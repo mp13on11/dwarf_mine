@@ -18,11 +18,13 @@ SET(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/lib)
 
 set(CMAKE_DEBUG_POSTFIX "d")
 
-# This option is to enable the /MP switch for Visual Studio 2005 and above compilers
-OPTION(WIN32_USE_MP "Set to ON to build LibCGS with the /MP option (Visual Studio 2005 and above)." ON)
-IF(WIN32_USE_MP)
-    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /MP")
-ENDIF(WIN32_USE_MP)
+IF(WIN32)
+    # This option is to enable the /MP switch for Visual Studio 2005 and above compilers
+    OPTION(WIN32_USE_MP "Set to ON to build LibCGS with the /MP option (Visual Studio 2005 and above)." ON)
+    IF(WIN32_USE_MP)
+        SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /MP")
+    ENDIF(WIN32_USE_MP)
+ENDIF(WIN32)
 
 ADD_SUBDIRECTORY(src)
 
