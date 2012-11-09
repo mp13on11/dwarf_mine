@@ -18,8 +18,8 @@ SET(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/lib)
 
 set(CMAKE_DEBUG_POSTFIX "d")
 
-# Enable C++ 11 for gcc
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x")
+# Enable C++ 11 and threading for gcc
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x -pthread")
 
 IF(WIN32)
     # This option is to enable the /MP switch for Visual Studio 2005 and above compilers
