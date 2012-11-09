@@ -14,10 +14,9 @@ int main(int argc, char** argv) {
     vector<thread> greeters;
     
     for (const string& arg : arguments) {
-        thread greeter([arg]() {
+        greeters.emplace_back([arg]() {
             cout << "Hello " << arg << "!" << endl;
         });
-        greeters.emplace_back(std::move(greeter));
     }
     
     for (thread& greeter : greeters)
