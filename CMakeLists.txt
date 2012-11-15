@@ -20,6 +20,7 @@ set(CMAKE_DEBUG_POSTFIX "d")
 
 # Enable C++ 11 and threading for gcc
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x -pthread")
+ADD_DEFINITIONS("-D__GXX_EXPERIMENTAL_CXX0X__")
 
 IF(WIN32)
     # This option is to enable the /MP switch for Visual Studio 2005 and above compilers
