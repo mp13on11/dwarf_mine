@@ -1,34 +1,27 @@
 CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
 
-# Example for querying a variable of type PATH through the UI
-#set(SOME_VARIABLE_NAME $ENV{SOME_VARIABLE_NAME} CACHE "explanatory text in ui" PATH)
-
 PROJECT(13on11)
 
 SET(CMAKE_CONFIGURATION_TYPES "Debug;Release" CACHE STRING "limited configs" FORCE)
 SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/bin)
 SET(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/bin)
 SET(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/lib)
+SET(CMAKE_DEBUG_POSTFIX "d")
 
-#SET(CPACK_GENERATOR "ZIP")
-#SET(CPACK_PACKAGE_VERSION_MAJOR "0")
-#SET(CPACK_PACKAGE_VERSION_MINOR "1")
-#SET(CPACK_PACKAGE_VERSION_PATCH "0")
-#INCLUDE(CPack)
+IF(UNIX)
+	# Enable C++ 11 and threading for gcc
+	SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x -pthread")
 
-set(CMAKE_DEBUG_POSTFIX "d")
+	# Provide syntax highlighting for C++ 11 in Eclipse
+	ADD_DEFINITIONS("-D__GXX_EXPERIMENTAL_CXX0X__")
+ENDIF(UNIX)
 
-# Enable C++ 11 and threading for gcc
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x -pthread")
-ADD_DEFINITIONS("-D__GXX_EXPERIMENTAL_CXX0X__")
-
-IF(WIN32)
-    # This option is to enable the /MP switch for Visual Studio 2005 and above compilers
+# Provide an option to enable multithreaded compilation in Visual Studio
+IF(MSVC)
     OPTION(WIN32_USE_MP "Set to ON to build with the /MP option (Visual Studio 2005 and above)." ON)
     IF(WIN32_USE_MP)
         SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /MP")
     ENDIF(WIN32_USE_MP)
-ENDIF(WIN32)
+ENDIF(MSVC)
 
 ADD_SUBDIRECTORY(src)
-

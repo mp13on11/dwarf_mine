@@ -10,24 +10,19 @@ INCLUDE_DIRECTORIES(
     # Add dependencies' include dirs here
 )
 
-FILE(GLOB auto_sources
+FILE(GLOB AUTO_SOURCES
 	"*.h"
 	"*.cpp"
 )
-
-IF(MSVC)
-    ADD_DEFINITIONS(/D_CRT_SECURE_NO_WARNINGS /DNOMINMAX /DWIN32_LEAN_AND_MEAN)
-ENDIF(MSVC)
 
 # Create filters (in MSVC)
 #SOURCE_GROUP("Group Name" FILES <FileNames>)
 #SOURCE_GROUP(Source REGULAR_EXPRESSION "c$|cpp$|cu$")
 #SOURCE_GROUP(Header REGULAR_EXPRESSION "hpp$|h$")
 
-
 # Build executable out of sources
 ADD_EXECUTABLE(${EXECUTABLE_NAME} 
-    ${auto_sources}
+    ${AUTO_SOURCES}
     # List additional source file lists here, if necessary
 )
 
@@ -36,6 +31,8 @@ TARGET_LINK_LIBRARIES(${EXECUTABLE_NAME}
 )    
     
 IF(MSVC)  
+	ADD_DEFINITIONS(/D_CRT_SECURE_NO_WARNINGS /DNOMINMAX /DWIN32_LEAN_AND_MEAN)
+
     SET_TARGET_PROPERTIES(${EXECUTABLE_NAME}
         PROPERTIES
         LINK_FLAGS "/NODEFAULTLIB:libcmt /SUBSYSTEM:CONSOLE")
