@@ -1,6 +1,6 @@
-*.cmake
+build/
 *.cproject
 *.project
-build/
-CMake*
-Makefile
+*.settings
+*.sublime-project
+*.sublime-workspace
