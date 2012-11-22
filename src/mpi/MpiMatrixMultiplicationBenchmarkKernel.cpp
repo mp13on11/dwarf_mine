@@ -45,6 +45,17 @@ void MpiMatrixMultiplicationBenchmarkKernel::shutdown(const string& outputFileNa
 
 void MpiMatrixMultiplicationBenchmarkKernel::broadcastSizes()
 {
+    size_t sizes[4] = {
+            left.rows(), left.columns(), right.rows(), right.columns()
+        };
+    MPI::COMM_WORLD.Bcast(sizes, 4 * sizeof(size_t), MPI::CHAR, ROOT_RANK);
+
+    if (rank != ROOT_RANK)
+    {
+        left = Matrix<float>(sizes[0], sizes[1]);
+        right = Matrix<float>(sizes[2], sizes[3]);
+        result = Matrix<float>(sizes[0], sizes[3]);
+    }
 }
 
 void MpiMatrixMultiplicationBenchmarkKernel::scatterMatrices()
