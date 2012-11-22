@@ -1,5 +1,4 @@
-#ifndef MATRIX_MULTIPLICATION_BENCHMARK_KERNEL_H_
-#define MATRIX_MULTIPLICATION_BENCHMARK_KERNEL_H_
+#pragma once
 
 #include "BenchmarkKernel.h"
 #include "Matrix.h"
@@ -12,15 +11,13 @@
 class MatrixMultiplicationBenchmarkKernel : public BenchmarkKernel
 {
 public:
-	static std::unique_ptr<MatrixMultiplicationBenchmarkKernel> create(const std::string &name);
+    static std::unique_ptr<MatrixMultiplicationBenchmarkKernel> create(const std::string& name);
 
 protected:
-	static Matrix<float> readMatrixFrom(const std::string &fileName);
-	static void writeMatrixTo(const std::string &fileName, const Matrix<float> &matrix);
+    static Matrix<float> readMatrixFrom(const std::string& fileName);
+    static void writeMatrixTo(const std::string& fileName, const Matrix<float>& matrix);
 
 private:
-	static void fillMatrixFromStream(Matrix<float> &matrix, std::istream &stream);
-	static std::vector<float> getValuesIn(const std::string &line);
+    static void fillMatrixFromStream(Matrix<float>& matrix, std::istream& stream);
+    static std::vector<float> getValuesIn(const std::string& line);
 };
-
-#endif /* MATRIX_MULTIPLICATION_BENCHMARK_KERNEL_H_ */
