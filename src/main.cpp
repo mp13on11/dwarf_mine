@@ -2,25 +2,17 @@
 #include <fstream>
 #include <iomanip>
 #include <iostream>
-#include <iterator>
 #include <random>
 #include <sstream>
 #include <vector>
 #include "Matrix.h"
+#include "MatrixMultiplicationBenchmarkKernel.h"
 
 using namespace std;
 
 void generateMatrix(const string &fileName);
-void printMatrix(const string &fileName);
 
-template<typename T>
-Matrix<T> readMatrix(const string &fileName);
-
-template<typename T>
-void fillMatrixFromStream(Matrix<T> &matrix, istream &stream);
-
-template<typename T>
-vector<T> getValuesIn(const string &line);
+bool isRunArgument(const string &arg);
 
 void printUsage(const string &program);
 
@@ -38,9 +30,12 @@ int main(int argc, const char *argv[])
 	{
 		generateMatrix(arguments[1]);
 	}
-	else if (arguments[0] == "read")
+	else if (isRunArgument(arguments[0]) && arguments.size() == 4)
 	{
-		printMatrix(arguments[1]);
+		auto kernel = MatrixMultiplicationBenchmarkKernel::create(arguments[0]);
+		kernel->startup(vector<string>{arguments[1], arguments[2]});
+		kernel->run();
+		kernel->shutdown(arguments[3]);
 	}
 	else
 	{
@@ -74,84 +69,14 @@ void generateMatrix(const string &fileName)
 	}
 }
 
-void printMatrix(const string &fileName)
+bool isRunArgument(const string &arg)
 {
-	try
-	{
-		Matrix<float> matrix = readMatrix<float>(fileName);
-
-		for (size_t i=0; i<matrix.rows(); i++)
-		{
-			for (size_t j=0; j<matrix.columns(); j++)
-			{
-				cout << " " << setw(3) << matrix(i, j);
-			}
-
-			cout << endl;
-		}
-	}
-	catch (exception &e)
-	{
-		cerr << "Fooooooo:" << e.what() << endl;
-	}
-}
-
-template<typename T>
-Matrix<T> readMatrix(const string &fileName)
-{
-	ifstream file;
-	file.exceptions(ios_base::failbit);
-	file.open(fileName);
-
-	size_t rows, columns;
-	file >> rows;
-	file >> columns;
-	string line;
-	getline(file, line);
-	Matrix<T> result(rows, columns);
-
-	try
-	{
-		fillMatrixFromStream(result, file);
-	}
-	catch (...)
-	{
-		cerr << "Warning. Missing line..." << endl;
-	}
-
-	return result;
-}
-
-template<typename T>
-void fillMatrixFromStream(Matrix<T> &matrix, istream &stream)
-{
-
-	for (size_t i=0; i<matrix.rows() && stream.good(); i++)
-	{
-		string line;
-		getline(stream, line);
-		vector<T> values = getValuesIn<T>(line);
-
-		for (size_t j=0; j<matrix.columns() && j<values.size(); j++)
-			matrix(i, j) = values[j];
-	}
-}
-
-template<typename T>
-vector<T> getValuesIn(const string &line)
-{
-	istringstream stream(line);
-	vector<T> result;
-	copy(
-			istream_iterator<T>(stream),
-			istream_iterator<T>(),
-			back_inserter<vector<T>>(result)
-		);
-
-	return result;
+	return arg == "cuda" || arg == "mpi" || arg == "smp";
 }
 
 void printUsage(const string &program)
 {
-	cerr << "Usage: " << program << " <generate|read> <matrix file name>" << endl;
+	cerr << "Usage: " << endl;
+	cerr << "\t" << program << " <cuda|mpi|smp> <left matrix file> <right matrix file> <result matrix file>" << endl;
+	cerr << "\t" << program << " <generate> <matrix file>" << endl;
 }
