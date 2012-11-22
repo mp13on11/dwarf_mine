@@ -1,20 +1,20 @@
-#include "mpi/MpiMatrixMultiplicationBenchmarkKernel.h"
-#include "lib/tools/MismatchedMatricesException.h"
-#include "lib/tools/MatrixHelper.h"
+#include "mpi/MpiMatrixKernel.h"
+#include "tools/MismatchedMatricesException.h"
+#include "tools/MatrixHelper.h"
 
 #include <mpi.h>
 #include <sstream>
 
 using namespace std;
 
-const int MpiMatrixMultiplicationBenchmarkKernel::ROOT_RANK = 0;
+const int MpiMatrixKernel::ROOT_RANK = 0;
 
-MpiMatrixMultiplicationBenchmarkKernel::MpiMatrixMultiplicationBenchmarkKernel() :
+MpiMatrixKernel::MpiMatrixKernel() :
         rank(MPI::COMM_WORLD.Get_rank())
 {
 }
 
-void MpiMatrixMultiplicationBenchmarkKernel::startup(const vector<string>& arguments)
+void MpiMatrixKernel::startup(const vector<string>& arguments)
 {
     if (rank != ROOT_RANK)
         return;
@@ -28,7 +28,7 @@ void MpiMatrixMultiplicationBenchmarkKernel::startup(const vector<string>& argum
     result = Matrix<float>(left.rows(), right.columns());
 }
 
-void MpiMatrixMultiplicationBenchmarkKernel::run()
+void MpiMatrixKernel::run()
 {
     broadcastSizes();
     scatterMatrices();
@@ -36,7 +36,7 @@ void MpiMatrixMultiplicationBenchmarkKernel::run()
     gatherResult();
 }
 
-void MpiMatrixMultiplicationBenchmarkKernel::shutdown(const string& outputFileName)
+void MpiMatrixKernel::shutdown(const string& outputFileName)
 {
     if (rank != ROOT_RANK)
         return;
@@ -44,7 +44,7 @@ void MpiMatrixMultiplicationBenchmarkKernel::shutdown(const string& outputFileNa
     MatrixHelper::writeMatrixTo(outputFileName, result);
 }
 
-void MpiMatrixMultiplicationBenchmarkKernel::broadcastSizes()
+void MpiMatrixKernel::broadcastSizes()
 {
     size_t sizes[4] = {
             left.rows(), left.columns(), right.rows(), right.columns()
@@ -59,14 +59,14 @@ void MpiMatrixMultiplicationBenchmarkKernel::broadcastSizes()
     }
 }
 
-void MpiMatrixMultiplicationBenchmarkKernel::scatterMatrices()
+void MpiMatrixKernel::scatterMatrices()
 {
 }
 
-void MpiMatrixMultiplicationBenchmarkKernel::multiply()
+void MpiMatrixKernel::multiply()
 {
 }
 
-void MpiMatrixMultiplicationBenchmarkKernel::gatherResult()
+void MpiMatrixKernel::gatherResult()
 {
 }
