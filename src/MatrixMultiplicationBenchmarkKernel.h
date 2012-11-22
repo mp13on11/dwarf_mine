@@ -1,7 +1,7 @@
 #ifndef MATRIX_MULTIPLICATION_BENCHMARK_KERNEL_H_
 #define MATRIX_MULTIPLICATION_BENCHMARK_KERNEL_H_
 
-#include "BenchmarkKernel.h"
+#include "benchmark-lib/BenchmarkKernel.h"
 #include "Matrix.h"
 
 #include <istream>
