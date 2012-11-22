@@ -22,7 +22,7 @@ void MpiMatrixKernel::startup(const vector<string>& arguments)
         return;
 
     left = MatrixHelper::readMatrixFrom(arguments[0]);
-    right = MatrixHelper::readMatrixFrom(arguments[0]);
+    right = MatrixHelper::readMatrixFrom(arguments[1]);
 
     if (left.columns() != right.rows())
         throw MismatchedMatricesException(left.columns(), right.rows());
