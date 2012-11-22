@@ -20,6 +20,13 @@ namespace CudaUtils
     class Memory
     {
     public:
+        Memory() :
+            gpuPtr(nullptr),
+            size(0)
+        {
+
+        }
+
         explicit Memory(std::size_t size) : gpuPtr(allocate(size)), size(size)
         {
         }
@@ -37,6 +44,12 @@ namespace CudaUtils
             other.size = 0;            
         }
 
+        void reallocate(std::size_t size)
+        {
+            free();
+            gpuPtr = allocate(size);
+        }
+
         const MemType* get() const
         {
             return gpuPtr;
@@ -51,7 +64,7 @@ namespace CudaUtils
         MemType* allocate(std::size_t size)
         {
             MemType* ptr;
-            checkError(cudaMalloc(&ptr, size));
+            checkError(cudaMalloc(&ptr, size * sizeof(MemType)));
             return ptr;
         }
         

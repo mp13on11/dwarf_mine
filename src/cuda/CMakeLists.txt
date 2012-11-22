@@ -19,7 +19,8 @@ CUDA_ADD_CUBLAS_TO_TARGET(${EXECUTABLE_NAME})
 
 TARGET_LINK_LIBRARIES(${EXECUTABLE_NAME}
     # Add dependencies' libraries here
-    "benchmark-lib"
+    "libbenchmark"
+    "libtools"
 )    
     
 IF(MSVC)

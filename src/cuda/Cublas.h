@@ -18,13 +18,13 @@ public:
     //
     // CUBLAS helper functions
     template<typename MatrixType>
-    void setMatrix(int rows, int cols, int elemSize, const CudaUtils::Memory<MatrixType>& A, int lda, CudaUtils::Memory<MatrixType>& B, int ldb)
+    void setMatrix(int rows, int cols, int elemSize, const MatrixType* A, int lda, CudaUtils::Memory<MatrixType>& B, int ldb)
     {
         checkStatus(cublasSetMatrix(
             rows,
             cols,
             elemSize,
-            A.get(),
+            A,
             lda,
             B.get(),
             ldb
@@ -32,7 +32,7 @@ public:
     }
 
     template<typename MatrixType>
-    void getMatrix(int rows, int cols, int elemSize, const CudaUtils::Memory<MatrixType>& A, int lda, CudaUtils::Memory<MatrixType>& B, int ldb)
+    void getMatrix(int rows, int cols, int elemSize, const CudaUtils::Memory<MatrixType>& A, int lda, MatrixType* B, int ldb)
     {
         checkStatus(cublasGetMatrix(
             rows,
@@ -40,7 +40,7 @@ public:
             elemSize,
             A.get(),
             lda,
-            B.get(),
+            B,
             ldb
         ));
     }
