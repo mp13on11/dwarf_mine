@@ -9,6 +9,7 @@ class Cublas;
 class CudaMatrixKernel : public BenchmarkKernel
 {
 public:
+    virtual std::size_t requiredInputs() const;
     virtual void startup(const std::vector<std::string>& arguments);
     virtual void run();
     virtual void shutdown(const std::string& outputFilename);

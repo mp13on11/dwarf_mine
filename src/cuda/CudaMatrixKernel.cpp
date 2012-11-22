@@ -12,6 +12,11 @@ using namespace CudaUtils;
 const float ALPHA = 1.0f;
 const float BETA = 0.0f;
 
+size_t CudaMatrixKernel::requiredInputs() const
+{
+    return 2;
+}
+
 void CudaMatrixKernel::startup(const std::vector<std::string>& arguments)
 {
     if (arguments.size() != 2)
