@@ -11,7 +11,7 @@ void Kernel::startup(const std::vector<std::string>& arguments)
     for(const auto& arg : arguments)
     std::cout << arg << std::endl;
 
-    auto m = MatrixHelper::readMatrixFrom(arguments[0]);
+    //auto m = MatrixHelper::readMatrixFrom(arguments[0]);
 }
     
 void Kernel::run()
