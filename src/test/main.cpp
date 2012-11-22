@@ -4,7 +4,7 @@
 
 using namespace std;
 
-int main(int argc, const char *argv[])
+int main()
 {
     std::cout << "Hello World!" << std::endl;
     FILE* x = popen("echo 'fuuuu bar'", "r");
