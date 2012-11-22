@@ -21,7 +21,7 @@ int main(int argc, const char* argv[])
 
     auto kernel = createKernel();
 
-    if (kernel->requiredInputs() < inputs.size())
+    if (inputs.size() < kernel->requiredInputs())
     {
         cerr << argv[0] << " requires " << kernel->requiredInputs() << " input files..." << endl;
         return 1;
