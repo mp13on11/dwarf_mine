@@ -12,7 +12,7 @@ int main(int argc, const char* argv[])
 {
     if (argc < 2)
     {
-        cerr << "Usage: " << argv[0] << "<input files>... <output file>" << endl;
+        cerr << "Usage: " << argv[0] << " <input files>... <output file>" << endl;
         return 1;
     }
 
@@ -20,6 +20,13 @@ int main(int argc, const char* argv[])
     string output(argv[argc - 1]);
 
     auto kernel = createKernel();
+
+    if (kernel->requiredInputs() < inputs.size())
+    {
+        cerr << argv[0] << " requires " << kernel->requiredInputs() << " input files..." << endl;
+        return 1;
+    }
+
     kernel->startup(inputs);
     kernel->run();
     kernel->shutdown(output);
