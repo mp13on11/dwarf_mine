@@ -1,23 +1,19 @@
 SET(EXECUTABLE_NAME spike)
 
-# Dependencies
-FIND_PACKAGE(CUDA REQUIRED)
-	
 INCLUDE_DIRECTORIES(
     ${PROJECT_SOURCE_DIR}
-	# Add dependencies' include dirs here
+    # Add dependencies' include dirs here
 )
 
 FILE(GLOB AUTO_SOURCES
-	"*.h"
-	"*.cpp"
-	"cuda/*.h"
-	"cuda/*.cpp"
+    "*.h"
+    "*.cpp"
 )
 
+# TODO: What exactly should happen in this CMake file...
+
 # Build executable out of sources
-CUDA_ADD_EXECUTABLE(${EXECUTABLE_NAME} ${AUTO_SOURCES})
-CUDA_ADD_CUBLAS_TO_TARGET(${EXECUTABLE_NAME})
+ADD_EXECUTABLE(${EXECUTABLE_NAME} ${AUTO_SOURCES})
 
 TARGET_LINK_LIBRARIES(${EXECUTABLE_NAME}
     # Add dependencies' libraries here
@@ -34,6 +30,6 @@ ENDIF(MSVC)
 
 ADD_SUBDIRECTORY(benchmark-lib)
 ADD_SUBDIRECTORY(gold)
-#ADD_SUBDIRECTORY(cuda)
+ADD_SUBDIRECTORY(cuda)
 #ADD_SUBDIRECTORY(mpi)
 #ADD_SUBDIRECTORY(smp)
