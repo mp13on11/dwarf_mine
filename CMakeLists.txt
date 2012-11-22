@@ -6,22 +6,22 @@ SET(CMAKE_CONFIGURATION_TYPES "Debug;Release" CACHE STRING "limited configs" FOR
 SET(CMAKE_DEBUG_POSTFIX "d")
 
 IF(MSVC)
-	SET(CMAKE_CXX_FLAGS "/W4 ${CMAKE_CXX_FLAGS}")
+    SET(CMAKE_CXX_FLAGS "/W4 ${CMAKE_CXX_FLAGS}")
 ELSEIF(CMAKE_COMPILER_IS_GNUCXX)
-	SET(CMAKE_CXX_FLAGS "-Wall -Wextra -W -pedantic ${CMAKE_CXX_FLAGS}")
+    SET(CMAKE_CXX_FLAGS "-Wall -Wextra -W -pedantic ${CMAKE_CXX_FLAGS}")
 ENDIF()
 
 IF(MSVC AND NOT MSVC10)
-	# Older VS versions do not support C++ 11
-	MESSAGE(FATAL_ERROR "This project needs at least Visual Studio 2010")
+    # Older VS versions do not support C++ 11
+    MESSAGE(FATAL_ERROR "This project needs at least Visual Studio 2010")
 ENDIF()
 
 IF(CMAKE_COMPILER_IS_GNUCXX)
-	# Enable C++ 11 and threading for gcc
-	SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x -pthread")
+    # Enable C++ 11 and threading for gcc
+    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x -pthread")
 
-	# Provide syntax highlighting for C++ 11 in Eclipse
-	ADD_DEFINITIONS("-D__GXX_EXPERIMENTAL_CXX0X__")
+    # Provide syntax highlighting for C++ 11 in Eclipse
+    ADD_DEFINITIONS("-D__GXX_EXPERIMENTAL_CXX0X__")
 ENDIF()
 
 # Provide an option to enable multithreaded compilation in Visual Studio

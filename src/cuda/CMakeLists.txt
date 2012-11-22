@@ -3,10 +3,10 @@ SET(EXECUTABLE_NAME cuda)
 # Dependencies
 FIND_PACKAGE(CUDA REQUIRED)
 FIND_PACKAGE(Boost REQUIRED)
-	
+    
 INCLUDE_DIRECTORIES(
     ${PROJECT_SOURCE_DIR}
-	# Add dependencies' include dirs here
+    # Add dependencies' include dirs here
 )
 
 FILE(GLOB AUTO_SOURCES

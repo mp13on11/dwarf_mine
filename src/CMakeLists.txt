@@ -1,13 +1,13 @@
 INCLUDE_DIRECTORIES(
     ${PROJECT_SOURCE_DIR}/src/
     ${PROJECT_SOURCE_DIR}/src/lib/
-	# Add dependencies' include dirs here
+    # Add dependencies' include dirs here
 )
 
 # TODO: What exactly should happen in this CMake file...
     
 IF(MSVC)
-	ADD_DEFINITIONS(/D_CRT_SECURE_NO_WARNINGS /DNOMINMAX /DWIN32_LEAN_AND_MEAN)
+    ADD_DEFINITIONS(/D_CRT_SECURE_NO_WARNINGS /DNOMINMAX /DWIN32_LEAN_AND_MEAN)
 
     SET_TARGET_PROPERTIES(${EXECUTABLE_NAME}
         PROPERTIES

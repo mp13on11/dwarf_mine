@@ -1,16 +1,16 @@
 SET(EXECUTABLE_NAME mpi-matrix)
 
 FIND_PACKAGE(MPI REQUIRED)
-	
+    
 INCLUDE_DIRECTORIES(
     ${PROJECT_SOURCE_DIR}
-	# Add dependencies' include dirs here
+    # Add dependencies' include dirs here
         ${MPI_INCLUDE_PATH}
 )
 
 FILE(GLOB AUTO_SOURCES
-	"*.h"
-	"*.cpp"
+    "*.h"
+    "*.cpp"
 )
 
 # Build executable out of sources
@@ -24,7 +24,7 @@ TARGET_LINK_LIBRARIES(${EXECUTABLE_NAME}
 )    
     
 IF(MSVC)
-	ADD_DEFINITIONS(/D_CRT_SECURE_NO_WARNINGS /DNOMINMAX /DWIN32_LEAN_AND_MEAN)
+    ADD_DEFINITIONS(/D_CRT_SECURE_NO_WARNINGS /DNOMINMAX /DWIN32_LEAN_AND_MEAN)
 
     SET_TARGET_PROPERTIES(${EXECUTABLE_NAME}
         PROPERTIES

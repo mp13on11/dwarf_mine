@@ -52,7 +52,7 @@ void CudaMatrixKernel::startup(const std::vector<std::string>& arguments)
 void CudaMatrixKernel::run()
 {
     cublas->Sgemm(
-        CUBLAS_OP_T, CUBLAS_OP_T,
+        CUBLAS_OP_N, CUBLAS_OP_N,
         matrixARows, matrixBCols, matrixACols,
         &ALPHA,
         matrixMemA, matrixARows,
