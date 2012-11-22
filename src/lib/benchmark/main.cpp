@@ -1,4 +1,4 @@
-#include "BenchmarkKernel.h"
+#include "benchmark/BenchmarkKernel.h"
 
 BenchmarkKernel::~BenchmarkKernel()
 {

@@ -1,7 +1,7 @@
 #pragma once
 
-#include "benchmark-lib/BenchmarkKernel.h"
-#include "Matrix.h"
+#include "benchmark/BenchmarkKernel.h"
+#include "tools/Matrix.h"
 
 #include <istream>
 #include <memory>
@@ -10,9 +10,6 @@
 
 class MatrixMultiplicationBenchmarkKernel : public BenchmarkKernel
 {
-public:
-    static std::unique_ptr<MatrixMultiplicationBenchmarkKernel> create(const std::string& name);
-
 protected:
     static Matrix<float> readMatrixFrom(const std::string& fileName);
     static void writeMatrixTo(const std::string& fileName, const Matrix<float>& matrix);

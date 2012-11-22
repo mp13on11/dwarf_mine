@@ -1,4 +1,4 @@
-SET(EXECUTABLE_NAME benchmark-lib)
+SET(EXECUTABLE_NAME libtools)
 
 # Dependencies
 #FIND_PACKAGE(OpenGL REQUIRED)

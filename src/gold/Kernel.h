@@ -1,4 +1,4 @@
-#include "../benchmark-lib/BenchmarkKernel.h"
+#include "benchmark/BenchmarkKernel.h"
 
 class Kernel : public BenchmarkKernel
 {
