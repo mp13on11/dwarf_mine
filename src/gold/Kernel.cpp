@@ -5,9 +5,10 @@
 #include <string>
 #include <vector>
 
-void Kernel::startup(const std::string& inputFilename)
+void Kernel::startup(const std::vector<std::string>& arguments)
 {
-	std::cout << inputFilename << std::endl;
+	for(const auto& arg : arguments)
+	std::cout << arg << std::endl;
 }
 
 void Kernel::run()
