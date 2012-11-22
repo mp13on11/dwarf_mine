@@ -46,25 +46,19 @@ unique_ptr<MatrixMultiplicationBenchmarkKernel> MatrixMultiplicationBenchmarkKer
 		throw UnknownNameException(name);
 }
 
-void MatrixMultiplicationBenchmarkKernel::startup(const vector<string> &arguments)
-{
-	left = readMatrixFrom(arguments[0]);
-	right = readMatrixFrom(arguments[1]);
-}
-
-void MatrixMultiplicationBenchmarkKernel::shutdown(const string &outputFilename)
+void MatrixMultiplicationBenchmarkKernel::writeMatrixTo(const string &filename, const Matrix<float> &matrix)
 {
 	ofstream file;
 	file.exceptions(ios_base::failbit);
-	file.open(outputFilename);
+	file.open(filename);
 
-	file << result.rows() << " " << result.columns() << endl;
+	file << matrix.rows() << " " << matrix.columns() << endl;
 
-	for (size_t i=0; i<result.rows(); i++)
+	for (size_t i=0; i<matrix.rows(); i++)
 	{
-		for (size_t j=0; j<result.columns(); j++)
+		for (size_t j=0; j<matrix.columns(); j++)
 		{
-			file << " " << result(i, j);
+			file << " " << matrix(i, j);
 		}
 
 		file << endl;
