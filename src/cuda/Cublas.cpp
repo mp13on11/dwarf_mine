@@ -1,5 +1,6 @@
 #include "Cublas.h"
 #include "CublasError.h"
+#include <string>
 
 Cublas::Cublas()
 {

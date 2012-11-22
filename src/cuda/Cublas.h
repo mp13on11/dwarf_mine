@@ -2,6 +2,7 @@
 
 #include <cublas_v2.h>
 #include "Memory.h"
+#include <string>
 
 class Cublas
 {

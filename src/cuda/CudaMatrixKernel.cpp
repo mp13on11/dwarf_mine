@@ -40,9 +40,8 @@ void CudaMatrixKernel::startup(const std::vector<std::string>& arguments)
 
     cublas.reset(new Cublas());
 
-    cublas->setMatrix(matrixARows, matrixACols, sizeof(float) * matrixASize, matrixA.buffer(), matrixARows, matrixMemA, matrixARows);
-    cublas->setMatrix(matrixACols, matrixBCols, sizeof(float) * matrixBSize, matrixB.buffer(), matrixACols, matrixMemB, matrixACols);
-
+    cublas->setMatrix(matrixARows, matrixACols, sizeof(float), matrixA.buffer(), matrixARows, matrixMemA, matrixARows);
+    cublas->setMatrix(matrixACols, matrixBCols, sizeof(float), matrixB.buffer(), matrixACols, matrixMemB, matrixACols);
 }
 
 void CudaMatrixKernel::run()
@@ -62,9 +61,8 @@ void CudaMatrixKernel::shutdown(const std::string& outputFilename)
 {
     size_t rows = matrixARows;
     size_t cols = matrixBCols;
-    size_t outputSize = rows * cols;
     Matrix<float> targetMatrix(rows, cols);
-    cublas->getMatrix(rows, cols, sizeof(float) * outputSize, outputMatrix, rows, targetMatrix.buffer(), rows);
+    cublas->getMatrix(rows, cols, sizeof(float), outputMatrix, rows, targetMatrix.buffer(), rows);
 
     MatrixHelper::writeMatrixTo(outputFilename, targetMatrix);
 }
