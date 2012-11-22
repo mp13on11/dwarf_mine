@@ -20,7 +20,9 @@ void MatrixHelper::writeMatrixTo(const string& filename, const Matrix<float>& ma
     {
         for (size_t j=0; j<matrix.columns(); j++)
         {
-            file << " " << matrix(i, j);
+            if(j>0)
+               file << " "; 
+            file << matrix(i, j);
         }
 
         file << endl;

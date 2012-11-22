@@ -1,11 +1,12 @@
 #pragma once
 
-#include "lib/tools/MatrixHelper.h"
+#include "benchmark/BenchmarkKernel.h"
+#include "tools/Matrix.h"
 
-class MpiMatrixMultiplicationBenchmarkKernel : public BenchmarkKernel
+class MpiMatrixKernel : public BenchmarkKernel
 {
 public:
-    MpiMatrixMultiplicationBenchmarkKernel();
+    MpiMatrixKernel();
     virtual void startup(const std::vector<std::string>& arguments);
     virtual void run();
     virtual void shutdown(const std::string& outputFilename);

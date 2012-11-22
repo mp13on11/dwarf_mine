@@ -14,13 +14,13 @@ const float BETA = 0.0f;
 
 void CudaMatrixKernel::startup(const std::vector<std::string>& arguments)
 {
-    if (arguments.size() != 4)
+    if (arguments.size() != 2)
     {
         throw runtime_error("CUDA matrix multiplication needs 3 matrix files as arguments!");
     }
 
-    Matrix<float> matrixA = MatrixHelper::readMatrixFrom(arguments[1]);
-    Matrix<float> matrixB = MatrixHelper::readMatrixFrom(arguments[2]);
+    Matrix<float> matrixA = MatrixHelper::readMatrixFrom(arguments[0]);
+    Matrix<float> matrixB = MatrixHelper::readMatrixFrom(arguments[1]);
 
     matrixARows = matrixA.rows();
     matrixACols = matrixA.columns();
@@ -42,6 +42,7 @@ void CudaMatrixKernel::startup(const std::vector<std::string>& arguments)
 
     cublas->setMatrix(matrixARows, matrixACols, sizeof(float) * matrixASize, matrixA.buffer(), matrixARows, matrixMemA, matrixARows);
     cublas->setMatrix(matrixACols, matrixBCols, sizeof(float) * matrixBSize, matrixB.buffer(), matrixACols, matrixMemB, matrixACols);
+
 }
 
 void CudaMatrixKernel::run()
