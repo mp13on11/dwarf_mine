@@ -2,11 +2,13 @@
 
 #include <vector>
 
+using namespace std;
+
 template<typename T>
 class Matrix
 {
 public:
-    Matrix(size_t rows, size_t columns);
+    Matrix(size_t rows=0, size_t columns=0);
 
     size_t rows() const;
     size_t columns() const;

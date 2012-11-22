@@ -1,4 +1,4 @@
-SET(EXECUTABLE_NAME gold)
+SET(EXECUTABLE_NAME libbenchmark)
 
 # Dependencies
 #FIND_PACKAGE(OpenGL REQUIRED)
@@ -14,12 +14,10 @@ FILE(GLOB AUTO_SOURCES
 )
 
 # Build executable out of sources
-ADD_EXECUTABLE(${EXECUTABLE_NAME} ${AUTO_SOURCES})
+ADD_LIBRARY(${EXECUTABLE_NAME} SHARED ${AUTO_SOURCES})
 
 TARGET_LINK_LIBRARIES(${EXECUTABLE_NAME}
     # Add dependencies' libraries here
-    "libbenchmark"
-    "libtools"
 )    
     
 IF(MSVC)

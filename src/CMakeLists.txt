@@ -2,7 +2,7 @@ SET(EXECUTABLE_NAME spike)
 
 INCLUDE_DIRECTORIES(
     ${PROJECT_SOURCE_DIR}
-    # Add dependencies' include dirs here
+	# Add dependencies' include dirs here
 )
 
 FILE(GLOB AUTO_SOURCES
