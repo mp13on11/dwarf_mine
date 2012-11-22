@@ -1,14 +1,13 @@
 #pragma once
 
-#include "benchmark/BenchmarkKernel.h"
-#include "tools/Matrix.h"
+#include "Matrix.h"
 
 #include <istream>
 #include <memory>
 #include <string>
 #include <vector>
 
-class MatrixMultiplicationBenchmarkKernel : public BenchmarkKernel
+class MatrixHelper
 {
 protected:
     static Matrix<float> readMatrixFrom(const std::string& fileName);

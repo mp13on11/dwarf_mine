@@ -1,4 +1,4 @@
-#include "tools/MatrixMultiplicationBenchmarkKernel.h"
+#include "MatrixHelper.h"
 
 #include <algorithm>
 #include <fstream>
@@ -8,7 +8,7 @@
 
 using namespace std;
 
-void MatrixMultiplicationBenchmarkKernel::writeMatrixTo(const string& filename, const Matrix<float>& matrix)
+void MatrixHelper::writeMatrixTo(const string& filename, const Matrix<float>& matrix)
 {
     ofstream file;
     file.exceptions(ios_base::failbit);
@@ -27,7 +27,7 @@ void MatrixMultiplicationBenchmarkKernel::writeMatrixTo(const string& filename, 
     }
 }
 
-Matrix<float> MatrixMultiplicationBenchmarkKernel::readMatrixFrom(const string& fileName)
+Matrix<float> MatrixHelper::readMatrixFrom(const string& fileName)
 {
     ifstream file;
     file.exceptions(ios_base::failbit);
@@ -52,7 +52,7 @@ Matrix<float> MatrixMultiplicationBenchmarkKernel::readMatrixFrom(const string& 
     return result;
 }
 
-void MatrixMultiplicationBenchmarkKernel::fillMatrixFromStream(Matrix<float>& matrix, istream& stream)
+void MatrixHelper::fillMatrixFromStream(Matrix<float>& matrix, istream& stream)
 {
     for (size_t i=0; i<matrix.rows() && stream.good(); i++)
     {
@@ -65,7 +65,7 @@ void MatrixMultiplicationBenchmarkKernel::fillMatrixFromStream(Matrix<float>& ma
     }
 }
 
-vector<float> MatrixMultiplicationBenchmarkKernel::getValuesIn(const string& line)
+vector<float> MatrixHelper::getValuesIn(const string& line)
 {
     istringstream stream(line);
     vector<float> result;

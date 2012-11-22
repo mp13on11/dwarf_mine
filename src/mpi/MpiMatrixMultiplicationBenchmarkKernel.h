@@ -1,8 +1,8 @@
 #pragma once
 
-#include "MatrixMultiplicationBenchmarkKernel.h"
+#include "lib/tools/MatrixHelper.h"
 
-class MpiMatrixMultiplicationBenchmarkKernel : public MatrixMultiplicationBenchmarkKernel
+class MpiMatrixMultiplicationBenchmarkKernel : public BenchmarkKernel
 {
 public:
     MpiMatrixMultiplicationBenchmarkKernel();
