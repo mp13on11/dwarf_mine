@@ -8,9 +8,11 @@
 using namespace std;
 
 const int MpiMatrixKernel::ROOT_RANK = 0;
+const int MpiMatrixKernel::BLOCK_SIZE = 10;
 
 MpiMatrixKernel::MpiMatrixKernel() :
-        rank(MPI::COMM_WORLD.Get_rank())
+        rank(MPI::COMM_WORLD.Get_rank()),
+        groupSize(MPI::COMM_WORLD.Get_size())
 {
 }
 
@@ -65,6 +67,21 @@ void MpiMatrixKernel::scatterMatrices()
 
 void MpiMatrixKernel::multiply()
 {
+    if (rank != ROOT_RANK)
+        return;
+
+    for (size_t i=0; i<left.rows(); i++)
+    {
+        for (size_t j=0; j<right.columns(); j++)
+        {
+            result(i, j) = 0;
+
+            for (size_t k=0; k<left.columns(); k++)
+            {
+                result(i, j) += left(i, k) * right(k, j);
+            }
+        }
+    }
 }
 
 void MpiMatrixKernel::gatherResult()
