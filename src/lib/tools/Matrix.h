@@ -6,8 +6,9 @@ template<typename T>
 class Matrix
 {
 public:
-    Matrix(std::size_t rows, std::size_t columns, T* data);
+
     Matrix(std::size_t rows=0, std::size_t columns=0);
+    Matrix(std::size_t rows, std::size_t columns, std::vector<T>&& data);
 
     std::size_t rows() const;
     std::size_t columns() const;
@@ -17,13 +18,17 @@ public:
 
     const T* buffer() const;
 
-    T* buffer();
-
 private:
     std::size_t _rows;
     std::size_t _columns;
     std::vector<T> values;
 };
+
+template<typename T>
+Matrix<T>::Matrix(std::size_t rows, std::size_t columns, std::vector<T>&& data)
+    : _rows(rows), _columns(columns), values(std::move(data))
+{
+}
 
 template<typename T>
 Matrix<T>::Matrix(std::size_t rows, std::size_t columns)
@@ -47,12 +52,6 @@ template<typename T>
 const T* Matrix<T>::buffer() const
 {
     return values.data();
-}
-
-template<typename T>
-T* Matrix<T>::buffer()
-{
-    return &values[0];
 }
 
 template<typename T>

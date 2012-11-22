@@ -66,9 +66,11 @@ void CudaMatrixKernel::shutdown(const std::string& outputFilename)
 {
     size_t rows = matrixARows;
     size_t cols = matrixBCols;
-    Matrix<float> targetMatrix(rows, cols);
-    cublas->getMatrix(rows, cols, sizeof(float), outputMatrix, rows, targetMatrix.buffer(), rows);
 
+    vector<float> outputBuffer(rows * cols);
+    cublas->getMatrix(rows, cols, sizeof(float), outputMatrix, rows, outputBuffer.data(), rows);
+
+    Matrix<float> targetMatrix(rows, cols, move(outputBuffer));
     MatrixHelper::writeMatrixTo(outputFilename, targetMatrix);
 }
 

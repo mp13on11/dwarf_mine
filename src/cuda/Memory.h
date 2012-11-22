@@ -11,11 +11,11 @@
 namespace CudaUtils
 {
 
-    /************************************************************************/
-    /* Abstraction for Cuda memory management
-    /*
-    /* Manages allocation and transfer of memory
-    /************************************************************************/
+    /************************************************************************
+     * Abstraction for Cuda memory management
+     *
+     * Manages allocation and transfer of memory
+     ************************************************************************/
     template<typename MemType>
     class Memory
     {

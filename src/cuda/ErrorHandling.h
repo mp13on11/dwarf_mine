@@ -8,14 +8,14 @@
     CheckState();
 
 namespace CudaUtils {
-    /************************************************************************/
-    /* Check Cuda or CUTIL return code, throws CudaError
-    /* if code indicates an error
-    /************************************************************************/
+    /************************************************************************
+     * Check Cuda or CUTIL return code, throws CudaError
+     * if given state indicates an error
+     ************************************************************************/
     void checkError(cudaError_t state);
 
-    /************************************************************************/
-    /* Checks cudaGetLastError() and throws CudaError if error detected
-    /************************************************************************/
+    /************************************************************************
+     * Checks cudaGetLastError() and throws CudaError if error detected
+     ************************************************************************/
     void checkState();
 }
