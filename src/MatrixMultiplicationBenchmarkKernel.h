@@ -1,6 +1,6 @@
 #pragma once
 
-#include "BenchmarkKernel.h"
+#include "benchmark-lib/BenchmarkKernel.h"
 #include "Matrix.h"
 
 #include <istream>
