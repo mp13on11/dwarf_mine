@@ -1,5 +1,6 @@
 #include "mpi/MpiMatrixMultiplicationBenchmarkKernel.h"
-#include "MismatchedMatricesException.h"
+#include "lib/tools/MismatchedMatricesException.h"
+#include "lib/tools/MatrixHelper.h"
 
 #include <mpi.h>
 #include <sstream>
@@ -18,8 +19,8 @@ void MpiMatrixMultiplicationBenchmarkKernel::startup(const vector<string>& argum
     if (rank != ROOT_RANK)
         return;
 
-    left = readMatrixFrom(arguments[0]);
-    right = readMatrixFrom(arguments[0]);
+    left = MatrixHelper::readMatrixFrom(arguments[0]);
+    right = MatrixHelper::readMatrixFrom(arguments[0]);
 
     if (left.columns() != right.rows())
         throw MismatchedMatricesException(left.columns(), right.rows());
@@ -40,7 +41,7 @@ void MpiMatrixMultiplicationBenchmarkKernel::shutdown(const string& outputFileNa
     if (rank != ROOT_RANK)
         return;
 
-    writeMatrixTo(outputFileName, result);
+    MatrixHelper::writeMatrixTo(outputFileName, result);
 }
 
 void MpiMatrixMultiplicationBenchmarkKernel::broadcastSizes()

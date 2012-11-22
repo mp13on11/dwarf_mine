@@ -1,6 +1,5 @@
 #pragma once
 
-#include "benchmark/BenchmarkKernel.h"
 #include "tools/Matrix.h"
 
 #include <istream>
@@ -8,9 +7,9 @@
 #include <string>
 #include <vector>
 
-class MatrixMultiplicationBenchmarkKernel : public BenchmarkKernel
+class MatrixHelper
 {
-protected:
+public:
     static Matrix<float> readMatrixFrom(const std::string& fileName);
     static void writeMatrixTo(const std::string& fileName, const Matrix<float>& matrix);
 
