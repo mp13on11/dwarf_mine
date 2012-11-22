@@ -1,4 +1,5 @@
 #include "MatrixMultiplicationBenchmarkKernel.h"
+#include "mpi/MpiMatrixMultiplicationBenchmarkKernel.h"
 
 #include <algorithm>
 #include <exception>
@@ -37,8 +38,9 @@ unique_ptr<MatrixMultiplicationBenchmarkKernel> MatrixMultiplicationBenchmarkKer
         // TODO: create a Cuda kernel here
         return unique_ptr<MatrixMultiplicationBenchmarkKernel>();
     else if (name == "mpi")
-        // TODO: create an MPI kernel here
-        return unique_ptr<MatrixMultiplicationBenchmarkKernel>();
+        return unique_ptr<MatrixMultiplicationBenchmarkKernel>(
+                new MpiMatrixMultiplicationBenchmarkKernel()
+            );
     else if (name == "smp")
         // TODO: create an SMP kernel here
         return unique_ptr<MatrixMultiplicationBenchmarkKernel>();

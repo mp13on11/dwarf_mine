@@ -5,12 +5,15 @@ SET(EXECUTABLE_NAME spike)
 	
 INCLUDE_DIRECTORIES(
     ${PROJECT_SOURCE_DIR}
+    ${PROJECT_SOURCE_DIR}/src
 	# Add dependencies' include dirs here
 )
 
 FILE(GLOB AUTO_SOURCES
 	"*.h"
 	"*.cpp"
+	"*/*.h"
+	"*/*.cpp"
 )
 
 # Build executable out of sources
