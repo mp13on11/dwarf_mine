@@ -1,11 +1,11 @@
-SET(EXECUTABLE_NAME mpi-matrix)
+SET(EXECUTABLE_NAME test)
 
-FIND_PACKAGE(MPI REQUIRED)
+# Dependencies
+#FIND_PACKAGE(OpenGL REQUIRED)
 	
 INCLUDE_DIRECTORIES(
     ${PROJECT_SOURCE_DIR}
 	# Add dependencies' include dirs here
-        ${MPI_INCLUDE_PATH}
 )
 
 FILE(GLOB AUTO_SOURCES
@@ -18,9 +18,7 @@ ADD_EXECUTABLE(${EXECUTABLE_NAME} ${AUTO_SOURCES})
 
 TARGET_LINK_LIBRARIES(${EXECUTABLE_NAME}
     # Add dependencies' libraries here
-    "libbenchmark"
     "libtools"
-    ${MPI_LIBRARIES}
 )    
     
 IF(MSVC)
