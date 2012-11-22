@@ -1,14 +1,17 @@
 #ifndef BENCHMARK_KERNEL_H
 #define BENCHMARK_KERNEL_H
 
-using namespace std;
-
 class BenchmarkKernel
 {
 public:
-	virtual startup(const string& inputFilename) = 0;
-	virtual run() = 0;
-	virtual shutdown(const string& outputFilename) = 0;
+	virtual ~BenchmarkKernel();
+	virtual void startup(const std::string& inputFilename) = 0;
+	virtual void run() = 0;
+	virtual void shutdown(const std::string& outputFilename) = 0;
+};
+
+inline BenchmarkKernel::~BenchmarkKernel()
+{
 }
 
 #endif /* BENCHMARK_KERNEL_H */
