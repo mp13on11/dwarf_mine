@@ -1,0 +1,30 @@
+SET(EXECUTABLE_NAME gold)
+
+# Dependencies
+#FIND_PACKAGE(OpenGL REQUIRED)
+	
+INCLUDE_DIRECTORIES(
+    ${PROJECT_SOURCE_DIR}
+	# Add dependencies' include dirs here
+)
+
+FILE(GLOB AUTO_SOURCES
+	"*.h"
+	"*.cpp"
+)
+
+# Build executable out of sources
+ADD_EXECUTABLE(${EXECUTABLE_NAME} ${AUTO_SOURCES})
+
+TARGET_LINK_LIBRARIES(${EXECUTABLE_NAME}
+    # Add dependencies' libraries here
+    "benchmark-lib"
+)    
+    
+IF(MSVC)
+	ADD_DEFINITIONS(/D_CRT_SECURE_NO_WARNINGS /DNOMINMAX /DWIN32_LEAN_AND_MEAN)
+
+    SET_TARGET_PROPERTIES(${EXECUTABLE_NAME}
+        PROPERTIES
+        LINK_FLAGS "/NODEFAULTLIB:libcmt /SUBSYSTEM:CONSOLE")
+ENDIF(MSVC)
