@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Matrix.h"
+#include "tools/Matrix.h"
 
 #include <istream>
 #include <memory>
@@ -9,7 +9,7 @@
 
 class MatrixHelper
 {
-protected:
+public:
     static Matrix<float> readMatrixFrom(const std::string& fileName);
     static void writeMatrixTo(const std::string& fileName, const Matrix<float>& matrix);
 
