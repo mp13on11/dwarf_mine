@@ -1,3 +1,6 @@
 build/
+*.cproject
+*.project
+*.settings
 *.sublime-project
 *.sublime-workspace
