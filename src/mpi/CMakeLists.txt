@@ -1,8 +1,11 @@
 SET(EXECUTABLE_NAME mpi-matrix)
+
+FIND_PACKAGE(MPI REQUIRED)
 	
 INCLUDE_DIRECTORIES(
     ${PROJECT_SOURCE_DIR}
 	# Add dependencies' include dirs here
+        ${MPI_INCLUDE_PATH}
 )
 
 FILE(GLOB AUTO_SOURCES
@@ -17,6 +20,7 @@ TARGET_LINK_LIBRARIES(${EXECUTABLE_NAME}
     # Add dependencies' libraries here
     "libbenchmark"
     "libtools"
+    ${MPI_LIBRARIES}
 )    
     
 IF(MSVC)
