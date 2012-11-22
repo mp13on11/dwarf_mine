@@ -5,12 +5,15 @@
 #include "Matrix.h"
 
 #include <istream>
+#include <memory>
 #include <string>
 #include <vector>
 
 class MatrixMultiplicationBenchmarkKernel : public BenchmarkKernel
 {
 public:
+	static std::unique_ptr<MatrixMultiplicationBenchmarkKernel> create(const std::string &name);
+
 	virtual void startup(const std::vector<std::string> &arguments);
 	virtual void run();
 	virtual void shutdown(const std::string &outputFilename);

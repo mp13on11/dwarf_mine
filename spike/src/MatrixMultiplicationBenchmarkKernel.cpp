@@ -1,12 +1,50 @@
 #include "MatrixMultiplicationBenchmarkKernel.h"
 
 #include <algorithm>
+#include <exception>
 #include <fstream>
 #include <iterator>
 #include <iostream>
 #include <sstream>
 
 using namespace std;
+
+class UnknownNameException : public exception
+{
+public:
+	UnknownNameException(const string &name)
+		: message("Unknown matrix multiplication benchmark name: ")
+	{
+		message += name;
+	}
+
+	virtual ~UnknownNameException() throw()
+	{
+	}
+
+	virtual const char* what() const throw()
+	{
+		return message.c_str();
+	}
+
+private:
+	string message;
+};
+
+unique_ptr<MatrixMultiplicationBenchmarkKernel> MatrixMultiplicationBenchmarkKernel::create(const string &name)
+{
+	if (name == "cuda")
+		// TODO: create a Cuda kernel here
+		return unique_ptr<MatrixMultiplicationBenchmarkKernel>();
+	else if (name == "mpi")
+		// TODO: create an MPI kernel here
+		return unique_ptr<MatrixMultiplicationBenchmarkKernel>();
+	else if (name == "smp")
+		// TODO: create an SMP kernel here
+		return unique_ptr<MatrixMultiplicationBenchmarkKernel>();
+	else
+		throw UnknownNameException(name);
+}
 
 void MatrixMultiplicationBenchmarkKernel::startup(const vector<string> &arguments)
 {
