@@ -1,12 +1,15 @@
 #pragma once
 
-#include "error_handling.h"
+#include "ErrorHandling.h"
 
 #include <cuda.h>
 #include <cuda_runtime.h>
 #include <device_launch_parameters.h>
+#include <cstddef>
 
-namespace CudaUtils {
+
+namespace CudaUtils
+{
 
     /************************************************************************/
     /* Abstraction for Cuda memory management
@@ -14,36 +17,46 @@ namespace CudaUtils {
     /* Manages allocation and transfer of memory
     /************************************************************************/
     template<typename MemType>
-    class Memory {
+    class Memory
+    {
     public:
-        explicit Memory(std::size_t size) : gpuPtr(allocate(size)), size(size) {}
-        ~Memory() {
+        explicit Memory(std::size_t size) : gpuPtr(allocate(size)), size(size)
+        {
+        }
+
+        ~Memory()
+        {
             free();
         }
         
         Memory(const Memory&) = delete;
         Memory& operator=(const Memory&) = delete;    
-        Memory(Memory&& other) : gpuPtr(other.gpuPtr), size(other.size) {
+        Memory(Memory&& other) : gpuPtr(other.gpuPtr), size(other.size)
+        {
             other.gpuPtr = nullptr;
             other.size = 0;            
         }
-        
-        void 
-        
-        MemType* get() {
+
+        const MemType* get() const
+        {
+            return gpuPtr;
+        }
+
+        MemType* get()
+        {
             return gpuPtr;
         }
         
     private:
-        MemType* allocate(std::size_t size) {
+        MemType* allocate(std::size_t size)
+        {
             MemType* ptr;
-            CheckError(
-                cudaMalloc(&ptr, size)
-            );
+            checkError(cudaMalloc(&ptr, size));
             return ptr;
         }
         
-        void free() {
+        void free()
+        {
             if (gpuPtr != nullptr)
                 cudaFree(gpuPtr);
         }

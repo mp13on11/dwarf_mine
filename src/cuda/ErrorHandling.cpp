@@ -6,7 +6,7 @@
 
 namespace CudaUtils 
 {
-    void CheckError(cudaError_t state) 
+    void checkError(cudaError_t state) 
     {
         if (state != cudaSuccess) 
         {
@@ -14,17 +14,9 @@ namespace CudaUtils
         }
     }
 
-    void CheckError(CUTBoolean result) 
-    {
-        if (result != CUTTrue) 
-        {
-            throw std::runtime_error("CUDA util error");
-        }
-    }
-
-    void CheckState() 
+    void checkState() 
     {
         cudaError_t state = cudaGetLastError();
-        CheckError(state);
+        checkError(state);
     }
 }
