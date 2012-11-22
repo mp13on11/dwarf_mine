@@ -9,8 +9,8 @@ INCLUDE_DIRECTORIES(
 )
 
 FILE(GLOB AUTO_SOURCES
-	"*.h"
-	"*.cpp"
+    "*.h"
+    "*.cpp"
 )
 
 # Build executable out of sources
