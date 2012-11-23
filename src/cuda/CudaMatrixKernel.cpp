@@ -19,11 +19,6 @@ size_t CudaMatrixKernel::requiredInputs() const
 
 void CudaMatrixKernel::startup(const std::vector<std::string>& arguments)
 {
-    if (arguments.size() != 2)
-    {
-        throw runtime_error("CUDA matrix multiplication needs 3 matrix files as arguments!");
-    }
-
     Matrix<float> matrixA = MatrixHelper::readMatrixFrom(arguments[0]);
     Matrix<float> matrixB = MatrixHelper::readMatrixFrom(arguments[1]);
 
