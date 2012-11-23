@@ -17,8 +17,8 @@ ADD_EXECUTABLE(${EXECUTABLE_NAME} ${AUTO_SOURCES})
 
 TARGET_LINK_LIBRARIES(${EXECUTABLE_NAME}
     # Add dependencies' libraries here
-    "libbenchmark"
-    "libtools"
+    ${BENCHMARK_LIB}
+    ${TOOLS_LIB}
     ${MPI_LIBRARIES}
 )    
     

@@ -1,9 +1,13 @@
-SET(LIB_NAME libtools)
+SET(TOOLS_LIB tools)
 
 # Dependencies
     
 INCLUDE_DIRECTORIES(
     # Add dependencies' include dirs here
+)
+
+LINK_DIRECTORIES(
+    ${CMAKE_CURRENT_BINARY_DIR}
 )
 
 FILE(GLOB AUTO_SOURCES
@@ -12,10 +16,10 @@ FILE(GLOB AUTO_SOURCES
 )
 
 # Build executable out of sources
-ADD_LIBRARY(${LIB_NAME} SHARED ${AUTO_SOURCES})
+ADD_LIBRARY(${TOOLS_LIB} SHARED ${AUTO_SOURCES})
 
-TARGET_LINK_LIBRARIES(${LIB_NAME}
+TARGET_LINK_LIBRARIES(${TOOLS_LIB}
     # Add dependencies' libraries here
 )    
     
-ADD_COMMON_MSVC_PROPS(${LIB_NAME})
+ADD_COMMON_MSVC_PROPS(${TOOLS_LIB})

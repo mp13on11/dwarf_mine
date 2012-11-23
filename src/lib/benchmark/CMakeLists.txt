@@ -1,4 +1,4 @@
-SET(LIB_NAME libbenchmark)
+SET(BENCHMARK_LIB benchmark)
 
 # Dependencies
     
@@ -7,16 +7,20 @@ INCLUDE_DIRECTORIES(
     # Add dependencies' include dirs here
 )
 
+LINK_DIRECTORIES(
+    ${CMAKE_CURRENT_BINARY_DIR}
+)
+
 FILE(GLOB AUTO_SOURCES
     "*.h"
     "*.cpp"
 )
 
 # Build executable out of sources
-ADD_LIBRARY(${LIB_NAME} SHARED ${AUTO_SOURCES})
+ADD_LIBRARY(${BENCHMARK_LIB} SHARED ${AUTO_SOURCES})
 
-TARGET_LINK_LIBRARIES(${LIB_NAME}
+TARGET_LINK_LIBRARIES(${BENCHMARK_LIB}
     # Add dependencies' libraries here
 )
 
-ADD_COMMON_MSVC_PROPS(${LIB_NAME})
+ADD_COMMON_MSVC_PROPS(${BENCHMARK_LIB})
