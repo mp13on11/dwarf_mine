@@ -1,19 +1,14 @@
+# Add global dependencies here
+FIND_PACKAGE(Boost REQUIRED)
+
+INCLUDE(Utils)
+
 INCLUDE_DIRECTORIES(
+    ${PROJECT_SOURCE_DIR}
     ${PROJECT_SOURCE_DIR}/src/
     ${PROJECT_SOURCE_DIR}/src/lib/
     # Add dependencies' include dirs here
 )
-
-# TODO: What exactly should happen in this CMake file...
-    
-IF(MSVC)
-    ADD_DEFINITIONS(/D_CRT_SECURE_NO_WARNINGS /DNOMINMAX /DWIN32_LEAN_AND_MEAN)
-
-    SET_TARGET_PROPERTIES(${EXECUTABLE_NAME}
-        PROPERTIES
-        LINK_FLAGS "/NODEFAULTLIB:libcmt /SUBSYSTEM:CONSOLE")
-ENDIF(MSVC)
-
 
 ADD_SUBDIRECTORY(lib/benchmark)
 ADD_SUBDIRECTORY(lib/tools)
