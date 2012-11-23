@@ -17,6 +17,7 @@ void hello()
 {
     int eventSet = PAPI_NULL;
     long long eventCounts[1];
+    int presetEvent = PAPI_TOT_INS;
 
     if (PAPI_register_thread() != PAPI_OK)
         cout << "Couldn't initialize thread." << endl;
@@ -24,7 +25,7 @@ void hello()
     if (PAPI_create_eventset(&eventSet) != PAPI_OK)
         cout << "Couldn't create event set for thread." <<endl;
 
-    if (PAPI_add_event(eventSet, PAPI_TOT_INS) != PAPI_OK)
+    if (PAPI_add_event(eventSet, presetEvent) != PAPI_OK)
         cout << "Couldn't add event to set of thread." << endl;
     
     if (PAPI_start(eventSet) != PAPI_OK)
