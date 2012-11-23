@@ -5,6 +5,7 @@ SET(EXECUTABLE_NAME test)
     
 INCLUDE_DIRECTORIES(
     ${PROJECT_SOURCE_DIR}
+    ${PROJECT_SOURCE_DIR}/gtest-1.6.0/include/
     # Add dependencies' include dirs here
 )
 
@@ -19,6 +20,7 @@ ADD_EXECUTABLE(${EXECUTABLE_NAME} ${AUTO_SOURCES})
 TARGET_LINK_LIBRARIES(${EXECUTABLE_NAME}
     # Add dependencies' libraries here
     "libtools"
+    "gtest"
 )    
     
 IF(MSVC)

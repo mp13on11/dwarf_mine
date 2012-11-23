@@ -1,16 +1,36 @@
 #include <ext/stdio_filebuf.h>
 #include <iostream>
 #include <fstream>
+#include "gtest/gtest.h"
 
 using namespace std;
 
-int main()
+double square_root (const double x)
 {
-    std::cout << "Hello World!" << std::endl;
-    FILE* x = popen("echo 'fuuuu bar'", "r");
+    double left = 0;
+    double right = x;
+    double middle, error;
 
-    __gnu_cxx::stdio_filebuf<char> filebuf(x, std::ios::in);
-    istream is(&filebuf);
+    do
+    {
+        middle = (left + right) / 2;
+        if(middle*middle > x)
+            right = middle;
+        else
+            left = middle;
+        error = (middle*middle - x) * (middle*middle - x);
+    }while(error > 1e-20);
+    return middle;
+}
 
-    std::cout << is.rdbuf();
+
+TEST (SquareRootTest, PositiveNos) { 
+    EXPECT_NEAR (182.0, square_root (324.0), 1e-4);
+    EXPECT_NEAR (25.4, square_root (645.16), 1e-4);
+    EXPECT_NEAR (50.3321, square_root (2533.310224), 1e-4);
+}
+
+int main(int argc, char **argv) {
+  ::testing::InitGoogleTest(&argc, argv);
+  return RUN_ALL_TESTS();
 }
