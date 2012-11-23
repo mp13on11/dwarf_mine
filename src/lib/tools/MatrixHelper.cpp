@@ -79,3 +79,14 @@ vector<float> MatrixHelper::getValuesIn(const string& line)
 
     return result;
 }
+
+void MatrixHelper::fill(Matrix<float>& matrix, const function<float()>& generator)
+{
+    for(size_t y = 0; y<matrix.rows(); y++)
+    {
+        for(size_t x = 0; x<matrix.columns(); x++)
+        {
+            matrix(y, x) = generator();
+        }
+    }
+}
