@@ -1,4 +1,4 @@
-SET(EXECUTABLE_NAME gold)
+SET(EXECUTABLE_NAME test)
 
 # Dependencies
 #FIND_PACKAGE(OpenGL REQUIRED)
@@ -18,7 +18,6 @@ ADD_EXECUTABLE(${EXECUTABLE_NAME} ${AUTO_SOURCES})
 
 TARGET_LINK_LIBRARIES(${EXECUTABLE_NAME}
     # Add dependencies' libraries here
-    "libbenchmark"
     "libtools"
 )    
     
