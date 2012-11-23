@@ -24,7 +24,7 @@ void CudaMatrixKernel::startup(const std::vector<std::string>& arguments)
 
     matrixARows = matrixA.rows();
     matrixACols = matrixA.columns();
-    size_t matrixBRows = matrixB.rows();
+    matrixBRows = matrixB.rows();
     matrixBCols = matrixB.columns();
 
     if (matrixACols != matrixBRows)
