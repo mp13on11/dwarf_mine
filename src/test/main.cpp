@@ -30,8 +30,8 @@ protected:
         inputBFile = "b.txt";
         outputFile = "c.txt";
 
-        referenceImplementation = "src/gold/gold";
-        currentImplementation = "src/" + string(GetParam());
+        referenceImplementation = "build/src/gold/gold";
+        currentImplementation = "build/src/" + string(GetParam());
     }
 
     virtual void TearDown() {
