@@ -30,6 +30,7 @@ void CudaMatrixKernel::startup(const std::vector<std::string>& arguments)
     if (matrixACols != matrixBRows)
         throw MismatchedMatricesException(matrixACols, matrixBRows);
 
+
     size_t matrixASize = matrixARows * matrixACols;
     size_t matrixBSize = matrixACols * matrixBCols;
     size_t outputSize = matrixARows * matrixBCols;
@@ -46,19 +47,26 @@ void CudaMatrixKernel::startup(const std::vector<std::string>& arguments)
 
 void CudaMatrixKernel::run()
 {
+    std::swap(matrixARows, matrixACols);
+    std::swap(matrixBRows, matrixBCols);
+
     cublas->Sgemm(
         CUBLAS_OP_N, CUBLAS_OP_N,
-        matrixARows, matrixBCols, matrixACols,
+        matrixBRows, matrixACols, matrixBCols,
         &ALPHA,
+        matrixMemB, matrixBRows,
         matrixMemA, matrixARows,
-        matrixMemB, matrixACols,
         &BETA,
-        outputMatrix, matrixARows
+        outputMatrix, matrixBRows
     );
 }
 
 void CudaMatrixKernel::shutdown(const std::string& outputFilename)
 {
+
+    std::swap(matrixARows, matrixACols);
+    std::swap(matrixBRows, matrixBCols);
+
     size_t rows = matrixARows;
     size_t cols = matrixBCols;
 
