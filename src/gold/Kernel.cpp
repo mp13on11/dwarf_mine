@@ -41,12 +41,12 @@ void Kernel::run()
     {        
         for(size_t x=0; x<c.columns(); x++)
         {
-            float val = 0;
+            double val = 0;
             for(size_t i=0; i<a.columns(); i++)
             {
                 val += a(y,i) * b(i,x);
             }
-            c(y,x) = val;
+            c(y,x) = (float)val;
         }
     }
 }

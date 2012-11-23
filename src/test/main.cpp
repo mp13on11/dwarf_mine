@@ -13,45 +13,68 @@
 using namespace std;
 
 
+    
 
-
-class MatrixMultiplyTest : public ::testing::Test
+class MatrixMultiplyTest : public ::testing::TestWithParam<const char*>
 {
+private:
+
+
+
 protected:
 
     virtual void SetUp() {
-        MatrixHelper::writeMatrixTo(matrixAFile, createTempMatrix(5,5));
-        MatrixHelper::writeMatrixTo(matrixBFile, createTempMatrix(5,5));
-        ofstream file;
-        file.open(matrixCFile);
+        //currentImplementation = GetParam();
+
+        inputAFile = "a.txt";
+        inputBFile = "b.txt";
+        outputFile = "c.txt";
+
+        referenceImplementation = "src/gold/gold";
+        currentImplementation = "src/" + string(GetParam());
     }
 
     virtual void TearDown() {
-        remove(matrixAFile.c_str());
-        remove(matrixBFile.c_str());
-        remove(matrixCFile.c_str());
+        remove(inputAFile.c_str());
+        remove(inputBFile.c_str());
+        remove(outputFile.c_str());
     }
 
-    Matrix<float> createTempMatrix(size_t rows, size_t columns)
-    {
-        uniform_real_distribution<float> distribution(-100, +100);
-        mt19937 engine(12345);
-        auto generator = bind(distribution, engine);
+    Matrix<float> createRandomMatrix(size_t rows, size_t columns)
+    {        
         Matrix<float> m(rows, columns);
-
-        for(size_t y = 0; y<rows; y++)
-        {
-            for(size_t x = 0; x<columns; x++)
-            {
-                m(y, x) = generator();
-            }
-        }
+        MatrixHelper::fill(m, generator);
         return m;
     }
 
-    string matrixAFile = "a.txt";
-    string matrixBFile = "b.txt";
-    string matrixCFile = "c.txt";
+    void initRandom(uint seed)
+    {
+        auto distribution = uniform_real_distribution<float> (-100, +100);
+        auto engine = mt19937(seed);
+        generator = bind(distribution, engine);
+    }
+
+    Matrix<float> executeMultiplication(string implementation, Matrix<float> a, Matrix<float> b)
+    {
+        MatrixHelper::writeMatrixTo(inputAFile, a);
+        MatrixHelper::writeMatrixTo(inputBFile, b);
+        startProcess({implementation, inputAFile, inputBFile, outputFile});
+        return MatrixHelper::readMatrixFrom(outputFile);
+    }
+
+    void startProcess(initializer_list<string> args)
+    {
+        system(boost::algorithm::join(args, " ").c_str());
+    }
+
+    function<float()> generator;
+
+    string inputAFile;
+    string inputBFile;
+    string outputFile;
+
+    string referenceImplementation;
+    string currentImplementation;
 };
 
 ::testing::AssertionResult AreMatricesEquals(Matrix<float> expected, Matrix<float>actual, float delta)
@@ -85,24 +108,45 @@ protected:
 }
 ::testing::AssertionResult  AreMatricesEquals(Matrix<float> a, Matrix<float>b)
 {
-    return AreMatricesEquals(a, b, 1e-1);
+    return AreMatricesEquals(a, b, 10);
 }
 
-void startProcess(initializer_list<string> args)
-{
-    system(boost::algorithm::join(args, " ").c_str());
-}
+TEST_P(MatrixMultiplyTest, SingleElementMatrixTest) {
+    initRandom(0);
+    auto left = createRandomMatrix(1, 1);
+    auto right = createRandomMatrix(1, 1);;
 
-TEST_F(MatrixMultiplyTest, GoldTest) { 
-    startProcess({"src/gold/gold", "a.txt", "b.txt", "c.txt"});
-    startProcess({"src/cuda/cuda", "a.txt", "b.txt", "c2.txt"});
-    auto expected = MatrixHelper::readMatrixFrom("c.txt");
-    auto actual = MatrixHelper::readMatrixFrom("c2.txt");
+    auto expected = executeMultiplication(referenceImplementation, left, right);
+    auto actual = executeMultiplication(currentImplementation, left, right);
+
     EXPECT_TRUE(AreMatricesEquals(expected, actual));
-    //EXPECT_NEAR (182.0, square_root (324.0), 1e-4);
-    //EXPECT_NEAR (25.4, square_root (645.16), 1e-4);
-    //EXPECT_NEAR (50.3321, square_root (2533.310224), 1e-4);
 }
+
+TEST_P(MatrixMultiplyTest, SmallSquareMatricesTest) {
+    initRandom(12345);
+    auto left = createRandomMatrix(5, 5);
+    auto right = createRandomMatrix(5, 5);
+
+    auto expected = executeMultiplication(referenceImplementation, left, right);
+    auto actual = executeMultiplication(currentImplementation, left, right);
+
+    EXPECT_TRUE(AreMatricesEquals(expected, actual));
+}
+
+TEST_P(MatrixMultiplyTest, MediumRectangularMatricesTest) {
+    initRandom(333);
+    auto left = createRandomMatrix(30, 50);
+    auto right = createRandomMatrix(50, 40);
+
+    auto expected = executeMultiplication(referenceImplementation, left, right);
+    auto actual = executeMultiplication(currentImplementation, left, right);
+
+    EXPECT_TRUE(AreMatricesEquals(expected, actual));
+}
+
+INSTANTIATE_TEST_CASE_P(MultiplePlatforms,
+                        MatrixMultiplyTest,
+                        ::testing::Values("cuda/cuda", "mpi/mpi-matrix"));
 
 int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);
