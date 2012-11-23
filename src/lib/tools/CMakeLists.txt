@@ -1,5 +1,8 @@
 SET(TOOLS_LIB tools)
 
+# Export lib name
+SET(TOOLS_LIB ${TOOLS_LIB} PARENT_SCOPE)
+
 # Dependencies
     
 INCLUDE_DIRECTORIES(

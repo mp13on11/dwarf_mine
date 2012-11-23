@@ -1,5 +1,8 @@
 SET(BENCHMARK_LIB benchmark)
 
+# Export lib name
+SET(BENCHMARK_LIB ${BENCHMARK_LIB} PARENT_SCOPE)
+
 # Dependencies
     
 INCLUDE_DIRECTORIES(
