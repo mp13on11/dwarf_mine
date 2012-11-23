@@ -22,5 +22,6 @@ private:
 
     std::size_t matrixARows;
     std::size_t matrixACols;
+    std::size_t matrixBRows;
     std::size_t matrixBCols;
 };

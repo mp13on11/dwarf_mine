@@ -19,21 +19,17 @@ size_t CudaMatrixKernel::requiredInputs() const
 
 void CudaMatrixKernel::startup(const std::vector<std::string>& arguments)
 {
-    if (arguments.size() != 2)
-    {
-        throw runtime_error("CUDA matrix multiplication needs 3 matrix files as arguments!");
-    }
-
     Matrix<float> matrixA = MatrixHelper::readMatrixFrom(arguments[0]);
     Matrix<float> matrixB = MatrixHelper::readMatrixFrom(arguments[1]);
 
     matrixARows = matrixA.rows();
     matrixACols = matrixA.columns();
-    size_t matrixBRows = matrixB.rows();
+    matrixBRows = matrixB.rows();
     matrixBCols = matrixB.columns();
 
     if (matrixACols != matrixBRows)
         throw MismatchedMatricesException(matrixACols, matrixBRows);
+
 
     size_t matrixASize = matrixARows * matrixACols;
     size_t matrixBSize = matrixACols * matrixBCols;
@@ -51,24 +47,29 @@ void CudaMatrixKernel::startup(const std::vector<std::string>& arguments)
 
 void CudaMatrixKernel::run()
 {
+    std::swap(matrixARows, matrixACols);
+    std::swap(matrixBRows, matrixBCols);
+
     cublas->Sgemm(
         CUBLAS_OP_N, CUBLAS_OP_N,
-        matrixARows, matrixBCols, matrixACols,
+        matrixBRows, matrixACols, matrixBCols,
         &ALPHA,
+        matrixMemB, matrixBRows,
         matrixMemA, matrixARows,
-        matrixMemB, matrixACols,
         &BETA,
-        outputMatrix, matrixARows
+        outputMatrix, matrixBRows
     );
 }
 
 void CudaMatrixKernel::shutdown(const std::string& outputFilename)
 {
-    size_t rows = matrixARows;
-    size_t cols = matrixBCols;
+    size_t rows = matrixBRows;
+    size_t cols = matrixACols;
 
     vector<float> outputBuffer(rows * cols);
     cublas->getMatrix(rows, cols, sizeof(float), outputMatrix, rows, outputBuffer.data(), rows);
+
+    std::swap(rows, cols);
 
     Matrix<float> targetMatrix(rows, cols, move(outputBuffer));
     MatrixHelper::writeMatrixTo(outputFilename, targetMatrix);
