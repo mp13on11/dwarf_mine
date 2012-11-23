@@ -54,7 +54,7 @@ void Kernel::run()
 void Kernel::shutdown(const std::string& outputFilename)
 {
     //std::cout << outputFilename << std::endl;
-    printMatrix(c);
+    //printMatrix(c);
     MatrixHelper::writeMatrixTo(outputFilename, c);
 }
 

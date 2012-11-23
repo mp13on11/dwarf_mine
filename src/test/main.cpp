@@ -7,6 +7,8 @@
 #include "tools/MatrixHelper.h"
 #include "tools/Matrix.h"
 #include "gtest/gtest.h"
+#include <sstream>
+#include <boost/algorithm/string/join.hpp>
 
 using namespace std;
 
@@ -52,27 +54,51 @@ protected:
     string matrixCFile = "c.txt";
 };
 
-void compareMatrices(Matrix<float> a, Matrix<float>b)
+::testing::AssertionResult AreMatricesEquals(Matrix<float> expected, Matrix<float>actual, float delta)
 {      
-    EXPECT_EQ(a.rows(), b.rows());
-    EXPECT_EQ(a.columns(), b.columns());
-    for(size_t y = 0; y<a.rows(); y++)
+    if(expected.rows() != actual.rows())
+    {
+        return ::testing::AssertionFailure() << "different number of rows: " << expected.rows() << " != " << actual.rows();  
+    }  
+    if(expected.columns() != actual.columns())
+    {
+        return ::testing::AssertionFailure() << "different number of columns: " << expected.columns() << " != " << actual.columns();  
+    }
+    for(size_t y = 0; y<expected.rows(); y++)
+    {
+        for(size_t x = 0; x<expected.columns(); x++)
         {
-            for(size_t x = 0; x<a.columns(); x++)
+            float expectedVal = expected(y,x);
+            float actualVal = actual(y,x);
+            float error = fabs(expected(y,x) - actual(y,x));
+            if(error > delta)
             {
-                EXPECT_NEAR(a(y,x), b(y,x), 1e-1);
-            }
+                return ::testing::AssertionFailure() 
+                << "The difference at (" << y << "," << x << ") is " << error << ", which exceeds " << delta << ", where" << endl 
+                << "expected(y,x) = " << expectedVal << " and" << endl
+                << "actual(y,x) = " << actualVal << ".";
+            }             
         }
+    }
+    return ::testing::AssertionSuccess();
 
 }
+::testing::AssertionResult  AreMatricesEquals(Matrix<float> a, Matrix<float>b)
+{
+    return AreMatricesEquals(a, b, 1e-1);
+}
 
+void startProcess(initializer_list<string> args)
+{
+    system(boost::algorithm::join(args, " ").c_str());
+}
 
 TEST_F(MatrixMultiplyTest, GoldTest) { 
-    system("src/gold/gold a.txt b.txt c.txt");
-    system("src/cuda/cuda a.txt b.txt c2.txt");
+    startProcess({"src/gold/gold", "a.txt", "b.txt", "c.txt"});
+    startProcess({"src/cuda/cuda", "a.txt", "b.txt", "c2.txt"});
     auto expected = MatrixHelper::readMatrixFrom("c.txt");
     auto actual = MatrixHelper::readMatrixFrom("c2.txt");
-    compareMatrices(expected, actual);
+    EXPECT_TRUE(AreMatricesEquals(expected, actual));
     //EXPECT_NEAR (182.0, square_root (324.0), 1e-4);
     //EXPECT_NEAR (25.4, square_root (645.16), 1e-4);
     //EXPECT_NEAR (50.3321, square_root (2533.310224), 1e-4);
