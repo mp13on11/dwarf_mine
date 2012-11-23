@@ -63,15 +63,13 @@ void CudaMatrixKernel::run()
 
 void CudaMatrixKernel::shutdown(const std::string& outputFilename)
 {
-
-    std::swap(matrixARows, matrixACols);
-    std::swap(matrixBRows, matrixBCols);
-
-    size_t rows = matrixARows;
-    size_t cols = matrixBCols;
+    size_t rows = matrixBRows;
+    size_t cols = matrixACols;
 
     vector<float> outputBuffer(rows * cols);
     cublas->getMatrix(rows, cols, sizeof(float), outputMatrix, rows, outputBuffer.data(), rows);
+
+    std::swap(rows, cols);
 
     Matrix<float> targetMatrix(rows, cols, move(outputBuffer));
     MatrixHelper::writeMatrixTo(outputFilename, targetMatrix);
