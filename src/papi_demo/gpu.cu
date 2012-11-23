@@ -9,9 +9,10 @@ kernel(char* output)
     output[threadIdx.x] = '1';
 }
 
-string invokeKernel(char input[])
+string invokeKernel()
 {
     string result;
+    char input[] = "12345678912345678912345678912345";
     size_t size = sizeof(input);
     char* output;
     cudaMalloc((void**) &output, size);
@@ -29,7 +30,6 @@ int main()
     long long eventCounts[1];
     char nativeEventName[] = "CUDA:::Quadro_4000:domain_d:active_cycles";
     int eventCode;
-    char input[] = "12345678901234567890123456789012";
     string output;
     
     int result = PAPI_library_init(PAPI_VER_CURRENT);
@@ -49,12 +49,12 @@ int main()
     if (PAPI_start(eventSet) != PAPI_OK)
         cout << "Couldn't start measurement for thread." << endl;
     
-    output = invokeKernel(input);
+    output = invokeKernel();
 
     if (PAPI_stop(eventSet, eventCounts) != PAPI_OK)
         cout << "Couldn't stop measurement for thread." << endl;
 
-    cout << "Input:\t\t" << input
+    cout << "Input:\t\t12345678912345678912345678912345"
          << "\nOutput:\t\t" << output
          << "\nExpected:\t11111111111111111111111111111111\n"
          << nativeEventName << " = " << eventCounts[0] << endl;
