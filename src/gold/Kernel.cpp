@@ -37,16 +37,18 @@ void Kernel::startup(const std::vector<std::string>& arguments)
     
 void Kernel::run()
 {
+
     for(size_t y=0; y<c.rows(); y++)
     {        
         for(size_t x=0; x<c.columns(); x++)
         {
-            double val = 0;
+            float val = 0;
+            c(y,x) = 0;
             for(size_t i=0; i<a.columns(); i++)
             {
                 val += a(y,i) * b(i,x);
             }
-            c(y,x) = (float)val;
+            c(y,x) = val;
         }
     }
 }

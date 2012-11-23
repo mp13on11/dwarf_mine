@@ -93,7 +93,9 @@ protected:
         {
             float expectedVal = expected(y,x);
             float actualVal = actual(y,x);
-            float error = fabs(expected(y,x) - actual(y,x));
+            float maxVal = max(fabs(expectedVal), fabs(actualVal));
+            float error = fabs(expectedVal - actualVal);
+            error = (maxVal < 1e-10) ? error : error / maxVal;
             if(error > delta)
             {
                 return ::testing::AssertionFailure() 
@@ -108,7 +110,7 @@ protected:
 }
 ::testing::AssertionResult  AreMatricesEquals(Matrix<float> a, Matrix<float>b)
 {
-    return AreMatricesEquals(a, b, 10);
+    return AreMatricesEquals(a, b, 1e-3);
 }
 
 TEST_P(MatrixMultiplyTest, SingleElementMatrixTest) {
