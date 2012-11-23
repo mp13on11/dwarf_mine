@@ -1,10 +1,8 @@
 SET(EXECUTABLE_NAME gold)
 
 # Dependencies
-#FIND_PACKAGE(OpenGL REQUIRED)
     
 INCLUDE_DIRECTORIES(
-    ${PROJECT_SOURCE_DIR}
     # Add dependencies' include dirs here
 )
 
@@ -20,12 +18,6 @@ TARGET_LINK_LIBRARIES(${EXECUTABLE_NAME}
     # Add dependencies' libraries here
     "libbenchmark"
     "libtools"
-)    
-    
-IF(MSVC)
-    ADD_DEFINITIONS(/D_CRT_SECURE_NO_WARNINGS /DNOMINMAX /DWIN32_LEAN_AND_MEAN)
+)
 
-    SET_TARGET_PROPERTIES(${EXECUTABLE_NAME}
-        PROPERTIES
-        LINK_FLAGS "/NODEFAULTLIB:libcmt /SUBSYSTEM:CONSOLE")
-ENDIF(MSVC)
+ADD_COMMON_MSVC_PROPS(${EXECUTABLE_NAME})
