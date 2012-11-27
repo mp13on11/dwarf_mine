@@ -1,4 +1,4 @@
-#include <SMPMatrixKernel>
+#include "SMPMatrixKernel.h"
 #include <iostream>
 #include <tools/Matrix.h>
 #include <tools/MismatchedMatricesException.h>
@@ -15,8 +15,9 @@ const float BETA = 0.0f;
 
 void SMPMatrixKernel::startup(const std::vector<std::string>& arguments)
 {
-    Matrix<float> matrixA = MatrixHelper::readMatrixFrom(arguments[0]);
-    Matrix<float> matrixB = MatrixHelper::readMatrixFrom(arguments[1]);
+    matrixA = MatrixHelper::readMatrixFrom(arguments[0]);
+    matrixB = MatrixHelper::readMatrixFrom(arguments[1]);
+
 
     matrixARows = matrixA.rows();
     matrixACols = matrixA.columns();
@@ -26,24 +27,36 @@ void SMPMatrixKernel::startup(const std::vector<std::string>& arguments)
     if (matrixACols != matrixBRows)
         throw MismatchedMatricesException(matrixACols, matrixBRows);
 
+
+    matrixC = Matrix<float>(matrixARows, matrixBCols);
+
 }
 
 void SMPMatrixKernel::run()
 {
-	cblas_dgemm(CblasColMajor, CblasNoTrans, CblasNoTrans, matrixARows, matrixBCols, matrixACols, ALPHA, matrixA, matrixARows, matrixB, matrixBRows, BETA, matrixC, matrixACols);
+	cblas_sgemm(
+        CblasRowMajor, 
+        CblasNoTrans, 
+        CblasNoTrans, 
+        matrixARows, 
+        matrixBCols, 
+        matrixACols, 
+        ALPHA, 
+        matrixA.buffer(), 
+        matrixACols, 
+        matrixB.buffer(), 
+        matrixBCols, 
+        BETA, 
+        const_cast<float*>(matrixC.buffer()),  
+        matrixBCols);
 }
 
 void SMPMatrixKernel::shutdown(const std::string& outputFilename)
 {
-    size_t rows = matrixBRows;
-    size_t cols = matrixACols;
-
-    Matrix<float> targetMatrix(rows, cols, move(outputBuffer));
-    MatrixHelper::writeMatrixTo(outputFilename, targetMatrix);
+    MatrixHelper::writeMatrixTo(outputFilename, matrixC);
 }
 
 std::shared_ptr<BenchmarkKernel> createKernel()
 {
-    BenchmarkKernel* kernel = new SMPMatrixKernel();
-    return std::shared_ptr<BenchmarkKernel>(kernel);
+    return std::shared_ptr<BenchmarkKernel>(new SMPMatrixKernel());
 }
