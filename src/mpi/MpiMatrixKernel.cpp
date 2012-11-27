@@ -8,12 +8,20 @@
 #include <algorithm>
 #include <exception>
 #include <cmath>
+#include <utility>
+
+#ifdef __ECLIPSE_DEVELOPMENT__
+	// small fix for Eclipse which can not detect the move method - during compiling using make
+	// outside eclipse, this symbol will never be defined
+	template<typename T>
+	T&& move(T& value);
+#endif
 
 using namespace std;
 
 const int MpiMatrixKernel::ROOT_RANK = 0;
-const size_t MpiMatrixKernel::BLOCK_ROWS = 3;
-const size_t MpiMatrixKernel::BLOCK_COLUMNS = 3;
+const size_t MpiMatrixKernel::BLOCK_ROWS = 2;
+const size_t MpiMatrixKernel::BLOCK_COLUMNS = 4;
 
 MpiMatrixKernel::MpiMatrixKernel() :
         rank(MPI::COMM_WORLD.Get_rank()),
@@ -26,8 +34,8 @@ void MpiMatrixKernel::startup(const vector<string>& arguments)
     if (rank != ROOT_RANK)
         return;
 
-    left = MatrixHelper::readMatrixFrom(arguments[0]);
-    right = MatrixHelper::readMatrixFrom(arguments[1]);
+    left = MatrixHelper::readMatrixFrom((const string)(arguments[0]));
+    right = MatrixHelper::readMatrixFrom((const string)(arguments[1]));
 
     if (left.columns() != right.rows())
         throw MismatchedMatricesException(left.columns(), right.rows());
@@ -65,11 +73,21 @@ void MpiMatrixKernel::broadcastSizes()
         right = Matrix<float>(sizes[2], sizes[3]);
         result = Matrix<float>(sizes[0], sizes[3]);
     }
+    cout<< rank << " - left["<<left.rows()<<", "<<left.columns()<<"]"<< " - right["<<right.rows()<<", "<<right.columns()<<"]"<<endl;
+    cout<< rank << " - right["<<right.rows()<<", "<<right.columns()<<"]"<< " - right["<<right.rows()<<", "<<right.columns()<<"]"<<endl;
 }
 
-vector<float> MpiMatrixKernel::distributeBuffer(const float* sendBuffer, const size_t rows, const size_t columns)
+vector<float> MpiMatrixKernel::distributeBuffer(const float* sendBuffer, const size_t rows, const size_t columns, string message)
 {
-	size_t size = rows * columns;
+	size_t size = (rows)* (columns);
+	stringstream s;
+	s<<message << "  ";
+	if (rank == ROOT_RANK)
+	for (int i = 0; i < size; i++)
+	{
+		s <<sendBuffer[i]<<" ";
+	}
+	cout << "SEND     "<<rank<<" - "<<s.str() <<endl<<endl;
 	float* recieveBufferTemp = new float[size];
 	if (MPI_Scatter(
 			const_cast<float*>(sendBuffer), size, MPI_FLOAT,
@@ -80,39 +98,101 @@ vector<float> MpiMatrixKernel::distributeBuffer(const float* sendBuffer, const s
 	{
 		throw new exception();
 	}
+	for (int i = 0; i < size; i++)
+	{
+		s <<"["<<rank<<", "<<recieveBufferTemp[i]<<"] ";
+	}
+	cout << "RECIEVED "<<rank<<" - "<<s.str() <<endl<<endl;
 	vector<float> recieveBuffer;
 	recieveBuffer.assign(recieveBufferTemp, recieveBufferTemp + size);
 	delete[] recieveBufferTemp;
 	return recieveBuffer;
 }
 
-vector<float> MpiMatrixKernel::transposeMatrix(const float* data, const size_t rows, const size_t columns)
+vector<float> MpiMatrixKernel::transposeMatrix(const float* data, const size_t rows, const size_t columns, stringstream& out)
 {
 	vector<float> buffer;
+	out << "TRANSPOSE  ";
+	for (size_t i = 0; i < rows * columns; ++i)
+	{
+		out << data[i]<< " ";
+	}
+	out <<endl;
 	for (size_t column = 0; column < columns; ++column)
 	{
 		for (size_t row = 0; row < rows; ++row)
 		{
-			buffer.push_back(data[columns*row + column]);
+			buffer.push_back(data[columns * row + column]);
 		}
 	}
+	out << "TRANSPOSED ";
+	for (size_t i = 0; i < rows * columns; ++i)
+	{
+		out << buffer[i]<< " ";
+	}
+	out <<endl;
 	return buffer;
 }
 
 void MpiMatrixKernel::scatterMatrices()
 {
-    vector<float> leftBuffer = distributeBuffer(left.buffer(), BLOCK_ROWS, left.columns());
-
+    vector<float> leftBuffer = distributeBuffer(left.buffer(), BLOCK_ROWS, left.columns(), "LEFT");
+	stringstream out;
+    out << "BEFORE TRANSPOSE "<<rank<<endl;
     vector<float> rightSendingBuffer;
     if (isRoot())
 	{
-    	rightSendingBuffer = transposeMatrix(right.buffer(), right.rows(), right.columns());
+    	rightSendingBuffer = transposeMatrix(right.buffer(), right.rows(), right.columns(), out);
 	}
-    vector<float> rightRecievingBuffer = distributeBuffer(rightSendingBuffer.data(), BLOCK_COLUMNS, right.rows());
-    vector<float> rightBuffer = transposeMatrix(rightRecievingBuffer.data(), rightRecievingBuffer.size() / BLOCK_COLUMNS, BLOCK_COLUMNS);
+
+	vector<float> recieveBuffer;
+    if (isRoot())
+    {
+		for (int slaveRank = 1; slaveRank < groupSize; ++slaveRank)
+		{
+			MPI_Send(
+				const_cast<float*>(rightSendingBuffer.data()), rightSendingBuffer.size(), MPI_FLOAT,
+				slaveRank, 0, MPI_COMM_WORLD);
+		}
+    }
+    else
+    {
+    	int size = right.rows()*right.columns();
+    	float* recieveBufferTemp = new float[size];
+    	MPI_Recv(
+    			recieveBufferTemp, size, MPI_FLOAT,
+    			ROOT_RANK, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+		recieveBuffer.assign(recieveBufferTemp, recieveBufferTemp + size);
+		delete[] recieveBufferTemp;
+    }
+
+    //vector<float> rightRecievingBuffer = distributeBuffer(rightSendingBuffer.data(), BLOCK_COLUMNS, right.rows(), "RIGHT");
+    out << "AFTER TRANSPOSE "<<rank<<endl;
+    //vector<float> rightBuffer = transposeMatrix(rightRecievingBuffer.data(), rightRecievingBuffer.size() / BLOCK_COLUMNS, BLOCK_COLUMNS, out);
+    vector<float> rightBuffer = recieveBuffer;
 
     left = Matrix<float>(BLOCK_ROWS, leftBuffer.size() / BLOCK_ROWS, move(leftBuffer));
 	right = Matrix<float>(BLOCK_COLUMNS, rightBuffer.size() / BLOCK_COLUMNS, move(rightBuffer));
+
+	out << "LEFT "<<rank<<endl;
+	for (size_t r = 0; r < left.rows(); r++)
+	{
+		for (size_t c = 0; c < left.columns(); c++)
+		{
+			out<<left(r,c)<<" ";
+		}
+		out<<endl;
+	}
+	out << endl<<endl<< "RIGHT "<<rank<<endl;
+	for (size_t r = 0; r < right.rows(); r++)
+	{
+		for (size_t c = 0; c < right.columns(); c++)
+		{
+			out<<right(r,c)<<" ";
+		}
+		out<<endl;
+	}
+	cout <<out.str()<<endl;
 }
 
 void MpiMatrixKernel::multiply()
@@ -131,41 +211,25 @@ void MpiMatrixKernel::multiply()
     }
 }
 
-void gather(float* sending, Matrix<float>& s, float* recieving, Matrix<float>& r)
-{
-	MPI_Gather(
-			sending, s.rows()* s.columns(), MPI_FLOAT,
-			recieving, r.rows() * r.columns(), MPI_FLOAT,
-			0,
-			MPI::COMM_WORLD
-		);
-}
-
 void MpiMatrixKernel::gatherResult()
 {
-	float* recievingBuffer;
+	size_t recievingSize = result.rows() * result.columns();
+	float* recievingBuffer = nullptr;
 	if (isRoot())
 	{
-		recievingBuffer = new float[result.rows() * result.columns()];
+		recievingBuffer = new float[recievingSize];
 	}
-	gather(const_cast<float*>(temp.buffer()), temp, recievingBuffer, result);
 
+	MPI_Gather(const_cast<float*>(temp.buffer()), temp.rows() * temp.columns(), MPI::FLOAT,
+					recievingBuffer, temp.rows() * temp.columns(), MPI::FLOAT,
+					ROOT_RANK,
+					MPI::COMM_WORLD);
 	if (isRoot())
+	{
+		vector<float> recievedBuffer;
+		recievedBuffer.assign(recievingBuffer, recievingBuffer + recievingSize);
 		delete[] recievingBuffer;
-//	if (isRoot())
-//	{
-//		cout << "RANK "<<rank<< " before convert"<<endl;
-////		vector<float> recieveBuffer;
-////		recieveBuffer.assign(recievingBuffer, recievingBuffer + result.rows() * result.columns());
-////		for (size_t i = 0; i< result.rows() * result.columns(); i++)
-////		{
-////			cout<<" "<<i<< "  "<<recievingBuffer[i]<<endl;
-////		}
-////		cout <<endl;
-//		cout << "RANK "<<rank<< " before delete[]"<<endl;
-//		//delete recievingBuffer	;
-//		cout << "RANK "<<rank<< " after delete[]"<<endl;
-//
-//	}
 
+		result = Matrix<float>(result.rows(), result.columns(), move(recievedBuffer));
+	}
 }

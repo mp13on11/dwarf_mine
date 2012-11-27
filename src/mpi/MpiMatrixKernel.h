@@ -3,6 +3,9 @@
 #include "benchmark/BenchmarkKernel.h"
 #include "tools/Matrix.h"
 
+#include <sstream>
+#include <string>
+
 class MpiMatrixKernel : public BenchmarkKernel
 {
 public:
@@ -28,12 +31,12 @@ private:
     void scatterMatrices();
     void multiply();
     void gatherResult();
-    std::vector<float> distributeBuffer(const float*, const std::size_t rows, const std::size_t columns);
-    std::vector<float> transposeMatrix(const float*, const std::size_t rows, const std::size_t columns);
-    bool const isRoot() const;
+    std::vector<float> distributeBuffer(const float*, const std::size_t rows, const std::size_t columns, std::string message);
+    std::vector<float> transposeMatrix(const float*, const std::size_t rows, const std::size_t columns, std::stringstream& out);
+    bool isRoot() const;
 };
 
-inline bool const MpiMatrixKernel::isRoot() const
+inline bool MpiMatrixKernel::isRoot() const
 {
     return rank == ROOT_RANK;
 }
