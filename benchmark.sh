@@ -4,7 +4,7 @@ INA="big_left.txt"
 INB="big_right.txt"
 OUT="out.txt"
 
-for i in "mpi/mpi-matrix" "cuda/cuda"
+for i in "mpi/mpi-matrix" "cuda/cuda" "smp/smp"
 do
     echo $i "{"
     echo -ne "\t"
