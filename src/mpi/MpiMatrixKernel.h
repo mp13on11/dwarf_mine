@@ -3,8 +3,6 @@
 #include "benchmark/BenchmarkKernel.h"
 #include "tools/Matrix.h"
 
-#include <sstream>
-#include <string>
 
 class MpiMatrixKernel : public BenchmarkKernel
 {
@@ -17,22 +15,26 @@ public:
 
 private:
     static const int ROOT_RANK;
-    static const std::size_t BLOCK_ROWS;
-    static const std::size_t BLOCK_COLUMNS;
 
     const int rank;
     const int groupSize;
+    size_t blockRows;
+    size_t blockColumns;
     Matrix<float> left;
     Matrix<float> right;
     Matrix<float> result;
-    Matrix<float> temp;
+    int leftRows;
+    int leftColumns;
+    int rightRows;
+    int rightColumns;
+
 
     void broadcastSizes();
     void scatterMatrices();
+    std::vector<float> scatterBuffer(const float* buffer, size_t bufferSize, size_t chunkSize);
+    std::vector<float> changeOrder(const float* matrix, size_t rows, size_t columns);
     void multiply();
     void gatherResult();
-    std::vector<float> distributeBuffer(const float*, const std::size_t rows, const std::size_t columns, std::string message);
-    std::vector<float> transposeMatrix(const float*, const std::size_t rows, const std::size_t columns, std::stringstream& out);
     bool isRoot() const;
 };
 
