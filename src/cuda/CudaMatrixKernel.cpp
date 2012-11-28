@@ -78,6 +78,5 @@ void CudaMatrixKernel::shutdown(const std::string& outputFilename)
 
 std::shared_ptr<BenchmarkKernel> createKernel()
 {
-    BenchmarkKernel* kernel = new CudaMatrixKernel();
-    return std::shared_ptr<BenchmarkKernel>(kernel);
+    return std::shared_ptr<BenchmarkKernel>(new CudaMatrixKernel);
 }
