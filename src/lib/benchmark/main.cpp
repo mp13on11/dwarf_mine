@@ -69,4 +69,6 @@ int main(int argc, const char* argv[])
     for (auto& kv : stats) {
         cout << kv.first << ": " << kv.second << std::endl;
     }
+
+    return 0;
 }
