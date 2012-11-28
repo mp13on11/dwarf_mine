@@ -30,30 +30,34 @@ void SMPMatrixKernel::startup(const std::vector<std::string>& arguments)
     if (matrixACols != matrixBRows)
         throw MismatchedMatricesException(matrixACols, matrixBRows);
 
+    matrixC = Matrix<float>(matrixARows, matrixBCols);
 }
 
 void SMPMatrixKernel::run()
 {
-    const float* matA = matrixA.buffer();
-    const float* matB = matrixA.buffer();
-    matC = new float[matrixBRows * matrixACols];
-	cblas_sgemm(CblasColMajor, CblasNoTrans, CblasNoTrans, matrixARows, matrixBCols, matrixACols, ALPHA, matA, matrixARows, matB, matrixBRows, BETA, matC, matrixACols);
+	cblas_sgemm(
+        CblasRowMajor, 
+        CblasNoTrans, 
+        CblasNoTrans, 
+        matrixARows, 
+        matrixBCols, 
+        matrixACols, 
+        ALPHA, 
+        matrixA.buffer(), 
+        matrixACols, 
+        matrixB.buffer(), 
+        matrixBCols, 
+        BETA, 
+        const_cast<float*>(matrixC.buffer()),
+        matrixBCols);
 }
 
 void SMPMatrixKernel::shutdown(const std::string& outputFilename)
 {
-    size_t rows = matrixBRows;
-    size_t cols = matrixACols;
-
-    vector<float> data(&matC[0], &matC[rows*cols-1]);
-    Matrix<float> targetMatrix(rows, cols, move(data));
-    MatrixHelper::writeMatrixTo(outputFilename, targetMatrix);
-
-    delete [] matC;
+    MatrixHelper::writeMatrixTo(outputFilename, matrixC);
 }
 
 std::shared_ptr<BenchmarkKernel> createKernel()
 {
-    BenchmarkKernel* kernel = new SMPMatrixKernel();
-    return std::shared_ptr<BenchmarkKernel>(kernel);
+    return std::shared_ptr<BenchmarkKernel>(new SMPMatrixKernel());
 }

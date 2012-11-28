@@ -14,8 +14,6 @@ public:
 
 private:
 
-    float* matC;
-
     Matrix<float> matrixA;
     Matrix<float> matrixB;
     Matrix<float> matrixC;
