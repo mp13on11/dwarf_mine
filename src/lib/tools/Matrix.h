@@ -17,6 +17,7 @@ public:
     T& operator()(std::size_t row, std::size_t column);
 
     const T* buffer() const;
+    T* buffer();
 
 private:
     std::size_t _rows;
@@ -50,6 +51,12 @@ T& Matrix<T>::operator()(std::size_t row, std::size_t column)
 
 template<typename T>
 const T* Matrix<T>::buffer() const
+{
+    return values.data();
+}
+
+template<typename T>
+T* Matrix<T>::buffer()
 {
     return values.data();
 }

@@ -148,7 +148,7 @@ TEST_P(MatrixMultiplyTest, MediumRectangularMatricesTest) {
 
 INSTANTIATE_TEST_CASE_P(MultiplePlatforms,
                         MatrixMultiplyTest,
-                        ::testing::Values("cuda/cuda", "mpi/mpi-matrix"));
+                        ::testing::Values("cuda/cuda", "mpi/mpi-matrix", "smp/smp"));
 
 int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);

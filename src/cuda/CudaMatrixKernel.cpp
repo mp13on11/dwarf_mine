@@ -43,12 +43,13 @@ void CudaMatrixKernel::startup(const std::vector<std::string>& arguments)
 
     cublas->setMatrix(matrixARows, matrixACols, sizeof(float), matrixA.buffer(), matrixARows, matrixMemA, matrixARows);
     cublas->setMatrix(matrixACols, matrixBCols, sizeof(float), matrixB.buffer(), matrixACols, matrixMemB, matrixACols);
+    
+    std::swap(matrixARows, matrixACols);
+    std::swap(matrixBRows, matrixBCols);
 }
 
 void CudaMatrixKernel::run()
 {
-    std::swap(matrixARows, matrixACols);
-    std::swap(matrixBRows, matrixBCols);
 
     cublas->Sgemm(
         CUBLAS_OP_N, CUBLAS_OP_N,
@@ -77,6 +78,5 @@ void CudaMatrixKernel::shutdown(const std::string& outputFilename)
 
 std::shared_ptr<BenchmarkKernel> createKernel()
 {
-    BenchmarkKernel* kernel = new CudaMatrixKernel();
-    return std::shared_ptr<BenchmarkKernel>(kernel);
+    return std::shared_ptr<BenchmarkKernel>(new CudaMatrixKernel);
 }

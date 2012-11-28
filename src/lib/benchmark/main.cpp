@@ -4,6 +4,7 @@
 #include <chrono>
 #include <functional>
 #include <map>
+#include <boost/lexical_cast.hpp>
 
 using namespace std;
 
@@ -32,13 +33,21 @@ int main(int argc, const char* argv[])
 {
     if (argc < 2)
     {
-        cerr << "Usage: " << argv[0] << " <input files>... <output file>" << endl;
+        cerr << "Usage: " << argv[0] << " <options> <input files>... <output file>" << endl;
         return 1;
     }
 
     // split args into first as inputs and the last as output
     vector<string> inputs(argv + 1, argv + argc - 1);
     string output(argv[argc - 1]);
+
+    int iterations = 1;
+    if(inputs[0] == "--iterations")
+    {
+        iterations = boost::lexical_cast<int>(inputs[1]);
+        inputs.erase(inputs.begin());
+        inputs.erase(inputs.begin());
+    }
 
     auto kernel = createKernel();
 
@@ -52,7 +61,7 @@ int main(int argc, const char* argv[])
     // execute kernel
     kernel->startup(inputs);
 
-    auto stats = benchmark([&](){kernel->run();});
+    auto stats = benchmark([&](){kernel->run();}, iterations);
 
     kernel->shutdown(output);
 
