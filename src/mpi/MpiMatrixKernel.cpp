@@ -173,13 +173,13 @@ void printToStream(const Matrix<float>& matrix, string prefix,  ostream& out)
 
 void MpiMatrixKernel::gatherResult()
 {
-	stringstream out;
-	out<< "Rank: "<< rank <<endl;
+//	stringstream out;
+//	out<< "Rank: "<< rank <<endl;
 	//printToStream(left, "Left", out);
 	//printToStream(right, "Right", out);
-	printToStream(result, "Result", out);
-	cout<< endl<<out.str()<<endl;
-	out.clear();
+//	printToStream(result, "Result", out);
+//	cout<< endl<<out.str()<<endl;
+//	out.clear();
 	float* buffer = nullptr;
 	if (isRoot())
 	{
@@ -222,9 +222,9 @@ void MpiMatrixKernel::gatherResult()
 //			}
 //		}
 		//	cout << out.str() <<endl;
-		out.clear();
-		printToStream(gatheredResult, "Final", out);
-		cout<<out.str()<<endl;
+//		out.clear();
+//		printToStream(gatheredResult, "Final", out);
+//		cout<<out.str()<<endl;
 		delete[] buffer;
 		result = move(gatheredResult);
 	}
