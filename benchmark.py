@@ -3,13 +3,18 @@
 
 # Requires at least Python 2.7
 
-import subprocess, os
+import subprocess, os, sys
 
 THRESHOLD = 1000.0
 UNITS = ['µs', 'ms', 's']
 INA="big_left.txt"
 INB="big_right.txt"
 OUT="out.txt"
+
+doHumanize = False
+for arg in sys.argv:
+    if arg in ("-h", "--humanize"):
+        doHumanize = True
 
 def humanize(runtime):
     unit = 0
@@ -18,13 +23,15 @@ def humanize(runtime):
         runtime /= THRESHOLD
         unit += 1
         
-    return "time (%s): %f" % (UNITS[unit], runtime)
+    return "time: %7.3f %s" % (runtime, UNITS[unit])
 
 def invokePlatform(platform):
     command = ["build/src/" + platform, INA, INB, OUT]
     output = subprocess.check_output(command, stderr=subprocess.STDOUT)
-    runtime = output.split(':')[1]
-    return humanize(float(runtime))
+    if doHumanize:
+        runtime = output.split(':')[1]
+        return humanize(float(runtime))
+    return output
 
 for platform in ("mpi/mpi-matrix", "cuda/cuda", "smp/smp"):
     print platform + " {" 
