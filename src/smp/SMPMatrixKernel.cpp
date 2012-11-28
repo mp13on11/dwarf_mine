@@ -48,7 +48,7 @@ void SMPMatrixKernel::run()
         matrixB.buffer(), 
         matrixBCols, 
         BETA, 
-        const_cast<float*>(matrixC.buffer()),
+        matrixC.buffer(),
         matrixBCols);
 }
 
