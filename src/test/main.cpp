@@ -115,7 +115,7 @@ protected:
 }
 ::testing::AssertionResult  AreMatricesEquals(Matrix<float> a, Matrix<float>b)
 {
-    return AreMatricesEquals(a, b, 1e-3);
+    return AreMatricesEquals(a, b, 1e-2);
 }
 
 TEST_P(MatrixMultiplyTest, SingleElementMatrixTest) {
@@ -140,10 +140,21 @@ TEST_P(MatrixMultiplyTest, SmallSquareMatricesTest) {
     EXPECT_TRUE(AreMatricesEquals(expected, actual));
 }
 
-TEST_P(MatrixMultiplyTest, MediumRectangularMatricesTest) {
+TEST_P(MatrixMultiplyTest, MediumShrinkingRectangularMatricesTest) {
     initRandom(333);
-    auto left = createRandomMatrix(30, 50);
-    auto right = createRandomMatrix(50, 40);
+    auto left = createRandomMatrix(30, 100);
+    auto right = createRandomMatrix(100, 40);
+
+    auto expected = executeMultiplication(referenceImplementation, left, right);
+    auto actual = executeMultiplication(currentImplementation, left, right);
+
+    EXPECT_TRUE(AreMatricesEquals(expected, actual));
+}
+
+TEST_P(MatrixMultiplyTest, MediumExpandingRectangularMatricesTest) {
+    initRandom(4567);
+    auto left = createRandomMatrix(110, 20);
+    auto right = createRandomMatrix(20, 130);
 
     auto expected = executeMultiplication(referenceImplementation, left, right);
     auto actual = executeMultiplication(currentImplementation, left, right);
@@ -161,6 +172,18 @@ TEST_P(MatrixMultiplyTest, PrimeRectangularMatricesTest) {
 
     EXPECT_TRUE(AreMatricesEquals(expected, actual));
 }
+
+TEST_P(MatrixMultiplyTest, BiggerPrimeRectangularMatricesTest) {
+    initRandom(73653);
+    auto left = createRandomMatrix(383, 269);
+    auto right = createRandomMatrix(269, 193);
+
+    auto expected = executeMultiplication(referenceImplementation, left, right);
+    auto actual = executeMultiplication(currentImplementation, left, right);
+
+    EXPECT_TRUE(AreMatricesEquals(expected, actual));
+}
+
 
 INSTANTIATE_TEST_CASE_P(MultiplePlatforms,
                         MatrixMultiplyTest,
