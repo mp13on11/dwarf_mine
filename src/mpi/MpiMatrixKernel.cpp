@@ -25,19 +25,19 @@ const size_t MpiMatrixKernel::BLOCK_SIZE = 10;
 MpiMatrixKernel::MpiMatrixKernel() :
         rank(MPI::COMM_WORLD.Get_rank()),
         groupSize(MPI::COMM_WORLD.Get_size()),
-        rowBuffer(NULL),
-        columnBuffer(NULL),
-        resultBuffer(NULL)
+        rowBuffer(nullptr),
+        columnBuffer(nullptr),
+        resultBuffer(nullptr)
 {
 }
 
 MpiMatrixKernel::~MpiMatrixKernel()
 {
-    if (columnBuffer != NULL)
+    if (columnBuffer != nullptr)
         delete[] columnBuffer;
-    if (rowBuffer != NULL)
+    if (rowBuffer != nullptr)
         delete[] rowBuffer;
-    if (resultBuffer != NULL)
+    if (resultBuffer != nullptr)
         delete[] resultBuffer;
 }
 
@@ -51,13 +51,19 @@ void MpiMatrixKernel::startup(const vector<string>& arguments)
 
     if (left.columns() != right.rows())
         throw MismatchedMatricesException(left.columns(), right.rows());
+
+    result = Matrix<float>(left.rows(), right.columns());
 }
 
 void MpiMatrixKernel::run()
 {
     broadcastSizes();
 
-    for (size_t i=0; i<10; i++)
+    size_t rounds = blockCount() / groupSize;
+    if (blockCount() % groupSize != 0)
+        rounds += 1;
+
+    for (size_t i=0; i<rounds; i++)
     {
         scatterMatrices(i);
         multiply(i);
@@ -165,9 +171,9 @@ void MpiMatrixKernel::multiply(size_t round)
         columnOffset = columnIndex(round, rank);
     }
 
-    for (size_t i=0; i<sentRows && i+rowOffset<left.rows(); i++)
+    for (size_t i=rowOffset; i<rowOffset+sentRows && i<left.rows(); i++)
     {
-        for (size_t j=0; j<sentColumns && j+columnOffset<right.columns(); j++)
+        for (size_t j=columnOffset; j<columnOffset+sentColumns && j<right.columns(); j++)
         {
             result(i, j) = 0;
             for (size_t k=0; k<left.columns(); k++)
