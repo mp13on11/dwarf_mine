@@ -104,7 +104,7 @@ protected:
 
                 // return failure
                 return ::testing::AssertionFailure() 
-                << "The difference at (" << y << "," << x << ") is " << error << ", which exceeds " << delta << ", where" << endl 
+                << "The relative error at (" << y << "," << x << ") is " << error << ", which exceeds " << delta << ", where" << endl 
                 << "expected(y,x) = " << expectedVal << " and" << endl
                 << "actual(y,x) = " << actualVal << ".";
             }             
@@ -144,6 +144,17 @@ TEST_P(MatrixMultiplyTest, MediumRectangularMatricesTest) {
     initRandom(333);
     auto left = createRandomMatrix(30, 50);
     auto right = createRandomMatrix(50, 40);
+
+    auto expected = executeMultiplication(referenceImplementation, left, right);
+    auto actual = executeMultiplication(currentImplementation, left, right);
+
+    EXPECT_TRUE(AreMatricesEquals(expected, actual));
+}
+
+TEST_P(MatrixMultiplyTest, PrimeRectangularMatricesTest) {
+    initRandom(333);
+    auto left = createRandomMatrix(67, 83);
+    auto right = createRandomMatrix(83, 109);
 
     auto expected = executeMultiplication(referenceImplementation, left, right);
     auto actual = executeMultiplication(currentImplementation, left, right);
