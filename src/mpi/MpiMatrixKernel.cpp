@@ -202,7 +202,7 @@ void MpiMatrixKernel::gatherResult(size_t round)
         {
             for (size_t j=0; j<sentColumns && j+startColumn < result.columns(); j++)
             {
-                result(i, j) = resultBuffer[offset + i*sentColumns + j];
+                result(i + startRow, j + startColumn) = resultBuffer[offset + i*sentColumns + j];
             }
         }
     }
