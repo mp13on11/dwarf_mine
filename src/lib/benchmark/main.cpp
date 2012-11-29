@@ -58,11 +58,18 @@ int main(int argc, const char* argv[])
     // execute kernel
     kernel->startup(args);
 
+    if (kernel->isIndirectCall())
+    {
+        kernel->run();
+        kernel->shutdown(args.outputFileName());
+        return 0;
+    }
+
     auto stats = benchmark([&](){kernel->run();}, args.iterations());
 
     kernel->shutdown(args.outputFileName());
 
-    if (!kernel->statsShouldBePrinted())
+    if (!kernel->shouldStatsBePrinted())
         return 0;
 
     // print statistics

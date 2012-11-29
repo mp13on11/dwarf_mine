@@ -15,7 +15,8 @@ public:
     virtual void startup(const std::vector<std::string>& arguments) = 0;
     virtual void run() = 0;
     virtual void shutdown(const std::string& outputFilename) = 0;
-    virtual bool statsShouldBePrinted() const;
+    virtual bool isIndirectCall() const;
+    virtual bool shouldStatsBePrinted() const;
 };
 
 extern std::shared_ptr<BenchmarkKernel> createKernel();
@@ -25,7 +26,12 @@ inline void BenchmarkKernel::startup(const Arguments& arguments)
     startup(arguments.inputFileNames());
 }
 
-inline bool BenchmarkKernel::statsShouldBePrinted() const
+inline bool BenchmarkKernel::isIndirectCall() const
+{
+    return false;
+}
+
+inline bool BenchmarkKernel::shouldStatsBePrinted() const
 {
     return true;
 }

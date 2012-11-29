@@ -16,7 +16,7 @@ public:
     virtual void startup(const std::vector<std::string>& arguments);
     virtual void run();
     virtual void shutdown(const std::string& outputFilename);
-    virtual bool statsShouldBePrinted() const;
+    virtual bool shouldStatsBePrinted() const;
 
 private:
     static const int ROOT_RANK;
@@ -50,7 +50,7 @@ private:
     std::size_t blockCount() const;
 };
 
-inline bool MpiMatrixKernel::statsShouldBePrinted() const
+inline bool MpiMatrixKernel::shouldStatsBePrinted() const
 {
     return isRoot();
 }

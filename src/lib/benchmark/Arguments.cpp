@@ -44,7 +44,7 @@ string Arguments::toString() const
     stream << _program;
 
     if (_iterations != 1)
-        stream << " --iterations" << _iterations;
+        stream << " --iterations " << _iterations;
 
     for (const string &input : _inputs)
         stream << " " << input;

@@ -18,7 +18,7 @@ public:
     virtual void startup(const std::vector<std::string>& arguments);
     virtual void run();
     virtual void shutdown(const std::string& outputFilename);
-    virtual bool statsShouldBePrinted() const;
+    virtual bool isIndirectCall() const;
 
 private:
     static const char* const ENVIRONMENT_VARIABLE_NAME;
@@ -32,7 +32,7 @@ inline std::size_t MpiStarterKernel::requiredInputs() const
     return kernel->requiredInputs();
 }
 
-inline bool MpiStarterKernel::statsShouldBePrinted() const
+inline bool MpiStarterKernel::isIndirectCall() const
 {
-    return false;
+    return true;
 }
