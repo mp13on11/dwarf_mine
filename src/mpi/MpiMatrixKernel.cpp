@@ -95,7 +95,7 @@ void MpiMatrixKernel::broadcastSizes()
     sentRows = min(BLOCK_SIZE, leftRows);
     sentColumns = min(BLOCK_SIZE, rightColumns);
     fullRows = leftRows;
-    fullColumns = leftColumns;
+    fullColumns = rightColumns;
 
     if (isRoot())
     {
