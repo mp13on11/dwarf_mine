@@ -17,10 +17,10 @@ shared_ptr<BenchmarkKernel> createKernel()
 {
     shared_ptr<BenchmarkKernel> kernel(new MpiMatrixKernel());
 
-    if (MpiStarterKernel::wasCorrectlyStarted())
-        return shared_ptr<BenchmarkKernel>(new MpiStarterKernel(kernel));
-    else
+    if (MpiStarterKernel::wasStartedCorrectly())
         return kernel;
+    else
+        return shared_ptr<BenchmarkKernel>(new MpiStarterKernel(kernel));
 }
 
 MpiInitializer::MpiInitializer()

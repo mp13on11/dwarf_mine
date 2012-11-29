@@ -9,7 +9,7 @@
 class MpiStarterKernel : public BenchmarkKernel
 {
 public:
-    static bool wasCorrectlyStarted();
+    static bool wasStartedCorrectly();
 
     MpiStarterKernel(const std::shared_ptr<BenchmarkKernel>& kernel);
 
@@ -23,6 +23,7 @@ public:
 private:
     static const char* const ENVIRONMENT_VARIABLE_NAME;
 
+    Arguments arguments;
     std::shared_ptr<BenchmarkKernel> kernel;
 };
 
