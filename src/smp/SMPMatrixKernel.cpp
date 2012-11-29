@@ -35,7 +35,7 @@ void SMPMatrixKernel::startup(const std::vector<std::string>& arguments)
 
 void SMPMatrixKernel::run()
 {
-	cblas_sgemm(
+    cblas_sgemm(
         CblasRowMajor, 
         CblasNoTrans, 
         CblasNoTrans, 

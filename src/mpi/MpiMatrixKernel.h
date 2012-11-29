@@ -23,10 +23,10 @@ private:
     Matrix<float> left;
     Matrix<float> right;
     Matrix<float> result;
-    int leftRows;
-    int leftColumns;
-    int rightRows;
-    int rightColumns;
+    size_t leftRows;
+    size_t leftColumns;
+    size_t rightRows;
+    size_t rightColumns;
 
 
     void broadcastSizes();
