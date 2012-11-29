@@ -40,7 +40,8 @@ void Arguments::printUsage(const string& program, ostream& out)
 
 string Arguments::toString() const
 {
-    stringstream stream(_program);
+    stringstream stream;
+    stream << _program;
 
     if (_iterations != 1)
         stream << " --iterations" << _iterations;
