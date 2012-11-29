@@ -56,7 +56,7 @@ int main(int argc, const char* argv[])
     }
 
     // execute kernel
-    kernel->startup(args.inputFileNames());
+    kernel->startup(args);
 
     auto stats = benchmark([&](){kernel->run();}, args.iterations());
 
