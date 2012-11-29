@@ -98,6 +98,11 @@ protected:
             error = (maxVal < 1e-10) ? error : error / maxVal;
             if(error > delta)
             {
+                // dump matrices
+                MatrixHelper::writeMatrixTo("dump_expected.txt", expected);
+                MatrixHelper::writeMatrixTo("dump_actual.txt", actual);
+
+                // return failure
                 return ::testing::AssertionFailure() 
                 << "The difference at (" << y << "," << x << ") is " << error << ", which exceeds " << delta << ", where" << endl 
                 << "expected(y,x) = " << expectedVal << " and" << endl
