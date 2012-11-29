@@ -6,6 +6,7 @@ SET(TOOLS_LIB ${TOOLS_LIB} PARENT_SCOPE)
 # Dependencies
     
 INCLUDE_DIRECTORIES(
+    ${PAPI_INCLUDE_DIR}
     # Add dependencies' include dirs here
 )
 
@@ -23,6 +24,7 @@ ADD_LIBRARY(${TOOLS_LIB} SHARED ${AUTO_SOURCES})
 
 TARGET_LINK_LIBRARIES(${TOOLS_LIB}
     # Add dependencies' libraries here
+    ${PAPI_LIBRARIES}
 )    
     
 ADD_COMMON_MSVC_PROPS(${TOOLS_LIB})

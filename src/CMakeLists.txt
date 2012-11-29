@@ -1,5 +1,6 @@
 # Add global dependencies here
 FIND_PACKAGE(Boost REQUIRED)
+FIND_PACKAGE(PAPI REQUIRED)
 
 INCLUDE(Utils)
 
