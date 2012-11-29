@@ -65,6 +65,9 @@ int main(int argc, const char* argv[])
 
     kernel->shutdown(output);
 
+    if (!kernel->statsShouldBePrinted())
+        return 0;
+
     // print statistics
     for (auto& kv : stats) {
         cout << kv.first << ": " << kv.second << std::endl;
