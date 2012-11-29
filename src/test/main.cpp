@@ -152,7 +152,7 @@ TEST_P(MatrixMultiplyTest, MediumRectangularMatricesTest) {
 }
 
 TEST_P(MatrixMultiplyTest, PrimeRectangularMatricesTest) {
-    initRandom(333);
+    initRandom(6543452);
     auto left = createRandomMatrix(67, 83);
     auto right = createRandomMatrix(83, 109);
 
