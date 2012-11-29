@@ -1,5 +1,7 @@
 #include "benchmark/BenchmarkKernel.h"
 #include "mpi/MpiMatrixKernel.h"
+#include "mpi/MpiStarterKernel.h"
+
 #include <mpi.h>
 
 using namespace std;
@@ -13,7 +15,12 @@ public:
 
 shared_ptr<BenchmarkKernel> createKernel()
 {
-    return shared_ptr<BenchmarkKernel>(new MpiMatrixKernel());
+    shared_ptr<BenchmarkKernel> kernel(new MpiMatrixKernel());
+
+    if (MpiStarterKernel::wasStartedCorrectly())
+        return kernel;
+    else
+        return shared_ptr<BenchmarkKernel>(new MpiStarterKernel(kernel));
 }
 
 MpiInitializer::MpiInitializer()
