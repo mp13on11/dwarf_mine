@@ -1,6 +1,7 @@
 #include "benchmark/PerformanceEvent.h"
 #include <algorithm>
 #include <papi.h>
+#include "tools/PapiHelper.h"
 
 PerformanceEvent::PerformanceEvent(const std::string& name)
 : name(name)
@@ -34,7 +35,8 @@ int PerformanceEvent::getCode()
 void PerformanceEvent::generateCode()
 {
     char* convertedName = getNameAsCharArray();
-    PAPI_event_name_to_code(convertedName, &code);
+    int result = PAPI_event_name_to_code(convertedName, &code);
+    PapiHelper::handleResult(result == PAPI_OK, result, __FILE__, __LINE__);
     generatedCode = true;
     free(convertedName);
 }
