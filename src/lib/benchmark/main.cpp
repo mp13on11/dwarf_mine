@@ -1,10 +1,11 @@
+#include "benchmark/Arguments.h"
 #include "benchmark/BenchmarkKernel.h"
+#include "benchmark/InvalidCommandLineException.h"
 
-#include <iostream>
 #include <chrono>
+#include <iostream>
 #include <functional>
 #include <map>
-#include <boost/lexical_cast.hpp>
 
 using namespace std;
 
@@ -31,39 +32,35 @@ map<string, float> benchmark(function<void()> func, size_t iterations = 1)
 
 int main(int argc, const char* argv[])
 {
-    if (argc < 2)
+    Arguments args;
+
+    try
     {
-        cerr << "Usage: " << argv[0] << " <options> <input files>... <output file>" << endl;
-        return 1;
+        args = Arguments(argc, argv);
     }
-
-    // split args into first as inputs and the last as output
-    vector<string> inputs(argv + 1, argv + argc - 1);
-    string output(argv[argc - 1]);
-
-    int iterations = 1;
-    if(inputs[0] == "--iterations")
+    catch (InvalidCommandLineException& e)
     {
-        iterations = boost::lexical_cast<int>(inputs[1]);
-        inputs.erase(inputs.begin());
-        inputs.erase(inputs.begin());
+        e.what();
+        Arguments::printUsage(argv[0], cerr);
+        return 1;
     }
 
     auto kernel = createKernel();
 
     // check for required number of input arguments
-    if (inputs.size() < kernel->requiredInputs())
+    if (args.inputFileNames().size() < kernel->requiredInputs())
     {
         cerr << argv[0] << " requires " << kernel->requiredInputs() << " input files..." << endl;
+        Arguments::printUsage(argv[0], cerr);
         return 1;
     }
 
     // execute kernel
-    kernel->startup(inputs);
+    kernel->startup(args.inputFileNames());
 
-    auto stats = benchmark([&](){kernel->run();}, iterations);
+    auto stats = benchmark([&](){kernel->run();}, args.iterations());
 
-    kernel->shutdown(output);
+    kernel->shutdown(args.outputFileName());
 
     if (!kernel->statsShouldBePrinted())
         return 0;
