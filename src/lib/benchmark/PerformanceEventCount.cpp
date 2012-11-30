@@ -4,7 +4,7 @@
 PerformanceEventCount::PerformanceEventCount(PerformanceEvent* performanceEvent)
 : performanceEvent(performanceEvent)
 {
-    reset();
+    resetSoft();
 }
 
 PerformanceEventCount::~PerformanceEventCount()
@@ -14,22 +14,38 @@ PerformanceEventCount::~PerformanceEventCount()
 
 void PerformanceEventCount::reset()
 {
+    resetHard();
+}
+
+void PerformanceEventCount::resetHard()
+{
+    resetSoft();
     counts.clear();
-    min = std::numeric_limits<long long>::max();
-    max = std::numeric_limits<long long>::min();
+}
+
+void PerformanceEventCount::resetSoft()
+{
+    min = std::numeric_limits<count_t>::max();
+    max = std::numeric_limits<count_t>::min();
     avg = 0;
+}
+
+void PerformanceEventCount::evaluate()
+{
+    resetSoft();
+    processCounts();
 }
 
 void PerformanceEventCount::processCounts()
 {
-    count_t avgSum = 0;
+    count_t sum = 0;
     for (count_t& count : counts)
     {
-        avgSum += count;
+        sum += count;
         if (count < min) min = count;
         if (count > max) max = count;
     }
-    avg = avgSum = counts.size();
+    avg = sum/counts.size();
 }
 
 const PerformanceEvent& PerformanceEventCount::getPerformanceEvent() const

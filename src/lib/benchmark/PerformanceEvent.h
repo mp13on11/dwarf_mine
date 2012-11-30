@@ -7,14 +7,14 @@ class PerformanceEvent
 {
 private:
     std::string name;
-    int code;
-    bool generatedCode;
-    void generateCode();
+    mutable int code;
+    mutable bool generatedCode;
+    void generateCode() const;
     char* getNameAsCharArray() const;
 public:
     PerformanceEvent(const std::string& name);
     PerformanceEvent(const std::string& name, const int code);
     ~PerformanceEvent();
     const std::string& getName() const;
-    int getCode();
+    int getCode() const;
 };

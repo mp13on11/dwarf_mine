@@ -14,11 +14,14 @@ private:
     count_t min;
     count_t max;
     count_t avg;
+    void resetHard();
+    void resetSoft();
+    void processCounts();
 public:
     PerformanceEventCount(PerformanceEvent* performanceEvent);
     ~PerformanceEventCount();
     void reset();
-    void processCounts();
+    void evaluate();
     const PerformanceEvent& getPerformanceEvent() const;
     count_t getMinimum() const;
     count_t getMaximum() const;

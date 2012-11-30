@@ -25,14 +25,14 @@ const std::string& PerformanceEvent::getName() const
     return name;
 }
 
-int PerformanceEvent::getCode()
+int PerformanceEvent::getCode() const
 {
     if (!generatedCode)
         generateCode();
     return code;
 }
 
-void PerformanceEvent::generateCode()
+void PerformanceEvent::generateCode() const
 {
     char* convertedName = getNameAsCharArray();
     int result = PAPI_event_name_to_code(convertedName, &code);
