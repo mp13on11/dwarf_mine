@@ -1,8 +1,8 @@
 #include "benchmark/PerformanceEventCount.h"
 #include <limits>
 
-PerformanceEventCount::PerformanceEventCount(PerformanceEvent* performanceEvent)
-: performanceEvent(performanceEvent)
+PerformanceEventCount::PerformanceEventCount(PerformanceEvent* performanceEvent) :
+    performanceEvent(performanceEvent)
 {
     resetSoft();
 }

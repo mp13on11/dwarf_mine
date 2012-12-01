@@ -1,19 +1,16 @@
 #include "benchmark/PerformanceEvent.h"
-#include <algorithm>
-#include <papi.h>
 #include "tools/PapiHelper.h"
 
-PerformanceEvent::PerformanceEvent(const std::string& name)
-: name(name)
+#include <algorithm>
+
+PerformanceEvent::PerformanceEvent(const std::string& name) :
+    name(name), code(0), generatedCode(false)
 {
-    generatedCode = false;
 }
 
-PerformanceEvent::PerformanceEvent(const std::string& name, const int code)
-: PerformanceEvent(name)
+PerformanceEvent::PerformanceEvent(const std::string& name, int code) :
+    name(name), code(code), generatedCode(true)
 {
-    this->code = code;
-    generatedCode = true;
 }
 
 PerformanceEvent::~PerformanceEvent()
@@ -29,22 +26,12 @@ int PerformanceEvent::getCode() const
 {
     if (!generatedCode)
         generateCode();
+
     return code;
 }
 
 void PerformanceEvent::generateCode() const
 {
-    char* convertedName = getNameAsCharArray();
-    int result = PAPI_event_name_to_code(convertedName, &code);
-    PapiHelper::handleResult(result == PAPI_OK, result, __FILE__, __LINE__);
+    code = PapiHelper::eventCodeFrom(name);
     generatedCode = true;
-    free(convertedName);
-}
-
-char* PerformanceEvent::getNameAsCharArray() const
-{
-    char* convertedName = new char[name.size() + 1];
-    std::copy(name.cbegin(), name.cend(), convertedName);
-    convertedName[name.size()] = '\0';
-    return convertedName;
 }

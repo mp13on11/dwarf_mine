@@ -3,20 +3,11 @@
 #include "benchmark/PerformanceEvent.h"
 #include <vector>
 
-using count_t = long long;
-using counts_t = std::vector<count_t>;
+typedef long long count_t;
+typedef std::vector<count_t> counts_t;
 
 class PerformanceEventCount
 {
-private:
-    PerformanceEvent* performanceEvent;
-    counts_t counts;
-    count_t min;
-    count_t max;
-    count_t avg;
-    void resetHard();
-    void resetSoft();
-    void processCounts();
 public:
     PerformanceEventCount(PerformanceEvent* performanceEvent);
     ~PerformanceEventCount();
@@ -26,4 +17,14 @@ public:
     count_t getMinimum() const;
     count_t getMaximum() const;
     count_t getAverage() const;
+
+private:
+    PerformanceEvent* performanceEvent;
+    counts_t counts;
+    count_t min;
+    count_t max;
+    count_t avg;
+    void resetHard();
+    void resetSoft();
+    void processCounts();
 };
