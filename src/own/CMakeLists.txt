@@ -1,4 +1,4 @@
-SET(EXECUTABLE_NAME gold)
+SET(EXECUTABLE_NAME own)
 
 # Dependencies
     
