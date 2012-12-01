@@ -1,6 +1,13 @@
 #include "PapiHelper.h"
 #include <iostream>
-#include <papi.h>
+
+#ifdef HAVE_PAPI
+    #include <papi.h>
+#else
+    #define PAPI_OK 0
+    #define PAPI_strerror(a) "<unknown -- build with PAPI to get error strings>";
+    #define PAPI_event_name_to_code(a, b) *b = 0
+#endif
 
 using namespace std;
 
