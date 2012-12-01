@@ -8,6 +8,6 @@ for i in "mpi/mpi-matrix" "cuda/cuda" "smp/smp"
 do
     echo $i "{"
     echo -ne "\t"
-    ("build/src/"$i "--iterations" "1000" $INA $INB $OUT)
+    ("./build/src/"$i "--iterations" "1000" $INA $INB $OUT)
     echo "}"
 done
