@@ -10,10 +10,12 @@ THRESHOLD = 1000.0
 UNITS = ['µs', 'ms', 's']
 INA="big_left.txt"
 INB="big_right.txt"
+INhA="huge_left.txt"
+INhB="huge_right.txt"
 INC="matrix.txt"
 OUT="out.txt"
-SCENARIOS = ["5x5", "50x50"]
-PARAMETERS = [(INC, INC, OUT),(INA, INB, OUT)]
+SCENARIOS = ["5x5", "50x50", "500x500"]
+PARAMETERS = [(INC, INC, OUT),(INA, INB, OUT),(INhA, INhB, OUT)]
 
 doHumanize = True
 plot = False
@@ -35,13 +37,13 @@ def humanize(runtime):
 
 def invokePlatform(platform, scenarioIndex):
     params = PARAMETERS[scenarioIndex]
-    command = ["build/src/" + platform, "--iterations", "100", params[0], params[1], params[2]]
+    command = ["build/src/" + platform, "--iterations", "1000", params[0], params[1], params[2]]
     output = subprocess.check_output(command, stderr=subprocess.STDOUT)
     runtime = output.split(':')[1]
     return float(runtime)
 
 values = {}
-for platform in ("mpi/mpi-matrix", "cuda/cuda", "smp/smp"):
+for platform in ("cuda/cuda", "smp/smp", "own/own", "mpi/mpi-matrix"):
 
     values[platform] = []
     print platform
