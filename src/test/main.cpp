@@ -64,7 +64,8 @@ protected:
 
     void startProcess(initializer_list<string> args)
     {
-        system(boost::algorithm::join(args, " ").c_str());
+        string commandLine = boost::algorithm::join(args, " ") + " > /dev/null";
+        system(commandLine.c_str());
     }
 
     function<float()> generator;
@@ -187,7 +188,7 @@ TEST_P(MatrixMultiplyTest, BiggerPrimeRectangularMatricesTest) {
 
 INSTANTIATE_TEST_CASE_P(MultiplePlatforms,
                         MatrixMultiplyTest,
-                        ::testing::Values("cuda/cuda", "mpi/mpi-matrix", "smp/smp"));
+                        ::testing::Values("cuda/cuda", "mpi/mpi-matrix", "smp/smp", "own/own"));
 
 int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);

@@ -4,18 +4,21 @@
 # Requires at least Python 2.7
 
 import subprocess, os, sys
-import cairoplot
+#import cairoplot
 
 THRESHOLD = 1000.0
 UNITS = ['µs', 'ms', 's']
 INA="big_left.txt"
 INB="big_right.txt"
+INhA="huge_left.txt"
+INhB="huge_right.txt"
 INC="matrix.txt"
 OUT="out.txt"
-SCENARIOS = ["5x5", "50x50"]
-PARAMETERS = [(INC, INC, OUT),(INA, INB, OUT)]
+SCENARIOS = ["5x5", "50x50", "500x500"]
+PARAMETERS = [(INC, INC, OUT),(INA, INB, OUT),(INhA, INhB, OUT)]
+PLATFORMS = ["cuda/cuda", "smp/smp", "own/own", "mpi/mpi-matrix"]
 
-doHumanize = False
+doHumanize = True
 plot = False
 
 for arg in sys.argv:
@@ -24,24 +27,27 @@ for arg in sys.argv:
     if arg in ("-p", "--plot"):
         plot = True
 
+def formatRuntime(runtime, unit=0):
+    return "%.3f %s" % (runtime, UNITS[unit].rjust(2))
+
 def humanize(runtime):
     unit = 0
     
-    while runtime >= THRESHOLD and unit < 2:
+    while runtime >= THRESHOLD and unit < len(UNITS)-1:
         runtime /= THRESHOLD
         unit += 1
         
-    return "time: %8.3f %s" % (runtime, UNITS[unit])
+    return formatRuntime(runtime, unit)
 
 def invokePlatform(platform, scenarioIndex):
     params = PARAMETERS[scenarioIndex]
-    command = ["build/src/" + platform, params[0], params[1], params[2]]
+    command = ["build/src/" + platform, "--iterations", "1000", params[0], params[1], params[2]]
     output = subprocess.check_output(command, stderr=subprocess.STDOUT)
     runtime = output.split(':')[1]
     return float(runtime)
 
 values = {}
-for platform in ("mpi/mpi-matrix", "cuda/cuda", "smp/smp"):
+for platform in PLATFORMS:
 
     values[platform] = []
     print platform
@@ -53,10 +59,11 @@ for platform in ("mpi/mpi-matrix", "cuda/cuda", "smp/smp"):
         if doHumanize:
             runtime = humanize(float(runtime))
         else:
-            runtime = "time: %8.3f %s" % (runtime, UNITS[0])
-        print "\t", SCENARIOS[scenarioIndex], "\t", (runtime + "")
+            runtime = formatRuntime(runtime)
 
-if plot:
-    cairoplot.dot_line_plot('Benchmark', values, 400, 300, series_legend = True, axis = True, grid = True, x_labels = SCENARIOS)  
+        print "\t%s\t%s\t%s" % (SCENARIOS[scenarioIndex], "time: ", str(runtime).rjust(10))
+
+#if plot:
+#    cairoplot.dot_line_plot('Benchmark', values, 400, 300, series_legend = True, axis = True, grid = True, x_labels = SCENARIOS)  
 
 os.unlink(OUT)
