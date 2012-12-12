@@ -1,10 +1,12 @@
 CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
 
-PROJECT(spike)
+PROJECT(dwarf_mine)
 
 SET(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/CMakeModules)
 SET(CMAKE_CONFIGURATION_TYPES "Debug;Release" CACHE STRING "limited configs" FORCE)
 SET(CMAKE_DEBUG_POSTFIX "d")
+
+INCLUDE(Utils)
 
 # Enable strict warnings
 IF(MSVC)
@@ -16,16 +18,7 @@ ENDIF()
 # Require Visual Studio 2012 or newer,
 # older VS versions do not support C++ 11
 IF(MSVC AND NOT MSVC11)
-    MESSAGE(FATAL_ERROR "This project needs at least Visual Studio 2010")
-ENDIF()
-
-# Gcc specific settings
-IF(CMAKE_COMPILER_IS_GNUCXX)
-    # Enable C++ 11 and threading for gcc
-    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x -pthread")
-
-    # Provide syntax highlighting for C++ 11 in Eclipse
-    ADD_DEFINITIONS("-D__GXX_EXPERIMENTAL_CXX0X__")
+    MESSAGE(FATAL_ERROR "This project needs at least Visual Studio 2012")
 ENDIF()
 
 # Visual Studio specific settings
