@@ -2,6 +2,7 @@
 #include "Memory.h"
 #include "MatrixMultiplication.h"
 #include <iostream>
+#include <vector>
 #include <cmath>
 
 void mul(int m, int n, int k, float* left, float* right, float* out)
@@ -16,7 +17,7 @@ void mul(int m, int n, int k, float* left, float* right, float* out)
                 sum += left[r*k+i] * right[n*i+c];
             }
             if (fabs(out[r*n+c]-sum) > 0.1) {
-                std::cout << "alles scheisse" << sum << " " << out[r*n+c] << std::endl;
+                std::cout << "alles scheisse: (" << r << ", " << c << ") " << sum << " " << out[r*n+c] << std::endl;
                 return;
             }
         }
@@ -25,37 +26,39 @@ void mul(int m, int n, int k, float* left, float* right, float* out)
 
 void CudaMatrixElf::test()
 {
-	int m = 5;
-	int n = 5;
-	int k = 5;
+	using namespace std;
 
-	float* a = new float[m*k];
-	float* b = new float[k*n];
-	float* c_h = new float[m*n];
+	int leftRows = 500;
+	int rightCols = 800;
+	int middle = 400;
+
+	vector<float> left(leftRows*middle);
+	vector<float> right(middle*rightCols);
+	vector<float> result_h(leftRows*rightCols);
 
 	srand( time(NULL) );
-	for (int i=0; i < m*k; ++i)
-	{
-		a[i] = (float) rand() /RAND_MAX;
-		b[i] = (float) rand() /RAND_MAX;
-	}
+	for (int i=0; i < leftRows*middle; ++i)
+		left[i] = (float) rand() / RAND_MAX;
 
-	CudaUtils::Memory<float> a_d(m*k);
-	CudaUtils::Memory<float> b_d(k*n);
-	CudaUtils::Memory<float> c_d(m*n);
+	for (int i=0; i < middle*rightCols; ++i)
+		right[i] = (float) rand() / RAND_MAX;
 
-	a_d.transferFrom(a);
-	b_d.transferFrom(b);
+	CudaUtils::Memory<float> left_d(leftRows*middle);
+	CudaUtils::Memory<float> right_d(middle*rightCols);
+	CudaUtils::Memory<float> result_d(leftRows*rightCols);
+
+	left_d.transferFrom(left.data());
+	right_d.transferFrom(right.data());
 
 	for (int i=0; i < 1; ++i)
-		gemm(m, n, k, a_d.get(), b_d.get(), c_d.get());
+		gemm(leftRows, rightCols, middle, left_d.get(), right_d.get(), result_d.get());
 
-	c_d.transferTo(c_h);
+	result_d.transferTo(result_h.data());
 
-	mul(m, n, k, a, b, c_h);
+	mul(leftRows, rightCols, middle, left.data(), right.data(), result_h.data());
 
-	std::cout << c_h[0] << " " << c_h[1] << std::endl;
-	std::cout << c_h[2] << " " << c_h[3] << std::endl;
+	cout << result_h[0] << " " << result_h[1] << endl;
+	cout << result_h[2] << " " << result_h[3] << endl;
 
-	[](){std::cout << "krasser shit!" << std::endl;}();
+	[](){cout << "krasser shit!" << endl;}();
 }
