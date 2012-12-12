@@ -12,6 +12,6 @@ MACRO(ENABLE_CPP_11)
         SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x -pthread")
 
         # Provide syntax highlighting for C++ 11 in Eclipse
-        ADD_DEFINITIONS("-D__GXX_EXPERIMENTAL_CXX0X__")
+        #ADD_DEFINITIONS("-D__GXX_EXPERIMENTAL_CXX0X__")
     ENDIF()
 ENDMACRO()
