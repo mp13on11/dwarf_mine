@@ -28,30 +28,38 @@ void CudaMatrixElf::test()
 {
 	using namespace std;
 
-	int leftRows = 500;
-	int rightCols = 800;
-	int middle = 400;
+	int leftRows = 1060;
+	int rightCols = 1060;
+	int middle = 1060;
 
-	vector<float> left(leftRows*middle);
-	vector<float> right(middle*rightCols);
-	vector<float> result_h(leftRows*rightCols);
+	size_t leftSize = leftRows * middle;
+	size_t rightSize = middle * rightCols;
+	size_t resultSize = leftRows * rightCols;
+
+	vector<float> left(leftSize);
+	vector<float> right(rightSize);
+	vector<float> result_h(resultSize);
 
 	srand( time(NULL) );
-	for (int i=0; i < leftRows*middle; ++i)
+	for (int i=0; i < leftSize; ++i)
 		left[i] = (float) rand() / RAND_MAX;
 
-	for (int i=0; i < middle*rightCols; ++i)
+	for (int i=0; i < rightSize; ++i)
 		right[i] = (float) rand() / RAND_MAX;
 
-	CudaUtils::Memory<float> left_d(leftRows*middle);
-	CudaUtils::Memory<float> right_d(middle*rightCols);
-	CudaUtils::Memory<float> result_d(leftRows*rightCols);
+	for (int i=0; i < resultSize; ++i)
+		result_h[i] = 0.0f;
+
+	CudaUtils::Memory<float> left_d(leftSize);
+	CudaUtils::Memory<float> right_d(rightSize);
+	CudaUtils::Memory<float> result_d(resultSize);
 
 	left_d.transferFrom(left.data());
 	right_d.transferFrom(right.data());
+	result_d.transferFrom(result_h.data());
 
 	for (int i=0; i < 1; ++i)
-		gemm(leftRows, rightCols, middle, left_d.get(), right_d.get(), result_d.get());
+		gemm(leftRows, rightCols, middle, left_d.get(), right_d.get(), result_d.get(), 32);
 
 	result_d.transferTo(result_h.data());
 
