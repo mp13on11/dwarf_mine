@@ -1,7 +1,10 @@
 #include <cstdlib>
 #include <iostream>
+#include <memory>
 #include <mpi.h>
 #include <sstream>
+#include <string>
+#include <vector>
 
 #include "BenchmarkRunner.h"
 #include "CudaElfFactory.h"
@@ -13,6 +16,30 @@ using namespace std;
 
 int main(int argc, char** argv) 
 {
+    vector<string> arguments(argv + 1, argv + argc);
+
+    if (arguments.size() < 1)
+    {
+        cerr << "Usage: " << argv[0] << " cuda|smp" << endl;
+        return 1;
+    }
+
+    unique_ptr<ElfFactory> factory;
+
+    if (arguments[0] == "cuda")
+    {
+        factory.reset(new CudaElfFactory());
+    }
+    else if (arguments[0] == "smp")
+    {
+        factory.reset(new SMPElfFactory());
+    }
+    else
+    {
+        cerr << "Usage: " << argv[0] << " matrix|smp" << endl;
+        return 1;
+    }
+
     MPI::Init(argc, argv);
 
     Matrix<float> first(10,10);
@@ -24,7 +51,7 @@ int main(int argc, char** argv)
     ProblemStatement statement {in, out, "matrix"};
     
     BenchmarkRunner runner(1);
-    runner.runBenchmark(statement, CudaElfFactory());
+    runner.runBenchmark(statement, *factory);
     auto results = runner.getResults();
     for (auto& result: results)
     {
