@@ -5,6 +5,7 @@
 #include <iterator>
 #include <iostream>
 #include <sstream>
+#include <stdexcept>
 
 using namespace std;
 
@@ -75,7 +76,6 @@ void MatrixHelper::fillMatrixFromStream(Matrix<float>& matrix, istream& stream)
     {
         string line;
         getline(stream, line);
-
         vector<float> values = getValuesIn(line);
 
         for (size_t j=0; j<matrix.columns() && j<values.size(); j++)
