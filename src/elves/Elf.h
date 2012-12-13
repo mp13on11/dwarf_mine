@@ -5,7 +5,7 @@ class Elf
 public:
     virtual ~Elf() = 0;
 
-    // TODO
+    virtual void run() = 0;
 };
 
 inline Elf::~Elf()

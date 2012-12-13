@@ -24,7 +24,7 @@ void mul(int m, int n, int k, float* left, float* right, float* out)
     }
 }
 
-void CudaMatrixElf::test()
+void CudaMatrixElf::run()
 {
 	using namespace std;
 

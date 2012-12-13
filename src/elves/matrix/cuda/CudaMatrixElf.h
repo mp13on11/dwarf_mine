@@ -5,5 +5,5 @@
 class CudaMatrixElf : public MatrixElf
 {
 public:
-	void test();
+	virtual void run();
 };
