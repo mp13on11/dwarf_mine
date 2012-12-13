@@ -38,7 +38,7 @@ int main(int argc, char** argv)
     }
     else
     {
-        cerr << "Usage: " << argv[0] << " matrix|smp" << endl;
+        cerr << "Usage: " << argv[0] << " cuda|smp" << endl;
         return 1;
     }
 
