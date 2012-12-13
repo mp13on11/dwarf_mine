@@ -5,6 +5,7 @@
 #include <iterator>
 #include <iostream>
 #include <sstream>
+#include <stdexcept>
 
 using namespace std;
 
@@ -38,12 +39,18 @@ Matrix<float> MatrixHelper::readMatrixFrom(istream& stream)
     try
     {
         size_t rows, columns;
+
         stream >> rows;
         stream >> columns;
+
+        if (stream.bad() || stream.fail())
+            throw runtime_error("Failed to read matrix size from stream in " + string(__FILE__));
+
         string line;
         getline(stream, line);
         Matrix<float> matrix(rows, columns);
         fillMatrixFromStream(matrix, stream);
+
         return matrix;
     }
     catch (...)
@@ -56,8 +63,11 @@ Matrix<float> MatrixHelper::readMatrixFrom(istream& stream)
 Matrix<float> MatrixHelper::readMatrixFrom(const string& fileName)
 {
     ifstream file;
-    file.exceptions(ios_base::failbit);
     file.open(fileName);
+
+    if (!file.is_open())
+        throw runtime_error("Could not open file: " + fileName);
+
     return readMatrixFrom(file);
 }
 
@@ -75,6 +85,10 @@ void MatrixHelper::fillMatrixFromStream(Matrix<float>& matrix, istream& stream)
     {
         string line;
         getline(stream, line);
+
+        if (stream.bad())
+            throw runtime_error("Error reading matrix from stream in: " + string(__FILE__));
+
         vector<float> values = getValuesIn(line);
 
         for (size_t j=0; j<matrix.columns() && j<values.size(); j++)
