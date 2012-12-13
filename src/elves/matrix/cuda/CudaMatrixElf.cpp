@@ -17,7 +17,7 @@ void mul(int m, int n, int k, float* left, float* right, float* out)
                 sum += left[r*k+i] * right[n*i+c];
             }
             if (fabs(out[r*n+c]-sum) > 0.1) {
-                std::cout << "alles scheisse: (" << r << ", " << c << ") " << sum << " " << out[r*n+c] << std::endl;
+                std::cout << "fehler : (" << r << ", " << c << ") " << sum << " " << out[r*n+c] << std::endl;
                 return;
             }
         }
@@ -68,5 +68,4 @@ void CudaMatrixElf::run(std::istream& input, std::ostream& output)
 	cout << result_h[0] << " " << result_h[1] << endl;
 	cout << result_h[2] << " " << result_h[3] << endl;
 
-	[](){cout << "krasser shit!" << endl;}();
 }
