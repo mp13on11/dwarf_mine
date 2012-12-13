@@ -35,9 +35,9 @@ int main(int argc, char** argv)
 {
     vector<string> arguments(argv + 1, argv + argc);
 
-    if (arguments.size() < 3)
+    if (arguments.size() < 1)
     {
-        cerr << "Usage: " << argv[0] << " cuda|smp <left_matrix> <right_matrix>" << endl;
+        cerr << "Usage: " << argv[0] << " cuda|smp" << endl;
         return 1;
     }
 
