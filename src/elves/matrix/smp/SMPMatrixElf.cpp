@@ -5,44 +5,24 @@
 #include <omp.h>
 #include <functional>
 #include "../Matrix.h"
+#include "../MatrixHelper.h"
 
 size_t div_ceil(size_t x, size_t y)
 {
     return (x % y) ? (x / y + 1) : (x / y);
 }
 
-void initRandom(std::function<float()>& generator, uint seed){
-    auto distribution = std::uniform_real_distribution<float> (-100, +100);
-    auto engine = std::mt19937(seed);
-    generator = bind(distribution, engine);
-}
-
-void fillMatrix(Matrix<float>& m, size_t rows, size_t columns, const std::function<float()>& generator){
-    for(size_t y = 0; y < rows; y++)
-    {
-        for(size_t x = 0; x < columns; x++)
-        {
-            m(y, x) = generator();
-        }
-    }
-}
-
-void SMPMatrixElf::run(std::istream& in, std::ostream& out)
+void SMPMatrixElf::run(std::istream& input, std::ostream& output)
 {
     using namespace std;
 
-    function<float()> generator;
-    initRandom(generator, 1234);
+    Matrix<float> a = MatrixHelper::readMatrixFrom(input);
+    Matrix<float> b = MatrixHelper::readMatrixFrom(input);
+  
+    size_t leftRows = a.rows();
+    size_t rightCols = b.columns();
 
-    size_t columns = 1060;
-    size_t rows = 1060;
-
-    Matrix<float> a(rows, columns);
-    Matrix<float> b(rows, columns);
-    Matrix<float> c(rows, columns);
-
-    fillMatrix(a, rows, columns, generator);
-    fillMatrix(b, rows, columns, generator);
+    Matrix<float> c(leftRows, rightCols);
 
     size_t elementsPerBlock = 10*10;
     size_t columnsPerBlock = (size_t)ceil(sqrt(elementsPerBlock));
@@ -78,4 +58,5 @@ void SMPMatrixElf::run(std::istream& in, std::ostream& out)
         }
 
     }
+    MatrixHelper::writeMatrixTo(output, c);
 }
