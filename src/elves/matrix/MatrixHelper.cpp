@@ -29,29 +29,40 @@ void MatrixHelper::writeMatrixTo(const string& filename, const Matrix<float>& ma
     }
 }
 
-Matrix<float> MatrixHelper::readMatrixFrom(const string& fileName)
+Matrix<float>* MatrixHelper::readMatrixFrom(istream& stream)
+{
+    try
+    {
+        size_t rows, columns;
+        stream >> rows;
+        stream >> columns;
+        string line;
+        getline(stream, line);
+        auto matrix = new Matrix<float>(rows, columns);
+        fillMatrixFromStream(*matrix, stream);
+        return matrix;
+    }
+    catch (...)
+    {
+        cerr << "ERROR: Wrong matrices stream format." << endl;
+        throw;
+    }
+}
+
+Matrix<float>* MatrixHelper::readMatrixFrom(const string& fileName)
 {
     ifstream file;
     file.exceptions(ios_base::failbit);
     file.open(fileName);
+    return readMatrixFrom(file);
+}
 
-    size_t rows, columns;
-    file >> rows;
-    file >> columns;
-    string line;
-    getline(file, line);
-    Matrix<float> result(rows, columns);
-
-    try
-    {
-        fillMatrixFromStream(result, file);
-    }
-    catch (...)
-    {
-        cerr << "Warning. Missing line..." << endl;
-    }
-
-    return result;
+pair<Matrix<float>*, Matrix<float>*> MatrixHelper::readMatrixPairFrom(std::istream& stream)
+{
+    pair<Matrix<float>*, Matrix<float>*> matrices;
+    matrices.first = readMatrixFrom(stream);
+    matrices.second = readMatrixFrom(stream);
+    return matrices;
 }
 
 void MatrixHelper::fillMatrixFromStream(Matrix<float>& matrix, istream& stream)
