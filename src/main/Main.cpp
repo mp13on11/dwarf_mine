@@ -1,14 +1,13 @@
-#include <iostream>
 #include <cstdlib>
+#include <iostream>
 #include <mpi.h>
 #include <sstream>
 
-#include "matrix/cuda/CudaMatrixElf.h"
-#include "matrix/smp/SMPMatrixElf.h"
-#include "matrix/MatrixHelper.h"
+#include "BenchmarkRunner.h"
 #include "CudaElfFactory.h"
 #include "SMPElfFactory.h"
-#include "BenchmarkRunner.h"
+#include "matrix/smp/SMPMatrixElf.h"
+#include "matrix/MatrixHelper.h"
 
 using namespace std;
 
