@@ -12,8 +12,10 @@ using namespace std;
 void MatrixHelper::writeMatrixTo(const string& filename, const Matrix<float>& matrix)
 {
     ofstream file;
-    file.exceptions(ios_base::failbit);
     file.open(filename);
+
+    if (!file.is_open())
+        throw runtime_error("Failed to open matrix file for write: " + filename);
 
     writeMatrixTo(file, matrix);
 }
@@ -31,6 +33,9 @@ void MatrixHelper::writeMatrixTo(ostream& output, const Matrix<float>& matrix)
             output << matrix(i, j);
         }
         output << endl;
+
+        if (output.bad())
+            throw runtime_error("Failed to write matrix to stream in " + string(__FILE__));
     }
 }
 
@@ -41,6 +46,10 @@ Matrix<float> MatrixHelper::readMatrixFrom(istream& stream)
         size_t rows, columns;
         stream >> rows;
         stream >> columns;
+
+        if (stream.bad() || stream.fail())
+            throw runtime_error("Failed to read matrix size from stream in " + string(__FILE__));
+
         string line;
         getline(stream, line);
         Matrix<float> matrix(rows, columns);
@@ -54,11 +63,14 @@ Matrix<float> MatrixHelper::readMatrixFrom(istream& stream)
     }
 }
 
-Matrix<float> MatrixHelper::readMatrixFrom(const string& fileName)
+Matrix<float> MatrixHelper::readMatrixFrom(const string& filename)
 {
     ifstream file;
-    file.exceptions(ios_base::failbit);
-    file.open(fileName);
+    file.open(filename);
+
+    if (!file.is_open())
+        throw runtime_error("Failed to open matrix file for read: " + filename);
+
     return readMatrixFrom(file);
 }
 
@@ -76,6 +88,10 @@ void MatrixHelper::fillMatrixFromStream(Matrix<float>& matrix, istream& stream)
     {
         string line;
         getline(stream, line);
+
+        if (stream.bad())
+            throw runtime_error("Failed to read matrix from stream in " + string(__FILE__));
+
         vector<float> values = getValuesIn(line);
 
         for (size_t j=0; j<matrix.columns() && j<values.size(); j++)
