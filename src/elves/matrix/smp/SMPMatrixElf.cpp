@@ -34,8 +34,8 @@ void SMPMatrixElf::run(std::istream& in, std::ostream& out)
     function<float()> generator;
     initRandom(generator, 1234);
 
-    size_t columns = 106;//0;
-    size_t rows = 106;//0;
+    size_t columns = 1060;
+    size_t rows = 1060;
 
     Matrix<float> a(rows, columns);
     Matrix<float> b(rows, columns);
