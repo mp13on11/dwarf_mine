@@ -3,6 +3,8 @@
 #include <iostream>
 #include <memory>
 #include <mpi.h>
+#include <random>
+#include <functional>
 #include <sstream>
 #include <string>
 #include <typeinfo>
@@ -16,13 +18,26 @@
 
 using namespace std;
 
+void generateProblemData(stringstream& in, stringstream& out)
+{
+    Matrix<float> first(100,100);
+    Matrix<float> second(100, 100);
+    auto distribution = uniform_real_distribution<float> (-100, +100);
+    auto engine = mt19937(time(0));
+    auto generator = bind(distribution, engine);
+    MatrixHelper::fill(first, generator);
+    MatrixHelper::fill(second, generator);
+    MatrixHelper::writeMatrixTo(in, first);
+    MatrixHelper::writeMatrixTo(in, second);
+}
+
 int main(int argc, char** argv) 
 {
     vector<string> arguments(argv + 1, argv + argc);
 
-    if (arguments.size() < 1)
+    if (arguments.size() < 3)
     {
-        cerr << "Usage: " << argv[0] << " cuda|smp" << endl;
+        cerr << "Usage: " << argv[0] << " cuda|smp <left_matrix> <right_matrix>" << endl;
         return 1;
     }
 
@@ -44,17 +59,16 @@ int main(int argc, char** argv)
 
     MPI::Init(argc, argv);
 
-    Matrix<float> first(10,10);
-    Matrix<float> second(10, 10);
+
     stringstream in;
     stringstream out;
-    MatrixHelper::writeMatrixTo(in, first);
-    MatrixHelper::writeMatrixTo(in, second);
-    ProblemStatement statement {in, out, "matrix"};
+
+    generateProblemData(in, out);
+    ProblemStatement statement{ in, out, "matrix"};// = generateProblemStatement();
     
     try
     {
-        BenchmarkRunner runner(1);
+        BenchmarkRunner runner(100);
         runner.runBenchmark(statement, *factory);
         auto results = runner.getResults();
         for (auto& result: results)

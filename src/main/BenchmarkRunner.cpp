@@ -49,14 +49,15 @@ chrono::microseconds BenchmarkRunner::measureCall(int targetRank, Elf& elf, cons
     clock::time_point before = clock::now();
     if (_rank == MASTER)
     {
+        statement.input.seekg (0, ios::beg);
         if (targetRank == MASTER)
         {
-            elf.run(statement.input, cout);
+            stringstream out;
+            elf.run(statement.input, out);
         }
         else
         {
             send(statement.input, targetRank, _rank);
-            statement.input.seekg(0);
             stringstream output;
             receive(output, targetRank, _rank);
         }
