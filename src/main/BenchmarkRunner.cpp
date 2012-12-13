@@ -15,7 +15,7 @@ BenchmarkRunner::BenchmarkRunner(size_t iterations)
 {
     
 }
-int __iteration = 0;
+
 void receive(ostream& out, int fromRank, int _rank)
 {
     MPI::Status status;
@@ -38,10 +38,8 @@ void send(istream& in, int toRank, int _rank)
         {
             break;
         }
-        cout << c;
         buffer.push_back(c);
     }
-    cout<<_rank<<" send "<<buffer.size()<<endl;
     MPI::COMM_WORLD.Send(const_cast<char*>(buffer.data()), buffer.size(), MPI::CHAR, toRank, 0);
 }
 
@@ -83,12 +81,10 @@ void BenchmarkRunner::runBenchmark(const ProblemStatement& statement, const ElfF
     {
         for (int device = 0; device < _devices; ++device)
         {
-            __iteration = 0;
             chrono::microseconds sum = chrono::microseconds(0);
             for (size_t i = 0; i < _iterations; ++i)
             {
                 sum += measureCall(device, *elf, statement);
-                __iteration++;
             }
             _measurements.push_back(sum / _iterations);
         }
