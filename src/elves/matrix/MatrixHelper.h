@@ -21,4 +21,3 @@ private:
     static void fillMatrixFromStream(Matrix<float>& matrix, std::istream& stream);
     static std::vector<float> getValuesIn(const std::string& line);
 };
-

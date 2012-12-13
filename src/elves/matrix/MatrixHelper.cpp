@@ -14,7 +14,12 @@ void MatrixHelper::writeMatrixTo(const string& filename, const Matrix<float>& ma
     file.exceptions(ios_base::failbit);
     file.open(filename);
 
-    file << matrix.rows() << " " << matrix.columns() << endl;
+    writeMatrixTo(file, matrix);
+}
+
+void MatrixHelper::writeMatrixTo(ostream& output, const Matrix<float>& matrix)
+{
+    output << matrix.rows() << " " << matrix.columns() << endl;
 
     for (size_t i=0; i<matrix.rows(); i++)
     {
@@ -24,7 +29,6 @@ void MatrixHelper::writeMatrixTo(const string& filename, const Matrix<float>& ma
                file << " "; 
             file << matrix(i, j);
         }
-
         file << endl;
     }
 }
@@ -101,4 +105,3 @@ void MatrixHelper::fill(Matrix<float>& matrix, const function<float()>& generato
         }
     }
 }
-

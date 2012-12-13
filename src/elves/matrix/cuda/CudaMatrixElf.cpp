@@ -4,6 +4,8 @@
 #include <iostream>
 #include <vector>
 #include <cmath>
+#include "../MatrixHelper.h"
+#include "../Matrix.h"
 
 void mul(int m, int n, int k, float* left, float* right, float* out)
 {
@@ -17,45 +19,48 @@ void mul(int m, int n, int k, float* left, float* right, float* out)
                 sum += left[r*k+i] * right[n*i+c];
             }
             if (fabs(out[r*n+c]-sum) > 0.1) {
-                std::cout << "alles scheisse: (" << r << ", " << c << ") " << sum << " " << out[r*n+c] << std::endl;
+                std::cout << "fehler : (" << r << ", " << c << ") " << sum << " " << out[r*n+c] << std::endl;
                 return;
             }
         }
     }
 }
 
-void CudaMatrixElf::test()
+void CudaMatrixElf::run(std::istream& input, std::ostream& output)
 {
 	using namespace std;
 
-	int leftRows = 1060;
-	int rightCols = 1060;
-	int middle = 1060;
+    Matrix<float> leftMatrix = MatrixHelper::readMatrixFrom(input);
+    Matrix<float> rightMatrix = MatrixHelper::readMatrixFrom(input);
+
+	int leftRows = leftMatrix.rows();
+	int rightCols = rightMatrix.columns();
+	int middle = leftMatrix.columns();
 
 	size_t leftSize = leftRows * middle;
 	size_t rightSize = middle * rightCols;
 	size_t resultSize = leftRows * rightCols;
 
-	vector<float> left(leftSize);
-	vector<float> right(rightSize);
+//	vector<float> left(leftSize);
+//	vector<float> right(rightSize);
 	vector<float> result_h(resultSize);
-
-	srand( time(NULL) );
-	for (int i=0; i < leftSize; ++i)
-		left[i] = (float) rand() / RAND_MAX;
-
-	for (int i=0; i < rightSize; ++i)
-		right[i] = (float) rand() / RAND_MAX;
-
-	for (int i=0; i < resultSize; ++i)
-		result_h[i] = 0.0f;
+//
+//	srand( time(NULL) );
+//	for (int i=0; i < leftSize; ++i)
+//		left[i] = (float) rand() / RAND_MAX;
+//
+//	for (int i=0; i < rightSize; ++i)
+//		right[i] = (float) rand() / RAND_MAX;
+//
+//	for (int i=0; i < resultSize; ++i)
+//		result_h[i] = 0.0f;
 
 	CudaUtils::Memory<float> left_d(leftSize);
 	CudaUtils::Memory<float> right_d(rightSize);
 	CudaUtils::Memory<float> result_d(resultSize);
 
-	left_d.transferFrom(left.data());
-	right_d.transferFrom(right.data());
+	left_d.transferFrom(leftMatrix.buffer());
+	right_d.transferFrom(rightMatrix.buffer());
 	result_d.transferFrom(result_h.data());
 
 	for (int i=0; i < 1; ++i)
@@ -63,10 +68,11 @@ void CudaMatrixElf::test()
 
 	result_d.transferTo(result_h.data());
 
-	mul(leftRows, rightCols, middle, left.data(), right.data(), result_h.data());
+	mul(leftRows, rightCols, middle, leftMatrix.buffer(), rightMatrix.buffer(), result_h.data());
 
-	cout << result_h[0] << " " << result_h[1] << endl;
-	cout << result_h[2] << " " << result_h[3] << endl;
+	//cout << result_h[0] << " " << result_h[1] << endl;
+	//cout << result_h[2] << " " << result_h[3] << endl;
 
-	[](){cout << "krasser shit!" << endl;}();
+    Matrix<float> resultMatrix(leftRows, rightCols, std::move(result_h));
+    MatrixHelper::writeMatrixTo(output, resultMatrix);
 }

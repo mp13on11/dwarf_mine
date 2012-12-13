@@ -4,3 +4,4 @@ build/
 *.settings
 *.sublime-project
 *.sublime-workspace
+*.swp
