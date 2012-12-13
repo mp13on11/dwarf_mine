@@ -8,6 +8,5 @@ class Scheduler
 {
 public:
     Scheduler(const BenchmarkResult& benchmarkResult);
-
-    void dispatch(ProblemStatement& statement);
+    virtual void dispatch(ProblemStatement& statement);
 };

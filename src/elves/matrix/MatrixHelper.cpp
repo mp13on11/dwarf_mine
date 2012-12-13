@@ -8,6 +8,15 @@
 
 using namespace std;
 
+void MatrixHelper::writeMatrixTo(const string& filename, const Matrix<float>& matrix)
+{
+    ofstream file;
+    file.exceptions(ios_base::failbit);
+    file.open(filename);
+
+    writeMatrixTo(file, matrix);
+}
+
 void MatrixHelper::writeMatrixTo(ostream& output, const Matrix<float>& matrix)
 {
     output << matrix.rows() << " " << matrix.columns() << endl;
@@ -20,30 +29,44 @@ void MatrixHelper::writeMatrixTo(ostream& output, const Matrix<float>& matrix)
                output << " "; 
             output << matrix(i, j);
         }
-
         output << endl;
     }
 }
 
-Matrix<float> MatrixHelper::readMatrixFrom(istream& input)
+Matrix<float> MatrixHelper::readMatrixFrom(istream& stream)
 {
-    size_t rows, columns;
-    input >> rows;
-    input >> columns;
-    string line;
-    getline(input, line);
-    Matrix<float> result(rows, columns);
-
     try
     {
-        fillMatrixFromStream(result, input);
+        size_t rows, columns;
+        stream >> rows;
+        stream >> columns;
+        string line;
+        getline(stream, line);
+        Matrix<float> matrix(rows, columns);
+        fillMatrixFromStream(matrix, stream);
+        return matrix;
     }
     catch (...)
     {
-        cerr << "Warning. Missing line..." << endl;
+        cerr << "ERROR: Wrong matrices stream format." << endl;
+        throw;
     }
+}
 
-    return result;
+Matrix<float> MatrixHelper::readMatrixFrom(const string& fileName)
+{
+    ifstream file;
+    file.exceptions(ios_base::failbit);
+    file.open(fileName);
+    return readMatrixFrom(file);
+}
+
+pair<Matrix<float>, Matrix<float>> MatrixHelper::readMatrixPairFrom(std::istream& stream)
+{
+    pair<Matrix<float>, Matrix<float>> matrices;
+    matrices.first = readMatrixFrom(stream);
+    matrices.second = readMatrixFrom(stream);
+    return matrices;
 }
 
 void MatrixHelper::fillMatrixFromStream(Matrix<float>& matrix, istream& stream)
