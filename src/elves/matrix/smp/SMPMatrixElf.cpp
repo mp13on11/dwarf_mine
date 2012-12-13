@@ -2,7 +2,6 @@
 #include <iostream>
 #include <math.h>
 #include <random>
-#include <thread>
 #include <omp.h>
 #include <functional>
 #include "../Matrix.h"
@@ -45,10 +44,6 @@ void SMPMatrixElf::test()
     fillMatrix(a, rows, columns, generator);
     fillMatrix(b, rows, columns, generator);
 
-    size_t workerCount = 5;
-    thread* workers = new thread[workerCount];
-
-
     size_t elementsPerBlock = 10*10;
     size_t columnsPerBlock = (size_t)ceil(sqrt(elementsPerBlock));
     columnsPerBlock = min(columnsPerBlock, c.columns());
@@ -83,6 +78,4 @@ void SMPMatrixElf::test()
         }
 
     }
-
-    delete[] workers;
 }
