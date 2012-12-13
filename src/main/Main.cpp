@@ -13,7 +13,7 @@ int main(int argc, char** argv)
     cout << "Hello World from "<<getenv("OMPI_COMM_WORLD_LOCAL_RANK")<<" of "<<getenv("OMPI_COMM_WORLD_LOCAL_SIZE")<<" on "<<getenv("OMPI_COMM_WORLD_RANK")<<endl;
 
     CudaMatrixElf elf;
-    elf.test();
+    elf.run(cin, cout);
     MPI::Finalize();
     return 0;
 }

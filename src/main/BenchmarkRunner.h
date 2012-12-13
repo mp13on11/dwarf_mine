@@ -2,9 +2,10 @@
 
 #include <vector>
 #include <chrono>
+#include "ElfFactory.h"
 #include "BenchmarkResults.h"
 #include "ProblemStatement.h"
-#include "../elves/Elf.h"
+
 
 class BenchmarkRunner
 {
@@ -14,11 +15,11 @@ private:
     int _devices;
     std::vector<std::chrono::microseconds> _measurements;
 
-    std::chrono::microseconds measureCall(int rank);
+    std::chrono::microseconds measureCall(int rank, Elf& elf, const ProblemStatement& statement);
 
 public:
-    BenchmarkRunner(size_t iterations, IElf* elf);
+    BenchmarkRunner(size_t iterations);
     ~BenchmarkRunner();
-    void runBenchmark(const ProblemStatement& statement);
+    void runBenchmark(const ProblemStatement& statement, const ElfFactory& factory);
     BenchmarkResult getResults();
 };

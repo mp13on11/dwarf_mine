@@ -1,7 +1,7 @@
 
 #include <mpi.h>
 #include <vector>
-#include "../elves/Elf.h"
+#include "Elf.h"
 #include "BenchmarkRunner.h"
 
 using namespace std;
@@ -15,7 +15,7 @@ BenchmarkRunner::BenchmarkRunner(size_t iterations)
     
 }
 
-chrono::microseconds BenchmarkRunner::measureCall(int device, Elf* elf, const ProblemStatement& statement)
+chrono::microseconds BenchmarkRunner::measureCall(int device, Elf& elf, const ProblemStatement& statement)
 {
     typedef chrono::high_resolution_clock clock;
     clock::time_point before = clock::now();
@@ -23,9 +23,7 @@ chrono::microseconds BenchmarkRunner::measureCall(int device, Elf* elf, const Pr
     {
         if (device == MASTER)
         {
-            elf->setInput(statement.input);
-            elf->process();
-            auto outstream = elf->getOutput();
+            elf.run(statement.input, cout);
         }
         else
         {
@@ -33,7 +31,7 @@ chrono::microseconds BenchmarkRunner::measureCall(int device, Elf* elf, const Pr
             while (statement.input.good())
             {
                 char c;
-                statement.input.get(&c)
+                statement.input.get(c);
                 if (statement.input.gcount() == 0)
                 {
                     break;
@@ -42,51 +40,44 @@ chrono::microseconds BenchmarkRunner::measureCall(int device, Elf* elf, const Pr
             }
             statement.input.seekg(0);
             MPI::COMM_WORLD.Send(
-                const_cast<char>(buffer), buffer.size(), MPI::CHAR,
-                device, 0, MPI::COMM_WORLD);
+                const_cast<char*>(buffer.data()), buffer.size(), MPI::CHAR,
+                device, 0);
 
             MPI::Status status;
-            MPI::COMM_WORLD.Probe(device, 0, MPI::COMM_WORLD, &status);
+            MPI::COMM_WORLD.Probe(device, 0, status);
             int bufferSize = status.Get_count(MPI::CHAR);
-            char* buffer = new char[bufferSize];
-            MPI::COMM_WORLD.Recv(buffer, bufferSize, MPI::CHAR, device, 0);
-            delete[] buffer;
+            char* bufferA = new char[bufferSize];
+            MPI::COMM_WORLD.Recv(bufferA, bufferSize, MPI::CHAR, device, 0);
+            delete[] bufferA;
         }
     }
     else
     {
         MPI::Status status;
-        MPI::COMM_WORLD.Probe(MASTER, 0, MPI::COMM_WORLD, &status);
+        MPI::COMM_WORLD.Probe(MASTER, 0, status);
         int bufferSize = status.Get_count(MPI::CHAR);
         char* buffer = new char[bufferSize];
         MPI::COMM_WORLD.Recv(buffer, bufferSize, MPI::CHAR, device, 0);
-        MPI::Status status;
-        MPI::COMM_WORLD.Probe(device, 0, MPI::COMM_WORLD, &status);
-        int bufferSize = status.Get_count(MPI::CHAR);
-        char* buffer = new char[bufferSize];
-        MPI::COMM_WORLD.Recv(buffer, bufferSize, MPI::CHAR, device, 0);
-        elf->setInput(buffer);
-        elf->process();
-        auto stream = elf->GetOutput();
-        MPI::COMM_WORLD.Send();
-        delete buffer[];
+       
+        elf.run(cin, cout);
+        //MPI::COMM_WORLD.Send();
+        delete[] buffer;
     }
     return clock::now() - before;
 }
 
-void BenchmarkRunner::runBenchmark(const ProblemStatement& statement)
+void BenchmarkRunner::runBenchmark(const ProblemStatement& statement, const ElfFactory& factory)
 {
-    Elf* elf = ElfFactory.Create(statement.elfCategory);
+    std::unique_ptr<Elf> elf = factory.createElf(statement.elfCategory);
     for (int device = 0; device < _devices; ++device)
     {
         chrono::microseconds sum = chrono::microseconds(0);
         for (size_t i = 0; i < _iterations; ++i)
         {
-            sum += measureCall(device, statement);
+            sum += measureCall(device, *elf, statement);
         }
         _measurements.push_back(sum / _iterations);
     }
-    delete elf;
 }
     
 
