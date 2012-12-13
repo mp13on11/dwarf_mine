@@ -26,14 +26,14 @@ void MatrixHelper::writeMatrixTo(ostream& output, const Matrix<float>& matrix)
         for (size_t j=0; j<matrix.columns(); j++)
         {
             if(j>0)
-               file << " "; 
-            file << matrix(i, j);
+               output << " "; 
+            output << matrix(i, j);
         }
-        file << endl;
+        output << endl;
     }
 }
 
-Matrix<float>* MatrixHelper::readMatrixFrom(istream& stream)
+Matrix<float> MatrixHelper::readMatrixFrom(istream& stream)
 {
     try
     {
@@ -42,8 +42,8 @@ Matrix<float>* MatrixHelper::readMatrixFrom(istream& stream)
         stream >> columns;
         string line;
         getline(stream, line);
-        auto matrix = new Matrix<float>(rows, columns);
-        fillMatrixFromStream(*matrix, stream);
+        Matrix<float> matrix(rows, columns);
+        fillMatrixFromStream(matrix, stream);
         return matrix;
     }
     catch (...)
@@ -53,7 +53,7 @@ Matrix<float>* MatrixHelper::readMatrixFrom(istream& stream)
     }
 }
 
-Matrix<float>* MatrixHelper::readMatrixFrom(const string& fileName)
+Matrix<float> MatrixHelper::readMatrixFrom(const string& fileName)
 {
     ifstream file;
     file.exceptions(ios_base::failbit);
@@ -61,9 +61,9 @@ Matrix<float>* MatrixHelper::readMatrixFrom(const string& fileName)
     return readMatrixFrom(file);
 }
 
-pair<Matrix<float>*, Matrix<float>*> MatrixHelper::readMatrixPairFrom(std::istream& stream)
+pair<Matrix<float>, Matrix<float>> MatrixHelper::readMatrixPairFrom(std::istream& stream)
 {
-    pair<Matrix<float>*, Matrix<float>*> matrices;
+    pair<Matrix<float>, Matrix<float>> matrices;
     matrices.first = readMatrixFrom(stream);
     matrices.second = readMatrixFrom(stream);
     return matrices;
