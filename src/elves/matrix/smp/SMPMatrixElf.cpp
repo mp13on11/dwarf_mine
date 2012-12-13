@@ -27,7 +27,7 @@ void fillMatrix(Matrix<float>& m, size_t rows, size_t columns, const std::functi
     }
 }
 
-void SMPMatrixElf::test()
+void SMPMatrixElf::run(std::istream& in, std::ostream& out)
 {
     using namespace std;
 

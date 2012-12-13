@@ -2,10 +2,11 @@
 
 #include <matrix/MatrixElf.h>
 #include <functional>
+#include <iostream>
 
 class SMPMatrixElf : public MatrixElf
 {
 
 public:
-	void test();
+	void run(std::istream& in, std::ostream& out);
 };
