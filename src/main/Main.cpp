@@ -1,9 +1,11 @@
 #include <cstdlib>
+#include <exception>
 #include <iostream>
 #include <memory>
 #include <mpi.h>
 #include <sstream>
 #include <string>
+#include <typeinfo>
 #include <vector>
 
 #include "BenchmarkRunner.h"
@@ -50,12 +52,25 @@ int main(int argc, char** argv)
     MatrixHelper::writeMatrixTo(in, second);
     ProblemStatement statement {in, out, "matrix"};
     
-    BenchmarkRunner runner(1);
-    runner.runBenchmark(statement, *factory);
-    auto results = runner.getResults();
-    for (auto& result: results)
+    try
     {
-        cout << result.first << " - " <<result.second<<endl;
+        BenchmarkRunner runner(1);
+        runner.runBenchmark(statement, *factory);
+        auto results = runner.getResults();
+        for (auto& result: results)
+        {
+            cout << result.first << " - " <<result.second<<endl;
+        }
+    }
+    catch (exception &e)
+    {
+        cerr << "FATAL: " << e.what() << endl;
+        return 1;
+    }
+    catch (...)
+    {
+        cerr << "FATAL ERROR of unknown type." << endl;
+        return 1;
     }
     
   //   CudaMatrixElf elf;
