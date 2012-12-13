@@ -1,12 +1,10 @@
 #pragma once
 
-#include <matrix/MatrixElf.h>
-#include <functional>
-#include <iostream>
+#include "matrix/MatrixElf.h"
 
 class SMPMatrixElf : public MatrixElf
 {
 
 public:
-	void run(std::istream& in, std::ostream& out);
+	virtual void run(std::istream& in, std::ostream& out);
 };
