@@ -1,11 +1,11 @@
 #pragma once
 
+#include "elves/ElfCategory.h"
+
 #include <iostream>
 
 struct ProblemStatement
 {
-    typedef std::string ElfCategory;
-
     std::istream& input;
     std::ostream& output;
     ElfCategory elfCategory;
