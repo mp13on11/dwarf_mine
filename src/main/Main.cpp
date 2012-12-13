@@ -3,6 +3,7 @@
 #include <mpi.h>
 
 #include <matrix/cuda/CudaMatrixElf.h>
+#include <matrix/smp/SMPMatrixElf.h>
 
 using namespace std;
 
@@ -14,7 +15,8 @@ int main(int argc, char** argv)
 
     CudaMatrixElf elf;
     elf.run(cin, cout);
-    MPI::Finalize();
+ 	SMPMatrixElf elf2;
+    elf2.run(cin, cout);
     return 0;
 }
 
