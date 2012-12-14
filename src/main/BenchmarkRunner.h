@@ -16,6 +16,8 @@ private:
     std::vector<std::chrono::microseconds> _measurements;
 
     std::chrono::microseconds measureCall(int rank, Elf& elf, const ProblemStatement& statement);
+    void benchmarkDevice(int device, Elf& elf, const ProblemStatement& statement);
+
 
 public:
     BenchmarkRunner(size_t iterations);

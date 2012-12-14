@@ -6,7 +6,7 @@
 
 struct ProblemStatement
 {
-    std::istream& input;
-    std::ostream& output;
+    std::iostream& input;
+    std::iostream& output;
     ElfCategory elfCategory;
 };

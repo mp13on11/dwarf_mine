@@ -16,31 +16,23 @@ BenchmarkRunner::BenchmarkRunner(size_t iterations)
     
 }
 
-void receive(ostream& out, int fromRank, int _rank)
+void receive(ostream& stream, int fromRank)
 {
     MPI::Status status;
     MPI::COMM_WORLD.Probe(fromRank, 0, status);
     int bufferSize = status.Get_count(MPI::CHAR);
-    char* bufferA = new char[bufferSize];
-    MPI::COMM_WORLD.Recv(bufferA, bufferSize, MPI::CHAR, fromRank, 0);
-    out.write(bufferA, bufferSize);
-    delete[] bufferA;
+    char* buffer = new char[bufferSize];
+    MPI::COMM_WORLD.Recv(buffer, bufferSize, MPI::CHAR, fromRank, 0);
+    stream.write(buffer, bufferSize);
+    delete[] buffer;
 }
 
-void send(istream& in, int toRank, int _rank)
+void send(istream& stream, int toRank)
 {
-    vector<char> buffer;
-    while (in.good())
-    {
-        char c;
-        in.get(c);
-        if (in.gcount() == 0)
-        {
-            break;
-        }
-        buffer.push_back(c);
-    }
-    MPI::COMM_WORLD.Send(const_cast<char*>(buffer.data()), buffer.size(), MPI::CHAR, toRank, 0);
+    stringstream buffer;
+    buffer << stream.rdbuf();
+    auto buffered = buffer.str();
+    MPI::COMM_WORLD.Send(buffered.c_str(), buffered.size(), MPI::CHAR, toRank, 0);
 }
 
 chrono::microseconds BenchmarkRunner::measureCall(int targetRank, Elf& elf, const ProblemStatement& statement)
@@ -51,27 +43,40 @@ chrono::microseconds BenchmarkRunner::measureCall(int targetRank, Elf& elf, cons
     {
         statement.input.clear();
         statement.input.seekg(0, ios::beg);
+        stringstream output;
         if (targetRank == MASTER)
         {
-            stringstream out;
-            elf.run(statement.input, out);
+            
+            elf.run(statement.input, output);
         }
         else
         {
-            send(statement.input, targetRank, _rank);
-            stringstream output;
-            receive(output, targetRank, _rank);
+            send(statement.input, targetRank);
+            receive(output, targetRank);
         }
     }
     else
     {
-        stringstream input;
-        stringstream output;
-        receive(input, MASTER, _rank);
-        elf.run(input, output);
-        send(output, MASTER, _rank);
+        receive(statement.input, MASTER);
+        elf.run(statement.input, statement.output);
+        send(statement.output, MASTER);
     }
     return clock::now() - before;
+}
+
+void BenchmarkRunner::benchmarkDevice(int device, Elf& elf, const ProblemStatement& statement)
+{
+    size_t warmupIterations = _iterations / 10;
+    for (size_t i = 0; i < warmupIterations; ++i)
+    {
+        measureCall(device, elf, statement);
+    }
+    chrono::microseconds sum(0);
+    for (size_t i = 0; i < _iterations; ++i)
+    {
+        sum += measureCall(device, elf, statement);
+    }
+    _measurements.push_back(sum / _iterations);
 }
 
 void BenchmarkRunner::runBenchmark(const ProblemStatement& statement, const ElfFactory& factory)
@@ -81,20 +86,13 @@ void BenchmarkRunner::runBenchmark(const ProblemStatement& statement, const ElfF
     {
         for (int device = 0; device < _devices; ++device)
         {
-            chrono::microseconds sum = chrono::microseconds(0);
-            for (size_t i = 0; i < _iterations; ++i)
-            {
-                sum += measureCall(device, *elf, statement);
-            }
-            _measurements.push_back(sum / _iterations);
+            benchmarkDevice(device, *elf, statement);
         }
     }
     else
     {
-        for (size_t i = 0; i < _iterations; ++i)
-        {
-            measureCall(MASTER, *elf, statement);
-        }
+        benchmarkDevice(MASTER, *elf, statement);
+        _measurements.clear();
     }
 }
     

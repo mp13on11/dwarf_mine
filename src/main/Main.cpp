@@ -64,7 +64,7 @@ int main(int argc, char** argv)
     stringstream out;
 
     generateProblemData(in, out);
-    ProblemStatement statement{ in, out, "matrix"};// = generateProblemStatement();
+    ProblemStatement statement{ in, out, "matrix"};
     
     try
     {
