@@ -1,0 +1,5 @@
+bigdwarf slots=2
+quadcore1 slots=2
+quadcore2 slots=2
+quadcore3 slots=2
+smalldwarf slots=1
