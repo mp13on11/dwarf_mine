@@ -1,17 +1,13 @@
 #pragma once
 
-#include <exception>
+#include <stdexcept>
 #include <string>
 
-class MismatchedMatricesException : public std::exception
+class MismatchedMatricesException : public std::runtime_error
 {
 public:
     MismatchedMatricesException(size_t leftColumns, size_t rightRows);
-    virtual ~MismatchedMatricesException() throw();
-    virtual const char* what() const throw();
 
 private:
-    std::string message;
-
-    void addToMessage(size_t number);
+    static std::string constructMessage(size_t leftColumns, size_t rightRows);
 };
