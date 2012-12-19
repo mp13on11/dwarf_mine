@@ -2,6 +2,7 @@
 #include <mpi.h>
 #include <vector>
 #include <sstream>
+#include <memory>
 #include "Elf.h"
 #include "BenchmarkRunner.h"
 
@@ -21,10 +22,9 @@ void receive(ostream& stream, int fromRank)
     MPI::Status status;
     MPI::COMM_WORLD.Probe(fromRank, 0, status);
     int bufferSize = status.Get_count(MPI::CHAR);
-    char* buffer = new char[bufferSize];
-    MPI::COMM_WORLD.Recv(buffer, bufferSize, MPI::CHAR, fromRank, 0);
-    stream.write(buffer, bufferSize);
-    delete[] buffer;
+    unique_ptr<char[]> buffer(new char[bufferSize]);
+    MPI::COMM_WORLD.Recv(buffer.get(), bufferSize, MPI::CHAR, fromRank, 0);
+    stream.write(buffer.get(), bufferSize);
 }
 
 void send(istream& stream, int toRank)
