@@ -11,8 +11,7 @@
 #include <ctime>
 
 #include "BenchmarkRunner.h"
-#include "CudaElfFactory.h"
-#include "SMPElfFactory.h"
+#include "Configuration.h"
 #include "matrix/smp/SMPMatrixElf.h"
 #include "matrix/MatrixHelper.h"
 #include "matrix/Matrix.h"
@@ -34,44 +33,22 @@ void generateProblemData(stringstream& in, stringstream& out)
 
 int main(int argc, char** argv) 
 {
-    vector<string> arguments(argv + 1, argv + argc);
-
-    if (arguments.size() < 1)
-    {
-        cerr << "Usage: " << argv[0] << " cuda|smp" << endl;
-        return 1;
-    }
-
-    unique_ptr<ElfFactory> factory;
-
-    if (arguments[0] == "cuda")
-    {
-        factory.reset(new CudaElfFactory());
-    }
-    else if (arguments[0] == "smp")
-    {
-        factory.reset(new SMPElfFactory());
-    }
-    else
-    {
-        cerr << "Usage: " << argv[0] << " cuda|smp" << endl;
-        return 1;
-    }
-
+    Configuration config(argc, argv);
     MPI::Init(argc, argv);
 
-    stringstream in;
-    stringstream out;
-
-    generateProblemData(in, out);
-    ProblemStatement statement{ in, out, "matrix"};
-    
     try
     {
+    	unique_ptr<ElfFactory> factory(config.getElfFactory());
+        stringstream in;
+        stringstream out;
+
+        generateProblemData(in, out);
+        ProblemStatement statement{ in, out, "matrix"};
+
         BenchmarkRunner runner(100);
         runner.runBenchmark(statement, *factory);
         auto results = runner.getResults();
-        for (auto& result: results)
+        for (const auto& result: results)
         {
             cout << result.first << " - " <<result.second<<endl;
         }
