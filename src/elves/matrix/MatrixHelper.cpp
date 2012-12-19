@@ -1,4 +1,6 @@
 #include "MatrixHelper.h"
+#include "Matrix.h"
+#include "MismatchedMatricesException.h"
 
 #include <algorithm>
 #include <fstream>
@@ -97,6 +99,12 @@ void MatrixHelper::fillMatrixFromStream(Matrix<float>& matrix, istream& stream)
         for (size_t j=0; j<matrix.columns() && j<values.size(); j++)
             matrix(i, j) = values[j];
     }
+}
+
+void MatrixHelper::validateMultiplicationPossible(const Matrix<float>& a, const Matrix<float>& b)
+{
+    if (a.columns() != b.rows())
+        throw MismatchedMatricesException(a.columns(), b.rows());
 }
 
 vector<float> MatrixHelper::getValuesIn(const string& line)

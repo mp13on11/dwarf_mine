@@ -6,5 +6,5 @@ class SMPMatrixElf : public MatrixElf
 {
 
 public:
-	virtual void run(std::istream& in, std::ostream& out);
+    virtual void run(std::istream& in, std::ostream& out);
 };

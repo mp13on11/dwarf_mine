@@ -18,7 +18,8 @@ void mul(int m, int n, int k, float* left, float* right, float* out)
             {
                 sum += left[r*k+i] * right[n*i+c];
             }
-            if (fabs(out[r*n+c]-sum) > 0.1) {
+            if (fabs(out[r*n+c]-sum) > 0.1)
+            {
                 std::cout << "fehler : (" << r << ", " << c << ") " << sum << " " << out[r*n+c] << std::endl;
                 return;
             }
@@ -28,34 +29,36 @@ void mul(int m, int n, int k, float* left, float* right, float* out)
 
 void CudaMatrixElf::run(std::istream& input, std::ostream& output)
 {
-	using namespace std;
+    using namespace std;
 
     Matrix<float> leftMatrix = MatrixHelper::readMatrixFrom(input);
     Matrix<float> rightMatrix = MatrixHelper::readMatrixFrom(input);
 
-	int leftRows = leftMatrix.rows();
-	int rightCols = rightMatrix.columns();
-	int middle = leftMatrix.columns();
+    MatrixHelper::validateMultiplicationPossible(leftMatrix, rightMatrix);
 
-	size_t leftSize = leftRows * middle;
-	size_t rightSize = middle * rightCols;
-	size_t resultSize = leftRows * rightCols;
-	vector<float> result_h(resultSize);
+    int leftRows = leftMatrix.rows();
+    int rightCols = rightMatrix.columns();
+    int middle = leftMatrix.columns();
 
-	CudaUtils::Memory<float> left_d(leftSize);
-	CudaUtils::Memory<float> right_d(rightSize);
-	CudaUtils::Memory<float> result_d(resultSize);
+    size_t leftSize = leftRows * middle;
+    size_t rightSize = middle * rightCols;
+    size_t resultSize = leftRows * rightCols;
+    vector<float> result_h(resultSize);
 
-	left_d.transferFrom(leftMatrix.buffer());
-	right_d.transferFrom(rightMatrix.buffer());
-	result_d.transferFrom(result_h.data());
+    CudaUtils::Memory<float> left_d(leftSize);
+    CudaUtils::Memory<float> right_d(rightSize);
+    CudaUtils::Memory<float> result_d(resultSize);
 
-	for (int i=0; i < 1; ++i)
-		gemm(leftRows, rightCols, middle, left_d.get(), right_d.get(), result_d.get(), 32);
+    left_d.transferFrom(leftMatrix.buffer());
+    right_d.transferFrom(rightMatrix.buffer());
+    result_d.transferFrom(result_h.data());
 
-	result_d.transferTo(result_h.data());
+    for (int i=0; i < 1; ++i)
+        gemm(leftRows, rightCols, middle, left_d.get(), right_d.get(), result_d.get(), 32);
 
-	//mul(leftRows, rightCols, middle, leftMatrix.buffer(), rightMatrix.buffer(), result_h.data());
+    result_d.transferTo(result_h.data());
+
+    //mul(leftRows, rightCols, middle, leftMatrix.buffer(), rightMatrix.buffer(), result_h.data());
 
     Matrix<float> resultMatrix(leftRows, rightCols, std::move(result_h));
     MatrixHelper::writeMatrixTo(output, resultMatrix);

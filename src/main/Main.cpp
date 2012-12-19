@@ -1,4 +1,3 @@
-#include <cstdlib>
 #include <exception>
 #include <iostream>
 #include <memory>
@@ -9,12 +8,14 @@
 #include <string>
 #include <typeinfo>
 #include <vector>
+#include <ctime>
 
 #include "BenchmarkRunner.h"
 #include "CudaElfFactory.h"
 #include "SMPElfFactory.h"
 #include "matrix/smp/SMPMatrixElf.h"
 #include "matrix/MatrixHelper.h"
+#include "matrix/Matrix.h"
 
 using namespace std;
 
@@ -23,7 +24,7 @@ void generateProblemData(stringstream& in, stringstream& out)
     Matrix<float> first(100,100);
     Matrix<float> second(100, 100);
     auto distribution = uniform_real_distribution<float> (-100, +100);
-    auto engine = mt19937(time(0));
+    auto engine = mt19937(time(nullptr));
     auto generator = bind(distribution, engine);
     MatrixHelper::fill(first, generator);
     MatrixHelper::fill(second, generator);
@@ -59,7 +60,6 @@ int main(int argc, char** argv)
 
     MPI::Init(argc, argv);
 
-
     stringstream in;
     stringstream out;
 
@@ -86,11 +86,7 @@ int main(int argc, char** argv)
         cerr << "FATAL ERROR of unknown type." << endl;
         return 1;
     }
-    
-  //   CudaMatrixElf elf;
-  //   elf.run(cin, cout);
- 	 // SMPMatrixElf elf2;
-   //   elf2.run(cin, cout);
+
     MPI::Finalize();
     return 0;
 }

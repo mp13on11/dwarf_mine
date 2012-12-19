@@ -19,6 +19,8 @@ void SMPMatrixElf::run(std::istream& input, std::ostream& output)
     Matrix<float> a = MatrixHelper::readMatrixFrom(input);
     Matrix<float> b = MatrixHelper::readMatrixFrom(input);
   
+    MatrixHelper::validateMultiplicationPossible(a, b);
+
     size_t leftRows = a.rows();
     size_t rightCols = b.columns();
 

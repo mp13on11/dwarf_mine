@@ -20,18 +20,18 @@ FILE(GLOB AUTO_SOURCES
 ADD_EXECUTABLE(${EXECUTABLE_NAME} ${AUTO_SOURCES})
 
 IF(BUILD_WITH_CUDA)
-	TARGET_LINK_LIBRARIES(${EXECUTABLE_NAME}
-		# Add dependencies' libraries here
-		${CUDA_MATRIX_ELF_LIB}
-		${SMP_MATRIX_ELF_LIB}
-		${MPI_LIBRARIES}
-	)
+    TARGET_LINK_LIBRARIES(${EXECUTABLE_NAME}
+        # Add dependencies' libraries here
+        ${CUDA_MATRIX_ELF_LIB}
+        ${SMP_MATRIX_ELF_LIB}
+        ${MPI_LIBRARIES}
+    )
 ELSE()
-	TARGET_LINK_LIBRARIES(${EXECUTABLE_NAME}
-		# Add dependencies' libraries here
-		${SMP_MATRIX_ELF_LIB}
-		${MPI_LIBRARIES}
-	)
+    TARGET_LINK_LIBRARIES(${EXECUTABLE_NAME}
+        # Add dependencies' libraries here
+        ${SMP_MATRIX_ELF_LIB}
+        ${MPI_LIBRARIES}
+    )
 ENDIF()
 
 ADD_COMMON_MSVC_PROPS(${EXECUTABLE_NAME})

@@ -1,13 +1,13 @@
 #pragma once
 
-#include "Matrix.h"
-
-#include <istream>
+#include <iosfwd>
 #include <memory>
 #include <string>
 #include <vector>
 #include <functional>
-#include <utility>
+
+template<typename T>
+class Matrix;
 
 class MatrixHelper
 {
@@ -18,6 +18,7 @@ public:
     static void writeMatrixTo(const std::string& fileName, const Matrix<float>& matrix);
     static void writeMatrixTo(std::ostream& stream, const Matrix<float>& matrix);
     static void fill(Matrix<float>& matrix, const std::function<float()>& generator);
+    static void validateMultiplicationPossible(const Matrix<float>& a, const Matrix<float>& b);
 private:
     static void fillMatrixFromStream(Matrix<float>& matrix, std::istream& stream);
     static std::vector<float> getValuesIn(const std::string& line);
