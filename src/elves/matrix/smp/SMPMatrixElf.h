@@ -1,8 +1,8 @@
 #pragma once
 
-#include "matrix/MatrixElf.h"
+#include <Elf.h>
 
-class SMPMatrixElf : public MatrixElf
+class SMPMatrixElf : public Elf
 {
 
 public:

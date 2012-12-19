@@ -1,8 +1,8 @@
 #pragma once
 
-#include "matrix/MatrixElf.h"
+#include <Elf.h>
 
-class CudaMatrixElf : public MatrixElf
+class CudaMatrixElf : public Elf
 {
 public:
     virtual void run(std::istream& input, std::ostream& output);
