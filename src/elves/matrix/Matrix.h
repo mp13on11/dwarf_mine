@@ -8,7 +8,7 @@ class Matrix
 {
 public:
 
-    Matrix(std::size_t rows=0, std::size_t columns=0);
+    explicit Matrix(std::size_t rows=0, std::size_t columns=0);
     Matrix(std::size_t rows, std::size_t columns, std::vector<T>&& data);
 
     std::size_t rows() const;

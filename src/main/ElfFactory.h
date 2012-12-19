@@ -2,7 +2,6 @@
 
 #include "Elf.h"
 #include "ElfCategory.h"
-
 #include <memory>
 
 class ElfFactory

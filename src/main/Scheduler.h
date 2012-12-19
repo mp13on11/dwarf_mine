@@ -7,7 +7,7 @@ struct ProblemStatement;
 class Scheduler
 {
 public:
-    Scheduler(const BenchmarkResult& benchmarkResult);
+    explicit Scheduler(const BenchmarkResult& benchmarkResult);
     virtual ~Scheduler();
     virtual void dispatch(ProblemStatement& statement);
 };

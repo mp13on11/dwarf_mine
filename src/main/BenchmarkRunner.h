@@ -20,7 +20,7 @@ private:
 
 
 public:
-    BenchmarkRunner(size_t iterations);
+    explicit BenchmarkRunner(size_t iterations);
     void runBenchmark(const ProblemStatement& statement, const ElfFactory& factory);
     BenchmarkResult getResults();
 };

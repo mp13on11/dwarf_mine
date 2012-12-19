@@ -2,7 +2,7 @@
 
 #include "elves/ElfCategory.h"
 
-#include <iostream>
+#include <iosfwd>
 
 struct ProblemStatement
 {
