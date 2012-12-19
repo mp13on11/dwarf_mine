@@ -38,7 +38,7 @@ int main(int argc, char** argv)
 
     try
     {
-    	unique_ptr<ElfFactory> factory(config.getElfFactory());
+        unique_ptr<ElfFactory> factory(config.getElfFactory());
         stringstream in;
         stringstream out;
 
