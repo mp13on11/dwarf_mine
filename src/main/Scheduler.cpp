@@ -1,12 +1,22 @@
 #include "Scheduler.h"
 #include "ProblemStatement.h"
 
-Scheduler::Scheduler(const BenchmarkResult& benchmarkResult)
-{
-   //TODO: Stub
+#include <mpi.h>
+
+Scheduler::Scheduler() :
+    nodesHaveRatings(false), rank(MPI::COMM_WORLD.Get_rank())
+{  
 }
 
-void Scheduler::dispatch(ProblemStatement& statement)
+Scheduler::Scheduler(const BenchmarkResult& benchmarkResult) : 
+    nodesHaveRatings(true), nodeSet(benchmarkResult), rank(MPI::COMM_WORLD.Get_rank())
 {
-    //TODO: Stub
+}
+
+void Scheduler::setNodeset(const BenchmarkResult& benchmarkResult) {
+    nodeSet = benchmarkResult;
+}
+
+void Scheduler::setNodeset(NodeId singleNode) {
+    nodeSet = {{singleNode, 0}};
 }

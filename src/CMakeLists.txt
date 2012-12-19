@@ -1,10 +1,12 @@
 # Add global dependencies here
 FIND_PACKAGE(Boost REQUIRED)
+FIND_PACKAGE(MPI REQUIRED)
 
 INCLUDE_DIRECTORIES(
     ${PROJECT_SOURCE_DIR}
     ${PROJECT_SOURCE_DIR}/src/
     ${PROJECT_SOURCE_DIR}/src/elves/
+    ${MPI_INCLUDE_PATH}
     # Add dependencies' include dirs here
 )
 

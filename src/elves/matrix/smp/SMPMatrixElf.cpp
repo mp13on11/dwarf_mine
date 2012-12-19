@@ -4,13 +4,9 @@
 #include <random>
 #include <omp.h>
 #include <functional>
+#include <main/Utils.h>
 #include "../Matrix.h"
 #include "../MatrixHelper.h"
-
-size_t div_ceil(size_t x, size_t y)
-{
-    return (x % y) ? (x / y + 1) : (x / y);
-}
 
 void SMPMatrixElf::run(std::istream& input, std::ostream& output)
 {

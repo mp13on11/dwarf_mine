@@ -2,13 +2,10 @@ SET(EXECUTABLE_NAME dwarf_mine)
 
 ENABLE_CPP_11()
 
-FIND_PACKAGE(MPI REQUIRED)
-
 # Dependencies
     
 INCLUDE_DIRECTORIES(
     # Add dependencies' include dirs here
-    ${MPI_INCLUDE_PATH}
 )
 
 FILE(GLOB AUTO_SOURCES
