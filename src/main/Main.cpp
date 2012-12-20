@@ -31,10 +31,25 @@ void generateProblemData(stringstream& in, stringstream& out)
     MatrixHelper::writeMatrixTo(in, second);
 }
 
+class MPIGuard
+{
+public:
+    MPIGuard(int argc, char** argv)
+    {
+        MPI::Init(argc, argv);
+    }
+
+    ~MPIGuard()
+    {
+        MPI::Finalize();
+    }
+};
+
 int main(int argc, char** argv) 
 {
     Configuration config(argc, argv);
-    MPI::Init(argc, argv);
+    // used to ensure MPI::Finalize is called on exit of the application
+    auto mpiGuard = MPIGuard(argc, argv);
 
     try
     {
@@ -65,7 +80,6 @@ int main(int argc, char** argv)
         return 1;
     }
 
-    MPI::Finalize();
     return 0;
 }
 
