@@ -19,6 +19,8 @@ public:
 
     const T* buffer() const;
     T* buffer();
+    
+    void addPadding(size_t multiple);
 
 private:
     std::size_t _rows;
@@ -73,3 +75,34 @@ std::size_t Matrix<T>::columns() const
 {
     return _columns;
 }
+
+template<typename T>
+void Matrix<T>::addPadding(size_t multiple)
+{
+    int columnRest = _columns % multiple;
+    int rowRest = _rows % multiple;
+
+    if (columnRest == 0 && rowRest == 0)
+        return;
+
+    int newColumns = (_columns/multiple + 1) * multiple;
+    int newRows = (_rows/multiple + 1) * multiple;
+
+    //values.get()->resize(newColumns*newRows, 0); 
+
+    vector<float> newValues(newColumns*newRows, 0);
+    
+    for (int i = 0; i < _rows; ++i)
+    {
+        for (int j = 0; j < _columns; ++j)
+        {
+            newValues.at(i*_rows+j) = values->at(i*_rows+j);
+        }  
+    }
+
+ 
+
+    _columns = newColumns;
+    _rows = newRows;
+}
+

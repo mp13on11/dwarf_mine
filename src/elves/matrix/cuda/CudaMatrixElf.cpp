@@ -20,7 +20,7 @@ void mul(int m, int n, int k, float* left, float* right, float* out)
             }
             if (fabs(out[r*n+c]-sum) > 0.1)
             {
-                std::cout << "fehler : (" << r << ", " << c << ") " << sum << " " << out[r*n+c] << std::endl;
+                std::cout << "fehler: (" << r << ", " << c << ") " << sum << " " << out[r*n+c] << std::endl;
                 return;
             }
         }
@@ -31,8 +31,14 @@ void CudaMatrixElf::run(std::istream& input, std::ostream& output)
 {
     using namespace std;
 
-    Matrix<float> leftMatrix = MatrixHelper::readMatrixFrom(input);
-    Matrix<float> rightMatrix = MatrixHelper::readMatrixFrom(input);
+    //Matrix<float> leftMatrix = MatrixHelper::readMatrixFrom(input);
+    //Matrix<float> rightMatrix = MatrixHelper::readMatrixFrom(input);
+
+    Matrix<float> leftMatrix(3, 2, vector<float>{1, 2, 3, 4, 5, 6});
+    Matrix<float> rightMatrix(2, 3, vector<float>{1, 2, 3, 4, 5, 6});
+   
+    leftMatrix.addPadding(32);
+    rightMatrix.addPadding(32);
 
     MatrixHelper::validateMultiplicationPossible(leftMatrix, rightMatrix);
 
@@ -44,6 +50,10 @@ void CudaMatrixElf::run(std::istream& input, std::ostream& output)
     size_t rightSize = middle * rightCols;
     size_t resultSize = leftRows * rightCols;
     vector<float> result_h(resultSize);
+    for (int i = 0; i < resultSize; ++i)
+    {
+        result_h.at(i) = 0;
+    }
 
     CudaUtils::Memory<float> left_d(leftSize);
     CudaUtils::Memory<float> right_d(rightSize);
@@ -58,8 +68,8 @@ void CudaMatrixElf::run(std::istream& input, std::ostream& output)
 
     result_d.transferTo(result_h.data());
 
-    //mul(leftRows, rightCols, middle, leftMatrix.buffer(), rightMatrix.buffer(), result_h.data());
-
+    mul(leftRows, rightCols, middle, leftMatrix.buffer(), rightMatrix.buffer(), result_h.data());
+    
     Matrix<float> resultMatrix(leftRows, rightCols, std::move(result_h));
     MatrixHelper::writeMatrixTo(output, resultMatrix);
 }
