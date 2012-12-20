@@ -1,80 +1,15 @@
 #include <ext/stdio_filebuf.h>
 #include <iostream>
 #include <fstream>
-#include <random>
 #include <cstdio>
-#include <functional>
+#include <cmath>
 #include <matrix/MatrixHelper.h>
 #include <matrix/Matrix.h>
 #include <gtest/gtest.h>
-#include <sstream>
-#include <boost/algorithm/string/join.hpp>
+
+#include "MatrixMultiplyTest.h"
 
 using namespace std;
-
-
-class MatrixMultiplyTest : public ::testing::TestWithParam<const char*>
-{
-private:
-
-
-
-protected:
-
-    virtual void SetUp() {
-        //currentImplementation = GetParam();
-
-        inputAFile = "a.txt";
-        inputBFile = "b.txt";
-        outputFile = "c.txt";
-
-        referenceImplementation = "build/src/test/gold";
-        currentImplementation = "build/src/" + string(GetParam());
-    }
-
-    virtual void TearDown() {
-        remove(inputAFile.c_str());
-        remove(inputBFile.c_str());
-        remove(outputFile.c_str());
-    }
-
-    Matrix<float> createRandomMatrix(size_t rows, size_t columns)
-    {
-        Matrix<float> m(rows, columns);
-        MatrixHelper::fill(m, generator);
-        return m;
-    }
-
-    void initRandom(uint seed)
-    {
-        auto distribution = uniform_real_distribution<float> (-100, +100);
-        auto engine = mt19937(seed);
-        generator = bind(distribution, engine);
-    }
-
-    Matrix<float> executeMultiplication(string implementation, Matrix<float> a, Matrix<float> b)
-    {
-        MatrixHelper::writeMatrixTo(inputAFile, a);
-        MatrixHelper::writeMatrixTo(inputBFile, b);
-        startProcess({implementation, inputAFile, inputBFile, outputFile});
-        return MatrixHelper::readMatrixFrom(outputFile);
-    }
-
-    void startProcess(initializer_list<string> args)
-    {
-        string commandLine = boost::algorithm::join(args, " ") + " > /dev/null";
-        system(commandLine.c_str());
-    }
-
-    function<float()> generator;
-
-    string inputAFile;
-    string inputBFile;
-    string outputFile;
-
-    string referenceImplementation;
-    string currentImplementation;
-};
 
 ::testing::AssertionResult AreMatricesEquals(Matrix<float> expected, Matrix<float>actual, float delta)
 {
@@ -110,9 +45,9 @@ protected:
         }
     }
     return ::testing::AssertionSuccess();
-
 }
-::testing::AssertionResult  AreMatricesEquals(Matrix<float> a, Matrix<float>b)
+
+::testing::AssertionResult AreMatricesEquals(Matrix<float> a, Matrix<float>b)
 {
     return AreMatricesEquals(a, b, 1e-2);
 }
@@ -122,8 +57,8 @@ TEST_P(MatrixMultiplyTest, SingleElementMatrixTest) {
     auto left = createRandomMatrix(1, 1);
     auto right = createRandomMatrix(1, 1);;
 
-    auto expected = executeMultiplication(referenceImplementation, left, right);
-    auto actual = executeMultiplication(currentImplementation, left, right);
+    auto expected = executeMultiplication(*referenceImplementation, left, right);
+    auto actual = executeMultiplication(*currentImplementation, left, right);
 
     EXPECT_TRUE(AreMatricesEquals(expected, actual));
 }
@@ -133,8 +68,8 @@ TEST_P(MatrixMultiplyTest, SmallSquareMatricesTest) {
     auto left = createRandomMatrix(5, 5);
     auto right = createRandomMatrix(5, 5);
 
-    auto expected = executeMultiplication(referenceImplementation, left, right);
-    auto actual = executeMultiplication(currentImplementation, left, right);
+    auto expected = executeMultiplication(*referenceImplementation, left, right);
+    auto actual = executeMultiplication(*currentImplementation, left, right);
 
     EXPECT_TRUE(AreMatricesEquals(expected, actual));
 }
@@ -144,8 +79,8 @@ TEST_P(MatrixMultiplyTest, MediumShrinkingRectangularMatricesTest) {
     auto left = createRandomMatrix(30, 100);
     auto right = createRandomMatrix(100, 40);
 
-    auto expected = executeMultiplication(referenceImplementation, left, right);
-    auto actual = executeMultiplication(currentImplementation, left, right);
+    auto expected = executeMultiplication(*referenceImplementation, left, right);
+    auto actual = executeMultiplication(*currentImplementation, left, right);
 
     EXPECT_TRUE(AreMatricesEquals(expected, actual));
 }
@@ -156,8 +91,8 @@ TEST_P(MatrixMultiplyTest, MediumExpandingRectangularMatricesTest) {
     auto left = createRandomMatrix(110, 20);
     auto right = createRandomMatrix(20, 130);
 
-    auto expected = executeMultiplication(referenceImplementation, left, right);
-    auto actual = executeMultiplication(currentImplementation, left, right);
+    auto expected = executeMultiplication(*referenceImplementation, left, right);
+    auto actual = executeMultiplication(*currentImplementation, left, right);
 
     EXPECT_TRUE(AreMatricesEquals(expected, actual));
 }
@@ -167,8 +102,8 @@ TEST_P(MatrixMultiplyTest, PrimeRectangularMatricesTest) {
     auto left = createRandomMatrix(67, 83);
     auto right = createRandomMatrix(83, 109);
 
-    auto expected = executeMultiplication(referenceImplementation, left, right);
-    auto actual = executeMultiplication(currentImplementation, left, right);
+    auto expected = executeMultiplication(*referenceImplementation, left, right);
+    auto actual = executeMultiplication(*currentImplementation, left, right);
 
     EXPECT_TRUE(AreMatricesEquals(expected, actual));
 }
@@ -178,8 +113,8 @@ TEST_P(MatrixMultiplyTest, BiggerPrimeRectangularMatricesTest) {
     auto left = createRandomMatrix(383, 269);
     auto right = createRandomMatrix(269, 193);
 
-    auto expected = executeMultiplication(referenceImplementation, left, right);
-    auto actual = executeMultiplication(currentImplementation, left, right);
+    auto expected = executeMultiplication(*referenceImplementation, left, right);
+    auto actual = executeMultiplication(*currentImplementation, left, right);
 
     EXPECT_TRUE(AreMatricesEquals(expected, actual));
 }

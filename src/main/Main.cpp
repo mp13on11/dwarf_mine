@@ -12,7 +12,6 @@
 
 #include "BenchmarkRunner.h"
 #include "Configuration.h"
-#include "matrix/smp/SMPMatrixElf.h"
 #include "matrix/MatrixHelper.h"
 #include "matrix/Matrix.h"
 
@@ -45,7 +44,7 @@ public:
     }
 };
 
-int main(int argc, char** argv) 
+int main(int argc, char** argv)
 {
     Configuration config(argc, argv);
     // used to ensure MPI::Finalize is called on exit of the application
@@ -59,7 +58,6 @@ int main(int argc, char** argv)
         ProblemStatement statement{ in, out, "matrix"};
 
         unique_ptr<ElfFactory> factory(config.getElfFactory(statement.elfCategory));
-       
 
         BenchmarkRunner runner(100);
         runner.runBenchmark(statement, *factory);

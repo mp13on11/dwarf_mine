@@ -6,18 +6,15 @@
 #include <functional>
 #include <main/Utils.h>
 #include "../Matrix.h"
-#include "../MatrixHelper.h"
 
-Matrix<float> SMPMatrixElf::multiply(const Matrix<float>& left, const Matrix<float>& right)
+SMPMatrixElf::MatrixT SMPMatrixElf::multiply(const MatrixT& left, const MatrixT& right)
 {
     using namespace std;
-
-    MatrixHelper::validateMultiplicationPossible(left, right);
 
     size_t leftRows = left.rows();
     size_t rightCols = right.columns();
 
-    Matrix<float> c(leftRows, rightCols);
+    MatrixT c(leftRows, rightCols);
 
     size_t elementsPerBlock = 10*10;
     size_t columnsPerBlock = (size_t)ceil(sqrt(elementsPerBlock));
@@ -55,15 +52,4 @@ Matrix<float> SMPMatrixElf::multiply(const Matrix<float>& left, const Matrix<flo
     }
 
     return c;
-}
-
-
-
-void SMPMatrixElf::run(std::istream& input, std::ostream& output)
-{
-    Matrix<float> a = MatrixHelper::readMatrixFrom(input);
-    Matrix<float> b = MatrixHelper::readMatrixFrom(input);
-
-    Matrix<float> c = multiply(a, b);
-    MatrixHelper::writeMatrixTo(output, c);
 }

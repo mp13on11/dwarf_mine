@@ -10,7 +10,6 @@ public:
 
     explicit Matrix(std::size_t rows=0, std::size_t columns=0);
     Matrix(std::size_t rows, std::size_t columns, std::vector<T>&& data);
-    Matrix(Matrix&& other) = default;
 
     std::size_t rows() const;
     std::size_t columns() const;

@@ -6,6 +6,7 @@ INCLUDE_DIRECTORIES(
     ${PROJECT_SOURCE_DIR}
     ${PROJECT_SOURCE_DIR}/src/
     ${PROJECT_SOURCE_DIR}/src/elves/
+    ${PROJECT_SOURCE_DIR}/src/elves/matrix/
     ${MPI_INCLUDE_PATH}
     # Add dependencies' include dirs here
 )
@@ -28,5 +29,5 @@ IF(BUILD_WITH_CUDA)
 ENDIF()
 
 ADD_SUBDIRECTORY(main)
-#ADD_SUBDIRECTORY(test)
+ADD_SUBDIRECTORY(test)
 

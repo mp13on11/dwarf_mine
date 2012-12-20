@@ -1,14 +1,9 @@
 #pragma once
 
-#include <Elf.h>
+#include <MatrixElf.h>
 
-template<typename T>
-class Matrix;
-
-class SMPMatrixElf : public Elf
+class SMPMatrixElf : public MatrixElf
 {
 public:
-    Matrix<float> multiply(const Matrix<float>& left, const Matrix<float>& right);
-
-    virtual void run(std::istream& in, std::ostream& out);
+    virtual MatrixT multiply(const MatrixT& left, const MatrixT& right);
 };

@@ -14,12 +14,28 @@ FILE(GLOB AUTO_SOURCES
     "*.cpp"
 )
 
+# We need all files from the main executable as well, but not Main.cpp,
+# since we have our own main()-function.
+
+SET(MAIN_PREFIX "../main")
+
+FILE(GLOB MAIN_SOURCES
+    "${MAIN_PREFIX}/*.h"
+    "${MAIN_PREFIX}/*.cpp"
+)
+FILE(GLOB TO_OMIT "${MAIN_PREFIX}/Main.cpp")
+LIST(REMOVE_ITEM MAIN_SOURCES ${TO_OMIT})
+
 # Build executable out of sources
-ADD_EXECUTABLE(${EXECUTABLE_NAME} ${AUTO_SOURCES})
+ADD_EXECUTABLE(${EXECUTABLE_NAME} 
+    ${AUTO_SOURCES} 
+    ${MAIN_SOURCES}
+)
 
 TARGET_LINK_LIBRARIES(${EXECUTABLE_NAME}
     # Add dependencies' libraries here
-    ${TOOLS_LIB}
+    ${ELF_LIBRARIES}
+    ${MPI_LIBRARIES}
     "gtest"
 )    
     

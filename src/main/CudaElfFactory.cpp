@@ -18,6 +18,7 @@ unique_ptr<Elf> CudaElfFactory::createElfImplementation() const
 {
 #ifndef HAVE_CUDA
     throw runtime_error("You have to build with Cuda support in order to create cuda elves of category " + _category);
+    return nullptr; // avoid compiler warning
 #else
     return unique_ptr<Elf>(new CudaMatrixElf());
 #endif

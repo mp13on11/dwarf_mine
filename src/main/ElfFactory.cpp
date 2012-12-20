@@ -1,4 +1,6 @@
 #include "main/ElfFactory.h"
+#include "main/SMPElfFactory.h"
+#include "main/CudaElfFactory.h"
 
 #include <stdexcept>
 
@@ -28,3 +30,16 @@ void ElfFactory::validate() const
     if (_category != "matrix")
         throw runtime_error("Unknown elf category: " + _category);
 }
+
+unique_ptr<ElfFactory> createElfFactory(const std::string& type, const ElfCategory& category)
+{
+    if (type == "smp")
+        return unique_ptr<ElfFactory>(new SMPElfFactory(category));
+    else if (type == "cuda")
+        return unique_ptr<ElfFactory>(new CudaElfFactory(category));
+    else
+        throw runtime_error("createElfFactory(): type must be one of cuda|smp");
+
+    return nullptr; // avoid warning
+}
+
