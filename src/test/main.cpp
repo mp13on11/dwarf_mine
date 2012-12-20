@@ -13,6 +13,8 @@ using namespace std;
 
 ::testing::AssertionResult AreMatricesEquals(Matrix<float> expected, Matrix<float>actual, float delta)
 {
+    int erroneous = 0;
+
     if(expected.rows() != actual.rows())
     {
         return ::testing::AssertionFailure() << "different number of rows: " << expected.rows() << " != " << actual.rows();
@@ -32,18 +34,27 @@ using namespace std;
             error = (maxVal < 1e-10) ? error : error / maxVal;
             if(error > delta)
             {
-                // dump matrices
-                MatrixHelper::writeMatrixTo("dump_expected.txt", expected);
-                MatrixHelper::writeMatrixTo("dump_actual.txt", actual);
+                ++erroneous;
 
-                // return failure
-                return ::testing::AssertionFailure()
+                cout
                 << "The relative error at (" << y << "," << x << ") is " << error << ", which exceeds " << delta << ", where" << endl
                 << "expected(y,x) = " << expectedVal << " and" << endl
                 << "actual(y,x) = " << actualVal << ".";
             }
         }
     }
+
+    if (erroneous > 0)
+    {
+        // dump matrices
+        MatrixHelper::writeMatrixTo("dump_expected.txt", expected);
+        MatrixHelper::writeMatrixTo("dump_actual.txt", actual);
+
+        // return failure
+        return ::testing::AssertionFailure() 
+            << erroneous << "/" << expected.rows()*expected.columns() << " are wrong";
+    }
+
     return ::testing::AssertionSuccess();
 }
 

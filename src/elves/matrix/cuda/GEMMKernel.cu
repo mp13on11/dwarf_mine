@@ -81,11 +81,6 @@ __global__ void gemmKernel(int m, int n, int k, float* left, float* right, float
         Matrix leftSub = getSubMatrix(leftMatrix, blockRow, block);
         Matrix rightSub = getSubMatrix(rightMatrix, block, blockColumn);
 
-        for (int i = 0; i < 32*32; ++i)
-        {
-            leftSub_s[i] = 0;
-            rightSub_s[i] = 0;
-        }
         
         leftSub_s[row * blockDim.x + col] = getElement(leftSub, row, col);
         rightSub_s[row * blockDim.x + col] = getElement(rightSub, row, col);

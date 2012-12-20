@@ -19,8 +19,8 @@ using namespace std;
 
 void generateProblemData(stringstream& targetStream)
 {
-    Matrix<float> first(100,100);
-    Matrix<float> second(100, 100);
+    Matrix<float> first(128,128);
+    Matrix<float> second(128, 128);
     auto distribution = uniform_real_distribution<float> (-100, +100);
     auto engine = mt19937(time(nullptr));
     auto generator = bind(distribution, engine);
