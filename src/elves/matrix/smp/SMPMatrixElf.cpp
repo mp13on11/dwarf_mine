@@ -8,17 +8,14 @@
 #include "../Matrix.h"
 #include "../MatrixHelper.h"
 
-void SMPMatrixElf::run(std::istream& input, std::ostream& output)
+Matrix<float> SMPMatrixElf::multiply(const Matrix<float>& left, const Matrix<float>& right)
 {
     using namespace std;
 
-    Matrix<float> a = MatrixHelper::readMatrixFrom(input);
-    Matrix<float> b = MatrixHelper::readMatrixFrom(input);
-  
-    MatrixHelper::validateMultiplicationPossible(a, b);
+    MatrixHelper::validateMultiplicationPossible(left, right);
 
-    size_t leftRows = a.rows();
-    size_t rightCols = b.columns();
+    size_t leftRows = left.rows();
+    size_t rightCols = right.columns();
 
     Matrix<float> c(leftRows, rightCols);
 
@@ -43,18 +40,30 @@ void SMPMatrixElf::run(std::istream& input, std::ostream& output)
         size_t rowEnd = min(rowStart+rowsPerBlock, c.rows());
 
         for(size_t y=rowStart; y<rowEnd; y++)
-        {        
+        {
             for(size_t x=columnStart; x<columnEnd; x++)
             {
                 float val = 0;
-                for(size_t i=0; i<a.columns(); i++)
+                for(size_t i=0; i<left.columns(); i++)
                 {
-                    val += a(y,i) * b(i,x);
+                    val += left(y,i) * right(i,x);
                 }
                 c(y,x) = val;
             }
         }
 
     }
+
+    return c;
+}
+
+
+
+void SMPMatrixElf::run(std::istream& input, std::ostream& output)
+{
+    Matrix<float> a = MatrixHelper::readMatrixFrom(input);
+    Matrix<float> b = MatrixHelper::readMatrixFrom(input);
+
+    Matrix<float> c = multiply(a, b);
     MatrixHelper::writeMatrixTo(output, c);
 }
