@@ -33,11 +33,11 @@ void send(istream& stream, int toRank)
     MPI::COMM_WORLD.Send(buffered.c_str(), buffered.size(), MPI::CHAR, toRank, 0);
 }
 
-void MatrixScheduler::dispatch(ProblemStatement& statement)
+void MatrixScheduler::doDispatch(ProblemStatement& statement)
 {
     if (rank == MASTER)
     {
-        if (nodeSet.size() == 1) 
+        if (nodeSet.size() == 1)
         {
             int targetRank = nodeSet.begin()->first;
 

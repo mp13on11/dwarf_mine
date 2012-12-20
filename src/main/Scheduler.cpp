@@ -2,21 +2,34 @@
 #include "ProblemStatement.h"
 
 #include <mpi.h>
+#include <stdexcept>
 
 Scheduler::Scheduler() :
-    nodesHaveRatings(false), rank(MPI::COMM_WORLD.Get_rank())
-{  
-}
-
-Scheduler::Scheduler(const BenchmarkResult& benchmarkResult) : 
-    nodesHaveRatings(true), nodeSet(benchmarkResult), rank(MPI::COMM_WORLD.Get_rank())
+    nodesHaveRatings(false), rank(MPI::COMM_WORLD.Get_rank()), elf(nullptr)
 {
 }
 
-void Scheduler::setNodeset(const BenchmarkResult& benchmarkResult) {
+Scheduler::Scheduler(const BenchmarkResult& benchmarkResult) :
+    nodesHaveRatings(true), nodeSet(benchmarkResult), rank(MPI::COMM_WORLD.Get_rank()), elf(nullptr)
+{
+}
+
+void Scheduler::setNodeset(const BenchmarkResult& benchmarkResult)
+{
     nodeSet = benchmarkResult;
 }
 
-void Scheduler::setNodeset(NodeId singleNode) {
+void Scheduler::setNodeset(NodeId singleNode)
+{
     nodeSet = {{singleNode, 0}};
+}
+
+void Scheduler::dispatch(ProblemStatement& statement)
+{
+    if (elf == nullptr)
+    {
+        throw std::runtime_error("Scheduler::dispatch(): No elf configured!");
+    }
+
+    doDispatch(statement);
 }
