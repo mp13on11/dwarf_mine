@@ -10,6 +10,7 @@ public:
 
     explicit Matrix(std::size_t rows=0, std::size_t columns=0);
     Matrix(std::size_t rows, std::size_t columns, std::vector<T>&& data);
+    Matrix(Matrix&& other) = default;
 
     std::size_t rows() const;
     std::size_t columns() const;
@@ -23,43 +24,43 @@ public:
 private:
     std::size_t _rows;
     std::size_t _columns;
-    std::shared_ptr<std::vector<T>> values;
+    std::vector<T> values;
 };
 
 template<typename T>
 Matrix<T>::Matrix(std::size_t rows, std::size_t columns, std::vector<T>&& data)
-    : _rows(rows), _columns(columns), values(new std::vector<T>(std::move(data)))
+    : _rows(rows), _columns(columns), values(std::move(data))
 {
 }
 
 template<typename T>
 Matrix<T>::Matrix(std::size_t rows, std::size_t columns)
-    : _rows(rows), _columns(columns), values(new std::vector<T>(rows * columns))
+    : _rows(rows), _columns(columns), values(rows * columns)
 {
 }
 
 template<typename T>
 const T& Matrix<T>::operator()(std::size_t row, std::size_t column) const
 {
-    return (*values)[row * _columns + column];
+    return values[row * _columns + column];
 }
 
 template<typename T>
 T& Matrix<T>::operator()(std::size_t row, std::size_t column)
 {
-    return (*values)[row * _columns + column];
+    return values[row * _columns + column];
 }
 
 template<typename T>
 const T* Matrix<T>::buffer() const
 {
-    return values->data();
+    return values.data();
 }
 
 template<typename T>
 T* Matrix<T>::buffer()
 {
-    return values->data();
+    return values.data();
 }
 
 template<typename T>
