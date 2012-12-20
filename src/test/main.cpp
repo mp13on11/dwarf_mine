@@ -4,16 +4,14 @@
 #include <random>
 #include <cstdio>
 #include <functional>
-#include "tools/MatrixHelper.h"
-#include "tools/Matrix.h"
-#include "gtest/gtest.h"
+#include <matrix/MatrixHelper.h>
+#include <matrix/Matrix.h>
+#include <gtest/gtest.h>
 #include <sstream>
 #include <boost/algorithm/string/join.hpp>
 
 using namespace std;
 
-
-    
 
 class MatrixMultiplyTest : public ::testing::TestWithParam<const char*>
 {
@@ -30,7 +28,7 @@ protected:
         inputBFile = "b.txt";
         outputFile = "c.txt";
 
-        referenceImplementation = "build/src/gold/gold";
+        referenceImplementation = "build/src/test/gold";
         currentImplementation = "build/src/" + string(GetParam());
     }
 
@@ -41,7 +39,7 @@ protected:
     }
 
     Matrix<float> createRandomMatrix(size_t rows, size_t columns)
-    {        
+    {
         Matrix<float> m(rows, columns);
         MatrixHelper::fill(m, generator);
         return m;
@@ -79,14 +77,14 @@ protected:
 };
 
 ::testing::AssertionResult AreMatricesEquals(Matrix<float> expected, Matrix<float>actual, float delta)
-{      
+{
     if(expected.rows() != actual.rows())
     {
-        return ::testing::AssertionFailure() << "different number of rows: " << expected.rows() << " != " << actual.rows();  
-    }  
+        return ::testing::AssertionFailure() << "different number of rows: " << expected.rows() << " != " << actual.rows();
+    }
     if(expected.columns() != actual.columns())
     {
-        return ::testing::AssertionFailure() << "different number of columns: " << expected.columns() << " != " << actual.columns();  
+        return ::testing::AssertionFailure() << "different number of columns: " << expected.columns() << " != " << actual.columns();
     }
     for(size_t y = 0; y<expected.rows(); y++)
     {
@@ -104,11 +102,11 @@ protected:
                 MatrixHelper::writeMatrixTo("dump_actual.txt", actual);
 
                 // return failure
-                return ::testing::AssertionFailure() 
-                << "The relative error at (" << y << "," << x << ") is " << error << ", which exceeds " << delta << ", where" << endl 
+                return ::testing::AssertionFailure()
+                << "The relative error at (" << y << "," << x << ") is " << error << ", which exceeds " << delta << ", where" << endl
                 << "expected(y,x) = " << expectedVal << " and" << endl
                 << "actual(y,x) = " << actualVal << ".";
-            }             
+            }
         }
     }
     return ::testing::AssertionSuccess();
@@ -152,6 +150,7 @@ TEST_P(MatrixMultiplyTest, MediumShrinkingRectangularMatricesTest) {
     EXPECT_TRUE(AreMatricesEquals(expected, actual));
 }
 
+
 TEST_P(MatrixMultiplyTest, MediumExpandingRectangularMatricesTest) {
     initRandom(4567);
     auto left = createRandomMatrix(110, 20);
@@ -188,7 +187,7 @@ TEST_P(MatrixMultiplyTest, BiggerPrimeRectangularMatricesTest) {
 
 INSTANTIATE_TEST_CASE_P(MultiplePlatforms,
                         MatrixMultiplyTest,
-                        ::testing::Values("cuda/cuda", "mpi/mpi-matrix", "smp/smp", "own/own"));
+                        ::testing::Values("cuda", "smp"));
 
 int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);
