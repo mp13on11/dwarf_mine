@@ -16,7 +16,7 @@ private:
     int _devices;
     BenchmarkResult m_results;
 
-    std::chrono::microseconds measureCall(int rank, ProblemStatement& statement, std::shared_ptr<Scheduler> scheduler);
+    std::chrono::microseconds measureCall(ProblemStatement& statement, std::shared_ptr<Scheduler> scheduler);
     void benchmarkDevice(DeviceId device, ProblemStatement& statement, std::shared_ptr<Scheduler> scheduler);
 
 

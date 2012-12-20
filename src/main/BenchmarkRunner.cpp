@@ -18,7 +18,7 @@ BenchmarkRunner::BenchmarkRunner(size_t iterations)
     
 }
 
-std::chrono::microseconds BenchmarkRunner::measureCall(int rank, ProblemStatement& statement, std::shared_ptr<Scheduler> scheduler) {
+std::chrono::microseconds BenchmarkRunner::measureCall(ProblemStatement& statement, std::shared_ptr<Scheduler> scheduler) {
     typedef chrono::high_resolution_clock clock;
     clock::time_point before = clock::now();
     scheduler->dispatch(statement);
@@ -29,12 +29,12 @@ void BenchmarkRunner::benchmarkDevice(DeviceId device, ProblemStatement& stateme
 {
     for (size_t i = 0; i < WARMUP_ITERATIONS; ++i)
     {
-        measureCall(device, statement, scheduler);
+        measureCall(statement, scheduler);
     }
     chrono::microseconds sum(0);
     for (size_t i = 0; i < _iterations; ++i)
     {
-        sum += measureCall(device, statement, scheduler);
+        sum += measureCall(statement, scheduler);
     }
     m_results[device] = (sum / _iterations).count();
 }
