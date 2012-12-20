@@ -2,6 +2,7 @@
 #include <mpi.h>
 #include <vector>
 #include <memory>
+#include <cmath>
 #include "Elf.h"
 #include "BenchmarkRunner.h"
 #include "Scheduler.h"
@@ -25,7 +26,7 @@ std::chrono::microseconds BenchmarkRunner::measureCall(ProblemStatement& stateme
     return clock::now() - before;
 }
 
-void BenchmarkRunner::benchmarkDevice(DeviceId device, ProblemStatement& statement, Scheduler& scheduler)
+void BenchmarkRunner::benchmarkDevice(DeviceId device, ProblemStatement& statement, Scheduler& scheduler, BenchmarkResult& results)
 {
     for (size_t i = 0; i < WARMUP_ITERATIONS; ++i)
     {
@@ -36,7 +37,7 @@ void BenchmarkRunner::benchmarkDevice(DeviceId device, ProblemStatement& stateme
     {
         sum += measureCall(statement, scheduler);
     }
-    m_results[device] = (sum / _iterations).count();
+    results[device] = (sum / _iterations).count();
 }
 
 void BenchmarkRunner::getBenchmarked(ProblemStatement& statement, Scheduler& scheduler)
@@ -54,11 +55,13 @@ void BenchmarkRunner::runBenchmark(ProblemStatement& statement, const ElfFactory
 
     if (MPI::COMM_WORLD.Get_rank() == MASTER)
     {
+        BenchmarkResult measurements;
         for (NodeId device = 0; device < _devices; ++device)
         {
             scheduler->setNodeset(device);
-            benchmarkDevice(device, statement, *scheduler);
+            benchmarkDevice(device, statement, *scheduler, measurements);
         }
+        transformToResults(measurements);
     }
     else
     {
@@ -66,8 +69,20 @@ void BenchmarkRunner::runBenchmark(ProblemStatement& statement, const ElfFactory
     }
 }
 
+void BenchmarkRunner::transformToResults(const BenchmarkResult& result)
+{
+    int runtimeSum = 0;
+    for (const auto& nodeResult : result)
+    {
+        runtimeSum += nodeResult.second;
+    }
+    for (const auto& nodeResult : result)
+    {
+        _results[nodeResult.first] = 100 - nodeResult.second * 100 / runtimeSum;
+    }
+}
 
 BenchmarkResult BenchmarkRunner::getResults()
 {
-    return m_results;
+    return _results;
 }
