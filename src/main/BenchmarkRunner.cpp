@@ -36,7 +36,10 @@ void BenchmarkRunner::benchmarkDevice(DeviceId device, ProblemStatement& stateme
     {
         sum += measureCall(statement, scheduler);
     }
-    m_results[device] = (sum / _iterations).count();
+    if (MPI::COMM_WORLD.Get_rank() == MASTER)
+    {
+        m_results[device] = (sum / _iterations).count();
+    }
 }
 
 void BenchmarkRunner::runBenchmark(ProblemStatement& statement, const ElfFactory& factory)
