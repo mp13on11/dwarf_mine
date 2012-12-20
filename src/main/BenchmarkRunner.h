@@ -2,25 +2,26 @@
 
 #include <vector>
 #include <chrono>
+#include <memory>
 #include "ElfFactory.h"
 #include "BenchmarkResults.h"
 #include "ProblemStatement.h"
 
+class Scheduler;
 
 class BenchmarkRunner
 {
 private:
     size_t _iterations;
-    int _rank;
     int _devices;
-    std::vector<std::chrono::microseconds> _measurements;
+    BenchmarkResult m_results;
 
-    std::chrono::microseconds measureCall(int rank, Elf& elf, const ProblemStatement& statement);
-    void benchmarkDevice(int device, Elf& elf, const ProblemStatement& statement);
-
+    std::chrono::microseconds measureCall(ProblemStatement& statement, Scheduler& scheduler);
+    void benchmarkDevice(DeviceId device, ProblemStatement& statement, Scheduler& scheduler);
+    void getBenchmarked(ProblemStatement& statement, Scheduler& scheduler);
 
 public:
     explicit BenchmarkRunner(size_t iterations);
-    void runBenchmark(const ProblemStatement& statement, const ElfFactory& factory);
+    void runBenchmark(ProblemStatement& statement, const ElfFactory& factory);
     BenchmarkResult getResults();
 };

@@ -5,6 +5,7 @@
 class MatrixScheduler: public Scheduler
 {
 public:
+    MatrixScheduler() = default;
     explicit MatrixScheduler(const BenchmarkResult& benchmarkResult);
-    virtual void dispatch(ProblemStatement& statement);
+    virtual void doDispatch(ProblemStatement& statement);
 };

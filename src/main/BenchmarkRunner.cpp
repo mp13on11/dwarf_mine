@@ -1,108 +1,73 @@
 
 #include <mpi.h>
 #include <vector>
-#include <sstream>
 #include <memory>
 #include "Elf.h"
 #include "BenchmarkRunner.h"
+#include "Scheduler.h"
 
 using namespace std;
 
-const int MASTER = 0;
+const int MASTER = 0; // TODO: Put in one common .h file
+const size_t WARMUP_ITERATIONS = 50;
 
 BenchmarkRunner::BenchmarkRunner(size_t iterations)
-    : _iterations(iterations), _rank(MPI::COMM_WORLD.Get_rank()), 
+    : _iterations(iterations),
       _devices(MPI::COMM_WORLD.Get_size())
 {
-    
+
 }
 
-void receive(ostream& stream, int fromRank)
-{
-    MPI::Status status;
-    MPI::COMM_WORLD.Probe(fromRank, 0, status);
-    int bufferSize = status.Get_count(MPI::CHAR);
-    unique_ptr<char[]> buffer(new char[bufferSize]);
-    MPI::COMM_WORLD.Recv(buffer.get(), bufferSize, MPI::CHAR, fromRank, 0);
-    stream.write(buffer.get(), bufferSize);
-}
-
-void send(istream& stream, int toRank)
-{
-    stringstream buffer;
-    buffer << stream.rdbuf();
-    auto buffered = buffer.str();
-    MPI::COMM_WORLD.Send(buffered.c_str(), buffered.size(), MPI::CHAR, toRank, 0);
-}
-
-chrono::microseconds BenchmarkRunner::measureCall(int targetRank, Elf& elf, const ProblemStatement& statement)
-{
+std::chrono::microseconds BenchmarkRunner::measureCall(ProblemStatement& statement, Scheduler& scheduler) {
     typedef chrono::high_resolution_clock clock;
     clock::time_point before = clock::now();
-    if (_rank == MASTER)
-    {
-        statement.input.clear();
-        statement.input.seekg(0, ios::beg);
-        stringstream output;
-        if (targetRank == MASTER)
-        {
-            
-            elf.run(statement.input, output);
-        }
-        else
-        {
-            send(statement.input, targetRank);
-            receive(output, targetRank);
-        }
-    }
-    else
-    {
-        receive(statement.input, MASTER);
-        elf.run(statement.input, statement.output);
-        send(statement.output, MASTER);
-    }
+    scheduler.dispatch(statement);
     return clock::now() - before;
 }
 
-void BenchmarkRunner::benchmarkDevice(int device, Elf& elf, const ProblemStatement& statement)
+void BenchmarkRunner::benchmarkDevice(DeviceId device, ProblemStatement& statement, Scheduler& scheduler)
 {
-    size_t warmupIterations = _iterations / 10;
-    for (size_t i = 0; i < warmupIterations; ++i)
+    for (size_t i = 0; i < WARMUP_ITERATIONS; ++i)
     {
-        measureCall(device, elf, statement);
+        measureCall(statement, scheduler);
     }
     chrono::microseconds sum(0);
     for (size_t i = 0; i < _iterations; ++i)
     {
-        sum += measureCall(device, elf, statement);
+        sum += measureCall(statement, scheduler);
     }
-    _measurements.push_back(sum / _iterations);
+    m_results[device] = (sum / _iterations).count();
 }
 
-void BenchmarkRunner::runBenchmark(const ProblemStatement& statement, const ElfFactory& factory)
+void BenchmarkRunner::getBenchmarked(ProblemStatement& statement, Scheduler& scheduler)
 {
-    std::unique_ptr<Elf> elf = factory.createElf(statement.elfCategory);
-    if (_rank == MASTER)
+    for (size_t i = 0; i < _iterations + WARMUP_ITERATIONS; ++i)
+        scheduler.dispatch(statement); // slave side
+}
+
+void BenchmarkRunner::runBenchmark(ProblemStatement& statement, const ElfFactory& factory)
+{
+    unique_ptr<Scheduler> scheduler = factory.createScheduler();
+
+    unique_ptr<Elf> elf = factory.createElf();
+    scheduler->setElf(elf.get());
+
+    if (MPI::COMM_WORLD.Get_rank() == MASTER)
     {
-        for (int device = 0; device < _devices; ++device)
+        for (NodeId device = 0; device < _devices; ++device)
         {
-            benchmarkDevice(device, *elf, statement);
+            scheduler->setNodeset(device);
+            benchmarkDevice(device, statement, *scheduler);
         }
     }
     else
     {
-        benchmarkDevice(MASTER, *elf, statement);
-        _measurements.clear();
+        getBenchmarked(statement, *scheduler);
     }
 }
-    
+
 
 BenchmarkResult BenchmarkRunner::getResults()
 {
-    BenchmarkResult result;
-    for (size_t i = 0; i < _measurements.size(); ++i)
-    {
-        result[i] = _measurements[i].count();
-    }
-    return result;
+    return m_results;
 }

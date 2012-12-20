@@ -4,27 +4,17 @@
 #include <random>
 #include <omp.h>
 #include <functional>
+#include <main/Utils.h>
 #include "../Matrix.h"
-#include "../MatrixHelper.h"
 
-size_t div_ceil(size_t x, size_t y)
-{
-    return (x % y) ? (x / y + 1) : (x / y);
-}
-
-void SMPMatrixElf::run(std::istream& input, std::ostream& output)
+SMPMatrixElf::MatrixT SMPMatrixElf::multiply(const MatrixT& left, const MatrixT& right)
 {
     using namespace std;
 
-    Matrix<float> a = MatrixHelper::readMatrixFrom(input);
-    Matrix<float> b = MatrixHelper::readMatrixFrom(input);
-  
-    MatrixHelper::validateMultiplicationPossible(a, b);
+    size_t leftRows = left.rows();
+    size_t rightCols = right.columns();
 
-    size_t leftRows = a.rows();
-    size_t rightCols = b.columns();
-
-    Matrix<float> c(leftRows, rightCols);
+    MatrixT c(leftRows, rightCols);
 
     size_t elementsPerBlock = 10*10;
     size_t columnsPerBlock = (size_t)ceil(sqrt(elementsPerBlock));
@@ -47,18 +37,19 @@ void SMPMatrixElf::run(std::istream& input, std::ostream& output)
         size_t rowEnd = min(rowStart+rowsPerBlock, c.rows());
 
         for(size_t y=rowStart; y<rowEnd; y++)
-        {        
+        {
             for(size_t x=columnStart; x<columnEnd; x++)
             {
                 float val = 0;
-                for(size_t i=0; i<a.columns(); i++)
+                for(size_t i=0; i<left.columns(); i++)
                 {
-                    val += a(y,i) * b(i,x);
+                    val += left(y,i) * right(i,x);
                 }
                 c(y,x) = val;
             }
         }
 
     }
-    MatrixHelper::writeMatrixTo(output, c);
+
+    return c;
 }

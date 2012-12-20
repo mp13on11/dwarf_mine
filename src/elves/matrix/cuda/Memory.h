@@ -27,8 +27,8 @@ namespace CudaUtils
 
         }
 
-        explicit Memory(std::size_t size) : 
-            gpuPtr(allocate(size)), 
+        explicit Memory(std::size_t size) :
+            gpuPtr(allocate(size)),
             size(size)
         {
         }
@@ -37,15 +37,15 @@ namespace CudaUtils
         {
             free();
         }
-        
+
         Memory(const Memory&) = delete;
-        Memory& operator=(const Memory&) = delete;    
-        Memory(Memory&& other) : 
-            gpuPtr(other.gpuPtr), 
+        Memory& operator=(const Memory&) = delete;
+        Memory(Memory&& other) :
+            gpuPtr(other.gpuPtr),
             size(other.size)
         {
             other.gpuPtr = nullptr;
-            other.size = 0;            
+            other.size = 0;
         }
 
         void reallocate(std::size_t newSize)
@@ -55,15 +55,15 @@ namespace CudaUtils
             gpuPtr = newPtr;
             size = newSize;
         }
-        
-        void transferTo(MemType* hostPtr) 
-        {   
+
+        void transferTo(MemType* hostPtr)
+        {
             checkError(
                 cudaMemcpy(hostPtr, gpuPtr, sizeInBytes(), cudaMemcpyDeviceToHost)
             );
         }
-        
-        void transferFrom(MemType* hostPtr) 
+
+        void transferFrom(const MemType* hostPtr)
         {
             checkError(
                 cudaMemcpy(gpuPtr, hostPtr, sizeInBytes(), cudaMemcpyHostToDevice)
@@ -79,20 +79,20 @@ namespace CudaUtils
         {
             return gpuPtr;
         }
-        
+
     private:
-        std::size_t sizeInBytes() const 
+        std::size_t sizeInBytes() const
         {
             return size * sizeof(MemType);
         }
-    
+
         MemType* allocate(std::size_t size)
         {
             MemType* ptr;
             checkError(cudaMalloc(&ptr, size * sizeof(MemType)));
             return ptr;
         }
-        
+
         void free()
         {
             if (gpuPtr != nullptr)
@@ -102,5 +102,5 @@ namespace CudaUtils
         MemType* gpuPtr;
         std::size_t size;
     };
-    
+
 }

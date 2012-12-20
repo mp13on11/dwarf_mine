@@ -5,7 +5,7 @@
 -host quadcore2  -np 1 /home/jenkins/share/dwarf_mine/build/src/main/dwarf_mine smp
 #-host quadcore2  -np 1 /home/jenkins/share/dwarf_mine/build/src/main/dwarf_mine cuda
 -host quadcore3  -np 1 /home/jenkins/share/dwarf_mine/build/src/main/dwarf_mine smp
--host quadcore4  -np 1 /home/jenkins/share/dwarf_mine/build/src/main/dwarf_mine cuda
+-host quadcore3  -np 1 /home/jenkins/share/dwarf_mine/build/src/main/dwarf_mine cuda
 #-host smalldwarf -np 1 /home/jenkins/share/dwarf_mine/build/src/main/dwarf_mine smp
 
 # smalldwarf and quadcore have problems with cuda

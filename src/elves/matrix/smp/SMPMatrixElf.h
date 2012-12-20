@@ -1,10 +1,9 @@
 #pragma once
 
-#include <Elf.h>
+#include <MatrixElf.h>
 
-class SMPMatrixElf : public Elf
+class SMPMatrixElf : public MatrixElf
 {
-
 public:
-    virtual void run(std::istream& in, std::ostream& out);
+    virtual MatrixT multiply(const MatrixT& left, const MatrixT& right);
 };

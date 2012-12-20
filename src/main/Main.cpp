@@ -12,13 +12,12 @@
 
 #include "BenchmarkRunner.h"
 #include "Configuration.h"
-#include "matrix/smp/SMPMatrixElf.h"
 #include "matrix/MatrixHelper.h"
 #include "matrix/Matrix.h"
 
 using namespace std;
 
-void generateProblemData(stringstream& in, stringstream& out)
+void generateProblemData(stringstream& targetStream)
 {
     Matrix<float> first(100,100);
     Matrix<float> second(100, 100);
@@ -27,23 +26,38 @@ void generateProblemData(stringstream& in, stringstream& out)
     auto generator = bind(distribution, engine);
     MatrixHelper::fill(first, generator);
     MatrixHelper::fill(second, generator);
-    MatrixHelper::writeMatrixTo(in, first);
-    MatrixHelper::writeMatrixTo(in, second);
+    MatrixHelper::writeMatrixTo(targetStream, first);
+    MatrixHelper::writeMatrixTo(targetStream, second);
 }
 
-int main(int argc, char** argv) 
+class MPIGuard
+{
+public:
+    MPIGuard(int argc, char** argv)
+    {
+        MPI::Init(argc, argv);
+    }
+
+    ~MPIGuard()
+    {
+        MPI::Finalize();
+    }
+};
+
+int main(int argc, char** argv)
 {
     Configuration config(argc, argv);
-    MPI::Init(argc, argv);
+    // used to ensure MPI::Finalize is called on exit of the application
+    auto mpiGuard = MPIGuard(argc, argv);
 
     try
     {
-        unique_ptr<ElfFactory> factory(config.getElfFactory());
         stringstream in;
         stringstream out;
-
-        generateProblemData(in, out);
+        generateProblemData(in);
         ProblemStatement statement{ in, out, "matrix"};
+
+        unique_ptr<ElfFactory> factory(config.getElfFactory(statement.elfCategory));
 
         BenchmarkRunner runner(100);
         runner.runBenchmark(statement, *factory);
@@ -64,7 +78,6 @@ int main(int argc, char** argv)
         return 1;
     }
 
-    MPI::Finalize();
     return 0;
 }
 
