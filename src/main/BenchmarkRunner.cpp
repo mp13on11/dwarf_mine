@@ -62,7 +62,7 @@ void BenchmarkRunner::runBenchmark(ProblemStatement& statement, const ElfFactory
     }
     else
     {
-        getBenchmarked(statement, sched);
+        getBenchmarked(statement, *scheduler);
     }
 }
 
