@@ -28,12 +28,12 @@ void Configuration::printUsage()
     cerr << "Usage: " << programName << " cuda|smp" << endl;
 }
 
-unique_ptr<ElfFactory> Configuration::getElfFactory()
+unique_ptr<ElfFactory> Configuration::getElfFactory(const ElfCategory& category)
 {
     if (arguments[0] == "smp")
-        return unique_ptr<ElfFactory>(new SMPElfFactory());
+        return unique_ptr<ElfFactory>(new SMPElfFactory(category));
     else if (arguments[0] == "cuda")
-        return unique_ptr<ElfFactory>(new CudaElfFactory());
+        return unique_ptr<ElfFactory>(new CudaElfFactory(category));
     else
         usageError();
 
