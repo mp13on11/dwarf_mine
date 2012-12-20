@@ -4,13 +4,14 @@
 #include <string>
 #include <memory>
 #include "ElfFactory.h"
+#include "ElfCategory.h"
 
 class Configuration
 {
 public:
     Configuration(int argc, char** argv);
     
-    std::unique_ptr<ElfFactory> getElfFactory();
+    std::unique_ptr<ElfFactory> getElfFactory(const ElfCategory& category);
     
 private:
     void usageError();

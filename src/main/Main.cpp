@@ -38,12 +38,13 @@ int main(int argc, char** argv)
 
     try
     {
-        unique_ptr<ElfFactory> factory(config.getElfFactory());
         stringstream in;
         stringstream out;
-
         generateProblemData(in, out);
         ProblemStatement statement{ in, out, "matrix"};
+
+        unique_ptr<ElfFactory> factory(config.getElfFactory(statement.elfCategory));
+       
 
         BenchmarkRunner runner(100);
         runner.runBenchmark(statement, *factory);

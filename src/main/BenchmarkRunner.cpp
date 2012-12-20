@@ -4,7 +4,7 @@
 #include <memory>
 #include "Elf.h"
 #include "BenchmarkRunner.h"
-#include <matrix/MatrixScheduler.h>
+#include "Scheduler.h"
 
 using namespace std;
 
@@ -18,14 +18,14 @@ BenchmarkRunner::BenchmarkRunner(size_t iterations)
 
 }
 
-std::chrono::microseconds BenchmarkRunner::measureCall(ProblemStatement& statement, std::shared_ptr<Scheduler> scheduler) {
+std::chrono::microseconds BenchmarkRunner::measureCall(ProblemStatement& statement, Scheduler& scheduler) {
     typedef chrono::high_resolution_clock clock;
     clock::time_point before = clock::now();
-    scheduler->dispatch(statement);
+    scheduler.dispatch(statement);
     return clock::now() - before;
 }
 
-void BenchmarkRunner::benchmarkDevice(DeviceId device, ProblemStatement& statement, shared_ptr<Scheduler> scheduler)
+void BenchmarkRunner::benchmarkDevice(DeviceId device, ProblemStatement& statement, Scheduler& scheduler)
 {
     for (size_t i = 0; i < WARMUP_ITERATIONS; ++i)
     {
@@ -39,26 +39,25 @@ void BenchmarkRunner::benchmarkDevice(DeviceId device, ProblemStatement& stateme
     m_results[device] = (sum / _iterations).count();
 }
 
-void BenchmarkRunner::getBenchmarked(ProblemStatement& statement, std::shared_ptr<Scheduler> scheduler)
+void BenchmarkRunner::getBenchmarked(ProblemStatement& statement, Scheduler& scheduler)
 {
     for (size_t i = 0; i < _iterations + WARMUP_ITERATIONS; ++i)
-        scheduler->dispatch(statement); // slave side
+        scheduler.dispatch(statement); // slave side
 }
 
 void BenchmarkRunner::runBenchmark(ProblemStatement& statement, const ElfFactory& factory)
 {
-    //shared_ptr<Scheduler> sched(someFactory.createScheduler(statement.elfCategory));
-    shared_ptr<Scheduler> sched(new MatrixScheduler());
+    unique_ptr<Scheduler> scheduler = factory.createScheduler();
 
-    std::unique_ptr<Elf> elf = factory.createElf(statement.elfCategory);
-    sched->setElf(elf.get());
+    unique_ptr<Elf> elf = factory.createElf();
+    scheduler->setElf(elf.get());
 
     if (MPI::COMM_WORLD.Get_rank() == MASTER)
     {
         for (NodeId device = 0; device < _devices; ++device)
         {
-            sched->setNodeset(device);
-            benchmarkDevice(device, statement, sched);
+            scheduler->setNodeset(device);
+            benchmarkDevice(device, statement, *scheduler);
         }
     }
     else

@@ -4,15 +4,27 @@
 
 using namespace std;
 
-unique_ptr<Elf> ElfFactory::createElf(const ElfCategory& category) const
+ElfFactory::ElfFactory(const ElfCategory& category)
+    : _category(category)
 {
-    validate(category);
-
-    return createElfFrom(category);
 }
 
-void ElfFactory::validate(const ElfCategory& category) const
+unique_ptr<Elf> ElfFactory::createElf() const
 {
-    if (category != "matrix")
-        throw runtime_error("Unknown elf category: " + category);
+    validate();
+
+    return createElfImplementation();
+}
+
+unique_ptr<Scheduler> ElfFactory::createScheduler() const
+{
+    validate();
+
+    return createSchedulerImplementation();
+}
+
+void ElfFactory::validate() const
+{
+    if (_category != "matrix")
+        throw runtime_error("Unknown elf category: " + _category);
 }
