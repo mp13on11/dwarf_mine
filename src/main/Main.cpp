@@ -17,7 +17,7 @@
 
 using namespace std;
 
-void generateProblemData(stringstream& in, stringstream& out)
+void generateProblemData(stringstream& targetStream)
 {
     Matrix<float> first(100,100);
     Matrix<float> second(100, 100);
@@ -26,8 +26,8 @@ void generateProblemData(stringstream& in, stringstream& out)
     auto generator = bind(distribution, engine);
     MatrixHelper::fill(first, generator);
     MatrixHelper::fill(second, generator);
-    MatrixHelper::writeMatrixTo(in, first);
-    MatrixHelper::writeMatrixTo(in, second);
+    MatrixHelper::writeMatrixTo(targetStream, first);
+    MatrixHelper::writeMatrixTo(targetStream, second);
 }
 
 class MPIGuard
@@ -54,7 +54,7 @@ int main(int argc, char** argv)
     {
         stringstream in;
         stringstream out;
-        generateProblemData(in, out);
+        generateProblemData(in);
         ProblemStatement statement{ in, out, "matrix"};
 
         unique_ptr<ElfFactory> factory(config.getElfFactory(statement.elfCategory));
