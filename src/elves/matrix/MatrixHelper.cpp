@@ -24,6 +24,7 @@ void MatrixHelper::writeMatrixTo(const string& filename, const Matrix<float>& ma
 
 void MatrixHelper::writeMatrixTo(ostream& output, const Matrix<float>& matrix)
 {
+    output << matrix.rows() << " " << matrix.columns() << endl;
     for (size_t i=0; i<matrix.rows(); i++)
     {
         for (size_t j=0; j<matrix.columns(); j++)

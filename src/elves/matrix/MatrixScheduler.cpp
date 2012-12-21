@@ -27,8 +27,8 @@ struct MatrixSliceDefinition
 
 typedef pair<NodeId, Rating> NodeRating;
 
-void sliceColumns(vector<MatrixSliceDefinition>& slices, list<NodeRating>& ratings, int rowOrigin, int columnOrigin, int rows, int columns);
-void sliceRows(vector<MatrixSliceDefinition>& slices, list<NodeRating>& ratings, int rowOrigin, int columnOrigin, int rows, int columns);
+void sliceColumns(vector<MatrixSliceDefinition>& slices, list<NodeRating>& ratings, size_t rowOrigin, size_t columnOrigin, size_t rows, size_t columns);
+void sliceRows(vector<MatrixSliceDefinition>& slices, list<NodeRating>& ratings, size_t rowOrigin, size_t columnOrigin, size_t rows, size_t columns);
 
 
 MatrixScheduler::MatrixScheduler(const BenchmarkResult& benchmarkResult) :
@@ -56,7 +56,7 @@ void send(iostream& stream, int toRank)
     MPI::COMM_WORLD.Send(buffered.c_str(), buffered.size(), MPI::CHAR, toRank, 0);
 }
 
-void sliceColumns(vector<MatrixSliceDefinition>& slices, list<NodeRating>& ratings, int rowOrigin, int columnOrigin, int rows, int columns)
+void sliceColumns(vector<MatrixSliceDefinition>& slices, list<NodeRating>& ratings, size_t rowOrigin, size_t columnOrigin, size_t rows, size_t columns)
 {
     if (ratings.size() == 0)
     {
@@ -74,16 +74,12 @@ void sliceColumns(vector<MatrixSliceDefinition>& slices, list<NodeRating>& ratin
         }
         pivot = ceil(columns * ratings.front().second * 1.0 / overall);
     }
-    slices[processor].node = processor;
-    slices[processor].x = columnOrigin;
-    slices[processor].y = rowOrigin;
-    slices[processor].columns = columnOrigin + pivot;
-    slices[processor].rows = rows;
+    slices.push_back(MatrixSliceDefinition{processor, columnOrigin, rowOrigin, columnOrigin + pivot, rows});
     ratings.pop_front();
     sliceRows(slices, ratings, rowOrigin, columnOrigin + pivot, rows, columns - pivot);
 }
 
-void sliceRows(vector<MatrixSliceDefinition>& slices, list<NodeRating>& ratings, int rowOrigin, int columnOrigin, int rows, int columns)
+void sliceRows(vector<MatrixSliceDefinition>& slices, list<NodeRating>& ratings, size_t rowOrigin, size_t columnOrigin, size_t rows, size_t columns)
 {
     if (ratings.size() == 0)
     {
@@ -101,27 +97,22 @@ void sliceRows(vector<MatrixSliceDefinition>& slices, list<NodeRating>& ratings,
         }
         pivot = ceil(rows * ratings.front().second * 1.0 / overall);
     }
-    slices[processor].node = processor;
-    slices[processor].x = columnOrigin;
-    slices[processor].y = rowOrigin;
-    slices[processor].columns = columns;
-    slices[processor].rows = rowOrigin + pivot;
+    slices.push_back(MatrixSliceDefinition{processor, columnOrigin, rowOrigin, columns, rowOrigin + pivot});
     ratings.pop_front();
     sliceColumns(slices, ratings, rowOrigin + pivot, columnOrigin, rows - pivot, columns);
-}
-
-bool compareRatingsDesc(const NodeRating& a, const NodeRating& b)
-{
-
-    return a.second > b.second;
 }
 
 vector<MatrixSliceDefinition> sliceAndDice(BenchmarkResult& results, size_t rows, size_t columns)
 {
     list<NodeRating> orderedRatings(results.begin(), results.end());
-    orderedRatings.sort(compareRatingsDesc);
+    orderedRatings.sort(
+        [](const NodeRating& a, const NodeRating& b)
+        { 
+            return a.second > b.second; 
+        }
+    );
 
-    vector<MatrixSliceDefinition> slicesDefinitions(orderedRatings.size());
+    vector<MatrixSliceDefinition> slicesDefinitions;
     sliceColumns(slicesDefinitions, orderedRatings, 0, 0, rows, columns);
     return slicesDefinitions;
 }
@@ -169,13 +160,16 @@ void MatrixScheduler::doDispatch(ProblemStatement& statement)
         statement.input.seekg(0);
         pair<Matrix<float>, Matrix<float>> matrices = MatrixHelper::readMatrixPairFrom(statement.input);
         Matrix<float> result(matrices.first.rows(), matrices.second.columns());
+
         vector<MatrixSliceDefinition> sliceDefinitions = sliceAndDice(nodeSet, result.rows(), result.columns());
+        bool calculateOnMaster = false;
         MatrixSliceDefinition masterSliceDefinition;
 
         for(const auto& d :sliceDefinitions)
         {
             if (d.node == MASTER)
             {
+                calculateOnMaster = true;
                 masterSliceDefinition = d;
             }
             else
@@ -185,20 +179,21 @@ void MatrixScheduler::doDispatch(ProblemStatement& statement)
                 send(buffer, d.node);
             }
         }
+        if (calculateOnMaster)
+        {
+            pair<Matrix<float>, Matrix<float>> slicedMatrices = sliceMatrices(masterSliceDefinition, matrices);
 
-        pair<Matrix<float>, Matrix<float>> slicedMatrices = sliceMatrices(masterSliceDefinition, matrices);
+            stringstream inputBuffer;
+            stringstream outputBuffer;
+            MatrixHelper::writeMatrixPairTo(inputBuffer, sliceMatrices(masterSliceDefinition, matrices));
 
-        stringstream inputBuffer;
-        stringstream outputBuffer;
-        MatrixHelper::writeMatrixPairTo(inputBuffer, sliceMatrices(masterSliceDefinition, matrices));
+            elf->run(inputBuffer, outputBuffer);
 
-        elf->run(inputBuffer, outputBuffer);
-
-        Matrix<float> resultSlice = MatrixHelper::readMatrixFrom(outputBuffer);
-        //Matrix<float> resultSlice = elf->run(slicedMatrices.first, slicedMatrices.second);
-        
-        injectSliceToResult(masterSliceDefinition, resultSlice, result);
-
+            Matrix<float> resultSlice = MatrixHelper::readMatrixFrom(outputBuffer);
+            //Matrix<float> resultSlice = elf->run(slicedMatrices.first, slicedMatrices.second);
+            
+            injectSliceToResult(masterSliceDefinition, resultSlice, result);
+        }
         for (const auto& d : sliceDefinitions)
         {
             if (d.node != MASTER)
