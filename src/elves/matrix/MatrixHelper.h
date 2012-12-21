@@ -14,6 +14,7 @@ class MatrixHelper
 public:
     static Matrix<float> readMatrixFrom(const std::string& fileName);
     static Matrix<float> readMatrixFrom(std::istream& stream);
+    static void writeMatrixPairTo(std::ostream& output, const std::pair<Matrix<float>, Matrix<float>>& matrices);
     static std::pair<Matrix<float>, Matrix<float>> readMatrixPairFrom(std::istream& stream);
     static void writeMatrixTo(const std::string& fileName, const Matrix<float>& matrix);
     static void writeMatrixTo(std::ostream& stream, const Matrix<float>& matrix);

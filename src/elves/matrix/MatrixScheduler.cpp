@@ -7,6 +7,7 @@
 #include <mpi.h>
 #include <numeric>
 #include "Matrix.h"
+#include "MatrixHelper.h"
 #include <cmath>
 #include <list>
 #include <map>
@@ -15,16 +16,19 @@ using namespace std;
 
 const int MASTER = 0; // TODO: Put in one common .h file
 
-struct MatrixSlice
+struct MatrixSliceDefinition
 {
+    NodeId node;
     size_t x;
     size_t y;
     size_t columns;
     size_t rows;
 };
 
-void spliceColumns(vector<MatrixSlice>& slices, list<int>& relation, int rowOrigin, int columnOrigin, int rows, int columns);
-void spliceRows(vector<MatrixSlice>& slices, list<int>& relation, int rowOrigin, int columnOrigin, int rows, int columns);
+typedef pair<NodeId, Rating> NodeRating;
+
+void sliceColumns(vector<MatrixSliceDefinition>& slices, list<NodeRating>& ratings, int rowOrigin, int columnOrigin, int rows, int columns);
+void sliceRows(vector<MatrixSliceDefinition>& slices, list<NodeRating>& ratings, int rowOrigin, int columnOrigin, int rows, int columns);
 
 
 MatrixScheduler::MatrixScheduler(const BenchmarkResult& benchmarkResult) :
@@ -32,7 +36,7 @@ MatrixScheduler::MatrixScheduler(const BenchmarkResult& benchmarkResult) :
 {
 }
 
-void receive(ostream& stream, int fromRank)
+void receive(iostream& stream, int fromRank)
 {
     MPI::Status status;
     MPI::COMM_WORLD.Probe(fromRank, 0, status);
@@ -40,9 +44,11 @@ void receive(ostream& stream, int fromRank)
     unique_ptr<char[]> buffer(new char[bufferSize]);
     MPI::COMM_WORLD.Recv(buffer.get(), bufferSize, MPI::CHAR, fromRank, 0);
     stream.write(buffer.get(), bufferSize);
+    stream.clear();
+    stream.seekg(0);
 }
 
-void send(istream& stream, int toRank)
+void send(iostream& stream, int toRank)
 {
     stringstream buffer;
     buffer << stream.rdbuf();
@@ -50,106 +56,164 @@ void send(istream& stream, int toRank)
     MPI::COMM_WORLD.Send(buffered.c_str(), buffered.size(), MPI::CHAR, toRank, 0);
 }
 
-void spliceColumns(vector<MatrixSlice>& slices, list<int>& relation, int rowOrigin, int columnOrigin, int rows, int columns)
+void sliceColumns(vector<MatrixSliceDefinition>& slices, list<NodeRating>& ratings, int rowOrigin, int columnOrigin, int rows, int columns)
 {
-    int processor = relation.size() - 1;
-    if (processor < 0)
+    if (ratings.size() == 0)
     {
         return;
     }
+    int processor = ratings.front().first;
 
     int pivot = columns;
-    if (relation.size() > 1)
+    if (ratings.size() > 1)
     {
         int overall = 0;
-        for (const auto& s : relation)
+        for (const auto& s : ratings)
         {
-            overall += s;
+            overall += s.second;
         }
-        pivot = ceil(columns * relation.front() * 1.0 / overall);
+        pivot = ceil(columns * ratings.front().second * 1.0 / overall);
     }
+    slices[processor].node = processor;
     slices[processor].x = columnOrigin;
     slices[processor].y = rowOrigin;
     slices[processor].columns = columnOrigin;
     slices[processor].rows = rows + pivot;
-    relation.pop_front();
-    spliceRows(slices, relation, rowOrigin, columnOrigin + pivot, rows, columns - pivot);
+    ratings.pop_front();
+    sliceRows(slices, ratings, rowOrigin, columnOrigin + pivot, rows, columns - pivot);
 }
 
-void spliceRows(vector<MatrixSlice>& slices, list<int>& relation, int rowOrigin, int columnOrigin, int rows, int columns)
+void sliceRows(vector<MatrixSliceDefinition>& slices, list<NodeRating>& ratings, int rowOrigin, int columnOrigin, int rows, int columns)
 {
-    int processor = relation.size() - 1;
-    if (processor < 0)
+    if (ratings.size() == 0)
     {
-        cout << relation.size() << endl;
         return;
     }
-
+    int processor = ratings.front().first;
+    
     int pivot = rows;
-    if (relation.size() > 1)
+    if (ratings.size() > 1)
     {
         int overall = 0;
-        for (const auto& s : relation)
+        for (const auto& s : ratings)
         {
-            overall += s;
+            overall += s.second;
         }
-        pivot = ceil(rows * relation.front() * 1.0 / overall);
+        pivot = ceil(rows * ratings.front().second * 1.0 / overall);
     }
+    slices[processor].node = processor;
     slices[processor].x = columnOrigin;
     slices[processor].y = rowOrigin;
     slices[processor].columns = columnOrigin + pivot;
     slices[processor].rows = rows;
-    relation.pop_front();
-    spliceColumns(slices, relation, rowOrigin + pivot, columnOrigin, rows - pivot, columns);
+    ratings.pop_front();
+    sliceColumns(slices, ratings, rowOrigin + pivot, columnOrigin, rows - pivot, columns);
 }
 
-vector<MatrixSlice> spliceAndDice(Matrix<float>& map, list<int>& relation)
+bool compareRatingsDesc(const NodeRating& a, const NodeRating& b)
 {
-    vector<MatrixSlice> slices(relation.size());
-    spliceColumns(slices, relation, 0, 0, map.rows(), map.columns());
-    return slices;
+
+    return a.second > b.second;
 }
 
-// vector<char> packMatrices(const vector<Matrix<float>>& matrices)
-// {
+vector<MatrixSliceDefinition> sliceAndDice(BenchmarkResult& results, size_t rows, size_t columns)
+{
+    list<NodeRating> orderedRatings(results.begin(), results.end());
+    orderedRatings.sort(compareRatingsDesc);
 
-// }
+    vector<MatrixSliceDefinition> slicesDefinitions(orderedRatings.size());
+    sliceColumns(slicesDefinitions, orderedRatings, 0, 0, rows, columns);
+    return slicesDefinitions;
+}
 
-// vector<Matrix<float>> unpackMatrices(const vector<char> buffer)
-// {
+pair<Matrix<float>, Matrix<float>> sliceMatrices(const MatrixSliceDefinition& definition, pair<Matrix<float>, Matrix<float>> matrices)
+{
+    Matrix<float> slicedLeft(definition.rows, matrices.first.columns());
+    Matrix<float> slicedRight(matrices.second.rows(), definition.columns);
 
-// }
+    for(size_t row = 0; row <= slicedLeft.rows(); ++row)
+    {
+        for(size_t column = 0; column <= slicedLeft.columns(); ++column)
+        {
+            slicedLeft(row, column) += matrices.first(row + definition.y, column);
+        }
+    }
 
+    for(size_t row = 0; row <= slicedRight.rows(); ++row)
+    {
+        for(size_t column = 0; column <= slicedRight.columns(); ++column)
+        {
+            slicedRight(row, column) += matrices.second(row, column + definition.x);
+        }
+    }
+
+    return make_pair<Matrix<float>, Matrix<float>>(move(slicedLeft), move(slicedRight));
+}
+
+void injectSliceToResult(const MatrixSliceDefinition& definition, Matrix<float> resultSlice, Matrix<float>& result)
+{
+    for(size_t row = 0; row <= resultSlice.rows(); ++row)
+    {
+        for(size_t column = 0; column <= resultSlice.columns(); ++column)
+        {
+            result(row + definition.y, column + definition.x) = resultSlice(row, column);
+        }
+    }    
+}
 
 void MatrixScheduler::doDispatch(ProblemStatement& statement)
 {
-    // Matrix<float> _map(93,37);
-    // list<int> relation ={5, 3, 3, 3, 1};
-    // spliceAndDice(_map, relation);
     if (rank == MASTER)
     {
-        if (nodeSet.size() == 1)
+        //statement.input.clear();
+        //statement.input.seekg(0);
+        pair<Matrix<float>, Matrix<float>> matrices = MatrixHelper::readMatrixPairFrom(statement.input);
+        Matrix<float> result(matrices.first.rows(), matrices.second.columns());
+        vector<MatrixSliceDefinition> sliceDefinitions = sliceAndDice(nodeSet, result.rows(), result.columns());
+        MatrixSliceDefinition masterSliceDefinition;
+        for(const auto& d :sliceDefinitions)
         {
-            int targetRank = nodeSet.begin()->first;
-
-            statement.input.clear();
-            statement.input.seekg(0, ios::beg);
-            stringstream output;
-            if (targetRank == MASTER)
+            if (d.node == MASTER)
             {
-                elf->run(statement.input, output);
+                masterSliceDefinition = d;
             }
             else
             {
-                send(statement.input, targetRank);
-                receive(output, targetRank);
+                stringstream buffer;
+                MatrixHelper::writeMatrixPairTo(buffer, sliceMatrices(d, matrices));
+                send(buffer, d.node);
             }
         }
+        pair<Matrix<float>, Matrix<float>> slicedMatrices = sliceMatrices(masterSliceDefinition, matrices);
+        stringstream inputBuffer;
+        stringstream outputBuffer;
+        MatrixHelper::writeMatrixPairTo(inputBuffer, sliceMatrices(masterSliceDefinition, matrices));
+        elf->run(inputBuffer, outputBuffer);
+        Matrix<float> resultSlice = MatrixHelper::readMatrixFrom(outputBuffer);
+        //Matrix<float> resultSlice = elf->run(slicedMatrices.first, slicedMatrices.second);
+        injectSliceToResult(masterSliceDefinition, resultSlice, result);
+
+        for (const auto& d : sliceDefinitions)
+        {
+            if (d.node != MASTER)
+            {
+                stringstream buffer;
+                receive(buffer, d.node);
+                Matrix<float> resultSlice = MatrixHelper::readMatrixFrom(buffer);
+                injectSliceToResult(d, resultSlice, result);
+            }
+        }
+        MatrixHelper::writeMatrixTo(statement.output, result);
     }
     else
     {
-        receive(statement.input, MASTER);
-        elf->run(statement.input, statement.output);
-        send(statement.output, MASTER);
+        stringstream inputBuffer;
+        receive(inputBuffer, MASTER);
+        //pair<Matrix<float>, Matrix<float>> matrices = MatrixHelper::readMatrixPairFrom(inputBuffer);
+        //Matrix<float> result = elf->run(matrices.first, matrices.second);
+        stringstream outputBuffer;
+        //MatrixHelper::writeMatrixTo(outputBuffer, result);
+        elf->run(inputBuffer, outputBuffer);
+        send(outputBuffer, MASTER);
     }
 }

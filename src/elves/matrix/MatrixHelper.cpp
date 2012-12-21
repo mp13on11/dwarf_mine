@@ -24,8 +24,6 @@ void MatrixHelper::writeMatrixTo(const string& filename, const Matrix<float>& ma
 
 void MatrixHelper::writeMatrixTo(ostream& output, const Matrix<float>& matrix)
 {
-    output << matrix.rows() << " " << matrix.columns() << endl;
-
     for (size_t i=0; i<matrix.rows(); i++)
     {
         for (size_t j=0; j<matrix.columns(); j++)
@@ -41,6 +39,12 @@ void MatrixHelper::writeMatrixTo(ostream& output, const Matrix<float>& matrix)
     }
 }
 
+void MatrixHelper::writeMatrixPairTo(ostream& output, const pair<Matrix<float>, Matrix<float>>& matrices)
+{
+    writeMatrixTo(output, matrices.first);
+    writeMatrixTo(output, matrices.second);
+}
+
 Matrix<float> MatrixHelper::readMatrixFrom(istream& stream)
 {
     try
@@ -50,8 +54,9 @@ Matrix<float> MatrixHelper::readMatrixFrom(istream& stream)
         stream >> columns;
 
         if (stream.bad() || stream.fail())
+        {  
             throw runtime_error("Failed to read matrix size from stream in " + string(__FILE__));
-
+        }
         string line;
         getline(stream, line);
         Matrix<float> matrix(rows, columns);
