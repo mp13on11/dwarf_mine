@@ -11,15 +11,15 @@
 
 using namespace std;
 
-::testing::AssertionResult AreMatricesEquals(Matrix<float> expected, Matrix<float>actual, float delta)
+testing::AssertionResult AreMatricesEquals(Matrix<float> expected, Matrix<float>actual, float delta)
 {
     if(expected.rows() != actual.rows())
     {
-        return ::testing::AssertionFailure() << "different number of rows: " << expected.rows() << " != " << actual.rows();
+        return testing::AssertionFailure() << "different number of rows: " << expected.rows() << " != " << actual.rows();
     }
     if(expected.columns() != actual.columns())
     {
-        return ::testing::AssertionFailure() << "different number of columns: " << expected.columns() << " != " << actual.columns();
+        return testing::AssertionFailure() << "different number of columns: " << expected.columns() << " != " << actual.columns();
     }
     for(size_t y = 0; y<expected.rows(); y++)
     {
@@ -37,17 +37,17 @@ using namespace std;
                 MatrixHelper::writeMatrixTo("dump_actual.txt", actual);
 
                 // return failure
-                return ::testing::AssertionFailure()
+                return testing::AssertionFailure()
                 << "The relative error at (" << y << "," << x << ") is " << error << ", which exceeds " << delta << ", where" << endl
                 << "expected(y,x) = " << expectedVal << " and" << endl
                 << "actual(y,x) = " << actualVal << ".";
             }
         }
     }
-    return ::testing::AssertionSuccess();
+    return testing::AssertionSuccess();
 }
 
-::testing::AssertionResult AreMatricesEquals(Matrix<float> a, Matrix<float>b)
+testing::AssertionResult AreMatricesEquals(Matrix<float> a, Matrix<float>b)
 {
     return AreMatricesEquals(a, b, 1e-2);
 }
@@ -120,11 +120,22 @@ TEST_P(MatrixMultiplyTest, BiggerPrimeRectangularMatricesTest) {
 }
 
 
-INSTANTIATE_TEST_CASE_P(MultiplePlatforms,
-                        MatrixMultiplyTest,
-                        ::testing::Values("cuda", "smp"));
+std::vector<const char*> getPlatforms()
+{
+    return {
+#ifdef HAVE_CUDA
+        "cuda", 
+#endif
+        "smp"
+    };
+}
+
+INSTANTIATE_TEST_CASE_P(
+    MultiplePlatforms, 
+    MatrixMultiplyTest, 
+    testing::ValuesIn(getPlatforms()));
 
 int main(int argc, char **argv) {
-  ::testing::InitGoogleTest(&argc, argv);
+  testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
 }
