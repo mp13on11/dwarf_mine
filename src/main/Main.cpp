@@ -49,18 +49,17 @@ int main(int argc, char** argv)
     Configuration config(argc, argv);
     // used to ensure MPI::Finalize is called on exit of the application
     auto mpiGuard = MPIGuard(argc, argv);
-
     try
     {
         stringstream in;
         stringstream out;
         generateProblemData(in);
         ProblemStatement statement{ in, out, "matrix"};
-
         unique_ptr<ElfFactory> factory(config.getElfFactory(statement.elfCategory));
-
         BenchmarkRunner runner(100);
+
         runner.runBenchmark(statement, *factory);
+
         auto results = runner.getResults();
         for (const auto& result: results)
         {

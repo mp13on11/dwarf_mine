@@ -77,8 +77,8 @@ void sliceColumns(vector<MatrixSliceDefinition>& slices, list<NodeRating>& ratin
     slices[processor].node = processor;
     slices[processor].x = columnOrigin;
     slices[processor].y = rowOrigin;
-    slices[processor].columns = columnOrigin;
-    slices[processor].rows = rows + pivot;
+    slices[processor].columns = columnOrigin + pivot;
+    slices[processor].rows = rows;
     ratings.pop_front();
     sliceRows(slices, ratings, rowOrigin, columnOrigin + pivot, rows, columns - pivot);
 }
@@ -104,8 +104,8 @@ void sliceRows(vector<MatrixSliceDefinition>& slices, list<NodeRating>& ratings,
     slices[processor].node = processor;
     slices[processor].x = columnOrigin;
     slices[processor].y = rowOrigin;
-    slices[processor].columns = columnOrigin + pivot;
-    slices[processor].rows = rows;
+    slices[processor].columns = columns;
+    slices[processor].rows = rowOrigin + pivot;
     ratings.pop_front();
     sliceColumns(slices, ratings, rowOrigin + pivot, columnOrigin, rows - pivot, columns);
 }
@@ -131,17 +131,17 @@ pair<Matrix<float>, Matrix<float>> sliceMatrices(const MatrixSliceDefinition& de
     Matrix<float> slicedLeft(definition.rows, matrices.first.columns());
     Matrix<float> slicedRight(matrices.second.rows(), definition.columns);
 
-    for(size_t row = 0; row <= slicedLeft.rows(); ++row)
+    for(size_t row = 0; row < slicedLeft.rows(); ++row)
     {
-        for(size_t column = 0; column <= slicedLeft.columns(); ++column)
+        for(size_t column = 0; column < slicedLeft.columns(); ++column)
         {
             slicedLeft(row, column) += matrices.first(row + definition.y, column);
         }
     }
 
-    for(size_t row = 0; row <= slicedRight.rows(); ++row)
+    for(size_t row = 0; row < slicedRight.rows(); ++row)
     {
-        for(size_t column = 0; column <= slicedRight.columns(); ++column)
+        for(size_t column = 0; column < slicedRight.columns(); ++column)
         {
             slicedRight(row, column) += matrices.second(row, column + definition.x);
         }
@@ -152,9 +152,9 @@ pair<Matrix<float>, Matrix<float>> sliceMatrices(const MatrixSliceDefinition& de
 
 void injectSliceToResult(const MatrixSliceDefinition& definition, Matrix<float> resultSlice, Matrix<float>& result)
 {
-    for(size_t row = 0; row <= resultSlice.rows(); ++row)
+    for(size_t row = 0; row < resultSlice.rows(); ++row)
     {
-        for(size_t column = 0; column <= resultSlice.columns(); ++column)
+        for(size_t column = 0; column < resultSlice.columns(); ++column)
         {
             result(row + definition.y, column + definition.x) = resultSlice(row, column);
         }
@@ -165,12 +165,13 @@ void MatrixScheduler::doDispatch(ProblemStatement& statement)
 {
     if (rank == MASTER)
     {
-        //statement.input.clear();
-        //statement.input.seekg(0);
+        statement.input.clear();
+        statement.input.seekg(0);
         pair<Matrix<float>, Matrix<float>> matrices = MatrixHelper::readMatrixPairFrom(statement.input);
         Matrix<float> result(matrices.first.rows(), matrices.second.columns());
         vector<MatrixSliceDefinition> sliceDefinitions = sliceAndDice(nodeSet, result.rows(), result.columns());
         MatrixSliceDefinition masterSliceDefinition;
+
         for(const auto& d :sliceDefinitions)
         {
             if (d.node == MASTER)
@@ -184,13 +185,18 @@ void MatrixScheduler::doDispatch(ProblemStatement& statement)
                 send(buffer, d.node);
             }
         }
+
         pair<Matrix<float>, Matrix<float>> slicedMatrices = sliceMatrices(masterSliceDefinition, matrices);
+
         stringstream inputBuffer;
         stringstream outputBuffer;
         MatrixHelper::writeMatrixPairTo(inputBuffer, sliceMatrices(masterSliceDefinition, matrices));
+
         elf->run(inputBuffer, outputBuffer);
+
         Matrix<float> resultSlice = MatrixHelper::readMatrixFrom(outputBuffer);
         //Matrix<float> resultSlice = elf->run(slicedMatrices.first, slicedMatrices.second);
+        
         injectSliceToResult(masterSliceDefinition, resultSlice, result);
 
         for (const auto& d : sliceDefinitions)
