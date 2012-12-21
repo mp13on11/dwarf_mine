@@ -10,13 +10,13 @@ class Configuration
 {
 public:
     Configuration(int argc, char** argv);
-    
+
     std::unique_ptr<ElfFactory> getElfFactory(const ElfCategory& category);
-    
+
 private:
     void usageError();
     void printUsage();
-    
+
     std::vector<std::string> arguments;
     std::string programName;
 };

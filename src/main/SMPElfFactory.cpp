@@ -4,10 +4,9 @@
 
 using namespace std;
 
-SMPElfFactory::SMPElfFactory(const ElfCategory& category)
-    : ElfFactory(category)
+SMPElfFactory::SMPElfFactory(const ElfCategory& category) :
+    ElfFactory(category)
 {
-
 }
 
 unique_ptr<Elf> SMPElfFactory::createElfImplementation() const

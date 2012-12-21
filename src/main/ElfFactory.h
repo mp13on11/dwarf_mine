@@ -27,3 +27,5 @@ private:
 inline ElfFactory::~ElfFactory()
 {
 }
+
+std::unique_ptr<ElfFactory> createElfFactory(const std::string& type, const ElfCategory& category);
