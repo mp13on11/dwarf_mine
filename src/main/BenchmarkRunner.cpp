@@ -9,7 +9,6 @@
 
 using namespace std;
 
-const int MASTER = 0; // TODO: Put in one common .h file
 const size_t WARMUP_ITERATIONS = 50;
 
 BenchmarkRunner::BenchmarkRunner(size_t iterations)

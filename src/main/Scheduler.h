@@ -12,7 +12,7 @@ public:
     Scheduler();
     explicit Scheduler(const BenchmarkResult& benchmarkResult);
     virtual ~Scheduler();
-    void dispatch(ProblemStatement& statement); // to be executed on master rank
+    void dispatch(ProblemStatement& statement);
     void setNodeset(const BenchmarkResult& benchmarkResult);
     void setNodeset(NodeId singleNode);
 

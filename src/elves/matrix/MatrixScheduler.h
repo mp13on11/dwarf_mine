@@ -2,6 +2,8 @@
 
 #include "../main/Scheduler.h"
 
+class MatrixElf;
+
 class MatrixScheduler: public Scheduler
 {
 public:
