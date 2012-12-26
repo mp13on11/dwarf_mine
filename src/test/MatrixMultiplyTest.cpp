@@ -8,6 +8,9 @@
 #include <sstream>
 #include <boost/algorithm/string/join.hpp>
 
+const float DIFFERENCE_THRESHOLD = 1e-2f;
+const float RELATIVE_ERROR_THRESHOLD = 1e-10;
+
 using namespace std;
 
 void MatrixMultiplyTest::SetUp() {
@@ -64,7 +67,10 @@ testing::AssertionResult AreMatricesEquals(Matrix<float> expected, Matrix<float>
             float actualVal = actual(y,x);
             float maxVal = max(fabs(expectedVal), fabs(actualVal));
             float error = fabs(expectedVal - actualVal);
-            error = (maxVal < 1e-10) ? error : error / maxVal;
+
+            if (maxVal >= RELATIVE_ERROR_THRESHOLD)
+                error /= maxVal;
+
             if(error > delta)
             {
                 // dump matrices
@@ -84,7 +90,7 @@ testing::AssertionResult AreMatricesEquals(Matrix<float> expected, Matrix<float>
 
 testing::AssertionResult AreMatricesEquals(Matrix<float> a, Matrix<float>b)
 {
-    return AreMatricesEquals(a, b, 1e-2);
+    return AreMatricesEquals(a, b, DIFFERENCE_THRESHOLD);
 }
 
 TEST_P(MatrixMultiplyTest, SingleElementMatrixTest) {
