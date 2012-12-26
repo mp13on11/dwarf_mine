@@ -8,6 +8,9 @@
 #include <sstream>
 #include <boost/algorithm/string/join.hpp>
 
+const float DIFFERENCE_THRESHOLD = 1e-2f;
+const float RELATIVE_ERROR_THRESHOLD = 1e-10;
+
 using namespace std;
 
 void MatrixMultiplyTest::SetUp() {
@@ -44,4 +47,115 @@ void MatrixMultiplyTest::initRandom(uint seed)
 Matrix<float> MatrixMultiplyTest::executeMultiplication(MatrixElf& elf, const Matrix<float>& a, const Matrix<float>& b)
 {
     return elf.multiply(a, b);
+}
+
+testing::AssertionResult AreMatricesEquals(Matrix<float> expected, Matrix<float>actual, float delta)
+{
+    if(expected.rows() != actual.rows())
+    {
+        return testing::AssertionFailure() << "different number of rows: " << expected.rows() << " != " << actual.rows();
+    }
+    if(expected.columns() != actual.columns())
+    {
+        return testing::AssertionFailure() << "different number of columns: " << expected.columns() << " != " << actual.columns();
+    }
+    for(size_t y = 0; y<expected.rows(); y++)
+    {
+        for(size_t x = 0; x<expected.columns(); x++)
+        {
+            float expectedVal = expected(y,x);
+            float actualVal = actual(y,x);
+            float maxVal = max(fabs(expectedVal), fabs(actualVal));
+            float error = fabs(expectedVal - actualVal);
+
+            if (maxVal >= RELATIVE_ERROR_THRESHOLD)
+                error /= maxVal;
+
+            if(error > delta)
+            {
+                // dump matrices
+                MatrixHelper::writeMatrixTo("dump_expected.txt", expected);
+                MatrixHelper::writeMatrixTo("dump_actual.txt", actual);
+
+                // return failure
+                return testing::AssertionFailure()
+                << "The relative error at (" << y << "," << x << ") is " << error << ", which exceeds " << delta << ", where" << endl
+                << "expected(y,x) = " << expectedVal << " and" << endl
+                << "actual(y,x) = " << actualVal << ".";
+            }
+        }
+    }
+    return testing::AssertionSuccess();
+}
+
+testing::AssertionResult AreMatricesEquals(Matrix<float> a, Matrix<float>b)
+{
+    return AreMatricesEquals(a, b, DIFFERENCE_THRESHOLD);
+}
+
+TEST_P(MatrixMultiplyTest, SingleElementMatrixTest) {
+    initRandom(0);
+    auto left = createRandomMatrix(1, 1);
+    auto right = createRandomMatrix(1, 1);;
+
+    auto expected = executeMultiplication(*referenceImplementation, left, right);
+    auto actual = executeMultiplication(*currentImplementation, left, right);
+
+    EXPECT_TRUE(AreMatricesEquals(expected, actual));
+}
+
+TEST_P(MatrixMultiplyTest, SmallSquareMatricesTest) {
+    initRandom(12345);
+    auto left = createRandomMatrix(5, 5);
+    auto right = createRandomMatrix(5, 5);
+
+    auto expected = executeMultiplication(*referenceImplementation, left, right);
+    auto actual = executeMultiplication(*currentImplementation, left, right);
+
+    EXPECT_TRUE(AreMatricesEquals(expected, actual));
+}
+
+TEST_P(MatrixMultiplyTest, MediumShrinkingRectangularMatricesTest) {
+    initRandom(333);
+    auto left = createRandomMatrix(30, 100);
+    auto right = createRandomMatrix(100, 40);
+
+    auto expected = executeMultiplication(*referenceImplementation, left, right);
+    auto actual = executeMultiplication(*currentImplementation, left, right);
+
+    EXPECT_TRUE(AreMatricesEquals(expected, actual));
+}
+
+
+TEST_P(MatrixMultiplyTest, MediumExpandingRectangularMatricesTest) {
+    initRandom(4567);
+    auto left = createRandomMatrix(110, 20);
+    auto right = createRandomMatrix(20, 130);
+
+    auto expected = executeMultiplication(*referenceImplementation, left, right);
+    auto actual = executeMultiplication(*currentImplementation, left, right);
+
+    EXPECT_TRUE(AreMatricesEquals(expected, actual));
+}
+
+TEST_P(MatrixMultiplyTest, PrimeRectangularMatricesTest) {
+    initRandom(6543452);
+    auto left = createRandomMatrix(67, 83);
+    auto right = createRandomMatrix(83, 109);
+
+    auto expected = executeMultiplication(*referenceImplementation, left, right);
+    auto actual = executeMultiplication(*currentImplementation, left, right);
+
+    EXPECT_TRUE(AreMatricesEquals(expected, actual));
+}
+
+TEST_P(MatrixMultiplyTest, BiggerPrimeRectangularMatricesTest) {
+    initRandom(73653);
+    auto left = createRandomMatrix(383, 269);
+    auto right = createRandomMatrix(269, 193);
+
+    auto expected = executeMultiplication(*referenceImplementation, left, right);
+    auto actual = executeMultiplication(*currentImplementation, left, right);
+
+    EXPECT_TRUE(AreMatricesEquals(expected, actual));
 }
