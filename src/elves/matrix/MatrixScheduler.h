@@ -5,7 +5,7 @@
 class MatrixScheduler: public Scheduler
 {
 public:
-    MatrixScheduler() = default;
+    MatrixScheduler();
     explicit MatrixScheduler(const BenchmarkResult& benchmarkResult);
     virtual ~MatrixScheduler();
 

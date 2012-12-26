@@ -104,6 +104,11 @@ struct MatrixScheduler::MatrixSchedulerImpl
     MatrixScheduler* self;
 };
 
+MatrixScheduler::MatrixScheduler() :
+    pImpl(new MatrixSchedulerImpl(this))
+{
+}
+
 MatrixScheduler::MatrixScheduler(const BenchmarkResult& benchmarkResult) :
     Scheduler(benchmarkResult), pImpl(new MatrixSchedulerImpl(this))
 {
