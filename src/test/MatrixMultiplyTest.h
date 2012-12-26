@@ -6,7 +6,7 @@
 #include <functional>
 #include <memory>
 
-class MatrixMultiplyTest : public ::testing::TestWithParam<const char*>
+class MatrixMultiplyTest : public testing::TestWithParam<const char*>
 {
 protected:
     //
@@ -17,7 +17,6 @@ protected:
     Matrix<float> createRandomMatrix(size_t rows, size_t columns);
     void initRandom(uint seed);
     Matrix<float> executeMultiplication(MatrixElf& elf, const Matrix<float>& a, const Matrix<float>& b);
-    void startProcess(std::initializer_list<std::string> args);
 
     //
     // Instance variables
