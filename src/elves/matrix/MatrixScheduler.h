@@ -2,12 +2,16 @@
 
 #include "../main/Scheduler.h"
 
-class MatrixElf;
-
 class MatrixScheduler: public Scheduler
 {
 public:
     MatrixScheduler() = default;
     explicit MatrixScheduler(const BenchmarkResult& benchmarkResult);
+    virtual ~MatrixScheduler();
+
     virtual void doDispatch(ProblemStatement& statement);
+
+private:
+    struct MatrixSchedulerImpl;
+    MatrixSchedulerImpl* pImpl;
 };

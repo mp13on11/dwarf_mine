@@ -8,13 +8,38 @@
 #include <iostream>
 #include <sstream>
 #include <stdexcept>
+#include <mpi.h>
 
 using namespace std;
 
 namespace MatrixHelper
 {
-    static void fillMatrixFromStream(Matrix<float>& matrix, std::istream& stream);
-    static std::vector<float> getValuesIn(const std::string& line);
+    static void fillMatrixFromStream(Matrix<float>& matrix, istream& stream);
+    static vector<float> getValuesIn(const string& line);
+
+    void sendMatrixTo(const Matrix<float>& matrix, NodeId node)
+    {
+        unsigned long dimensions[2] =
+        {
+            matrix.rows(),
+            matrix.columns()
+        };
+        auto numElements = dimensions[0] * dimensions[1];
+        MPI::COMM_WORLD.Send(dimensions, 2, MPI::UNSIGNED_LONG, node, 0);
+        MPI::COMM_WORLD.Send(matrix.buffer(), numElements, MPI::FLOAT, node, 0);
+    }
+
+    Matrix<float> receiveMatrixFrom(NodeId node)
+    {
+        unsigned long dimensions[2];
+        MPI::COMM_WORLD.Recv(dimensions, 2, MPI::UNSIGNED_LONG, node, 0);
+        auto rows = dimensions[0];
+        auto cols = dimensions[1];
+        Matrix<float> result(rows, cols);
+
+        MPI::COMM_WORLD.Recv(result.buffer(), rows*cols, MPI::FLOAT, node, 0);
+        return result;
+    }
 
     void writeMatrixTo(const string& filename, const Matrix<float>& matrix)
     {

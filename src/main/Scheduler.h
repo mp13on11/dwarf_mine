@@ -3,7 +3,6 @@
 #include "BenchmarkResults.h"
 
 struct ProblemStatement;
-
 class Elf;
 
 class Scheduler
