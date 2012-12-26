@@ -15,16 +15,8 @@
 
 using namespace std;
 
-typedef pair<NodeId, Rating> NodeRating;
-
 void sliceColumns(vector<MatrixSlice>& slices, list<NodeRating>& ratings, size_t rowOrigin, size_t columnOrigin, size_t rows, size_t columns);
 void sliceRows(vector<MatrixSlice>& slices, list<NodeRating>& ratings, size_t rowOrigin, size_t columnOrigin, size_t rows, size_t columns);
-
-
-MatrixScheduler::MatrixScheduler(const BenchmarkResult& benchmarkResult) :
-    Scheduler(benchmarkResult)
-{
-}
 
 void receive(iostream& stream, int fromRank)
 {
@@ -115,6 +107,11 @@ pair<Matrix<float>, Matrix<float>> sliceMatrices(const MatrixSlice& definition, 
     return make_pair<Matrix<float>, Matrix<float>>(move(slicedLeft), move(slicedRight));
 }
 
+MatrixScheduler::MatrixScheduler(const BenchmarkResult& benchmarkResult) :
+    Scheduler(benchmarkResult)
+{
+}
+
 void MatrixScheduler::doDispatch(ProblemStatement& statement)
 {
     if (rank == MASTER)
@@ -137,9 +134,11 @@ void MatrixScheduler::doDispatch(ProblemStatement& statement)
             }
             else
             {
-                stringstream buffer;
-                MatrixHelper::writeMatrixPairTo(buffer, sliceMatrices(definition, matrices));
-                send(buffer, definition.getNodeId());
+                auto inputMatrices = sliceMatrices(definition, matrices);
+                definition.send();
+                //stringstream buffer;
+                //MatrixHelper::writeMatrixPairTo(buffer, );
+                //send(buffer, definition.getNodeId());
             }
         }
         if (calculateOnMaster)

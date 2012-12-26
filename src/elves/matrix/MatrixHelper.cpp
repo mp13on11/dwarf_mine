@@ -11,128 +11,134 @@
 
 using namespace std;
 
-void MatrixHelper::writeMatrixTo(const string& filename, const Matrix<float>& matrix)
+namespace MatrixHelper
 {
-    ofstream file;
-    file.open(filename);
+    static void fillMatrixFromStream(Matrix<float>& matrix, std::istream& stream);
+    static std::vector<float> getValuesIn(const std::string& line);
 
-    if (!file.is_open())
-        throw runtime_error("Failed to open matrix file for write: " + filename);
-
-    writeMatrixTo(file, matrix);
-}
-
-void MatrixHelper::writeMatrixTo(ostream& output, const Matrix<float>& matrix)
-{
-    output << matrix.rows() << " " << matrix.columns() << endl;
-    for (size_t i=0; i<matrix.rows(); i++)
+    void writeMatrixTo(const string& filename, const Matrix<float>& matrix)
     {
-        for (size_t j=0; j<matrix.columns(); j++)
+        ofstream file;
+        file.open(filename);
+
+        if (!file.is_open())
+            throw runtime_error("Failed to open matrix file for write: " + filename);
+
+        writeMatrixTo(file, matrix);
+    }
+
+    void writeMatrixTo(ostream& output, const Matrix<float>& matrix)
+    {
+        output << matrix.rows() << " " << matrix.columns() << endl;
+        for (size_t i=0; i<matrix.rows(); i++)
         {
-            if(j>0)
-               output << " "; 
-            output << matrix(i, j);
+            for (size_t j=0; j<matrix.columns(); j++)
+            {
+                if(j>0)
+                   output << " ";
+                output << matrix(i, j);
+            }
+            output << endl;
+
+            if (output.bad())
+                throw runtime_error("Failed to write matrix to stream in " + string(__FILE__));
         }
-        output << endl;
-
-        if (output.bad())
-            throw runtime_error("Failed to write matrix to stream in " + string(__FILE__));
     }
-}
 
-void MatrixHelper::writeMatrixPairTo(ostream& output, const pair<Matrix<float>, Matrix<float>>& matrices)
-{
-    writeMatrixTo(output, matrices.first);
-    writeMatrixTo(output, matrices.second);
-}
-
-Matrix<float> MatrixHelper::readMatrixFrom(istream& stream)
-{
-    try
+    void writeMatrixPairTo(ostream& output, const pair<Matrix<float>, Matrix<float>>& matrices)
     {
-        size_t rows, columns;
-        stream >> rows;
-        stream >> columns;
-
-        if (stream.bad() || stream.fail())
-        {  
-            throw runtime_error("Failed to read matrix size from stream in " + string(__FILE__));
-        }
-        string line;
-        getline(stream, line);
-        Matrix<float> matrix(rows, columns);
-        fillMatrixFromStream(matrix, stream);
-        return matrix;
+        writeMatrixTo(output, matrices.first);
+        writeMatrixTo(output, matrices.second);
     }
-    catch (...)
+
+    Matrix<float> readMatrixFrom(istream& stream)
     {
-        cerr << "ERROR: Wrong matrices stream format." << endl;
-        throw;
-    }
-}
-
-Matrix<float> MatrixHelper::readMatrixFrom(const string& filename)
-{
-    ifstream file;
-    file.open(filename);
-
-    if (!file.is_open())
-        throw runtime_error("Failed to open matrix file for read: " + filename);
-
-    return readMatrixFrom(file);
-}
-
-pair<Matrix<float>, Matrix<float>> MatrixHelper::readMatrixPairFrom(std::istream& stream)
-{
-    pair<Matrix<float>, Matrix<float>> matrices;
-    matrices.first = readMatrixFrom(stream);
-    matrices.second = readMatrixFrom(stream);
-    return matrices;
-}
-
-void MatrixHelper::fillMatrixFromStream(Matrix<float>& matrix, istream& stream)
-{
-    for (size_t i=0; i<matrix.rows() && stream.good(); i++)
-    {
-        string line;
-        getline(stream, line);
-
-        if (stream.bad())
-            throw runtime_error("Failed to read matrix from stream in " + string(__FILE__));
-
-        vector<float> values = getValuesIn(line);
-
-        for (size_t j=0; j<matrix.columns() && j<values.size(); j++)
-            matrix(i, j) = values[j];
-    }
-}
-
-void MatrixHelper::validateMultiplicationPossible(const Matrix<float>& a, const Matrix<float>& b)
-{
-    if (a.columns() != b.rows())
-        throw MismatchedMatricesException(a.columns(), b.rows());
-}
-
-vector<float> MatrixHelper::getValuesIn(const string& line)
-{
-    istringstream stream(line);
-    vector<float> result;
-    copy(
-            istream_iterator<float>(stream),
-            istream_iterator<float>(),
-            back_inserter<vector<float>>(result)
-        );
-
-    return result;
-}
-
-void MatrixHelper::fill(Matrix<float>& matrix, const function<float()>& generator)
-{
-    for(size_t y = 0; y<matrix.rows(); y++)
-    {
-        for(size_t x = 0; x<matrix.columns(); x++)
+        try
         {
-            matrix(y, x) = generator();
+            size_t rows, columns;
+            stream >> rows;
+            stream >> columns;
+
+            if (stream.bad() || stream.fail())
+            {
+                throw runtime_error("Failed to read matrix size from stream in " + string(__FILE__));
+            }
+            string line;
+            getline(stream, line);
+            Matrix<float> matrix(rows, columns);
+            fillMatrixFromStream(matrix, stream);
+            return matrix;
+        }
+        catch (...)
+        {
+            cerr << "ERROR: Wrong matrices stream format." << endl;
+            throw;
+        }
+    }
+
+    Matrix<float> readMatrixFrom(const string& filename)
+    {
+        ifstream file;
+        file.open(filename);
+
+        if (!file.is_open())
+            throw runtime_error("Failed to open matrix file for read: " + filename);
+
+        return readMatrixFrom(file);
+    }
+
+    pair<Matrix<float>, Matrix<float>> readMatrixPairFrom(std::istream& stream)
+    {
+        pair<Matrix<float>, Matrix<float>> matrices;
+        matrices.first = readMatrixFrom(stream);
+        matrices.second = readMatrixFrom(stream);
+        return matrices;
+    }
+
+    void fillMatrixFromStream(Matrix<float>& matrix, istream& stream)
+    {
+        for (size_t i=0; i<matrix.rows() && stream.good(); i++)
+        {
+            string line;
+            getline(stream, line);
+
+            if (stream.bad())
+                throw runtime_error("Failed to read matrix from stream in " + string(__FILE__));
+
+            vector<float> values = getValuesIn(line);
+
+            for (size_t j=0; j<matrix.columns() && j<values.size(); j++)
+                matrix(i, j) = values[j];
+        }
+    }
+
+    void validateMultiplicationPossible(const Matrix<float>& a, const Matrix<float>& b)
+    {
+        if (a.columns() != b.rows())
+            throw MismatchedMatricesException(a.columns(), b.rows());
+    }
+
+    vector<float> getValuesIn(const string& line)
+    {
+        istringstream stream(line);
+        vector<float> result;
+        copy(
+                istream_iterator<float>(stream),
+                istream_iterator<float>(),
+                back_inserter<vector<float>>(result)
+            );
+
+        return result;
+    }
+
+    void fill(Matrix<float>& matrix, const function<float()>& generator)
+    {
+        for(size_t y = 0; y<matrix.rows(); y++)
+        {
+            for(size_t x = 0; x<matrix.columns(); x++)
+            {
+                matrix(y, x) = generator();
+            }
         }
     }
 }
