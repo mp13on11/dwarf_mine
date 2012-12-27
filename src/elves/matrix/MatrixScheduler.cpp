@@ -2,6 +2,7 @@
 #include "Matrix.h"
 #include "MatrixHelper.h"
 #include "MatrixSlice.h"
+#include "MatrixSlicer.h"
 #include "MatrixElf.h"
 #include <Elf.h>
 #include <main/ProblemStatement.h>
@@ -9,85 +10,9 @@
 #include <iostream>
 #include <memory>
 #include <mpi.h>
-#include <numeric>
-#include <cmath>
-#include <list>
-#include <map>
 
 using namespace std;
 using MatrixHelper::MatrixPair;
-
-void sliceColumns(vector<MatrixSlice>& slices, list<NodeRating>& ratings, size_t rowOrigin, size_t columnOrigin, size_t rows, size_t columns);
-void sliceRows(vector<MatrixSlice>& slices, list<NodeRating>& ratings, size_t rowOrigin, size_t columnOrigin, size_t rows, size_t columns);
-
-void sliceColumns(vector<MatrixSlice>& slices, list<NodeRating>& ratings, size_t rowOrigin, size_t columnOrigin, size_t rows, size_t columns)
-{
-    if (ratings.size() == 0)
-    {
-        return;
-    }
-    int processor = ratings.front().first;
-
-    int pivot = columns;
-    if (ratings.size() > 1)
-    {
-        int overall = 0;
-        for (const auto& s : ratings)
-        {
-            overall += s.second;
-        }
-        pivot = ceil(columns * ratings.front().second * 1.0 / overall);
-    }
-    slices.push_back(MatrixSlice{processor, columnOrigin, rowOrigin, columnOrigin + pivot, rows});
-    ratings.pop_front();
-    sliceRows(slices, ratings, rowOrigin, columnOrigin + pivot, rows, columns - pivot);
-}
-
-void sliceRows(vector<MatrixSlice>& slices, list<NodeRating>& ratings, size_t rowOrigin, size_t columnOrigin, size_t rows, size_t columns)
-{
-    if (ratings.size() == 0)
-    {
-        return;
-    }
-    int processor = ratings.front().first;
-
-    int pivot = rows;
-    if (ratings.size() > 1)
-    {
-        int overall = 0;
-        for (const auto& s : ratings)
-        {
-            overall += s.second;
-        }
-        pivot = ceil(rows * ratings.front().second * 1.0 / overall);
-    }
-    slices.push_back(MatrixSlice{processor, columnOrigin, rowOrigin, columns, rowOrigin + pivot});
-    ratings.pop_front();
-    sliceColumns(slices, ratings, rowOrigin + pivot, columnOrigin, rows - pivot, columns);
-}
-
-vector<MatrixSlice> sliceAndDice(BenchmarkResult& results, size_t rows, size_t columns)
-{
-    list<NodeRating> orderedRatings(results.begin(), results.end());
-    orderedRatings.sort(
-        [](const NodeRating& a, const NodeRating& b)
-        {
-            return a.second > b.second;
-        }
-    );
-
-    vector<MatrixSlice> slicesDefinitions;
-    sliceColumns(slicesDefinitions, orderedRatings, 0, 0, rows, columns);
-    return slicesDefinitions;
-}
-
-MatrixPair sliceMatrices(const MatrixSlice& definition, const MatrixPair& matrices)
-{
-    Matrix<float> slicedLeft = definition.extractSlice(matrices.first, true);
-    Matrix<float> slicedRight = definition.extractSlice(matrices.second, false);
-
-    return make_pair<Matrix<float>, Matrix<float>>(move(slicedLeft), move(slicedRight));
-}
 
 struct MatrixScheduler::MatrixSchedulerImpl
 {
@@ -131,6 +56,14 @@ void MatrixScheduler::doDispatch(ProblemStatement& statement)
     }
 }
 
+MatrixPair sliceMatrices(const MatrixSlice& definition, const MatrixPair& matrices)
+{
+    Matrix<float> slicedLeft = definition.extractSlice(matrices.first, true);
+    Matrix<float> slicedRight = definition.extractSlice(matrices.second, false);
+
+    return make_pair<Matrix<float>, Matrix<float>>(move(slicedLeft), move(slicedRight));
+}
+
 void MatrixScheduler::MatrixSchedulerImpl::calculateOnSlave()
 {
     MatrixElf* elf = static_cast<MatrixElf*>(self->elf);
@@ -152,7 +85,8 @@ void MatrixScheduler::MatrixSchedulerImpl::orchestrateCalculation(ProblemStateme
 Matrix<float> MatrixScheduler::MatrixSchedulerImpl::dispatchAndReceive(const MatrixPair& matrices)
 {
     Matrix<float> result(matrices.first.rows(), matrices.second.columns());
-    vector<MatrixSlice> sliceDefinitions = sliceAndDice(self->nodeSet, result.rows(), result.columns());
+    MatrixSlicer slicer;
+    vector<MatrixSlice> sliceDefinitions = slicer.sliceAndDice(self->nodeSet, result.rows(), result.columns());
     const MatrixSlice* masterSlice = distributeSlices(sliceDefinitions, matrices);
     if (masterSlice != nullptr)
     {
