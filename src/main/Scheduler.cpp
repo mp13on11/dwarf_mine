@@ -31,5 +31,10 @@ void Scheduler::dispatch(ProblemStatement& statement)
         throw std::runtime_error("Scheduler::dispatch(): No elf configured!");
     }
 
+    if (nodeSet.empty())
+    {
+        throw std::runtime_error("Scheduler::dispatch(): Nodeset is empty!");
+    }
+
     doDispatch(statement);
 }
