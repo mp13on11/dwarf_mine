@@ -16,7 +16,7 @@ BenchmarkResult makeUniformRatings(size_t number)
     BenchmarkResult ratings;
     for (size_t i=0; i<number; ++i)
     {
-        ratings[i] = 1/number * 100;
+        ratings[i] = 100/number;
     }
     return ratings;
 }
