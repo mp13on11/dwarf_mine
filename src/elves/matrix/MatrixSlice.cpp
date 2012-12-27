@@ -17,16 +17,6 @@ MatrixSlice::MatrixSlice(
 {
 }
 
-void MatrixSlice::send() const
-{
-
-}
-
-void MatrixSlice::receive() const
-{
-
-}
-
 Matrix<float> MatrixSlice::extractSlice(const Matrix<float>& sourceMatrix, bool rowWise) const
 {
     size_t numRows, numColumns, yOffset, xOffset;
@@ -76,6 +66,16 @@ void MatrixSlice::injectSlice(const Matrix<float>& sliceData, Matrix<float>& des
 NodeId MatrixSlice::getNodeId() const
 {
     return nodeId;
+}
+
+size_t MatrixSlice::getStartX() const
+{
+    return x;
+}
+
+size_t MatrixSlice::getStartY() const
+{
+    return y;
 }
 
 size_t MatrixSlice::getColumns() const
