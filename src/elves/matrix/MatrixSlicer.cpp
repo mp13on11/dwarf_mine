@@ -1,6 +1,5 @@
 #include "MatrixSlicer.h"
 #include "MatrixSlice.h"
-#include <numeric>
 #include <cmath>
 #include <cassert>
 
@@ -13,9 +12,8 @@ size_t MatrixSlicer::determinePivot(size_t rowsOrCols) const
     {
         Rating overall = 0;
         for (const auto& s : ratings)
-        {
             overall += s.second;
-        }
+
         pivot = ceil(rowsOrCols * ratings.front().second * (1.0 / overall));
     }
     ratings.pop_front();
@@ -27,9 +25,12 @@ size_t MatrixSlicer::processRating(size_t y, size_t x, size_t rows, size_t cols,
     NodeId processor = ratings.front().first;
     size_t pivot = determinePivot(colWise ? cols : rows);
     
-    size_t newCols = colWise ? pivot : cols;
-    size_t newRows = !colWise ? pivot : rows; 
-    slices.push_back(MatrixSlice{processor, x, y, newCols, newRows});
+    if (colWise)
+        cols = pivot;
+    else
+        rows = pivot;
+    
+    slices.push_back(MatrixSlice{processor, x, y, cols, rows});
     return pivot;
 }
 
