@@ -7,7 +7,7 @@
 
 const size_t ROWS = 910;
 const size_t COLS = 735;
-const size_t NODE_COUNTS[] = { 1, 2, 3, 5, 7, 12, 25, 80, 110 };
+const size_t NODE_COUNTS[] = { 3, 1, 2, 3, 5, 7, 12, 25, 80, 110 };
 
 typedef Matrix<float> TestGrid;
 
@@ -22,6 +22,22 @@ ostream& operator<<(ostream& stream, const MatrixSlice& slice)
         << slice.getStartY() << ", "
         << slice.getColumns() << ", "
         << slice.getRows() << ")";
+}
+
+ostream& operator<<(ostream& stream, const SliceList& slices)
+{
+    stream << "[";
+    bool first = true;
+    for (const auto& slice : slices)
+    {
+        if (!first)
+            stream << ", ";
+        stream << slice;
+        first = false;
+    }
+    stream << "]";
+
+    return stream;
 }
 
 BenchmarkResult makeUniformRatings(size_t number)
@@ -84,19 +100,19 @@ TestGrid makeTestGrid(size_t nodeCount, const MatrixSlicer& slicer)
     return fillTestGrid(ROWS, COLS, slices, ratings);
 }
 
-void checkTestGrid(const TestGrid& testGrid)
+void checkTestGrid(const TestGrid& testGrid, const SliceList& slices)
 {
     for(size_t i=0; i<ROWS; ++i)
     {
         for (size_t j=0; j<COLS; ++j)
         {
             ASSERT_GT(testGrid(i, j), 0.0f)
-                << "Slice incomplete at (" << i
-                << ", " << j << ")";
+                << "Slices incomplete at (" << i
+                << ", " << j << "). Slices: " << slices;
 
             ASSERT_LT(testGrid(i, j), 2.0f)
                 << "Slices overlap at (" << i
-                << ", " << j << ")";
+                << ", " << j << "). Slices: " << slices;
         }
     }
 }
@@ -126,10 +142,12 @@ TEST_F(MatrixSlicingTest, ValidSlicesTest)
 {
     for (size_t count : NODE_COUNTS)
     {
-        TestGrid testGrid = makeTestGrid(count, slicer);
+        auto ratings = makeUniformRatings(count);
+        auto slices = slicer.sliceAndDice(ratings, ROWS, COLS);
+        TestGrid testGrid = fillTestGrid(ROWS, COLS, slices, ratings);
         if (HasFatalFailure()) return;
 
-        checkTestGrid(testGrid);
+        checkTestGrid(testGrid, slices);
         if (HasFatalFailure()) return;
     }
 }

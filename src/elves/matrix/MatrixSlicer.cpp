@@ -2,6 +2,7 @@
 #include "MatrixSlice.h"
 #include <numeric>
 #include <cmath>
+#include <cassert>
 
 using namespace std;
 
@@ -23,7 +24,7 @@ void MatrixSlicer::sliceColumns(size_t rowOrigin, size_t columnOrigin, size_t ro
         }
         pivot = ceil(columns * ratings.front().second * (1.0 / overall));
     }
-    slices.push_back(MatrixSlice{processor, columnOrigin, rowOrigin, columnOrigin + pivot, rows});
+    slices.push_back(MatrixSlice{processor, columnOrigin, rowOrigin, pivot - columnOrigin, rows});
     ratings.pop_front();
     sliceRows(rowOrigin, columnOrigin + pivot, rows, columns - pivot);
 }
@@ -44,9 +45,10 @@ void MatrixSlicer::sliceRows(size_t rowOrigin, size_t columnOrigin, size_t rows,
         {
             overall += s.second;
         }
+        assert(overall <= 100);
         pivot = ceil(rows * ratings.front().second * (1.0 / overall));
     }
-    slices.push_back(MatrixSlice{processor, columnOrigin, rowOrigin, columns, rowOrigin + pivot});
+    slices.push_back(MatrixSlice{processor, columnOrigin, rowOrigin, columns, pivot - rowOrigin});
     ratings.pop_front();
     sliceColumns(rowOrigin + pivot, columnOrigin, rows - pivot, columns);
 }
