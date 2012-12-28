@@ -14,7 +14,7 @@ void MatrixSlicer::sliceColumns(size_t rowOrigin, size_t columnOrigin, size_t ro
     }
     NodeId processor = ratings.front().first;
 
-    int pivot = columns;
+    size_t pivot = columns;
     if (ratings.size() > 1)
     {
         int overall = 0;
@@ -24,7 +24,7 @@ void MatrixSlicer::sliceColumns(size_t rowOrigin, size_t columnOrigin, size_t ro
         }
         pivot = ceil(columns * ratings.front().second * (1.0 / overall));
     }
-    slices.push_back(MatrixSlice{processor, columnOrigin, rowOrigin, pivot - columnOrigin, rows});
+    slices.push_back(MatrixSlice{processor, columnOrigin, rowOrigin, pivot, rows});
     ratings.pop_front();
     sliceRows(rowOrigin, columnOrigin + pivot, rows, columns - pivot);
 }
@@ -37,7 +37,7 @@ void MatrixSlicer::sliceRows(size_t rowOrigin, size_t columnOrigin, size_t rows,
     }
     NodeId processor = ratings.front().first;
 
-    int pivot = rows;
+    size_t pivot = rows;
     if (ratings.size() > 1)
     {
         int overall = 0;
@@ -48,7 +48,7 @@ void MatrixSlicer::sliceRows(size_t rowOrigin, size_t columnOrigin, size_t rows,
         assert(overall <= 100);
         pivot = ceil(rows * ratings.front().second * (1.0 / overall));
     }
-    slices.push_back(MatrixSlice{processor, columnOrigin, rowOrigin, columns, pivot - rowOrigin});
+    slices.push_back(MatrixSlice{processor, columnOrigin, rowOrigin, columns, pivot});
     ratings.pop_front();
     sliceColumns(rowOrigin + pivot, columnOrigin, rows - pivot, columns);
 }
