@@ -17,6 +17,8 @@ private:
     void sliceRows(size_t rowOrigin, size_t columnOrigin, size_t rows, size_t columns) const;
     void sliceColumns(size_t rowOrigin, size_t columnOrigin, size_t rows, size_t columns) const;
     void setup(const BenchmarkResult& results) const;
+    size_t determinePivot(size_t rowsOrCols) const;
+    size_t processRating(size_t y, size_t x, size_t rows, size_t cols, bool colWise) const;
 
     mutable SliceList slices;
     mutable RatingList ratings;

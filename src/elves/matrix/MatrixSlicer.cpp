@@ -6,50 +6,46 @@
 
 using namespace std;
 
-void MatrixSlicer::sliceColumns(size_t rowOrigin, size_t columnOrigin, size_t rows, size_t columns) const
+size_t MatrixSlicer::determinePivot(size_t rowsOrCols) const
 {
-    if (ratings.size() == 0)
-    {
-        return;
-    }
-    NodeId processor = ratings.front().first;
-
-    size_t pivot = columns;
+    size_t pivot = rowsOrCols;
     if (ratings.size() > 1)
     {
-        int overall = 0;
+        Rating overall = 0;
         for (const auto& s : ratings)
         {
             overall += s.second;
         }
-        pivot = ceil(columns * ratings.front().second * (1.0 / overall));
+        pivot = ceil(rowsOrCols * ratings.front().second * (1.0 / overall));
     }
-    slices.push_back(MatrixSlice{processor, columnOrigin, rowOrigin, pivot, rows});
     ratings.pop_front();
+    return pivot;
+}
+
+size_t MatrixSlicer::processRating(size_t y, size_t x, size_t rows, size_t cols, bool colWise) const
+{
+    NodeId processor = ratings.front().first;
+    size_t pivot = determinePivot(colWise ? cols : rows);
+    
+    size_t newCols = colWise ? pivot : cols;
+    size_t newRows = !colWise ? pivot : rows; 
+    slices.push_back(MatrixSlice{processor, x, y, newCols, newRows});
+    return pivot;
+}
+
+void MatrixSlicer::sliceColumns(size_t rowOrigin, size_t columnOrigin, size_t rows, size_t columns) const
+{
+    if (ratings.empty()) return;
+
+    size_t pivot = processRating(rowOrigin, columnOrigin, rows, columns, true);
     sliceRows(rowOrigin, columnOrigin + pivot, rows, columns - pivot);
 }
 
 void MatrixSlicer::sliceRows(size_t rowOrigin, size_t columnOrigin, size_t rows, size_t columns) const
 {
-    if (ratings.size() == 0)
-    {
-        return;
-    }
-    NodeId processor = ratings.front().first;
-
-    size_t pivot = rows;
-    if (ratings.size() > 1)
-    {
-        int overall = 0;
-        for (const auto& s : ratings)
-        {
-            overall += s.second;
-        }
-        assert(overall <= 100);
-        pivot = ceil(rows * ratings.front().second * (1.0 / overall));
-    }
-    slices.push_back(MatrixSlice{processor, columnOrigin, rowOrigin, columns, pivot});
-    ratings.pop_front();
+    if (ratings.empty()) return;
+    
+    size_t pivot = processRating(rowOrigin, columnOrigin, rows, columns, false);
     sliceColumns(rowOrigin + pivot, columnOrigin, rows - pivot, columns);
 }
 
