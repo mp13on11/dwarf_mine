@@ -11,13 +11,13 @@ public:
     typedef std::vector<MatrixSlice> SliceList;
     typedef std::list<NodeRating> RatingList;
 
-    SliceList sliceAndDice(const BenchmarkResult& results, size_t rows, size_t columns);
+    SliceList sliceAndDice(const BenchmarkResult& results, size_t rows, size_t columns) const;
 
 private:
-    void sliceRows(size_t rowOrigin, size_t columnOrigin, size_t rows, size_t columns);
-    void sliceColumns(size_t rowOrigin, size_t columnOrigin, size_t rows, size_t columns);
-    void setup(const BenchmarkResult& results);
+    void sliceRows(size_t rowOrigin, size_t columnOrigin, size_t rows, size_t columns) const;
+    void sliceColumns(size_t rowOrigin, size_t columnOrigin, size_t rows, size_t columns) const;
+    void setup(const BenchmarkResult& results) const;
 
-    SliceList slices;
-    RatingList ratings;
+    mutable SliceList slices;
+    mutable RatingList ratings;
 };
