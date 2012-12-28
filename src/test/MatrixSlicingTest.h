@@ -6,9 +6,5 @@
 class MatrixSlicingTest : public testing::Test
 {
 protected:
-    //
-    // Members
-    //virtual void SetUp();
-    //virtual void TearDown();
     MatrixSlicer slicer;
 };
