@@ -7,7 +7,7 @@
 
 const size_t ROWS = 910;
 const size_t COLS = 735;
-const size_t NODE_COUNTS[] = { 3, 1, 2, 3, 5, 7, 12, 25, 80, 110 };
+const size_t NODE_COUNTS[] = { 1, 2, 3, 5, 7, 12, 25, 80, 110, 127 };
 
 typedef Matrix<float> TestGrid;
 
