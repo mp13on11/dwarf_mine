@@ -14,8 +14,11 @@ size_t MatrixSlicer::determinePivot(size_t rowsOrCols) const
         for (const auto& s : ratings)
             overall += s.second;
 
-        pivot = ceil(rowsOrCols * ratings.front().second * (1.0 / overall));
-    }
+        if (overall > 0)
+            pivot = ceil(rowsOrCols * ratings.front().second * (1.0 / overall));
+        else
+            pivot = 0;        
+    }    
     ratings.pop_front();
     return pivot;
 }
