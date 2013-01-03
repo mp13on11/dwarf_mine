@@ -60,40 +60,36 @@ void printResultOnMaster(string preamble, BenchmarkResult results, string unit =
     }
 }
 
+BenchmarkResult calculateWeightings(const ElfFactory& factory, const Configuration& config){
+    ProblemStatement benchmarkStatement(config.getElfCategory());
+    generateProblemData(benchmarkStatement);
+      
+    BenchmarkRunner preBenchmarkRunner(BENCHMARK_ITERATIONS);
+    preBenchmarkRunner.runBenchmark(benchmarkStatement, factory);
+    return preBenchmarkRunner.getWeightedResults();   
+}
+
 int main(int argc, char** argv)
 {
     Configuration config(argc, argv);
+    config.parseArguments(); 
+
     // used to ensure MPI::Finalize is called on exit of the application
     auto mpiGuard = MPIGuard(argc, argv);
     try
     {
-        ProblemStatement benchmarkStatement("matrix");
-        generateProblemData(benchmarkStatement);
-        unique_ptr<ElfFactory> factory(config.getElfFactory(benchmarkStatement.elfCategory));
-      
-        BenchmarkRunner preBenchmarkRunner(BENCHMARK_ITERATIONS);
-        preBenchmarkRunner.runBenchmark(benchmarkStatement, *factory);
-        auto weightedResults = preBenchmarkRunner.getWeightedResults();
-       
+        unique_ptr<ElfFactory> factory(config.getElfFactory());
+        auto weightedResults = calculateWeightings(*factory, config);
         printResultOnMaster("Weighted", weightedResults);
 
-        auto statement = config.createProblemStatement("matrix");
+        auto statement = config.createProblemStatement(config.getElfCategory());
 
-        BenchmarkRunner clusterBenchmarkRunner(BENCHMARK_ITERATIONS, weightedResults);
+        BenchmarkRunner clusterBenchmarkRunner(config, weightedResults);
         clusterBenchmarkRunner.runBenchmark(*statement, *factory);
         auto clusterResults = clusterBenchmarkRunner.getTimedResults();
 
-        printResultOnMaster("Cluster", clusterResults, "µs");
+        printResultOnMaster("Measured Time:", clusterResults, "µs");
 
-        if (MPI::COMM_WORLD.Get_rank() == MASTER)
-        {
-            BenchmarkRunner singleBenchmarkRunner(BENCHMARK_ITERATIONS, MASTER);
-            singleBenchmarkRunner.runBenchmark(*statement, *factory);
-
-            auto singleResults = singleBenchmarkRunner.getTimedResults();
-
-            printResultOnMaster("Master", singleResults, "µs");
-        }
     }
     catch (exception &e)
     {

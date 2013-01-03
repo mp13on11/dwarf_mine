@@ -15,7 +15,7 @@ const size_t WARMUP_ITERATIONS = 50;
  * BenchmarkRunner determines the available devices and benchmarks them idenpendently
  */
 BenchmarkRunner::BenchmarkRunner(size_t iterations)
-    : _iterations(iterations)
+    : _iterations(iterations), _warmUps(WARMUP_ITERATIONS)
 {
     for (NodeId i = 0; i < MPI::COMM_WORLD.Get_size(); ++i)
         _nodesets.push_back({{i, 0}});
@@ -24,19 +24,10 @@ BenchmarkRunner::BenchmarkRunner(size_t iterations)
 /**
  * BenchmarkRunner uses the given (weighted) result to benchmark the nodeset as cluster
  */
-BenchmarkRunner::BenchmarkRunner(size_t iterations, BenchmarkResult result)
-    : _iterations(iterations)
+BenchmarkRunner::BenchmarkRunner(Configuration& config, const BenchmarkResult& result)
+    : _iterations(config.getNumberOfIterations()), _warmUps(config.getNumberOfWarmUps())
 {
     _nodesets.push_back(result);
-}
-    
-/**
- * BenchmarkRunner uses the given device and benchmarks it alone
- */
-BenchmarkRunner::BenchmarkRunner(size_t iterations, NodeId device)
-    : _iterations(iterations)
-{
-    _nodesets.push_back({{device, 0}});
 }
 
 std::chrono::microseconds BenchmarkRunner::measureCall(ProblemStatement& statement, Scheduler& scheduler) {
@@ -48,7 +39,7 @@ std::chrono::microseconds BenchmarkRunner::measureCall(ProblemStatement& stateme
 
 unsigned int BenchmarkRunner::benchmarkNodeset(ProblemStatement& statement, Scheduler& scheduler)
 {
-    for (size_t i = 0; i < WARMUP_ITERATIONS; ++i)
+    for (size_t i = 0; i < _warmUps; ++i)
     {
         measureCall(statement, scheduler);
     }
@@ -62,7 +53,7 @@ unsigned int BenchmarkRunner::benchmarkNodeset(ProblemStatement& statement, Sche
 
 void BenchmarkRunner::getBenchmarked(ProblemStatement& statement, Scheduler& scheduler)
 {
-    for (size_t i = 0; i < _iterations + WARMUP_ITERATIONS; ++i)
+    for (size_t i = 0; i < _iterations + _warmUps; ++i)
         scheduler.dispatch(statement); // slave side
 }
 
