@@ -5,21 +5,26 @@
 #include <string>
 #include <vector>
 #include <functional>
+#include <main/MpiUtils.h>
 
 template<typename T>
 class Matrix;
 
-class MatrixHelper
+namespace MatrixHelper
 {
-public:
-    static Matrix<float> readMatrixFrom(const std::string& fileName);
-    static Matrix<float> readMatrixFrom(std::istream& stream);
-    static std::pair<Matrix<float>, Matrix<float>> readMatrixPairFrom(std::istream& stream);
-    static void writeMatrixTo(const std::string& fileName, const Matrix<float>& matrix);
-    static void writeMatrixTo(std::ostream& stream, const Matrix<float>& matrix);
-    static void fill(Matrix<float>& matrix, const std::function<float()>& generator);
-    static void validateMultiplicationPossible(const Matrix<float>& a, const Matrix<float>& b);
-private:
-    static void fillMatrixFromStream(Matrix<float>& matrix, std::istream& stream);
-    static std::vector<float> getValuesIn(const std::string& line);
-};
+    typedef std::pair<Matrix<float>, Matrix<float>> MatrixPair;
+
+    //
+    // Send via MPI
+    void sendMatrixTo(const Matrix<float>& matrix, NodeId node);
+    Matrix<float> receiveMatrixFrom(NodeId node);
+
+    Matrix<float> readMatrixFrom(const std::string& fileName);
+    Matrix<float> readMatrixFrom(std::istream& stream);
+    void writeMatrixPairTo(std::ostream& output, const MatrixPair& matrices);
+    MatrixPair readMatrixPairFrom(std::istream& stream);
+    void writeMatrixTo(const std::string& fileName, const Matrix<float>& matrix);
+    void writeMatrixTo(std::ostream& stream, const Matrix<float>& matrix);
+    void fill(Matrix<float>& matrix, const std::function<float()>& generator);
+    void validateMultiplicationPossible(const Matrix<float>& a, const Matrix<float>& b);
+}

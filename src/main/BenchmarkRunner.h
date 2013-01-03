@@ -14,11 +14,12 @@ class BenchmarkRunner
 private:
     size_t _iterations;
     int _devices;
-    BenchmarkResult m_results;
+    BenchmarkResult _results;
 
     std::chrono::microseconds measureCall(ProblemStatement& statement, Scheduler& scheduler);
-    void benchmarkDevice(DeviceId device, ProblemStatement& statement, Scheduler& scheduler);
+    void benchmarkDevice(DeviceId device, ProblemStatement& statement, Scheduler& scheduler, BenchmarkResult& result);
     void getBenchmarked(ProblemStatement& statement, Scheduler& scheduler);
+    void transformToResults(const BenchmarkResult& result);
 
 public:
     explicit BenchmarkRunner(size_t iterations);

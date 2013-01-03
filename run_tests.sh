@@ -1,2 +1,2 @@
 #!/bin/bash
-build/src/test/test
+build/src/test/test $*

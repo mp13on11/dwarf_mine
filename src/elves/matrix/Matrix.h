@@ -2,6 +2,7 @@
 
 #include <vector>
 #include <memory>
+#include <cassert>
 
 template<typename T>
 class Matrix
@@ -50,6 +51,8 @@ const T& Matrix<T>::operator()(std::size_t row, std::size_t column) const
 template<typename T>
 T& Matrix<T>::operator()(std::size_t row, std::size_t column)
 {
+    assert(row < rows());
+    assert(column < columns());
     return values[row * _columns + column];
 }
 

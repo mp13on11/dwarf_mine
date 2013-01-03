@@ -17,17 +17,17 @@
 
 using namespace std;
 
-void generateProblemData(stringstream& targetStream)
+void generateProblemData(ProblemStatement& statement)
 {
-    Matrix<float> first(500,500);
-    Matrix<float> second(500,500);
+    Matrix<float> first(100,100);
+    Matrix<float> second(100, 100);
     auto distribution = uniform_real_distribution<float> (-100, +100);
     auto engine = mt19937(time(nullptr));
     auto generator = bind(distribution, engine);
     MatrixHelper::fill(first, generator);
     MatrixHelper::fill(second, generator);
-    MatrixHelper::writeMatrixTo(targetStream, first);
-    MatrixHelper::writeMatrixTo(targetStream, second);
+    MatrixHelper::writeMatrixTo(*(statement.input), first);
+    MatrixHelper::writeMatrixTo(*(statement.input), second);
 }
 
 class MPIGuard
@@ -49,23 +49,25 @@ int main(int argc, char** argv)
     Configuration config(argc, argv);
     // used to ensure MPI::Finalize is called on exit of the application
     auto mpiGuard = MPIGuard(argc, argv);
-
     try
     {
-        stringstream in;
-        stringstream out;
-        generateProblemData(in);
-        ProblemStatement statement{ in, out, "matrix"};
+        ProblemStatement benchmarkStatement("matrix");
+        generateProblemData(benchmarkStatement);
+        unique_ptr<ElfFactory> factory(config.getElfFactory(benchmarkStatement.elfCategory));
+        BenchmarkRunner runner(100);
 
-        unique_ptr<ElfFactory> factory(config.getElfFactory(statement.elfCategory));
+        runner.runBenchmark(benchmarkStatement, *factory);
 
-        BenchmarkRunner runner(1);
-        runner.runBenchmark(statement, *factory);
         auto results = runner.getResults();
-        for (const auto& result: results)
-        {
-            cout << result.first << " - " <<result.second<<endl;
-        }
+
+        auto statement = config.createProblemStatement("matrix");
+        auto scheduler = factory->createScheduler();
+        scheduler->setNodeset(results);
+        auto elf = factory->createElf();
+        scheduler->setElf(elf.get());
+        
+        scheduler->dispatch(*statement);
+
     }
     catch (exception &e)
     {
