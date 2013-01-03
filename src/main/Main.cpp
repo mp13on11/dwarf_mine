@@ -71,11 +71,11 @@ int main(int argc, char** argv)
         ProblemStatement benchmarkStatement("matrix");
         generateProblemData(benchmarkStatement);
         unique_ptr<ElfFactory> factory(config.getElfFactory(benchmarkStatement.elfCategory));
-      
+
         BenchmarkRunner preBenchmarkRunner(BENCHMARK_ITERATIONS);
         preBenchmarkRunner.runBenchmark(benchmarkStatement, *factory);
         auto weightedResults = preBenchmarkRunner.getWeightedResults();
-       
+
         printResultOnMaster("Weighted", weightedResults);
 
         auto statement = config.createProblemStatement("matrix");
@@ -96,7 +96,7 @@ int main(int argc, char** argv)
             printResultOnMaster("Master", singleResults, "µs");
         }
     }
-    catch (exception &e)
+    catch (const exception &e)
     {
         cerr << "FATAL: " << e.what() << endl;
         return 1;

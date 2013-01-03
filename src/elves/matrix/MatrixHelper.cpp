@@ -14,9 +14,6 @@ using namespace std;
 
 namespace MatrixHelper
 {
-    static void fillMatrixFromStream(Matrix<float>& matrix, istream& stream);
-    static vector<float> getValuesIn(const string& line);
-
     void sendMatrixTo(const Matrix<float>& matrix, NodeId node)
     {
         unsigned long dimensions[2] =
@@ -44,7 +41,7 @@ namespace MatrixHelper
     void writeMatrixTo(const string& filename, const Matrix<float>& matrix)
     {
         ofstream file;
-        file.open(filename);
+        file.open(filename, ios_base::binary);
 
         if (!file.is_open())
             throw runtime_error("Failed to open matrix file for write: " + filename);
@@ -54,20 +51,12 @@ namespace MatrixHelper
 
     void writeMatrixTo(ostream& output, const Matrix<float>& matrix)
     {
-        output << matrix.rows() << " " << matrix.columns() << endl;
-        for (size_t i=0; i<matrix.rows(); i++)
-        {
-            for (size_t j=0; j<matrix.columns(); j++)
-            {
-                if(j>0)
-                   output << " ";
-                output << matrix(i, j);
-            }
-            output << endl;
+        size_t dimensions[] = { matrix.rows(), matrix.columns() };
+        output.write(reinterpret_cast<const char*>(dimensions), sizeof(size_t)*2);
+        output.write(reinterpret_cast<const char*>(matrix.buffer()), sizeof(float)*matrix.rows()*matrix.columns());
 
-            if (output.bad())
-                throw runtime_error("Failed to write matrix to stream in " + string(__FILE__));
-        }
+        if (output.bad())
+            throw runtime_error("Failed to write matrix to stream in " + string(__FILE__));
     }
 
     void writeMatrixPairTo(ostream& output, const pair<Matrix<float>, Matrix<float>>& matrices)
@@ -80,18 +69,18 @@ namespace MatrixHelper
     {
         try
         {
-            size_t rows, columns;
-            stream >> rows;
-            stream >> columns;
+            size_t dimensions[2];
+            stream.read(reinterpret_cast<char*>(dimensions), sizeof(size_t)*2);
+
+            size_t rows(dimensions[0]);
+            size_t columns(dimensions[1]);
+
+            Matrix<float> matrix(rows, columns);
+            stream.read(reinterpret_cast<char*>(matrix.buffer()), sizeof(float) * rows * columns);
 
             if (stream.bad() || stream.fail())
-            {
                 throw runtime_error("Failed to read matrix size from stream in " + string(__FILE__));
-            }
-            string line;
-            getline(stream, line);
-            Matrix<float> matrix(rows, columns);
-            fillMatrixFromStream(matrix, stream);
+
             return matrix;
         }
         catch (...)
@@ -104,7 +93,7 @@ namespace MatrixHelper
     Matrix<float> readMatrixFrom(const string& filename)
     {
         ifstream file;
-        file.open(filename);
+        file.open(filename, ios_base::binary);
 
         if (!file.is_open())
             throw runtime_error("Failed to open matrix file for read: " + filename);
@@ -120,40 +109,10 @@ namespace MatrixHelper
         return matrices;
     }
 
-    void fillMatrixFromStream(Matrix<float>& matrix, istream& stream)
-    {
-        for (size_t i=0; i<matrix.rows() && stream.good(); i++)
-        {
-            string line;
-            getline(stream, line);
-
-            if (stream.bad())
-                throw runtime_error("Failed to read matrix from stream in " + string(__FILE__));
-
-            vector<float> values = getValuesIn(line);
-
-            for (size_t j=0; j<matrix.columns() && j<values.size(); j++)
-                matrix(i, j) = values[j];
-        }
-    }
-
     void validateMultiplicationPossible(const Matrix<float>& a, const Matrix<float>& b)
     {
         if (a.columns() != b.rows())
             throw MismatchedMatricesException(a.columns(), b.rows());
-    }
-
-    vector<float> getValuesIn(const string& line)
-    {
-        istringstream stream(line);
-        vector<float> result;
-        copy(
-                istream_iterator<float>(stream),
-                istream_iterator<float>(),
-                back_inserter<vector<float>>(result)
-            );
-
-        return result;
     }
 
     void fill(Matrix<float>& matrix, const function<float()>& generator)
