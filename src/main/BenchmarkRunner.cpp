@@ -39,31 +39,33 @@ BenchmarkRunner::BenchmarkRunner(size_t iterations, NodeId device)
     _nodesets.push_back({{device, 0}});
 }
 
-std::chrono::microseconds BenchmarkRunner::measureCall(ProblemStatement& statement, Scheduler& scheduler) {
+std::chrono::microseconds BenchmarkRunner::measureCall(Scheduler& scheduler) {
     typedef chrono::high_resolution_clock clock;
     clock::time_point before = clock::now();
-    scheduler.dispatch(statement);
+    scheduler.dispatch();
     return clock::now() - before;
 }
 
 unsigned int BenchmarkRunner::benchmarkNodeset(ProblemStatement& statement, Scheduler& scheduler)
 {
+    scheduler.provideData(statement);
     for (size_t i = 0; i < WARMUP_ITERATIONS; ++i)
     {
-        measureCall(statement, scheduler);
+        measureCall(scheduler);
     }
     chrono::microseconds sum(0);
     for (size_t i = 0; i < _iterations; ++i)
     {
-        sum += measureCall(statement, scheduler);
+        sum += measureCall(scheduler);
     }
+    scheduler.outputData(statement);
     return (sum / _iterations).count();
 }
 
-void BenchmarkRunner::getBenchmarked(ProblemStatement& statement, Scheduler& scheduler)
+void BenchmarkRunner::getBenchmarked(Scheduler& scheduler)
 {
     for (size_t i = 0; i < _iterations + WARMUP_ITERATIONS; ++i)
-        scheduler.dispatch(statement); // slave side
+        scheduler.dispatch(); // slave side
 }
 
 void BenchmarkRunner::runBenchmark(ProblemStatement& statement, const ElfFactory& factory)
@@ -84,7 +86,7 @@ void BenchmarkRunner::runBenchmark(ProblemStatement& statement, const ElfFactory
     }
     else
     {
-        getBenchmarked(statement, *scheduler);
+        getBenchmarked(*scheduler);
     }
 }
 

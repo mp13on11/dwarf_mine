@@ -17,9 +17,9 @@ private:
     BenchmarkResult _weightedResults;
     BenchmarkResult _timedResults;
 
-    std::chrono::microseconds measureCall(ProblemStatement& statement, Scheduler& scheduler);
+    std::chrono::microseconds measureCall(Scheduler& scheduler);
     unsigned int benchmarkNodeset(ProblemStatement& statement, Scheduler& scheduler);
-    void getBenchmarked(ProblemStatement& statement, Scheduler& scheduler);
+    void getBenchmarked(Scheduler& scheduler);
     void weightTimedResults();
 
 public:
