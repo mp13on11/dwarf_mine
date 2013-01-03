@@ -18,15 +18,21 @@ struct MatrixScheduler::MatrixSchedulerImpl
 {
     MatrixSchedulerImpl(MatrixScheduler* self) : self(self) {}
 
-    void orchestrateCalculation(ProblemStatement& statement);
+    void orchestrateCalculation();
     void calculateOnSlave();
     Matrix<float> dispatchAndReceive(const MatrixPair& matrices);
     const MatrixSlice* distributeSlices(const std::vector<MatrixSlice>& sliceDefinitions, const MatrixPair& matrices);
     void calculateOnMaster(const MatrixSlice& sliceDefinition, const MatrixPair& matrices, Matrix<float>& result);
     void collectResults(const std::vector<MatrixSlice>& sliceDefinitions, Matrix<float>& result);
 
+    void outputData(ProblemStatement& statement);
+    bool hasData();
+    void provideData(ProblemStatement& statement);
+
     // Reference to containing MatrixScheduler
     MatrixScheduler* self;
+    MatrixPair matrices;
+    Matrix<float> result;
 };
 
 MatrixScheduler::MatrixScheduler() :
@@ -44,11 +50,26 @@ MatrixScheduler::~MatrixScheduler()
     delete pImpl;
 }
 
-void MatrixScheduler::doDispatch(ProblemStatement& statement)
+void MatrixScheduler::provideData(ProblemStatement& statement)
+{
+    pImpl->provideData(statement);
+}
+
+bool MatrixScheduler::hasData()
+{
+    return pImpl->hasData();
+}
+
+void MatrixScheduler::outputData(ProblemStatement& statement)
+{
+    pImpl->outputData(statement);
+}
+
+void MatrixScheduler::doDispatch()
 {
     if (rank == MASTER)
     {
-        pImpl->orchestrateCalculation(statement);
+        pImpl->orchestrateCalculation();
     }
     else
     {
@@ -61,7 +82,7 @@ MatrixPair sliceMatrices(const MatrixSlice& definition, const MatrixPair& matric
     Matrix<float> slicedLeft = definition.extractSlice(matrices.first, true);
     Matrix<float> slicedRight = definition.extractSlice(matrices.second, false);
 
-    return make_pair<Matrix<float>, Matrix<float>>(move(slicedLeft), move(slicedRight));
+    return { move(slicedLeft), move(slicedRight) };
 }
 
 void MatrixScheduler::MatrixSchedulerImpl::calculateOnSlave()
@@ -73,13 +94,26 @@ void MatrixScheduler::MatrixSchedulerImpl::calculateOnSlave()
     MatrixHelper::sendMatrixTo(result, MASTER);
 }
 
-void MatrixScheduler::MatrixSchedulerImpl::orchestrateCalculation(ProblemStatement& statement)
+void MatrixScheduler::MatrixSchedulerImpl::provideData(ProblemStatement& statement)
 {
     statement.input->clear();
     statement.input->seekg(0);
-    MatrixPair matrices = MatrixHelper::readMatrixPairFrom(*(statement.input));
-    Matrix<float> result = dispatchAndReceive(matrices);
+    matrices = MatrixHelper::readMatrixPairFrom(*(statement.input));
+}
+
+void MatrixScheduler::MatrixSchedulerImpl::outputData(ProblemStatement& statement)
+{
     MatrixHelper::writeMatrixTo(*(statement.output), result);
+}
+
+bool MatrixScheduler::MatrixSchedulerImpl::hasData()
+{
+    return !matrices.first.empty() || !matrices.second.empty();
+}
+
+void MatrixScheduler::MatrixSchedulerImpl::orchestrateCalculation()
+{
+    result = dispatchAndReceive(matrices);
 }
 
 Matrix<float> MatrixScheduler::MatrixSchedulerImpl::dispatchAndReceive(const MatrixPair& matrices)

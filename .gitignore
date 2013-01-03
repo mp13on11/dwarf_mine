@@ -1,4 +1,5 @@
 build/
+out.txt
 *.cproject
 *.project
 *.settings

@@ -24,17 +24,29 @@ void Scheduler::setNodeset(NodeId singleNode)
     nodeSet = {{singleNode, 0}};
 }
 
-void Scheduler::dispatch(ProblemStatement& statement)
+void Scheduler::dispatch()
 {
+    if (!hasData())
+    {
+        throw std::runtime_error("Scheduler::dispatch(): No ProblemStatement configured!");
+    }
+
     if (elf == nullptr)
     {
         throw std::runtime_error("Scheduler::dispatch(): No elf configured!");
     }
-	
+
     if (nodeSet.empty() && rank == MASTER)
     {
         throw std::runtime_error("Scheduler::dispatch(): Nodeset is empty!");
     }
 
-    doDispatch(statement);
+    doDispatch();
+}
+
+void Scheduler::dispatch(ProblemStatement& statement)
+{
+    provideData(statement);
+    dispatch();
+    outputData(statement);
 }

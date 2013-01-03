@@ -9,7 +9,12 @@ public:
     explicit MatrixScheduler(const BenchmarkResult& benchmarkResult);
     virtual ~MatrixScheduler();
 
-    virtual void doDispatch(ProblemStatement& statement);
+    virtual bool hasData();
+    virtual void provideData(ProblemStatement& statement);
+    virtual void outputData(ProblemStatement& statement);
+
+protected:
+    virtual void doDispatch();
 
 private:
     struct MatrixSchedulerImpl;
