@@ -59,19 +59,13 @@ int main(int argc, char** argv)
         runner.runBenchmark(benchmarkStatement, *factory);
 
         auto results = runner.getResults();
-        for (const auto& result: results)
-        {
-            cout << result.first << " - " <<result.second<<endl;
-        }
 
         auto statement = config.createProblemStatement("matrix");
-        //ProblemStatement statement("matrix");
-        //generateProblemData(statement);
-        
         auto scheduler = factory->createScheduler();
         scheduler->setNodeset(results);
         auto elf = factory->createElf();
         scheduler->setElf(elf.get());
+        
         scheduler->dispatch(*statement);
 
     }
