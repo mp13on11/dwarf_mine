@@ -12,6 +12,8 @@ public:
     explicit Matrix(std::size_t rows=0, std::size_t columns=0);
     Matrix(std::size_t rows, std::size_t columns, std::vector<T>&& data);
 
+    bool empty() const;
+
     std::size_t rows() const;
     std::size_t columns() const;
 
@@ -75,4 +77,10 @@ template<typename T>
 std::size_t Matrix<T>::columns() const
 {
     return _columns;
+}
+
+template<typename T>
+bool Matrix<T>::empty() const
+{
+    return _rows == 0 || _columns == 0;
 }
