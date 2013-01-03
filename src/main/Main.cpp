@@ -18,12 +18,13 @@
 
 using namespace std;
 
-const int BENCHMARK_ITERATIONS = 100;
+const int BENCHMARK_ITERATIONS = 10;
+const int PRE_BENCHMARK_MATRIX_SIZE = 500;
 
 void generateProblemData(ProblemStatement& statement)
 {
-    Matrix<float> first(100,100);
-    Matrix<float> second(100, 100);
+    Matrix<float> first(PRE_BENCHMARK_MATRIX_SIZE,PRE_BENCHMARK_MATRIX_SIZE);
+    Matrix<float> second(PRE_BENCHMARK_MATRIX_SIZE, PRE_BENCHMARK_MATRIX_SIZE);
     auto distribution = uniform_real_distribution<float> (-100, +100);
     auto engine = mt19937(time(nullptr));
     auto generator = bind(distribution, engine);
