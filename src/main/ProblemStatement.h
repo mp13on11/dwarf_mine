@@ -19,12 +19,12 @@ struct ProblemStatement
     {
         auto i = new std::fstream();
         auto o = new std::fstream();
-        i->open(inputFilename);
+        i->open(inputFilename, std::ios::in);
 
         if (!i->is_open())
             throw std::runtime_error("Failed to open file: " + inputFilename);
 
-        o->open(outputFilename);
+        o->open(outputFilename, std::ios::out);
 
         if (!o->is_open())
             throw std::runtime_error("Failed to open file: " + outputFilename);
