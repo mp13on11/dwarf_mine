@@ -16,9 +16,14 @@ MatrixSlice::MatrixSlice(
     rows(rows)
 {
 }
-
+#include <iostream>
 Matrix<float> MatrixSlice::extractSlice(const Matrix<float>& sourceMatrix, bool rowWise) const
 {
+    // short cut to prevent unnecessary copies
+    if (x == 0 && y == 0 && columns == sourceMatrix.columns() && rows == sourceMatrix.rows())
+    {
+        return sourceMatrix;
+    }
     size_t numRows, numColumns, yOffset, xOffset;
     if (rowWise)
     {
