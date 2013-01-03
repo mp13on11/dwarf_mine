@@ -1,4 +1,5 @@
 #include <iostream>
+#include <fstream>
 #include <vector>
 #include <stdexcept>
 #include <ctime>
@@ -18,6 +19,13 @@ void verifyMatrices(const vector<string>& args)
     throw runtime_error("Not implemented yet!");
 }
 
+function<float()> makeGenerator()
+{
+    auto distribution = uniform_real_distribution<float> (-100, +100);
+    auto engine = mt19937(time(nullptr));
+    return bind(distribution, engine);
+}
+
 void generateMatrix(const vector<string>& args)
 {
     using namespace boost;
@@ -30,11 +38,72 @@ void generateMatrix(const vector<string>& args)
     auto outFile = args[2];
 
     Matrix<float> result(rows, cols);
-    auto distribution = uniform_real_distribution<float> (-100, +100);
-    auto engine = mt19937(time(nullptr));
-    auto generator = bind(distribution, engine);
+    auto generator = makeGenerator();
     MatrixHelper::fill(result, generator);
     MatrixHelper::writeMatrixTo(outFile, result);
+
+    cout << "Matrix generated." << endl;
+}
+
+void generateMatrixPair(const vector<string>& args)
+{
+    using namespace boost;
+
+    if (args.size() < 4)
+        printUsage("<rows> <middle> <cols> <out_file>");
+
+    auto rows = lexical_cast<size_t>(args[0]);
+    auto middle = lexical_cast<size_t>(args[1]);
+    auto cols = lexical_cast<size_t>(args[2]);
+    auto outFile = args[3];
+
+    Matrix<float> left(rows, middle);
+    Matrix<float> right(middle, cols);
+    auto generator = makeGenerator();
+    MatrixHelper::fill(left, generator);
+    MatrixHelper::fill(right, generator);
+
+    ofstream output(outFile, ios_base::binary);
+
+    MatrixHelper::writeMatrixPairTo(output, { left, right });
+
+    cout << "Matrix pair generated." << endl;
+}
+
+void convert(const vector<string>& args, bool toBinary)
+{
+    if (args.size() < 2)
+        printUsage("<in_file> <out_file>");
+
+    auto inFlags = ios_base::in;
+    auto outFlags = ios_base::out;
+
+    if (toBinary)
+        outFlags |= ios_base::binary;
+    else
+        inFlags |= ios_base::binary;
+
+    ifstream inFile(args[0], inFlags);
+    ofstream outFile(args[1], outFlags);
+
+    size_t count(0);
+
+    while (inFile.peek() != EOF && inFile.good() && !inFile.eof())
+    {
+        if (toBinary)
+        {
+            Matrix<float> input(MatrixHelper::readMatrixTextFrom(inFile));
+            MatrixHelper::writeMatrixTo(outFile, input);
+        }
+        else
+        {
+            Matrix<float> input(MatrixHelper::readMatrixFrom(inFile));
+            MatrixHelper::writeMatrixTextTo(outFile, input);
+        }
+        ++count;
+    }
+
+    cout << "Converted " << count << " matrices." << endl;
 }
 
 map<string, function<void(const vector<string>&)>> subCommands =
@@ -47,6 +116,23 @@ map<string, function<void(const vector<string>&)>> subCommands =
     { "generate", [](const vector<string>& args)
         {
             generateMatrix(args);
+        }
+    },
+    { "generate_pair", [](const vector<string>& args)
+        {
+            generateMatrixPair(args);
+        }
+    },
+    {
+        "text2bin", [](const vector<string>& args)
+        {
+            convert(args, true);
+        }
+    },
+    {
+        "bin2text", [](const vector<string>& args)
+        {
+            convert(args, false);
         }
     }
 };

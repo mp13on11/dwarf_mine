@@ -14,6 +14,9 @@ using namespace std;
 
 namespace MatrixHelper
 {
+    static void fillMatrixFromStream(Matrix<float>& matrix, istream& stream);
+    static vector<float> getValuesIn(const string& line);
+
     void sendMatrixTo(const Matrix<float>& matrix, NodeId node)
     {
         unsigned long dimensions[2] =
@@ -38,15 +41,22 @@ namespace MatrixHelper
         return result;
     }
 
-    void writeMatrixTo(const string& filename, const Matrix<float>& matrix)
+    void writeMatrixTo(const string& filename, const Matrix<float>& matrix, bool binary)
     {
         ofstream file;
-        file.open(filename, ios_base::binary);
+
+        if (binary)
+            file.open(filename, ios_base::binary);
+        else
+            file.open(filename);
 
         if (!file.is_open())
             throw runtime_error("Failed to open matrix file for write: " + filename);
 
-        writeMatrixTo(file, matrix);
+        if (binary)
+            writeMatrixTo(file, matrix);
+        else
+            writeMatrixTextTo(file, matrix);
     }
 
     void writeMatrixTo(ostream& output, const Matrix<float>& matrix)
@@ -57,6 +67,49 @@ namespace MatrixHelper
 
         if (output.bad())
             throw runtime_error("Failed to write matrix to stream in " + string(__FILE__));
+    }
+
+    void writeMatrixTextTo(ostream& output, const Matrix<float>& matrix)
+    {
+        output << matrix.rows() << " " << matrix.columns() << endl;
+        for (size_t i=0; i<matrix.rows(); i++)
+        {
+            for (size_t j=0; j<matrix.columns(); j++)
+            {
+                if(j>0)
+                   output << " ";
+                output << matrix(i, j);
+            }
+            output << endl;
+
+            if (output.bad())
+                throw runtime_error("Failed to write matrix to stream in " + string(__FILE__));
+        }
+    }
+
+    Matrix<float> readMatrixTextFrom(istream& stream)
+    {
+        try
+        {
+            size_t rows, columns;
+            stream >> rows;
+            stream >> columns;
+
+            if (stream.bad() || stream.fail())
+            {
+                throw runtime_error("Failed to read matrix size from stream in " + string(__FILE__));
+            }
+            string line;
+            getline(stream, line);
+            Matrix<float> matrix(rows, columns);
+            fillMatrixFromStream(matrix, stream);
+            return matrix;
+        }
+        catch (...)
+        {
+            cerr << "ERROR: Wrong matrices stream format." << endl;
+            throw;
+        }
     }
 
     void writeMatrixPairTo(ostream& output, const pair<Matrix<float>, Matrix<float>>& matrices)
@@ -90,15 +143,22 @@ namespace MatrixHelper
         }
     }
 
-    Matrix<float> readMatrixFrom(const string& filename)
+    Matrix<float> readMatrixFrom(const string& filename, bool binary)
     {
         ifstream file;
-        file.open(filename, ios_base::binary);
+
+        if (binary)
+            file.open(filename, ios_base::binary);
+        else
+            file.open(filename);
 
         if (!file.is_open())
             throw runtime_error("Failed to open matrix file for read: " + filename);
 
-        return readMatrixFrom(file);
+        if (binary)
+            return readMatrixFrom(file);
+        else
+            return readMatrixTextFrom(file);
     }
 
     pair<Matrix<float>, Matrix<float>> readMatrixPairFrom(std::istream& stream)
@@ -124,5 +184,35 @@ namespace MatrixHelper
                 matrix(y, x) = generator();
             }
         }
+    }
+
+    void fillMatrixFromStream(Matrix<float>& matrix, istream& stream)
+    {
+        for (size_t i=0; i<matrix.rows() && stream.good(); i++)
+        {
+            string line;
+            getline(stream, line);
+
+            if (stream.bad())
+                throw runtime_error("Failed to read matrix from stream in " + string(__FILE__));
+
+            vector<float> values = getValuesIn(line);
+
+            for (size_t j=0; j<matrix.columns() && j<values.size(); j++)
+                matrix(i, j) = values[j];
+        }
+    }
+
+    vector<float> getValuesIn(const string& line)
+    {
+        istringstream stream(line);
+        vector<float> result;
+        copy(
+                istream_iterator<float>(stream),
+                istream_iterator<float>(),
+                back_inserter<vector<float>>(result)
+            );
+
+        return result;
     }
 }
