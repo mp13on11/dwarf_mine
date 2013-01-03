@@ -17,7 +17,7 @@
 
 using namespace std;
 
-void generateProblemData(stringstream& targetStream)
+void generateProblemData(ProblemStatement& statement)
 {
     Matrix<float> first(100,100);
     Matrix<float> second(100, 100);
@@ -26,8 +26,8 @@ void generateProblemData(stringstream& targetStream)
     auto generator = bind(distribution, engine);
     MatrixHelper::fill(first, generator);
     MatrixHelper::fill(second, generator);
-    MatrixHelper::writeMatrixTo(targetStream, first);
-    MatrixHelper::writeMatrixTo(targetStream, second);
+    MatrixHelper::writeMatrixTo(*(statement.input), first);
+    MatrixHelper::writeMatrixTo(*(statement.input), second);
 }
 
 class MPIGuard
@@ -51,10 +51,8 @@ int main(int argc, char** argv)
     auto mpiGuard = MPIGuard(argc, argv);
     try
     {
-        stringstream in;
-        stringstream out;
-        generateProblemData(in);
-        ProblemStatement benchmarkStatement{ in, out, "matrix"};
+        ProblemStatement benchmarkStatement("matrix");
+        generateProblemData(benchmarkStatement);
         unique_ptr<ElfFactory> factory(config.getElfFactory(benchmarkStatement.elfCategory));
         BenchmarkRunner runner(100);
 
@@ -66,10 +64,16 @@ int main(int argc, char** argv)
             cout << result.first << " - " <<result.second<<endl;
         }
 
-        auto statement = config.createProblemStatement();
-        auto scheduler = factory->createFactory();
-        scheduler->doDispatch(*statement);
+        auto statement = config.createProblemStatement("matrix");
+        //ProblemStatement statement("matrix");
+        //generateProblemData(statement);
         
+        auto scheduler = factory->createScheduler();
+        scheduler->setNodeset(results);
+        auto elf = factory->createElf();
+        scheduler->setElf(elf.get());
+        scheduler->dispatch(*statement);
+
     }
     catch (exception &e)
     {

@@ -75,11 +75,11 @@ void MatrixScheduler::MatrixSchedulerImpl::calculateOnSlave()
 
 void MatrixScheduler::MatrixSchedulerImpl::orchestrateCalculation(ProblemStatement& statement)
 {
-    statement.input.clear();
-    statement.input.seekg(0);
-    MatrixPair matrices = MatrixHelper::readMatrixPairFrom(statement.input);
+    statement.input->clear();
+    statement.input->seekg(0);
+    MatrixPair matrices = MatrixHelper::readMatrixPairFrom(*(statement.input));
     Matrix<float> result = dispatchAndReceive(matrices);
-    MatrixHelper::writeMatrixTo(statement.output, result);
+    MatrixHelper::writeMatrixTo(*(statement.output), result);
 }
 
 Matrix<float> MatrixScheduler::MatrixSchedulerImpl::dispatchAndReceive(const MatrixPair& matrices)

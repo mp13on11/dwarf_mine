@@ -11,7 +11,7 @@ class Configuration
 {
 public:
     Configuration(int argc, char** argv);
-    std::unique_ptr<ProblemStatement> createProblemStatement();
+    std::unique_ptr<ProblemStatement> createProblemStatement(std::string category);
     std::unique_ptr<ElfFactory> getElfFactory(const ElfCategory& category);
 
 private:
