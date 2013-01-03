@@ -90,7 +90,7 @@ int main(int argc, char** argv)
             BenchmarkRunner singleBenchmarkRunner(BENCHMARK_ITERATIONS, MASTER);
             singleBenchmarkRunner.runBenchmark(*statement, *factory);
 
-            auto singleResults = clusterBenchmarkRunner.getTimedResults();
+            auto singleResults = singleBenchmarkRunner.getTimedResults();
 
             printResultOnMaster("Master", singleResults, "µs");
         }
