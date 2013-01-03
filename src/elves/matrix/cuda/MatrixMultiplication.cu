@@ -17,4 +17,5 @@ void gemm(int m, int n, int k, float* left, float* right, float* out, int blockS
     dim3 dimBlock(blockSize, blockSize);
     gemmKernel <<< dimGrid, dimBlock >>>(m, n, k, left, right, out);
     CudaUtils::checkState();
+    //cudaDeviceReset();
 }
