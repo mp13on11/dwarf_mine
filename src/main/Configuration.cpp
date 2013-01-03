@@ -5,6 +5,7 @@
 #include <stdexcept>
 #include <cstdlib>
 #include <iostream>
+#include <fstream>
 
 using namespace std;
 
@@ -26,6 +27,21 @@ void Configuration::usageError()
 void Configuration::printUsage()
 {
     cerr << "Usage: " << programName << " cuda|smp" << endl;
+}
+
+unique_ptr<ProblemStatement> Configuration::createProblemStatement()
+{
+    ifstream input;
+    auto statement = unique_ptr<ProblemStatement>(new ProblemStatement()));
+    input.open(argv[2]);
+    
+    if(!input.is_open())
+    {
+        throw runtime_error("Failed to open " + string(argv[2]));
+    }
+
+    statement->input.rdbuf(input.rdbuf());
+    return statement;
 }
 
 unique_ptr<ElfFactory> Configuration::getElfFactory(const ElfCategory& category)

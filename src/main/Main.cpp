@@ -54,17 +54,22 @@ int main(int argc, char** argv)
         stringstream in;
         stringstream out;
         generateProblemData(in);
-        ProblemStatement statement{ in, out, "matrix"};
-        unique_ptr<ElfFactory> factory(config.getElfFactory(statement.elfCategory));
+        ProblemStatement benchmarkStatement{ in, out, "matrix"};
+        unique_ptr<ElfFactory> factory(config.getElfFactory(benchmarkStatement.elfCategory));
         BenchmarkRunner runner(100);
 
-        runner.runBenchmark(statement, *factory);
+        runner.runBenchmark(benchmarkStatement, *factory);
 
         auto results = runner.getResults();
         for (const auto& result: results)
         {
             cout << result.first << " - " <<result.second<<endl;
         }
+
+        auto statement = config.createProblemStatement();
+        auto scheduler = factory->createFactory();
+        scheduler->doDispatch(*statement);
+        
     }
     catch (exception &e)
     {
