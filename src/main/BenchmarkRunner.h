@@ -13,16 +13,20 @@ class BenchmarkRunner
 {
 private:
     size_t _iterations;
-    int _devices;
-    BenchmarkResult _results;
+    std::vector<BenchmarkResult> _nodesets;
+    BenchmarkResult _weightedResults;
+    BenchmarkResult _timedResults;
 
     std::chrono::microseconds measureCall(ProblemStatement& statement, Scheduler& scheduler);
-    void benchmarkDevice(DeviceId device, ProblemStatement& statement, Scheduler& scheduler, BenchmarkResult& result);
+    unsigned int benchmarkNodeset(ProblemStatement& statement, Scheduler& scheduler);
     void getBenchmarked(ProblemStatement& statement, Scheduler& scheduler);
-    void transformToResults(const BenchmarkResult& result);
+    void weightTimedResults();
 
 public:
     explicit BenchmarkRunner(size_t iterations);
+    BenchmarkRunner(size_t iterations, BenchmarkResult result);
+    BenchmarkRunner(size_t iterations, NodeId device);
     void runBenchmark(ProblemStatement& statement, const ElfFactory& factory);
-    BenchmarkResult getResults();
+    BenchmarkResult getWeightedResults();
+    BenchmarkResult getTimedResults();
 };

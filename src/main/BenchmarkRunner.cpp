@@ -11,11 +11,32 @@ using namespace std;
 
 const size_t WARMUP_ITERATIONS = 50;
 
+/**
+ * BenchmarkRunner determines the available devices and benchmarks them idenpendently
+ */
 BenchmarkRunner::BenchmarkRunner(size_t iterations)
-    : _iterations(iterations),
-      _devices(MPI::COMM_WORLD.Get_size())
+    : _iterations(iterations)
 {
+    for (NodeId i = 0; i < MPI::COMM_WORLD.Get_size(); ++i)
+        _nodesets.push_back({{i, 0}});
+}
 
+/**
+ * BenchmarkRunner uses the given (weighted) result to benchmark the nodeset as cluster
+ */
+BenchmarkRunner::BenchmarkRunner(size_t iterations, BenchmarkResult result)
+    : _iterations(iterations)
+{
+    _nodesets.push_back(result);
+}
+    
+/**
+ * BenchmarkRunner uses the given device and benchmarks it alone
+ */
+BenchmarkRunner::BenchmarkRunner(size_t iterations, NodeId device)
+    : _iterations(iterations)
+{
+    _nodesets.push_back({{device, 0}});
 }
 
 std::chrono::microseconds BenchmarkRunner::measureCall(ProblemStatement& statement, Scheduler& scheduler) {
@@ -25,7 +46,7 @@ std::chrono::microseconds BenchmarkRunner::measureCall(ProblemStatement& stateme
     return clock::now() - before;
 }
 
-void BenchmarkRunner::benchmarkDevice(DeviceId device, ProblemStatement& statement, Scheduler& scheduler, BenchmarkResult& results)
+unsigned int BenchmarkRunner::benchmarkNodeset(ProblemStatement& statement, Scheduler& scheduler)
 {
     for (size_t i = 0; i < WARMUP_ITERATIONS; ++i)
     {
@@ -36,7 +57,7 @@ void BenchmarkRunner::benchmarkDevice(DeviceId device, ProblemStatement& stateme
     {
         sum += measureCall(statement, scheduler);
     }
-    results[device] = (sum / _iterations).count();
+    return (sum / _iterations).count();
 }
 
 void BenchmarkRunner::getBenchmarked(ProblemStatement& statement, Scheduler& scheduler)
@@ -54,13 +75,12 @@ void BenchmarkRunner::runBenchmark(ProblemStatement& statement, const ElfFactory
 
     if (MPI::COMM_WORLD.Get_rank() == MASTER)
     {
-        BenchmarkResult measurements;
-        for (NodeId device = 0; device < _devices; ++device)
+        for (size_t nodeset = 0; nodeset < _nodesets.size(); ++nodeset)
         {
-            scheduler->setNodeset(device);
-            benchmarkDevice(device, statement, *scheduler, measurements);
+            scheduler->setNodeset(_nodesets[nodeset]);
+            _timedResults[nodeset] = benchmarkNodeset(statement, *scheduler);
         }
-        transformToResults(measurements);
+        weightTimedResults();
     }
     else
     {
@@ -68,20 +88,25 @@ void BenchmarkRunner::runBenchmark(ProblemStatement& statement, const ElfFactory
     }
 }
 
-void BenchmarkRunner::transformToResults(const BenchmarkResult& result)
+void BenchmarkRunner::weightTimedResults()
 {
     int runtimeSum = 0;
-    for (const auto& nodeResult : result)
+    for (const auto& nodeResult : _timedResults)
     {
         runtimeSum += nodeResult.second;
     }
-    for (const auto& nodeResult : result)
+    for (const auto& nodeResult :  _timedResults)
     {
-        _results[nodeResult.first] = 100 - nodeResult.second * 100 / runtimeSum;
+        _weightedResults[nodeResult.first] = 100 - nodeResult.second * 100 / runtimeSum;
     }
 }
 
-BenchmarkResult BenchmarkRunner::getResults()
+BenchmarkResult BenchmarkRunner::getWeightedResults()
 {
-    return _results;
+    return _weightedResults;
+}
+
+BenchmarkResult BenchmarkRunner::getTimedResults()
+{
+    return _timedResults;
 }

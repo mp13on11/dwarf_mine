@@ -14,13 +14,17 @@
 #include "Configuration.h"
 #include "matrix/MatrixHelper.h"
 #include "matrix/Matrix.h"
+#include "MpiUtils.h"
 
 using namespace std;
 
+const int BENCHMARK_ITERATIONS = 10;
+const int PRE_BENCHMARK_MATRIX_SIZE = 500;
+
 void generateProblemData(ProblemStatement& statement)
 {
-    Matrix<float> first(100,100);
-    Matrix<float> second(100, 100);
+    Matrix<float> first(PRE_BENCHMARK_MATRIX_SIZE,PRE_BENCHMARK_MATRIX_SIZE);
+    Matrix<float> second(PRE_BENCHMARK_MATRIX_SIZE, PRE_BENCHMARK_MATRIX_SIZE);
     auto distribution = uniform_real_distribution<float> (-100, +100);
     auto engine = mt19937(time(nullptr));
     auto generator = bind(distribution, engine);
@@ -44,6 +48,19 @@ public:
     }
 };
 
+void printResultOnMaster(string preamble, BenchmarkResult results, string unit = "")
+{
+    if (MPI::COMM_WORLD.Get_rank() == MASTER)
+    {
+        cout << preamble << "\n";
+        for (const auto& result : results)
+        {
+            cout << result.first << " " << result.second << " "<< unit << "\n";
+        }
+        cout << flush;
+    }
+}
+
 int main(int argc, char** argv)
 {
     Configuration config(argc, argv);
@@ -54,20 +71,30 @@ int main(int argc, char** argv)
         ProblemStatement benchmarkStatement("matrix");
         generateProblemData(benchmarkStatement);
         unique_ptr<ElfFactory> factory(config.getElfFactory(benchmarkStatement.elfCategory));
-        BenchmarkRunner runner(100);
-
-        runner.runBenchmark(benchmarkStatement, *factory);
-
-        auto results = runner.getResults();
+      
+        BenchmarkRunner preBenchmarkRunner(BENCHMARK_ITERATIONS);
+        preBenchmarkRunner.runBenchmark(benchmarkStatement, *factory);
+        auto weightedResults = preBenchmarkRunner.getWeightedResults();
+       
+        printResultOnMaster("Weighted", weightedResults);
 
         auto statement = config.createProblemStatement("matrix");
-        auto scheduler = factory->createScheduler();
-        scheduler->setNodeset(results);
-        auto elf = factory->createElf();
-        scheduler->setElf(elf.get());
-        
-        scheduler->dispatch(*statement);
 
+        BenchmarkRunner clusterBenchmarkRunner(BENCHMARK_ITERATIONS, weightedResults);
+        clusterBenchmarkRunner.runBenchmark(*statement, *factory);
+        auto clusterResults = clusterBenchmarkRunner.getTimedResults();
+
+        printResultOnMaster("Cluster", clusterResults, "µs");
+
+        if (MPI::COMM_WORLD.Get_rank() == MASTER)
+        {
+            BenchmarkRunner singleBenchmarkRunner(BENCHMARK_ITERATIONS, MASTER);
+            singleBenchmarkRunner.runBenchmark(*statement, *factory);
+
+            auto singleResults = singleBenchmarkRunner.getTimedResults();
+
+            printResultOnMaster("Master", singleResults, "µs");
+        }
     }
     catch (exception &e)
     {
