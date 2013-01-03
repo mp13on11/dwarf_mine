@@ -15,8 +15,8 @@ MatrixElf::MatrixT CudaMatrixElf::multiply(const MatrixT& left, const MatrixT& r
     //MatrixT left(leftOriginal);
     //MatrixT right(rightOriginal);  
 
-    MatrixHelper::writeMatrixTo("/home/gary/left", left);    
-    MatrixHelper::writeMatrixTo("/home/gary/right", right);    
+    //MatrixHelper::writeMatrixTo("/home/gary/left", left);    
+   // MatrixHelper::writeMatrixTo("/home/gary/right", right);    
     
     //left.addPadding(32);
     //right.addPadding(32); 
@@ -46,6 +46,6 @@ MatrixElf::MatrixT CudaMatrixElf::multiply(const MatrixT& left, const MatrixT& r
     MatrixT resultMatrix(leftRows, rightCols, std::move(result_h));
     //resultMatrix.resizeLossy(leftOriginal.rows(), rightOriginal.columns());
 
-    MatrixHelper::writeMatrixTo("/home/gary/res", resultMatrix);    
+//    MatrixHelper::writeMatrixTo("/home/gary/res", resultMatrix);    
     return resultMatrix;
 }

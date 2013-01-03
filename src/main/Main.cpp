@@ -19,8 +19,8 @@ using namespace std;
 
 void generateProblemData(stringstream& targetStream)
 {
-    Matrix<float> first(2000,2000);
-    Matrix<float> second(2000,2000);
+    Matrix<float> first(500,500);
+    Matrix<float> second(500,500);
     auto distribution = uniform_real_distribution<float> (-100, +100);
     auto engine = mt19937(time(nullptr));
     auto generator = bind(distribution, engine);
@@ -59,7 +59,7 @@ int main(int argc, char** argv)
 
         unique_ptr<ElfFactory> factory(config.getElfFactory(statement.elfCategory));
 
-        BenchmarkRunner runner(100);
+        BenchmarkRunner runner(1);
         runner.runBenchmark(statement, *factory);
         auto results = runner.getResults();
         for (const auto& result: results)
