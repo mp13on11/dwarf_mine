@@ -1,0 +1,81 @@
+jenkins@bigdwarf:~/share/dwarf_mine$ mpirun --app appfile_master
+Configuation: 
+	Mode: smp
+	WarmUps: 50
+	Iterations: 100
+	Input: /home/jenkins/share/dwarf_mine/very_huge_input.bin
+	Output: /home/jenkins/share/dwarf_mine/output.bin
+Timed
+0 11665 µs
+Weighted
+0 100 
+Measured Time:
+0 2328975 µs
+
+
+jenkins@bigdwarf:~/share/dwarf_mine$ mpirun --app appfile_master_cuda 
+Configuation: 
+	Mode: cuda
+	WarmUps: 50
+	Iterations: 100
+	Input: /home/jenkins/share/dwarf_mine/very_huge_input.bin
+	Output: /home/jenkins/share/dwarf_mine/output.bin
+Timed
+0 13452 µs
+Weighted
+0 100 
+Measured Time:
+0 319968 µs
+
+jenkins@bigdwarf:~/share/dwarf_mine$ mpirun --app appfile
+Configuation: 
+	Mode: smp
+	WarmUps: 50
+	Iterations: 100
+	Input: /home/jenkins/share/dwarf_mine/very_huge_input.bin
+	Output: /home/jenkins/share/dwarf_mine/output.bin
+Timed
+0 17611 µs
+1 14053 µs
+2 83405 µs
+3 47410 µs
+4 61572 µs
+5 83257 µs
+6 47608 µs
+Weighted
+0 4 
+1 3 
+2 23 
+3 13 
+4 17 
+5 23 
+6 13 
+Measured Time:
+0 1288735 µs
+
+
+jenkins@bigdwarf:~/share/dwarf_mine$ mpirun --app appfile_cuda_master 
+Configuation: 
+	Mode: cuda
+	WarmUps: 50
+	Iterations: 100
+	Input: /home/jenkins/share/dwarf_mine/very_huge_input.bin
+	Output: /home/jenkins/share/dwarf_mine/output.bin
+Timed
+0 13696 µs
+1 18134 µs
+2 82039 µs
+3 47569 µs
+4 71956 µs
+5 83579 µs
+6 47670 µs
+Weighted
+0 3 
+1 4 
+2 22 
+3 13 
+4 19 
+5 22 
+6 13 
+Measured Time:
+0 1316242 µs
