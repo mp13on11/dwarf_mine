@@ -19,7 +19,7 @@
 using namespace std;
 
 const int BENCHMARK_ITERATIONS = 10;
-const int PRE_BENCHMARK_MATRIX_SIZE = 500;
+const int PRE_BENCHMARK_MATRIX_SIZE = 1500;
 
 void generateProblemData(ProblemStatement& statement)
 {
@@ -61,15 +61,28 @@ void printResultOnMaster(string preamble, BenchmarkResult results, string unit =
     }
 }
 
-BenchmarkResult calculateWeightings(const ElfFactory& factory, const Configuration& config){
-    ProblemStatement benchmarkStatement(config.getElfCategory());
-    generateProblemData(benchmarkStatement);
-      
-    BenchmarkRunner preBenchmarkRunner(BENCHMARK_ITERATIONS);
-    preBenchmarkRunner.runBenchmark(benchmarkStatement, factory);
-    printResultOnMaster("Timed", preBenchmarkRunner.getTimedResults(), "µs");
-    return preBenchmarkRunner.getWeightedResults();   
+BenchmarkResult calculateWeightings(const ElfFactory& factory, Configuration& config){
+	if (config.preBenchmark())
+	{
+		ProblemStatement benchmarkStatement(config.getElfCategory());
+		generateProblemData(benchmarkStatement);
+		  
+		BenchmarkRunner preBenchmarkRunner(config);
+		preBenchmarkRunner.runBenchmark(benchmarkStatement, factory);
+		printResultOnMaster("Timed", preBenchmarkRunner.getTimedResults(), "µs");
+		return preBenchmarkRunner.getWeightedResults();   
+	}
+	else
+	{
+		BenchmarkResult result;
+		for (int i = 0; i < MPI::COMM_WORLD.Get_size(); ++i)
+		{
+			result[i] = 1;
+		}
+		return result;
+	}
 }
+
 
 int main(int argc, char** argv)
 {
@@ -87,7 +100,7 @@ int main(int argc, char** argv)
     try
     {
         unique_ptr<ElfFactory> factory(config.getElfFactory());
-        auto weightedResults = calculateWeightings(*factory, config);
+		auto weightedResults = calculateWeightings(*factory, config);
         printResultOnMaster("Weighted", weightedResults);
 		
         auto statement = config.createProblemStatement(config.getElfCategory());

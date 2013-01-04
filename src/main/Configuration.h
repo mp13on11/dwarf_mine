@@ -18,17 +18,19 @@ public:
     bool parseArguments();
     size_t getNumberOfWarmUps();
     size_t getNumberOfIterations();
+    bool preBenchmark() const;
     
     friend std::ostream& operator<<(std::ostream& s, const Configuration& c)
     {
-	s 	<< "Configuation: "
-		<< "\n\tMode: "<< c._mode
-		<< "\n\tWarmUps: " << c._numberOfWarmUps
-		<< "\n\tIterations: " << c._numberOfIterations
-		<< "\n\tInput: " << c._inputFile
-		<< "\n\tOutput: " << c._outputFile;
-	return s;
-}
+		s 	<< "Configuation: "
+			<< "\n\tMode: "<< c._mode
+			<< "\n\tWarmUps: " << c._numberOfWarmUps
+			<< "\n\tIterations: " << c._numberOfIterations
+			<< "\n\tInput: " << c._inputFile
+			<< "\n\tOutput: " << c._outputFile
+			<< "\n\tPre-Benchmark: " << c._preBenchmark;
+		return s;
+	}
 
 private:
     
@@ -42,4 +44,5 @@ private:
     char** arguments;    
     std::string programName, _mode;
     std::string _inputFile, _outputFile;
+    bool _preBenchmark;
 };

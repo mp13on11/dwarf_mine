@@ -30,7 +30,8 @@ bool Configuration::parseArguments()
             ("numwarmups,w", po::value<size_t>(&_numberOfWarmUps)->default_value(50), "Number of warmup rounds")
             ("numiter,n", po::value<size_t>(&_numberOfIterations)->default_value(100), "Number of benchmark iterations")
             ("input,i", po::value<string>(&_inputFile), "Input file")
-            ("output,o", po::value<string>(&_outputFile), "Output file");
+            ("output,o", po::value<string>(&_outputFile), "Output file")
+            ("prebenchmark,p",po::value<bool>(&_preBenchmark)->default_value(true), "Use prebenchmark - without uniform distribution is enforced");
         po::variables_map vm;
         try
         {
@@ -55,7 +56,7 @@ bool Configuration::parseArguments()
         {
            _useFiles = true;
         }
-
+        
         if(vm.count("mode") && (_mode != "smp" && _mode != "cuda")){
             cerr << "ERROR: Mode must be smp or cuda" << endl; 
             return false;
@@ -70,6 +71,11 @@ bool Configuration::parseArguments()
     }
 
     return true;
+}
+
+bool Configuration::preBenchmark() const
+{
+	return _preBenchmark;
 }
 
 unique_ptr<ProblemStatement> Configuration::createProblemStatement(std::string category)

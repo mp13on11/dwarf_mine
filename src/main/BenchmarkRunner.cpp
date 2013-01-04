@@ -15,8 +15,8 @@ const size_t WARMUP_ITERATIONS = 50;
 /**
  * BenchmarkRunner determines the available devices and benchmarks them idenpendently
  */
-BenchmarkRunner::BenchmarkRunner(size_t iterations)
-    : _iterations(iterations), _warmUps(WARMUP_ITERATIONS)
+BenchmarkRunner::BenchmarkRunner(Configuration& config)
+    : _iterations(config.getNumberOfIterations()), _warmUps(config.getNumberOfWarmUps())
 {
     for (NodeId i = 0; i < MPI::COMM_WORLD.Get_size(); ++i)
         _nodesets.push_back({{i, 0}});

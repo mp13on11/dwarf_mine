@@ -25,7 +25,7 @@ private:
     void weightTimedResults();
 
 public:
-    explicit BenchmarkRunner(size_t iterations);
+    explicit BenchmarkRunner(Configuration& config);
     BenchmarkRunner(Configuration& config, const BenchmarkResult& result);
     void runBenchmark(ProblemStatement& statement, const ElfFactory& factory);
     BenchmarkResult getWeightedResults();
