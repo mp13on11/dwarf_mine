@@ -12,12 +12,22 @@ class Configuration
 public:
     Configuration(int argc, char** argv);
     std::unique_ptr<ProblemStatement> createProblemStatement(std::string category);
-    std::unique_ptr<ElfFactory> getElfFactory(const ElfCategory& category);
+    std::unique_ptr<ElfFactory> getElfFactory();
+    std::string getElfCategory() const;
+    bool parseArguments();
+    size_t getNumberOfWarmUps();
+    size_t getNumberOfIterations();
 
 private:
+    
     void usageError();
-    void printUsage();
+    void printUsage();    
 
-    std::vector<std::string> arguments;
-    std::string programName;
+    int argc;
+    bool _useFiles;
+    size_t _numberOfWarmUps;
+    size_t _numberOfIterations;
+    char** arguments;    
+    std::string programName, _mode;
+    std::string _inputFile, _outputFile;
 };

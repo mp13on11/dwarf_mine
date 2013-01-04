@@ -7,49 +7,99 @@
 #include <iostream>
 #include <fstream>
 
+#include <boost/program_options.hpp> 
+
 using namespace std;
 
 Configuration::Configuration(int argc, char** argv)
-    : arguments(argv + 1, argv + argc), programName(argv[0])
+    : argc(argc), _useFiles(false), arguments(argv), programName(argv[0]) 
 {
-    if (arguments.size() != 1 && arguments.size() != 3)
-    {
-        usageError();
+
+}
+
+bool Configuration::parseArguments()
+{ 
+
+    try
+    {           
+        namespace po = boost::program_options;
+        po::options_description desc("Options");
+        desc.add_options()    
+            ("help", "Print help message")
+            ("mode,m", po::value<string>(&_mode), "Mode (smp|cuda)")
+            ("numwarmups,w", po::value<size_t>(&_numberOfWarmUps)->default_value(50), "Number of warmup rounds")
+            ("numiter,n", po::value<size_t>(&_numberOfIterations)->default_value(100), "Number of benchmark iterations")
+            ("input,i", po::value<string>(&_inputFile), "Input file")
+            ("output,o", po::value<string>(&_outputFile), "Output file");
+        po::variables_map vm;
+        try
+        {
+            po::store(po::parse_command_line(argc, arguments, desc), vm);            
+
+            if(vm.count("help") || argc == 1) 
+            { 
+                cout << "Dwarf Mine Benchmark" << endl << desc << endl;  
+            }
+
+            po::notify(vm);
+        }
+        
+        catch(po::error& e)
+        {
+            cerr << "ERROR: " << e.what() << endl << endl; 
+            cerr << desc << endl; 
+            return false; 
+        }
+    
+        if(vm.count("input") && vm.count("output"))
+        {
+           _useFiles = true;
+        }
+
+        if(vm.count("mode") && (_mode != "smp" && _mode != "cuda")){
+            cerr << "ERROR: Mode must be smp or cuda" << endl; 
+            return false;
+        }
+
     }
-}
 
-void Configuration::usageError()
-{
-    printUsage();
-    exit(1);
-}
+    catch(exception& e)
+    {
+        cerr << "Unhandled Exception in configuration" << endl;
+        return false;
+    }
 
-void Configuration::printUsage()
-{
-    cerr << "Usage: " << programName << " cuda|smp" << " [inputFilename outputFilename] " << endl << "\tInput and outputFilename required for master." << endl;
+    return true;
 }
 
 unique_ptr<ProblemStatement> Configuration::createProblemStatement(std::string category)
 {
-    
-    if(arguments.size() < 2)
+
+    if(!_useFiles)
     {
         return unique_ptr<ProblemStatement>(new ProblemStatement(category));
     } 
-
-    return unique_ptr<ProblemStatement>(new ProblemStatement(category, arguments[1], arguments[2]));
+    
+    return unique_ptr<ProblemStatement>(new ProblemStatement(category, _inputFile, _outputFile));
 }
 
-unique_ptr<ElfFactory> Configuration::getElfFactory(const ElfCategory& category)
+unique_ptr<ElfFactory> Configuration::getElfFactory()
 {
-    try
-    {
-        return createElfFactory(arguments[0], category);
-    }
-    catch (const std::exception&)
-    {
-        usageError();
-    }
+    return createElfFactory(_mode, getElfCategory());
+}
 
-    return nullptr; // just to make compiler happy, usageError() terminates anyway
+size_t Configuration::getNumberOfIterations()
+{
+    return _numberOfIterations;
+}
+
+size_t Configuration::getNumberOfWarmUps()
+{
+    return _numberOfWarmUps;
+}
+
+// TODO remove
+string Configuration::getElfCategory() const
+{
+    return "matrix";
 }
