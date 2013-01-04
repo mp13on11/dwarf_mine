@@ -12,10 +12,12 @@ using namespace std;
 Configuration::Configuration(int argc, char** argv)
     : arguments(argv + 1, argv + argc), programName(argv[0])
 {
+    /*
     if (arguments.size() != 1 && arguments.size() != 3)
     {
         usageError();
     }
+    */
 }
 
 void Configuration::usageError()
@@ -31,11 +33,11 @@ void Configuration::printUsage()
 
 unique_ptr<ProblemStatement> Configuration::createProblemStatement(std::string category)
 {
-    
+
     if(arguments.size() < 2)
     {
         return unique_ptr<ProblemStatement>(new ProblemStatement(category));
-    } 
+    }
 
     return unique_ptr<ProblemStatement>(new ProblemStatement(category, arguments[1], arguments[2]));
 }

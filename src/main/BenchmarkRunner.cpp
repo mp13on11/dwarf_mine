@@ -21,12 +21,14 @@ BenchmarkRunner::BenchmarkRunner(size_t iterations)
 std::chrono::microseconds BenchmarkRunner::measureCall(ProblemStatement& statement, Scheduler& scheduler) {
     typedef chrono::high_resolution_clock clock;
     clock::time_point before = clock::now();
-    scheduler.dispatch(statement);
+    scheduler.dispatch();
     return clock::now() - before;
 }
 
 void BenchmarkRunner::benchmarkDevice(DeviceId device, ProblemStatement& statement, Scheduler& scheduler, BenchmarkResult& results)
 {
+    scheduler.provideData(statement);
+
     for (size_t i = 0; i < WARMUP_ITERATIONS; ++i)
     {
         measureCall(statement, scheduler);
@@ -41,8 +43,10 @@ void BenchmarkRunner::benchmarkDevice(DeviceId device, ProblemStatement& stateme
 
 void BenchmarkRunner::getBenchmarked(ProblemStatement& statement, Scheduler& scheduler)
 {
+    scheduler.provideData(statement);
+
     for (size_t i = 0; i < _iterations + WARMUP_ITERATIONS; ++i)
-        scheduler.dispatch(statement); // slave side
+        scheduler.dispatch(); // slave side
 }
 
 void BenchmarkRunner::runBenchmark(ProblemStatement& statement, const ElfFactory& factory)
@@ -68,6 +72,8 @@ void BenchmarkRunner::runBenchmark(ProblemStatement& statement, const ElfFactory
     }
 }
 
+#include <iostream>
+
 void BenchmarkRunner::transformToResults(const BenchmarkResult& result)
 {
     int runtimeSum = 0;
@@ -77,6 +83,7 @@ void BenchmarkRunner::transformToResults(const BenchmarkResult& result)
     }
     for (const auto& nodeResult : result)
     {
+        cout << nodeResult.second << endl;
         _results[nodeResult.first] = 100 - nodeResult.second * 100 / runtimeSum;
     }
 }

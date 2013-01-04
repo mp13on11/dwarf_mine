@@ -9,6 +9,7 @@
 #include <typeinfo>
 #include <vector>
 #include <ctime>
+#include <boost/lexical_cast.hpp>
 
 #include "BenchmarkRunner.h"
 #include "Configuration.h"
@@ -19,8 +20,8 @@ using namespace std;
 
 void generateProblemData(ProblemStatement& statement)
 {
-    Matrix<float> first(100,100);
-    Matrix<float> second(100, 100);
+    Matrix<float> first(600,416);
+    Matrix<float> second(416, 808);
     auto distribution = uniform_real_distribution<float> (-100, +100);
     auto engine = mt19937(time(nullptr));
     auto generator = bind(distribution, engine);
@@ -54,10 +55,10 @@ int main(int argc, char** argv)
         ProblemStatement benchmarkStatement("matrix");
         generateProblemData(benchmarkStatement);
         unique_ptr<ElfFactory> factory(config.getElfFactory(benchmarkStatement.elfCategory));
-        BenchmarkRunner runner(100);
+        BenchmarkRunner runner(50);
 
         runner.runBenchmark(benchmarkStatement, *factory);
-
+/*
         auto results = runner.getResults();
 
         auto statement = config.createProblemStatement("matrix");
@@ -65,8 +66,9 @@ int main(int argc, char** argv)
         scheduler->setNodeset(results);
         auto elf = factory->createElf();
         scheduler->setElf(elf.get());
-        
+
         scheduler->dispatch(*statement);
+        */
 
     }
     catch (exception &e)

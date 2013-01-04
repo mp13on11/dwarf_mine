@@ -26,6 +26,8 @@ INSTANTIATE_TEST_CASE_P(
     MatrixMultiplyTest,
     testing::ValuesIn(getPlatforms()));
 
+size_t blockSize = 24;
+
 
 int main(int argc, char **argv) {
   testing::InitGoogleTest(&argc, argv);

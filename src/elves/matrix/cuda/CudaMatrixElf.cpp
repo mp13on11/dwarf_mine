@@ -7,19 +7,9 @@
 #include "../MatrixHelper.h"
 #include "../Matrix.h"
 
-//MatrixElf::MatrixT CudaMatrixElf::multiply(const MatrixT& leftOriginal, const MatrixT& rightOriginal)
 MatrixElf::MatrixT CudaMatrixElf::multiply(const MatrixT& left, const MatrixT& right)
 {
     using namespace std;
-
-    //MatrixT left(leftOriginal);
-    //MatrixT right(rightOriginal);  
-
-    //MatrixHelper::writeMatrixTo("/home/gary/left", left);    
-   // MatrixHelper::writeMatrixTo("/home/gary/right", right);    
-    
-    //left.addPadding(32);
-    //right.addPadding(32); 
 
     int leftRows = left.rows();
     int rightCols = right.columns();
@@ -38,14 +28,10 @@ MatrixElf::MatrixT CudaMatrixElf::multiply(const MatrixT& left, const MatrixT& r
     right_d.transferFrom(right.buffer());
     result_d.transferFrom(result_h.data());
 
-    for (int i=0; i < 1; ++i)
-        gemm(leftRows, rightCols, middle, left_d.get(), right_d.get(), result_d.get(), 32);
+    gemm(leftRows, rightCols, middle, left_d.get(), right_d.get(), result_d.get());
 
     result_d.transferTo(result_h.data());
 
     MatrixT resultMatrix(leftRows, rightCols, std::move(result_h));
-    //resultMatrix.resizeLossy(leftOriginal.rows(), rightOriginal.columns());
-
-//    MatrixHelper::writeMatrixTo("/home/gary/res", resultMatrix);    
     return resultMatrix;
 }
