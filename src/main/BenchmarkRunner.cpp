@@ -3,6 +3,7 @@
 #include <vector>
 #include <memory>
 #include <cmath>
+#include <limits>
 #include "Elf.h"
 #include "BenchmarkRunner.h"
 #include "Scheduler.h"
@@ -90,7 +91,7 @@ void BenchmarkRunner::weightTimedResults()
     }
     for (const auto& nodeResult :  _timedResults)
     {
-        _weightedResults[nodeResult.first] = 100 - nodeResult.second * 100 / runtimeSum;
+        _weightedResults[nodeResult.first] = (nodeResult.second * 1.0 / runtimeSum) * 100;
     }
 }
 

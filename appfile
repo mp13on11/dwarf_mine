@@ -1,11 +1,10 @@
--host bigdwarf -np 1 /home/jenkins/share/dwarf_mine/build/src/main/dwarf_mine smp /home/jenkins/share/dwarf_mine/huge_input.txt /home/jenkins/share/dwarf_mine/output.txt
--host bigdwarf -np 1 /home/jenkins/share/dwarf_mine/build/src/main/dwarf_mine cuda
--host quadcore1 -np 1 /home/jenkins/share/dwarf_mine/build/src/main/dwarf_mine smp
--host quadcore1 -np 1 /home/jenkins/share/dwarf_mine/build/src/main/dwarf_mine cuda
--host quadcore2 -np 1 /home/jenkins/share/dwarf_mine/build/src/main/dwarf_mine smp
-#-host quadcore2 -np 1 /home/jenkins/share/dwarf_mine/build/src/main/dwarf_mine cuda
--host quadcore3 -np 1 /home/jenkins/share/dwarf_mine/build/src/main/dwarf_mine smp
--host quadcore3 -np 1 /home/jenkins/share/dwarf_mine/build/src/main/dwarf_mine cuda
-#-host smalldwarf -np 1 /home/jenkins/share/dwarf_mine/build/src/main/dwarf_mine smp
+-host bigdwarf -np 1 /home/jenkins/share/dwarf_mine/build/src/main/dwarf_mine -m smp -i /home/jenkins/share/dwarf_mine/very_huge_input.bin -o /home/jenkins/share/dwarf_mine/output.bin
+-host bigdwarf -np 1 /home/jenkins/share/dwarf_mine/build/src/main/dwarf_mine -m cuda
+-host quadcore1 -np 1 /home/jenkins/share/dwarf_mine/build/src/main/dwarf_mine -m smp
+-host quadcore1 -np 1 /home/jenkins/share/dwarf_mine/build/src/main/dwarf_mine -m cuda
+-host quadcore2 -np 1 /home/jenkins/share/dwarf_mine/build/src/main/dwarf_mine -m smp
+#-host quadcore2 -np 1 /home/jenkins/share/dwarf_mine/build/src/main/dwarf_mine -m cuda
+-host quadcore3 -np 1 /home/jenkins/share/dwarf_mine/build/src/main/dwarf_mine -m smp
+-host quadcore3 -np 1 /home/jenkins/share/dwarf_mine/build/src/main/dwarf_mine -m cuda
+#-host smalldwarf -np 1 /home/jenkins/share/dwarf_mine/build/src/main/dwarf_mine -m smp
 
-# smalldwarf and quadcore have problems with cuda

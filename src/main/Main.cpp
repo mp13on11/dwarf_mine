@@ -67,6 +67,7 @@ BenchmarkResult calculateWeightings(const ElfFactory& factory, const Configurati
       
     BenchmarkRunner preBenchmarkRunner(BENCHMARK_ITERATIONS);
     preBenchmarkRunner.runBenchmark(benchmarkStatement, factory);
+    printResultOnMaster("Timed", preBenchmarkRunner.getTimedResults(), "µs");
     return preBenchmarkRunner.getWeightedResults();   
 }
 
@@ -74,15 +75,21 @@ int main(int argc, char** argv)
 {
     Configuration config(argc, argv);
     config.parseArguments(); 
-
+    
     // used to ensure MPI::Finalize is called on exit of the application
     auto mpiGuard = MPIGuard(argc, argv);
+    
+    if (MPI::COMM_WORLD.Get_rank() == MASTER)
+    {
+		cout << config <<endl;
+	}
+    
     try
     {
         unique_ptr<ElfFactory> factory(config.getElfFactory());
         auto weightedResults = calculateWeightings(*factory, config);
         printResultOnMaster("Weighted", weightedResults);
-
+		
         auto statement = config.createProblemStatement(config.getElfCategory());
 
         BenchmarkRunner clusterBenchmarkRunner(config, weightedResults);
