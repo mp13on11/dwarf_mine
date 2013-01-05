@@ -2,6 +2,9 @@
 #include "CudaElfFactory.h"
 #include "SMPElfFactory.h"
 
+#include "matrix/Matrix.h"
+#include "matrix/MatrixHelper.h"
+
 #include <stdexcept>
 #include <cstdlib>
 #include <iostream>
@@ -12,26 +15,32 @@
 using namespace std;
 
 Configuration::Configuration(int argc, char** argv)
-    : argc(argc), _useFiles(false), arguments(argv), programName(argv[0]) 
+    : argc(argc), arguments(argv), programName(argv[0]), _useFiles(false)
 {
 
 }
 
+
+
 bool Configuration::parseArguments()
 { 
-
     try
     {           
         namespace po = boost::program_options;
         po::options_description desc("Options");
         desc.add_options()    
             ("help", "Print help message")
-            ("mode,m", po::value<string>(&_mode), "Mode (smp|cuda)")
-            ("numwarmups,w", po::value<size_t>(&_numberOfWarmUps)->default_value(50), "Number of warmup rounds")
-            ("numiter,n", po::value<size_t>(&_numberOfIterations)->default_value(100), "Number of benchmark iterations")
-            ("input,i", po::value<string>(&_inputFile), "Input file")
-            ("output,o", po::value<string>(&_outputFile), "Output file")
-            ("prebenchmark,p",po::value<bool>(&_preBenchmark)->default_value(true), "Use prebenchmark - without uniform distribution is enforced");
+            ("mode,m",               po::value<string>(&_mode), "Mode (smp|cuda)")
+            ("numwarmups,w",         po::value<size_t>(&_numberOfWarmUps)->default_value(50), "Number of warmup rounds")
+            ("numiter,n",            po::value<size_t>(&_numberOfIterations)->default_value(100), "Number of benchmark iterations")
+            ("input,i",              po::value<string>(&_inputFile), "Input file")
+            ("output,o",             po::value<string>(&_outputFile), "Output file")
+            ("export_configuration", po::value<string>(&_exportConfigurationFile), "Measure cluster and export configuration")
+            ("import_configuration", po::value<string>(&_importConfigurationFile), "Run benchmark with given configuration")
+            ("skip_benchmark",       "Skip the benchmark run")
+            ("left_rows",            po::value<size_t>(&_leftMatrixRows)->default_value(500), "Number of left rows to be generated (overridden for benchmark by input file)")
+            ("common_rows_columns",  po::value<size_t>(&_commonMatrixRowsColumns)->default_value(500), "Number of left columns / right rows to be generated (overridden for benchmark by input file)")
+            ("right_columns",        po::value<size_t>(&_rightMatrixColumns)->default_value(500), "Number of right columns to be generated (overridden for benchmark by input file)");
         po::variables_map vm;
         try
         {
@@ -44,7 +53,6 @@ bool Configuration::parseArguments()
 
             po::notify(vm);
         }
-        
         catch(po::error& e)
         {
             cerr << "ERROR: " << e.what() << endl << endl; 
@@ -62,6 +70,7 @@ bool Configuration::parseArguments()
             return false;
         }
 
+        _skipBenchmark = vm.count("skip_benchmark");
     }
 
     catch(exception& e)
@@ -73,20 +82,29 @@ bool Configuration::parseArguments()
     return true;
 }
 
-bool Configuration::preBenchmark() const
+unique_ptr<ProblemStatement> generateProblemStatement(string elfCategory, size_t leftRows, size_t commonRowsColumns, size_t rightColumns)
 {
-	return _preBenchmark;
+    auto statement = unique_ptr<ProblemStatement>(new ProblemStatement(elfCategory)); 
+    Matrix<float> left(leftRows, commonRowsColumns);
+    Matrix<float> right(commonRowsColumns, rightColumns);
+    auto distribution = uniform_real_distribution<float> (-100, +100);
+    auto engine = mt19937(time(nullptr));
+    auto generator = bind(distribution, engine);
+    MatrixHelper::fill(left, generator);
+    MatrixHelper::fill(right, generator);
+    MatrixHelper::writeMatrixTo(*(statement->input), left);
+    MatrixHelper::writeMatrixTo(*(statement->input), right);
+    return statement;
 }
 
-unique_ptr<ProblemStatement> Configuration::createProblemStatement(std::string category)
+unique_ptr<ProblemStatement> Configuration::getProblemStatement(bool forceGenerated)
 {
 
-    if(!_useFiles)
+    if(!_useFiles || forceGenerated)
     {
-        return unique_ptr<ProblemStatement>(new ProblemStatement(category));
+        return generateProblemStatement(getElfCategory(), _leftMatrixRows, _commonMatrixRowsColumns, _rightMatrixColumns);
     } 
-    
-    return unique_ptr<ProblemStatement>(new ProblemStatement(category, _inputFile, _outputFile));
+    return unique_ptr<ProblemStatement>(new ProblemStatement(getElfCategory(), _inputFile, _outputFile));
 }
 
 unique_ptr<ElfFactory> Configuration::getElfFactory()
@@ -108,4 +126,47 @@ size_t Configuration::getNumberOfWarmUps()
 string Configuration::getElfCategory() const
 {
     return "matrix";
+}
+
+bool Configuration::exportConfiguration() const
+{
+    return _exportConfigurationFile != "";
+}
+    
+bool Configuration::importConfiguration() const
+{
+    return _importConfigurationFile != "";
+}
+
+bool Configuration::skipBenchmark() const
+{
+    return _skipBenchmark;
+}
+
+std::string Configuration::getExportConfigurationFilename() const
+{
+    return _exportConfigurationFile;
+}
+
+std::string Configuration::getImportConfigurationFilename() const
+{
+    return _importConfigurationFile;
+}
+
+std::ostream& operator<<(std::ostream& s, const Configuration& c)
+{
+    s   << "Configuation: "
+        << "\n\tMode: "<< c._mode
+        << "\n\tWarmUps: " << c._numberOfWarmUps
+        << "\n\tIterations: " << c._numberOfIterations;
+    if (c._useFiles)
+    {
+        s   << "\n\tInput: " << c._inputFile
+            << "\n\tOutput: " << c._outputFile;
+    } 
+    else
+    {
+        s   << "\n\tMatrices: ("<<c._leftMatrixRows<<" x "<<c._commonMatrixRowsColumns<<") x ("<<c._commonMatrixRowsColumns<<" x "<<c._rightMatrixColumns<<")";
+    }
+    return s;
 }
