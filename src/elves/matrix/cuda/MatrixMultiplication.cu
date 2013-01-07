@@ -13,7 +13,7 @@ void gemm(int m, int n, int k, float* left, float* right, float* out, int blockS
 {
 	using namespace std;
 
-	cudaFuncSetCacheConfig(gemmKernel, cudaFuncCachePreferL1);
+	cudaFuncSetCacheConfig(gemmKernel, cudaFuncCachePreferShared);
 
     dim3 dimGrid(div_ceil(n, blockSize), div_ceil(m, blockSize));
     dim3 dimBlock(blockSize, blockSize);

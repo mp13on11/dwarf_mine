@@ -20,8 +20,8 @@ using namespace std;
 
 void generateProblemData(ProblemStatement& statement)
 {
-    Matrix<float> first(600,416);
-    Matrix<float> second(416, 808);
+    Matrix<float> first(1200,800);
+    Matrix<float> second(800,1200);
     auto distribution = uniform_real_distribution<float> (-100, +100);
     auto engine = mt19937(time(nullptr));
     auto generator = bind(distribution, engine);

@@ -70,7 +70,8 @@ __global__ void gemmKernel(int m, int n, int k, float* left, float* right, float
 
     float sum = 0.0f;
 
-    for (int block = 0; block < div_ceil_d(leftMatrix.cols, blockDim.x); ++block)
+
+    for (int block = 0, end= div_ceil_d(leftMatrix.cols, blockDim.x); block < end ; ++block)
     {
         __shared__ float leftSub_s[BLOCK_SIZE][BLOCK_SIZE];
         __shared__ float rightSub_s[BLOCK_SIZE][BLOCK_SIZE];
@@ -90,9 +91,21 @@ __global__ void gemmKernel(int m, int n, int k, float* left, float* right, float
         {
             sum += leftSub_s[row][i] * rightSub_s[i][col];
         }
-        __syncthreads();
+        //__syncthreads();
     }
 
     setElement(outSub, row, col, sum);
 
+}
+
+__global__ void gemmKernel2(int m, int n, int k, float* left, float* right, float* out)
+{
+    int column = blockDim.x * blockIdx.x + threadIdx.x;
+    int row = blockDim.y * blockIdx.y + threadIdx.y;
+    float sum=0; 
+    for (int i=0; i < k; ++i)
+    {
+        sum += left[row*k+i] * right[n*i+column];
+    } 
+    out[row*n+column] = sum;
 }
