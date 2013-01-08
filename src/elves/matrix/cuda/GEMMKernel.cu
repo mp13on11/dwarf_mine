@@ -6,9 +6,10 @@ const size_t BLOCK_SIZE = DEFAULT_BLOCK_SIZE;
 
 __device__ int div_ceil_d(int x, int y)
 {
-    return (x + y - 1) / y;
+//    return 1 + ((x - 1) / y);
+//    return (x + y - 1) / y;
 
-//    return (x % y) ? x / y + 1 : x / y;
+    return (x % y) ? x / y + 1 : x / y;
 }
 
 struct Matrix
@@ -72,7 +73,6 @@ __global__ void gemmKernel(int m, int n, int k, float* left, float* right, float
 
     float sum = 0.0f;
 
-
     for (int block = 0, end= div_ceil_d(leftMatrix.cols, blockDim.x); block < end ; ++block)
     {
         __shared__ float leftSub_s[BLOCK_SIZE][BLOCK_SIZE];
@@ -81,11 +81,8 @@ __global__ void gemmKernel(int m, int n, int k, float* left, float* right, float
         Matrix leftSub = getSubMatrix(leftMatrix, blockRow, block);
         Matrix rightSub = getSubMatrix(rightMatrix, block, blockColumn);
 
-
         leftSub_s[row][col] = getElement(leftSub, row, col);
         rightSub_s[row][col] = getElement(rightSub, row, col);
-
-//        printf("%f %f\n", getElement(leftSub, row, col), getElement(rightSub, row, col));
 
         __syncthreads();
 
@@ -93,9 +90,7 @@ __global__ void gemmKernel(int m, int n, int k, float* left, float* right, float
         {
             sum += leftSub_s[row][i] * rightSub_s[i][col];
         }
-        //__syncthreads();
     }
 
     setElement(outSub, row, col, sum);
-
 }

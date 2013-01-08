@@ -13,11 +13,10 @@ void gemm(int m, int n, int k, float* left, float* right, float* out, int blockS
 {
 	using namespace std;
 
-	cudaFuncSetCacheConfig(gemmKernel, cudaFuncCachePreferShared);
+	cudaFuncSetCacheConfig(gemmKernel, cudaFuncCachePreferL1);
 
     dim3 dimGrid(div_ceil(n, blockSize), div_ceil(m, blockSize));
     dim3 dimBlock(blockSize, blockSize);
     gemmKernel <<< dimGrid, dimBlock >>>(m, n, k, left, right, out);
     CudaUtils::checkState();
-    //cudaDeviceReset();
 }
