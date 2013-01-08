@@ -6,7 +6,9 @@ const size_t BLOCK_SIZE = DEFAULT_BLOCK_SIZE;
 
 __device__ int div_ceil_d(int x, int y)
 {
-    return (x % y) ? x / y + 1 : x / y;
+    return (x + y - 1) / y;
+
+//    return (x % y) ? x / y + 1 : x / y;
 }
 
 struct Matrix
@@ -96,16 +98,4 @@ __global__ void gemmKernel(int m, int n, int k, float* left, float* right, float
 
     setElement(outSub, row, col, sum);
 
-}
-
-__global__ void gemmKernel2(int m, int n, int k, float* left, float* right, float* out)
-{
-    int column = blockDim.x * blockIdx.x + threadIdx.x;
-    int row = blockDim.y * blockIdx.y + threadIdx.y;
-    float sum=0; 
-    for (int i=0; i < k; ++i)
-    {
-        sum += left[row*k+i] * right[n*i+column];
-    } 
-    out[row*n+column] = sum;
 }
