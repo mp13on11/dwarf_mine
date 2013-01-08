@@ -1,16 +1,15 @@
-#include "Scheduler.h"
 #include "ProblemStatement.h"
+#include "Scheduler.h"
 
-#include <mpi.h>
 #include <stdexcept>
 
 Scheduler::Scheduler() :
-    nodesHaveRatings(false), rank(MPI::COMM_WORLD.Get_rank()), elf(nullptr)
+    nodesHaveRatings(false), rank(MpiHelper::rank()), elf(nullptr)
 {
 }
 
 Scheduler::Scheduler(const BenchmarkResult& benchmarkResult) :
-    nodesHaveRatings(true), nodeSet(benchmarkResult), rank(MPI::COMM_WORLD.Get_rank()), elf(nullptr)
+    nodesHaveRatings(true), nodeSet(benchmarkResult), rank(MpiHelper::rank()), elf(nullptr)
 {
 }
 

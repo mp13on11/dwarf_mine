@@ -1,6 +1,7 @@
 #pragma once
 
 #include "BenchmarkResults.h"
+#include "MpiHelper.h"
 
 struct ProblemStatement;
 class Elf;
@@ -28,7 +29,7 @@ protected:
 
     bool nodesHaveRatings;
     BenchmarkResult nodeSet;
-    int rank;
+    NodeId rank;
     Elf* elf;
 };
 
