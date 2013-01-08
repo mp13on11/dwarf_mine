@@ -1,75 +1,113 @@
-#include <exception>
 #include <iostream>
-#include <memory>
-#include <mpi.h>
-#include <random>
-#include <functional>
-#include <sstream>
 #include <string>
-#include <typeinfo>
-#include <vector>
-#include <ctime>
+#include <fstream>
 
 #include "BenchmarkRunner.h"
 #include "Configuration.h"
 #include "matrix/MatrixHelper.h"
 #include "matrix/Matrix.h"
+#include "MpiUtils.h"
 
 using namespace std;
 
-void generateProblemData(ProblemStatement& statement)
+ostream& printResultOnMaster(ostream& o, string preamble, BenchmarkResult results, string unit = "")
 {
-    Matrix<float> first(100,100);
-    Matrix<float> second(100, 100);
-    auto distribution = uniform_real_distribution<float> (-100, +100);
-    auto engine = mt19937(time(nullptr));
-    auto generator = bind(distribution, engine);
-    MatrixHelper::fill(first, generator);
-    MatrixHelper::fill(second, generator);
-    MatrixHelper::writeMatrixTo(*(statement.input), first);
-    MatrixHelper::writeMatrixTo(*(statement.input), second);
+    if (MPIGuard::isMaster())
+    {
+        o << preamble <<" "<<unit<< "\n" << results;
+    }
+    return o;
 }
 
-class MPIGuard
+BenchmarkResult determineWeightedConfiguration(Configuration& config)
 {
-public:
-    MPIGuard(int argc, char** argv)
-    {
-        MPI::Init(argc, argv);
-    }
+    auto factory = config.getElfFactory();
+    auto statement = config.getProblemStatement();
+    BenchmarkRunner runner(config);
+    runner.runBenchmark(*statement, *factory);
+    return runner.getWeightedResults(); 
+}
 
-    ~MPIGuard()
+void exportClusterConfiguration(const string& filename, BenchmarkResult& result)
+{
+    fstream file(filename, fstream::out);
+    if (!file.is_open())
     {
-        MPI::Finalize();
+        cerr << "ERROR: Could not write "<<filename<<endl;
+        exit(1);
     }
-};
+    file << result;
+    file.close();
+}
+
+BenchmarkResult importClusterConfiguration(const string& filename)
+{
+    fstream file(filename, fstream::in);
+    if (!file.is_open())
+    {
+        cerr << "ERROR: Coult not read "<<filename<<endl;
+        exit(1);
+    }
+    BenchmarkResult result;
+    file >> result;
+    file.close();
+    if (result.size() != MPIGuard::numberOfNodes())
+    {
+        cerr << "ERROR: Number of nodes does not match configured number of nodes" <<endl;
+        exit(1);
+    }
+    return result;
+}
+
+BenchmarkResult runTimedMeasurement(Configuration& config, BenchmarkResult& weightedResults)
+{    
+    auto factory = config.getElfFactory();
+    auto statement = config.getProblemStatement(true);
+    BenchmarkRunner runner(config, weightedResults);
+    runner.runBenchmark(*statement, *factory);
+    return runner.getTimedResults();
+}
 
 int main(int argc, char** argv)
 {
     Configuration config(argc, argv);
+    config.parseArguments(); 
+    
     // used to ensure MPI::Finalize is called on exit of the application
     auto mpiGuard = MPIGuard(argc, argv);
+    
+    if (MPIGuard::isMaster())
+    {
+		cout << config <<endl;
+	}
+    
     try
     {
-        ProblemStatement benchmarkStatement("matrix");
-        generateProblemData(benchmarkStatement);
-        unique_ptr<ElfFactory> factory(config.getElfFactory(benchmarkStatement.elfCategory));
-        BenchmarkRunner runner(100);
-
-        runner.runBenchmark(benchmarkStatement, *factory);
-
-        auto results = runner.getResults();
-
-        auto statement = config.createProblemStatement("matrix");
-        auto scheduler = factory->createScheduler();
-        scheduler->setNodeset(results);
-        auto elf = factory->createElf();
-        scheduler->setElf(elf.get());
-        
-        scheduler->dispatch(*statement);
-
+        BenchmarkResult weightedResults;
+        if (config.exportConfiguration() || !config.importConfiguration())
+        {
+            cout << "Calculating node weights" <<endl;
+            weightedResults = determineWeightedConfiguration(config);
+            printResultOnMaster(cout, "Weighted", weightedResults);
+        }
+        if (config.exportConfiguration())
+        {
+            cout << "Exporting node weights" <<endl;
+    		exportClusterConfiguration(config.getExportConfigurationFilename(), weightedResults);
+		}
+        if (config.importConfiguration())
+        {
+            cout << "Importing node weights" <<endl;
+            weightedResults = importClusterConfiguration(config.getImportConfigurationFilename());
+        }
+        if (!config.skipBenchmark())
+        {
+            cout << "Running benchmark" <<endl;
+            auto clusterResults = runTimedMeasurement(config, weightedResults);
+            printResultOnMaster(cout, "Measured Time:", clusterResults, "µs");    
+        }
     }
-    catch (exception &e)
+    catch (const exception &e)
     {
         cerr << "FATAL: " << e.what() << endl;
         return 1;

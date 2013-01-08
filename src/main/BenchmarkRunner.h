@@ -6,6 +6,7 @@
 #include "ElfFactory.h"
 #include "BenchmarkResults.h"
 #include "ProblemStatement.h"
+#include "Configuration.h"
 
 class Scheduler;
 
@@ -13,16 +14,20 @@ class BenchmarkRunner
 {
 private:
     size_t _iterations;
-    int _devices;
-    BenchmarkResult _results;
+    size_t _warmUps;
+    std::vector<BenchmarkResult> _nodesets;
+    BenchmarkResult _weightedResults;
+    BenchmarkResult _timedResults;
 
-    std::chrono::microseconds measureCall(ProblemStatement& statement, Scheduler& scheduler);
-    void benchmarkDevice(DeviceId device, ProblemStatement& statement, Scheduler& scheduler, BenchmarkResult& result);
-    void getBenchmarked(ProblemStatement& statement, Scheduler& scheduler);
-    void transformToResults(const BenchmarkResult& result);
+    std::chrono::microseconds measureCall(Scheduler& scheduler);
+    unsigned int benchmarkNodeset(ProblemStatement& statement, Scheduler& scheduler);
+    void getBenchmarked(Scheduler& scheduler);
+    void weightTimedResults();
 
 public:
-    explicit BenchmarkRunner(size_t iterations);
+    explicit BenchmarkRunner(Configuration& config);
+    BenchmarkRunner(Configuration& config, const BenchmarkResult& result);
     void runBenchmark(ProblemStatement& statement, const ElfFactory& factory);
-    BenchmarkResult getResults();
+    BenchmarkResult getWeightedResults();
+    BenchmarkResult getTimedResults();
 };

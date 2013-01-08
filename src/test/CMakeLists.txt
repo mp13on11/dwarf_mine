@@ -36,6 +36,7 @@ TARGET_LINK_LIBRARIES(${EXECUTABLE_NAME}
     # Add dependencies' libraries here
     ${ELF_LIBRARIES}
     ${MPI_LIBRARIES}
+    ${Boost_LIBRARIES}
     "gtest"
 )    
     

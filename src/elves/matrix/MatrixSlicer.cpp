@@ -8,14 +8,23 @@ using namespace std;
 size_t MatrixSlicer::determinePivot(size_t rowsOrCols) const
 {
     size_t pivot = rowsOrCols;
+
     if (ratings.size() > 1)
     {
-        Rating overall = 0;
+        Rating overallPercentRatings = 0;
+        Rating invertedOverallPercentRatings = 0;
         for (const auto& s : ratings)
-            overall += s.second;
+        {
+            overallPercentRatings += s.second;
+            invertedOverallPercentRatings += 100 - s.second;
+		}
 
-        if (overall > 0)
-            pivot = ceil(rowsOrCols * ratings.front().second * (1.0 / overall));
+        if (overallPercentRatings > 0)
+        {
+			double invertedRuntimePercentRating = 100 - ratings.front().second;
+
+            pivot = ceil(rowsOrCols * invertedRuntimePercentRating * (1.0 / invertedOverallPercentRatings));
+		}
         else
             pivot = 0;        
     }    
@@ -68,7 +77,7 @@ void MatrixSlicer::setup(const BenchmarkResult& results) const
     orderedRatings.sort(
         [](const NodeRating& a, const NodeRating& b)
         {
-            return a.second > b.second;
+            return a.second < b.second;
         }
     );
     ratings = move(orderedRatings);

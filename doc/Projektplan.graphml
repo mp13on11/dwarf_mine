@@ -34,8 +34,8 @@
     <node id="n1">
       <data key="d6">
         <y:ShapeNode>
-          <y:Geometry height="49.90625" width="161.638671875" x="221.638671875" y="39.9531746031746"/>
-          <y:Fill color="#FFFFFF" transparent="false"/>
+          <y:Geometry height="49.90625" width="161.638671875" x="0.0" y="-16.56190476190477"/>
+          <y:Fill color="#FFCC00" transparent="false"/>
           <y:BorderStyle color="#000000" type="line" width="1.0"/>
           <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="31.9375" modelName="custom" textColor="#000000" visible="true" width="122.482421875" x="19.578125" y="8.984375">andere Dwarves
 identifizieren (zwei)<y:LabelModel>
@@ -53,7 +53,7 @@ identifizieren (zwei)<y:LabelModel>
       <data key="d6">
         <y:ShapeNode>
           <y:Geometry height="49.90625" width="161.638671875" x="221.638671875" y="257.2424603174603"/>
-          <y:Fill color="#FFCC00" transparent="false"/>
+          <y:Fill color="#99CC00" transparent="false"/>
           <y:BorderStyle color="#000000" type="line" width="1.0"/>
           <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="31.9375" modelName="custom" textColor="#000000" visible="true" width="118.65625" x="21.4912109375" y="8.984375">Benchmark Phase
 (OpenMPI) als Stub<y:LabelModel>
@@ -71,7 +71,7 @@ identifizieren (zwei)<y:LabelModel>
       <data key="d6">
         <y:ShapeNode>
           <y:Geometry height="49.90625" width="161.638671875" x="0.0" y="337.1488095238095"/>
-          <y:Fill color="#FFCC00" transparent="false"/>
+          <y:Fill color="#99CC00" transparent="false"/>
           <y:BorderStyle color="#000000" type="line" width="1.0"/>
           <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="31.9375" modelName="custom" textColor="#000000" visible="true" width="137.2890625" x="12.1748046875" y="8.984375">Zerlegen / Verteilen
 der Daten (Scheduler)<y:LabelModel>
@@ -89,7 +89,7 @@ der Daten (Scheduler)<y:LabelModel>
       <data key="d6">
         <y:ShapeNode>
           <y:Geometry height="49.90625" width="161.638671875" x="0.0" y="257.2424603174603"/>
-          <y:Fill color="#FFCC00" transparent="false"/>
+          <y:Fill color="#CCCCCC" transparent="false"/>
           <y:BorderStyle color="#000000" type="line" width="1.0"/>
           <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="17.96875" modelName="custom" textColor="#000000" visible="true" width="118.6796875" x="21.4794921875" y="15.96875">Node-Identifikation<y:LabelModel>
               <y:SmartNodeLabelModel distance="4.0"/>
@@ -123,7 +123,7 @@ der Daten (Scheduler)<y:LabelModel>
       <data key="d6">
         <y:ShapeNode>
           <y:Geometry height="49.90625" width="161.638671875" x="0.0" y="503.1998015873015"/>
-          <y:Fill color="#FFCC00" transparent="false"/>
+          <y:Fill color="#99CC00" transparent="false"/>
           <y:BorderStyle color="#000000" type="line" width="1.0"/>
           <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="31.9375" modelName="custom" textColor="#000000" visible="true" width="134.79296875" x="13.4228515625" y="8.984375">SMP für GEMM von 
 Hand implementieren<y:LabelModel>
@@ -141,7 +141,7 @@ Hand implementieren<y:LabelModel>
       <data key="d6">
         <y:ShapeNode>
           <y:Geometry height="49.90625" width="161.638671875" x="0.0" y="417.0551587301587"/>
-          <y:Fill color="#FFCC00" transparent="false"/>
+          <y:Fill color="#99CC00" transparent="false"/>
           <y:BorderStyle color="#000000" type="line" width="1.0"/>
           <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="31.9375" modelName="custom" textColor="#000000" visible="true" width="134.79296875" x="13.4228515625" y="8.984375">CUDA für GEMM von 
 Hand implementieren<y:LabelModel>
@@ -179,7 +179,7 @@ Diagramm<y:LabelModel>
           <y:Geometry height="49.90625" width="161.638671875" x="443.27734375" y="159.8126984126984"/>
           <y:Fill color="#FFFFFF" transparent="false"/>
           <y:BorderStyle color="#000000" type="line" width="1.0"/>
-          <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="17.96875" modelName="custom" textColor="#000000" visible="true" width="105.90625" x="27.8662109375" y="15.96875">SMP @ Dwarf #2<y:LabelModel>
+          <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="17.96875" modelName="custom" textColor="#000000" visible="true" width="105.90625" x="27.8662109375" y="15.96875">SMP @ Dwarf #3<y:LabelModel>
               <y:SmartNodeLabelModel distance="4.0"/>
             </y:LabelModel>
             <y:ModelParameter>
@@ -213,7 +213,7 @@ Diagramm<y:LabelModel>
           <y:Geometry height="49.90625" width="161.638671875" x="443.27734375" y="0.0"/>
           <y:Fill color="#FFFFFF" transparent="false"/>
           <y:BorderStyle color="#000000" type="line" width="1.0"/>
-          <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="17.96875" modelName="custom" textColor="#000000" visible="true" width="105.90625" x="27.8662109375" y="15.96875">SMP @ Dwarf #3<y:LabelModel>
+          <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="17.96875" modelName="custom" textColor="#000000" visible="true" width="105.90625" x="27.8662109375" y="15.96875">SMP @ Dwarf #2<y:LabelModel>
               <y:SmartNodeLabelModel distance="4.0"/>
             </y:LabelModel>
             <y:ModelParameter>
@@ -245,7 +245,7 @@ Diagramm<y:LabelModel>
       <data key="d6">
         <y:ShapeNode>
           <y:Geometry height="49.90625" width="161.638671875" x="221.638671875" y="337.1488095238095"/>
-          <y:Fill color="#FFFFFF" transparent="false"/>
+          <y:Fill color="#99CC00" transparent="false"/>
           <y:BorderStyle color="#000000" type="line" width="1.0"/>
           <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="45.90625" modelName="custom" textColor="#000000" visible="true" width="146.1484375" x="7.7451171875" y="2.0">Verteilen der untersch. 
 großen Datenpakete 
@@ -282,7 +282,7 @@ an die Worker<y:LabelModel>
       <data key="d6">
         <y:ShapeNode>
           <y:Geometry height="49.90625" width="161.638671875" x="221.638671875" y="429.531746031746"/>
-          <y:Fill color="#FFFFFF" transparent="false"/>
+          <y:Fill color="#99CC00" transparent="false"/>
           <y:BorderStyle color="#000000" type="line" width="1.0"/>
           <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="31.9375" modelName="custom" textColor="#000000" visible="true" width="128.201171875" x="16.71875" y="8.984375">hybrides Berechnen 
 auf einem System<y:LabelModel>
@@ -300,7 +300,7 @@ auf einem System<y:LabelModel>
       <data key="d6">
         <y:ShapeNode>
           <y:Geometry height="49.90625" width="161.638671875" x="221.638671875" y="503.19980158730164"/>
-          <y:Fill color="#FFFFFF" transparent="false"/>
+          <y:Fill color="#CCCCCC" transparent="false"/>
           <y:BorderStyle color="#000000" type="line" width="1.0"/>
           <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="17.96875" modelName="custom" textColor="#000000" visible="true" width="52.9609375" x="54.3388671875" y="15.96875">Profiling<y:LabelModel>
               <y:SmartNodeLabelModel distance="4.0"/>
@@ -317,7 +317,7 @@ auf einem System<y:LabelModel>
       <data key="d6">
         <y:ShapeNode>
           <y:Geometry height="49.90625" width="161.638671875" x="443.27734375" y="337.1488095238095"/>
-          <y:Fill color="#FFFFFF" transparent="false"/>
+          <y:Fill color="#99CC00" transparent="false"/>
           <y:BorderStyle color="#000000" type="line" width="1.0"/>
           <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="45.90625" modelName="custom" textColor="#000000" visible="true" width="151.638671875" x="5.0" y="2.0">Zusammenführen zu 
 einem funktionierenden 
@@ -336,7 +336,7 @@ System<y:LabelModel>
       <data key="d6">
         <y:ShapeNode>
           <y:Geometry height="49.90625" width="161.638671875" x="443.27734375" y="423.2934523809524"/>
-          <y:Fill color="#FFFFFF" transparent="false"/>
+          <y:Fill color="#FFCC00" transparent="false"/>
           <y:BorderStyle color="#000000" type="line" width="1.0"/>
           <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="17.96875" modelName="custom" textColor="#000000" visible="true" width="98.34765625" x="31.6455078125" y="15.96875">SMP optimieren<y:LabelModel>
               <y:SmartNodeLabelModel distance="4.0"/>
@@ -353,7 +353,7 @@ System<y:LabelModel>
       <data key="d6">
         <y:ShapeNode>
           <y:Geometry height="49.90625" width="161.638671875" x="443.27734375" y="503.1998015873016"/>
-          <y:Fill color="#FFFFFF" transparent="false"/>
+          <y:Fill color="#FFCC00" transparent="false"/>
           <y:BorderStyle color="#000000" type="line" width="1.0"/>
           <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="17.96875" modelName="custom" textColor="#000000" visible="true" width="107.751953125" x="26.943359375" y="15.968750000000057">CUDA optimieren<y:LabelModel>
               <y:SmartNodeLabelModel distance="4.0"/>
@@ -491,11 +491,45 @@ Dwarves<y:LabelModel>
         </y:ShapeNode>
       </data>
     </node>
-    <edge id="e0" source="n1" target="n9">
+    <node id="n27">
+      <data key="d6">
+        <y:ShapeNode>
+          <y:Geometry height="49.90625" width="161.638671875" x="221.638671875" y="8.876190476190459"/>
+          <y:Fill color="#FFCC00" transparent="false"/>
+          <y:BorderStyle color="#000000" type="line" width="1.0"/>
+          <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="17.96875" modelName="custom" textColor="#000000" visible="true" width="127.45703125" x="17.0908203125" y="15.96875">sequential Dwarf #2<y:LabelModel>
+              <y:SmartNodeLabelModel distance="4.0"/>
+            </y:LabelModel>
+            <y:ModelParameter>
+              <y:SmartNodeLabelModelParameter labelRatioX="0.0" labelRatioY="0.0" nodeRatioX="0.0" nodeRatioY="0.0" offsetX="0.0" offsetY="0.0" upX="0.0" upY="-1.0"/>
+            </y:ModelParameter>
+          </y:NodeLabel>
+          <y:Shape type="rectangle"/>
+        </y:ShapeNode>
+      </data>
+    </node>
+    <node id="n28">
+      <data key="d6">
+        <y:ShapeNode>
+          <y:Geometry height="49.90625" width="161.638671875" x="221.63867187499997" y="159.8126984126984"/>
+          <y:Fill color="#FFCC00" transparent="false"/>
+          <y:BorderStyle color="#000000" type="line" width="1.0"/>
+          <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="17.96875" modelName="custom" textColor="#000000" visible="true" width="127.45703125" x="17.09082031250003" y="15.96875">sequential Dwarf #3<y:LabelModel>
+              <y:SmartNodeLabelModel distance="4.0"/>
+            </y:LabelModel>
+            <y:ModelParameter>
+              <y:SmartNodeLabelModelParameter labelRatioX="0.0" labelRatioY="0.0" nodeRatioX="0.0" nodeRatioY="0.0" offsetX="0.0" offsetY="0.0" upX="0.0" upY="-1.0"/>
+            </y:ModelParameter>
+          </y:NodeLabel>
+          <y:Shape type="rectangle"/>
+        </y:ShapeNode>
+      </data>
+    </node>
+    <edge id="e0" source="n28" target="n9">
       <data key="d10">
         <y:PolyLineEdge>
-          <y:Path sx="80.8193359375" sy="-0.0" tx="-80.8193359375" ty="-0.0">
-            <y:Point x="423.27734375" y="64.9062996031746"/>
+          <y:Path sx="80.8193359375" sy="0.0" tx="-80.8193359375" ty="-0.0">
+            <y:Point x="417.8973975776904" y="184.7658234126984"/>
             <y:Point x="423.27734375" y="184.7658234126984"/>
           </y:Path>
           <y:LineStyle color="#000000" type="line" width="1.0"/>
@@ -504,11 +538,11 @@ Dwarves<y:LabelModel>
         </y:PolyLineEdge>
       </data>
     </edge>
-    <edge id="e1" source="n1" target="n10">
+    <edge id="e1" source="n27" target="n10">
       <data key="d10">
         <y:PolyLineEdge>
-          <y:Path sx="80.8193359375" sy="-0.0" tx="-80.8193359375" ty="-0.0">
-            <y:Point x="423.27734375" y="64.9062996031746"/>
+          <y:Path sx="80.8193359375" sy="0.0" tx="-80.8193359375" ty="-0.0">
+            <y:Point x="423.27734375" y="33.82931547619046"/>
             <y:Point x="423.27734375" y="104.8594742063492"/>
           </y:Path>
           <y:LineStyle color="#000000" type="line" width="1.0"/>
@@ -517,11 +551,11 @@ Dwarves<y:LabelModel>
         </y:PolyLineEdge>
       </data>
     </edge>
-    <edge id="e2" source="n1" target="n11">
+    <edge id="e2" source="n27" target="n11">
       <data key="d10">
         <y:PolyLineEdge>
-          <y:Path sx="80.8193359375" sy="-0.0" tx="-80.8193359375" ty="-0.0">
-            <y:Point x="423.27734375" y="64.9062996031746"/>
+          <y:Path sx="80.8193359375" sy="0.0" tx="-80.8193359375" ty="-0.0">
+            <y:Point x="423.27734375" y="33.82931547619046"/>
             <y:Point x="423.27734375" y="24.953125"/>
           </y:Path>
           <y:LineStyle color="#000000" type="line" width="1.0"/>
@@ -530,11 +564,11 @@ Dwarves<y:LabelModel>
         </y:PolyLineEdge>
       </data>
     </edge>
-    <edge id="e3" source="n1" target="n12">
+    <edge id="e3" source="n28" target="n12">
       <data key="d10">
         <y:PolyLineEdge>
-          <y:Path sx="80.8193359375" sy="-0.0" tx="-80.8193359375" ty="-0.0">
-            <y:Point x="423.27734375" y="64.9062996031746"/>
+          <y:Path sx="80.8193359375" sy="0.0" tx="-80.8193359375" ty="-0.0">
+            <y:Point x="423.27734375" y="184.7658234126984"/>
             <y:Point x="423.27734375" y="264.6721726190476"/>
           </y:Path>
           <y:LineStyle color="#000000" type="line" width="1.0"/>
@@ -823,6 +857,34 @@ Dwarves<y:LabelModel>
           <y:Path sx="80.8124882814353" sy="11.068608831748293" tx="0.0" ty="0.0">
             <y:Point x="192.0" y="539.2215354190498"/>
             <y:Point x="192.0" y="454.484871031746"/>
+          </y:Path>
+          <y:LineStyle color="#000000" type="line" width="1.0"/>
+          <y:Arrows source="none" target="standard"/>
+          <y:BendStyle smoothed="false"/>
+        </y:PolyLineEdge>
+      </data>
+    </edge>
+    <edge id="e28" source="n1" target="n27">
+      <data key="d9"/>
+      <data key="d10">
+        <y:PolyLineEdge>
+          <y:Path sx="0.0" sy="0.0" tx="0.0" ty="0.0">
+            <y:Point x="187.20610720851164" y="8.39122023809523"/>
+            <y:Point x="187.20610720851164" y="33.82931547619046"/>
+          </y:Path>
+          <y:LineStyle color="#000000" type="line" width="1.0"/>
+          <y:Arrows source="none" target="standard"/>
+          <y:BendStyle smoothed="false"/>
+        </y:PolyLineEdge>
+      </data>
+    </edge>
+    <edge id="e29" source="n1" target="n28">
+      <data key="d9"/>
+      <data key="d10">
+        <y:PolyLineEdge>
+          <y:Path sx="0.0" sy="0.0" tx="0.0" ty="0.0">
+            <y:Point x="186.38584650181463" y="8.39122023809523"/>
+            <y:Point x="186.38584650181463" y="184.7658234126984"/>
           </y:Path>
           <y:LineStyle color="#000000" type="line" width="1.0"/>
           <y:Arrows source="none" target="standard"/>

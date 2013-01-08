@@ -2,54 +2,171 @@
 #include "CudaElfFactory.h"
 #include "SMPElfFactory.h"
 
+#include "matrix/Matrix.h"
+#include "matrix/MatrixHelper.h"
+
 #include <stdexcept>
 #include <cstdlib>
 #include <iostream>
 #include <fstream>
 
+#include <boost/program_options.hpp> 
+
 using namespace std;
 
 Configuration::Configuration(int argc, char** argv)
-    : arguments(argv + 1, argv + argc), programName(argv[0])
+    : argc(argc), arguments(argv), programName(argv[0]), _useFiles(false)
 {
-    if (arguments.size() != 1 && arguments.size() != 3)
-    {
-        usageError();
-    }
+
 }
 
-void Configuration::usageError()
-{
-    printUsage();
-    exit(1);
-}
 
-void Configuration::printUsage()
-{
-    cerr << "Usage: " << programName << " cuda|smp" << " [inputFilename outputFilename] " << endl << "\tInput and outputFilename required for master." << endl;
-}
 
-unique_ptr<ProblemStatement> Configuration::createProblemStatement(std::string category)
-{
-    
-    if(arguments.size() < 2)
-    {
-        return unique_ptr<ProblemStatement>(new ProblemStatement(category));
-    } 
-
-    return unique_ptr<ProblemStatement>(new ProblemStatement(category, arguments[1], arguments[2]));
-}
-
-unique_ptr<ElfFactory> Configuration::getElfFactory(const ElfCategory& category)
-{
+bool Configuration::parseArguments()
+{ 
     try
-    {
-        return createElfFactory(arguments[0], category);
-    }
-    catch (const std::exception&)
-    {
-        usageError();
+    {           
+        namespace po = boost::program_options;
+        po::options_description desc("Options");
+        desc.add_options()    
+            ("help", "Print help message")
+            ("mode,m",               po::value<string>(&_mode), "Mode (smp|cuda)")
+            ("numwarmups,w",         po::value<size_t>(&_numberOfWarmUps)->default_value(50), "Number of warmup rounds")
+            ("numiter,n",            po::value<size_t>(&_numberOfIterations)->default_value(100), "Number of benchmark iterations")
+            ("input,i",              po::value<string>(&_inputFile), "Input file")
+            ("output,o",             po::value<string>(&_outputFile), "Output file")
+            ("export_configuration", po::value<string>(&_exportConfigurationFile), "Measure cluster and export configuration")
+            ("import_configuration", po::value<string>(&_importConfigurationFile), "Run benchmark with given configuration")
+            ("skip_benchmark",       "Skip the benchmark run")
+            ("left_rows",            po::value<size_t>(&_leftMatrixRows)->default_value(500), "Number of left rows to be generated (overridden for benchmark by input file)")
+            ("common_rows_columns",  po::value<size_t>(&_commonMatrixRowsColumns)->default_value(500), "Number of left columns / right rows to be generated (overridden for benchmark by input file)")
+            ("right_columns",        po::value<size_t>(&_rightMatrixColumns)->default_value(500), "Number of right columns to be generated (overridden for benchmark by input file)");
+        po::variables_map vm;
+        try
+        {
+            po::store(po::parse_command_line(argc, arguments, desc), vm);            
+
+            if(vm.count("help") || argc == 1) 
+            { 
+                cout << "Dwarf Mine Benchmark" << endl << desc << endl;  
+            }
+
+            po::notify(vm);
+        }
+        catch(po::error& e)
+        {
+            cerr << "ERROR: " << e.what() << endl << endl; 
+            cerr << desc << endl; 
+            return false; 
+        }
+    
+        if(vm.count("input") && vm.count("output"))
+        {
+           _useFiles = true;
+        }
+        
+        if(vm.count("mode") && (_mode != "smp" && _mode != "cuda")){
+            cerr << "ERROR: Mode must be smp or cuda" << endl; 
+            return false;
+        }
+
+        _skipBenchmark = vm.count("skip_benchmark");
     }
 
-    return nullptr; // just to make compiler happy, usageError() terminates anyway
+    catch(exception& e)
+    {
+        cerr << "Unhandled Exception in configuration" << endl;
+        return false;
+    }
+
+    return true;
+}
+
+unique_ptr<ProblemStatement> generateProblemStatement(string elfCategory, size_t leftRows, size_t commonRowsColumns, size_t rightColumns)
+{
+    auto statement = unique_ptr<ProblemStatement>(new ProblemStatement(elfCategory)); 
+    Matrix<float> left(leftRows, commonRowsColumns);
+    Matrix<float> right(commonRowsColumns, rightColumns);
+    auto distribution = uniform_real_distribution<float> (-100, +100);
+    auto engine = mt19937(time(nullptr));
+    auto generator = bind(distribution, engine);
+    MatrixHelper::fill(left, generator);
+    MatrixHelper::fill(right, generator);
+    MatrixHelper::writeMatrixTo(*(statement->input), left);
+    MatrixHelper::writeMatrixTo(*(statement->input), right);
+    return statement;
+}
+
+unique_ptr<ProblemStatement> Configuration::getProblemStatement(bool forceGenerated)
+{
+
+    if(!_useFiles || forceGenerated)
+    {
+        return generateProblemStatement(getElfCategory(), _leftMatrixRows, _commonMatrixRowsColumns, _rightMatrixColumns);
+    } 
+    return unique_ptr<ProblemStatement>(new ProblemStatement(getElfCategory(), _inputFile, _outputFile));
+}
+
+unique_ptr<ElfFactory> Configuration::getElfFactory()
+{
+    return createElfFactory(_mode, getElfCategory());
+}
+
+size_t Configuration::getNumberOfIterations()
+{
+    return _numberOfIterations;
+}
+
+size_t Configuration::getNumberOfWarmUps()
+{
+    return _numberOfWarmUps;
+}
+
+// TODO remove
+string Configuration::getElfCategory() const
+{
+    return "matrix";
+}
+
+bool Configuration::exportConfiguration() const
+{
+    return _exportConfigurationFile != "";
+}
+    
+bool Configuration::importConfiguration() const
+{
+    return _importConfigurationFile != "";
+}
+
+bool Configuration::skipBenchmark() const
+{
+    return _skipBenchmark;
+}
+
+std::string Configuration::getExportConfigurationFilename() const
+{
+    return _exportConfigurationFile;
+}
+
+std::string Configuration::getImportConfigurationFilename() const
+{
+    return _importConfigurationFile;
+}
+
+std::ostream& operator<<(std::ostream& s, const Configuration& c)
+{
+    s   << "Configuation: "
+        << "\n\tMode: "<< c._mode
+        << "\n\tWarmUps: " << c._numberOfWarmUps
+        << "\n\tIterations: " << c._numberOfIterations;
+    if (c._useFiles)
+    {
+        s   << "\n\tInput: " << c._inputFile
+            << "\n\tOutput: " << c._outputFile;
+    } 
+    else
+    {
+        s   << "\n\tMatrices: ("<<c._leftMatrixRows<<" x "<<c._commonMatrixRowsColumns<<") x ("<<c._commonMatrixRowsColumns<<" x "<<c._rightMatrixColumns<<")";
+    }
+    return s;
 }
