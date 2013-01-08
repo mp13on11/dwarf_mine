@@ -45,7 +45,7 @@ BenchmarkResult importClusterConfiguration(const string& filename)
     fstream file(filename, fstream::in);
     if (!file.is_open())
     {
-        cerr << "ERROR: Coult not read "<<filename<<endl;
+        cerr << "ERROR: Could not read "<<filename<<endl;
         exit(1);
     }
     BenchmarkResult result;
@@ -109,7 +109,12 @@ int main(int argc, char** argv)
             printResultOnMaster(cout, "Measured Time:", clusterResults, "µs");
         }
     }
-    catch (const exception &e)
+    catch (const logic_error& e)
+    {
+        cerr << "ERROR: " << e.what() << endl;
+        return 1;
+    }
+    catch (const exception& e)
     {
         cerr << "FATAL: " << e.what() << endl;
         return 1;

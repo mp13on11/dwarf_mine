@@ -31,8 +31,8 @@ bool Configuration::parseArguments()
             ("mode,m",               po::value<string>(&_mode)->required(), "Mode (smp|cuda)")
             ("numwarmups,w",         po::value<size_t>(&_numberOfWarmUps)->default_value(50), "Number of warmup rounds")
             ("numiter,n",            po::value<size_t>(&_numberOfIterations)->default_value(100), "Number of benchmark iterations")
-            ("input,i",              po::value<string>(&_inputFile)->required(), "Input file")
-            ("output,o",             po::value<string>(&_outputFile)->required(), "Output file")
+            ("input,i",              po::value<string>(&_inputFile), "Input file")
+            ("output,o",             po::value<string>(&_outputFile), "Output file")
             ("export_configuration", po::value<string>(&_exportConfigurationFile), "Measure cluster and export configuration")
             ("import_configuration", po::value<string>(&_importConfigurationFile), "Run benchmark with given configuration")
             ("skip_benchmark",       "Skip the benchmark run")
@@ -51,14 +51,14 @@ bool Configuration::parseArguments()
 
         po::notify(vm);
 
-        if(vm.count("input") && vm.count("output"))
-        {
-           _useFiles = true;
-        }
+        if(vm.count("input") ^ vm.count("output"))
+            throw logic_error("Both input and output are needed, if one is given");
 
-        if(vm.count("mode") && (_mode != "smp" && _mode != "cuda")){
-            throw runtime_error("Mode must be smp or cuda");
-        }
+        if(vm.count("input") && vm.count("output"))
+           _useFiles = true;
+
+        if(vm.count("mode") && (_mode != "smp" && _mode != "cuda"))
+            throw logic_error("Mode must be smp or cuda");
 
     }
     catch(const po::error& e)
