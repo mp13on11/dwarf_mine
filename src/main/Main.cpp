@@ -4,9 +4,10 @@
 
 #include "BenchmarkRunner.h"
 #include "Configuration.h"
+#include "MpiGuard.h"
+#include "MpiHelper.h"
 #include "matrix/MatrixHelper.h"
 #include "matrix/Matrix.h"
-#include "MpiUtils.h"
 
 using namespace std;
 
