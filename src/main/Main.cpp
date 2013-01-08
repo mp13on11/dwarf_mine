@@ -12,7 +12,7 @@ using namespace std;
 
 ostream& printResultOnMaster(ostream& o, string preamble, BenchmarkResult results, string unit = "")
 {
-    if (MPIGuard::isMaster())
+    if (MpiGuard::isMaster())
     {
         o << preamble <<" "<<unit<< "\n" << results;
     }
@@ -51,7 +51,7 @@ BenchmarkResult importClusterConfiguration(const string& filename)
     BenchmarkResult result;
     file >> result;
     file.close();
-    if (result.size() != MPIGuard::numberOfNodes())
+    if (result.size() != MpiGuard::numberOfNodes())
     {
         cerr << "ERROR: Number of nodes does not match configured number of nodes" <<endl;
         exit(1);
@@ -71,7 +71,7 @@ BenchmarkResult runTimedMeasurement(Configuration& config, BenchmarkResult& weig
 int main(int argc, char** argv)
 {
     // used to ensure MPI::Finalize is called on exit of the application
-    auto mpiGuard = MPIGuard(argc, argv);
+    MpiGuard guard(argc, argv);
 
     try
     {
@@ -80,7 +80,7 @@ int main(int argc, char** argv)
         if (!config.parseArguments())
             return 2;
 
-        if (MPIGuard::isMaster())
+        if (MpiGuard::isMaster())
         {
             cout << config <<endl;
         }
