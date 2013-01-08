@@ -23,23 +23,24 @@ public:
     bool skipBenchmark() const;
     std::string getImportConfigurationFilename() const;
     std::string getExportConfigurationFilename() const;
-    
+
     friend std::ostream& operator<<(std::ostream& s, const Configuration& c);
 
 private:
-    
+
     void usageError();
-    void printUsage();   
+    void printUsage();
 
     int argc;
-    char** arguments;    
+    bool _useFiles;
+	char** arguments;
     std::string programName;
 
-    bool _useFiles;
     bool _skipBenchmark;
     size_t _numberOfWarmUps;
     size_t _numberOfIterations;
     std::string _mode;
+    std::string _category;
     std::string _inputFile;
     std::string _outputFile;
     std::string _exportConfigurationFile;

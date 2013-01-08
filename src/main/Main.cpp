@@ -25,7 +25,7 @@ BenchmarkResult determineWeightedConfiguration(Configuration& config)
     auto statement = config.getProblemStatement();
     BenchmarkRunner runner(config);
     runner.runBenchmark(*statement, *factory);
-    return runner.getWeightedResults(); 
+    return runner.getWeightedResults();
 }
 
 void exportClusterConfiguration(const string& filename, BenchmarkResult& result)
@@ -60,7 +60,7 @@ BenchmarkResult importClusterConfiguration(const string& filename)
 }
 
 BenchmarkResult runTimedMeasurement(Configuration& config, BenchmarkResult& weightedResults)
-{    
+{
     auto factory = config.getElfFactory();
     auto statement = config.getProblemStatement(true);
     BenchmarkRunner runner(config, weightedResults);
@@ -70,19 +70,21 @@ BenchmarkResult runTimedMeasurement(Configuration& config, BenchmarkResult& weig
 
 int main(int argc, char** argv)
 {
-    Configuration config(argc, argv);
-    config.parseArguments(); 
-    
     // used to ensure MPI::Finalize is called on exit of the application
     auto mpiGuard = MPIGuard(argc, argv);
-    
-    if (MPIGuard::isMaster())
-    {
-		cout << config <<endl;
-	}
-    
+
     try
     {
+        Configuration config(argc, argv);
+
+        if (!config.parseArguments())
+            return 2;
+
+        if (MPIGuard::isMaster())
+        {
+            cout << config <<endl;
+        }
+
         BenchmarkResult weightedResults;
         if (config.exportConfiguration() || !config.importConfiguration())
         {
@@ -104,7 +106,7 @@ int main(int argc, char** argv)
         {
             cout << "Running benchmark" <<endl;
             auto clusterResults = runTimedMeasurement(config, weightedResults);
-            printResultOnMaster(cout, "Measured Time:", clusterResults, "µs");    
+            printResultOnMaster(cout, "Measured Time:", clusterResults, "µs");
         }
     }
     catch (const exception &e)
