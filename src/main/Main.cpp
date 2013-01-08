@@ -12,7 +12,7 @@ using namespace std;
 
 ostream& printResultOnMaster(ostream& o, string preamble, BenchmarkResult results, string unit = "")
 {
-    if (MpiGuard::isMaster())
+    if (MpiHelper::isMaster())
     {
         o << preamble <<" "<<unit<< "\n" << results;
     }
@@ -51,7 +51,7 @@ BenchmarkResult importClusterConfiguration(const string& filename)
     BenchmarkResult result;
     file >> result;
     file.close();
-    if (result.size() != MpiGuard::numberOfNodes())
+    if (result.size() != MpiHelper::numberOfNodes())
     {
         cerr << "ERROR: Number of nodes does not match configured number of nodes" <<endl;
         exit(1);
@@ -80,7 +80,7 @@ int main(int argc, char** argv)
         if (!config.parseArguments())
             return 2;
 
-        if (MpiGuard::isMaster())
+        if (MpiHelper::isMaster())
         {
             cout << config <<endl;
         }

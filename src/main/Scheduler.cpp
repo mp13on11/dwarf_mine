@@ -31,19 +31,18 @@ void Scheduler::dispatch()
         throw std::runtime_error("Scheduler::dispatch(): No elf configured!");
     }
 
-	if (rank == MASTER)
-	{
-		if (!hasData())
-		{
-			throw std::runtime_error("Scheduler::dispatch(): No ProblemStatement configured!");
-		}
+    if (MpiHelper::isMaster(rank))
+    {
+        if (!hasData())
+        {
+            throw std::runtime_error("Scheduler::dispatch(): No ProblemStatement configured!");
+        }
 
-
-		if (nodeSet.empty())
-		{
-			throw std::runtime_error("Scheduler::dispatch(): Nodeset is empty!");
-		}
-	}
+        if (nodeSet.empty())
+        {
+            throw std::runtime_error("Scheduler::dispatch(): Nodeset is empty!");
+        }
+    }
     doDispatch();
 }
 

@@ -67,7 +67,7 @@ void BenchmarkRunner::runBenchmark(ProblemStatement& statement, const ElfFactory
     unique_ptr<Elf> elf = factory.createElf();
     scheduler->setElf(elf.get());
 
-    if (MPI::COMM_WORLD.Get_rank() == MASTER)
+    if (MpiHelper::isMaster())
     {
         for (size_t nodeset = 0; nodeset < _nodesets.size(); ++nodeset)
         {

@@ -67,7 +67,7 @@ void MatrixScheduler::outputData(ProblemStatement& statement)
 
 void MatrixScheduler::doDispatch()
 {
-    if (rank == MASTER)
+    if (MpiHelper::isMaster(rank))
     {
         pImpl->orchestrateCalculation();
     }
@@ -88,10 +88,10 @@ MatrixPair sliceMatrices(const MatrixSlice& definition, const MatrixPair& matric
 void MatrixScheduler::MatrixSchedulerImpl::calculateOnSlave()
 {
     MatrixElf* elf = static_cast<MatrixElf*>(self->elf);
-    Matrix<float> left = MatrixHelper::receiveMatrixFrom(MASTER);
-    Matrix<float> right = MatrixHelper::receiveMatrixFrom(MASTER);
+    Matrix<float> left = MatrixHelper::receiveMatrixFrom(MpiHelper::MASTER);
+    Matrix<float> right = MatrixHelper::receiveMatrixFrom(MpiHelper::MASTER);
     Matrix<float> result = elf->multiply(left, right);
-    MatrixHelper::sendMatrixTo(result, MASTER);
+    MatrixHelper::sendMatrixTo(result, MpiHelper::MASTER);
 }
 
 void MatrixScheduler::MatrixSchedulerImpl::provideData(ProblemStatement& statement)
@@ -137,7 +137,7 @@ const MatrixSlice* MatrixScheduler::MatrixSchedulerImpl::distributeSlices(const 
     for(const auto& definition : sliceDefinitions)
     {
         auto nodeId = definition.getNodeId();
-        if (nodeId == MASTER)
+        if (MpiHelper::isMaster(nodeId))
         {
             masterSliceDefinition = &definition;
         }
@@ -156,7 +156,7 @@ void MatrixScheduler::MatrixSchedulerImpl::collectResults(const vector<MatrixSli
     for (const auto& definition : sliceDefinitions)
     {
         auto nodeId = definition.getNodeId();
-        if (nodeId != MASTER)
+        if (MpiHelper::isMaster(nodeId))
         {
             Matrix<float> resultSlice = MatrixHelper::receiveMatrixFrom(nodeId);
             definition.injectSlice(resultSlice, result);
