@@ -8,16 +8,21 @@
 class BigInt;
 
 std::ostream& operator<<(std::ostream& out, const BigInt& i);
+std::istream& operator>>(std::istream& in, BigInt& i);
 
 class BigInt
 {
 public:
+    static const uint32_t MAX_ITEM = -1;
+
     static const BigInt& ZERO;
     static const BigInt& ONE;
 
     BigInt();
     BigInt(uint32_t value);
+    explicit BigInt(const std::string& value);
     BigInt& operator=(uint32_t value);
+    BigInt& operator=(const std::string& value);
 
     BigInt& operator++();
     BigInt operator++(int postfix);
@@ -55,6 +60,7 @@ public:
     bool isEven() const;
     bool isOdd() const;
 
+    void readFrom(std::istream& stream);
     std::string toString() const;
 
 private:
@@ -74,6 +80,13 @@ private:
 inline std::ostream& operator<<(std::ostream& out, const BigInt& value)
 {
     return out << value.toString();
+}
+
+inline std::istream& operator>>(std::istream& in, BigInt& value)
+{
+    value.readFrom(in);
+
+    return in;
 }
 
 inline BigInt BigInt::operator+(const BigInt& right) const

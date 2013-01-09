@@ -1,7 +1,9 @@
 #include "BigInt.h"
 
 #include <algorithm>
+#include <cctype>
 #include <iomanip>
+#include <istream>
 #include <sstream>
 #include <stdexcept>
 
@@ -20,10 +22,30 @@ BigInt::BigInt(uint32_t value)
     items.push_back(value);
 }
 
+BigInt::BigInt(const string& value)
+{
+    istringstream stream(value);
+    readFrom(stream);
+
+    if (stream.fail())
+        throw logic_error("Failed to convert string to BigInt: " + value);
+}
+
 BigInt& BigInt::operator=(uint32_t value)
 {
     items.clear();
     items.push_back(value);
+
+    return *this;
+}
+
+BigInt& BigInt::operator=(const string& value)
+{
+    istringstream stream(value);
+    readFrom(stream);
+
+    if (stream.fail())
+        throw logic_error("Failed to convert string to BigInt: " + value);
 
     return *this;
 }
@@ -266,6 +288,24 @@ string BigInt::toString() const
     }
 
     return stream.str();
+}
+
+void BigInt::readFrom(istream& stream)
+{
+    if (!isdigit(stream.peek()))
+    {
+        stream.setstate(ios::failbit);
+        return;
+    }
+
+    *this = ZERO;
+
+    do
+    {
+        *this *= 10;
+        *this += (stream.get() - '0');
+    }
+    while (stream.good() && isdigit(stream.peek()));
 }
 
 bool BigInt::isEven() const
