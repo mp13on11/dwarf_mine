@@ -44,6 +44,13 @@ TEST(BigIntTest, testSmallSubtraction)
     EXPECT_EQ(BigInt(7777), b);
 }
 
+TEST(BigIntTest, regressionTestSubtractionWithZeroResult)
+{
+    BigInt a(1234);
+
+    EXPECT_EQ(BigInt::ZERO, a - a);
+}
+
 TEST(BigIntTest, testSmallMultiplication)
 {
     BigInt a(1234);

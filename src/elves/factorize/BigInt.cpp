@@ -365,7 +365,7 @@ void BigInt::reverse(uint32_t &v)
 
 void BigInt::normalize()
 {
-    while (items.back() == 0)
+    while (!items.empty() && items.back() == 0)
     {
         items.pop_back();
     }
