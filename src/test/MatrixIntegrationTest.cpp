@@ -9,34 +9,53 @@
 #include <string>
 #include <fstream>
 #include <future>
+#include <boost/lexical_cast.hpp>
 #include <sys/wait.h>
 #include <signal.h>
 
-const int TIMEOUT_SECONDS = 10;
-
 using namespace std;
 
-TEST(MatrixIntegrationTest, TestSmallInputSMPScheduling)
+const int           TIMEOUT_SECONDS = 10;
+const int           NUM_NODES       = 8;
+const char* const   CONF_FILENAME   = "test_config.cfg";
+const char* const   INPUT_FILENAME  = "small_input.bin";
+const char* const   OUTPUT_FILENAME = "small_output.bin";
+
+void setupConfigFile()
+{
+    ofstream config(CONF_FILENAME);
+    for (int i=0; i<NUM_NODES; ++i)
+        config << i << " " << 1 << endl;
+}
+
+pid_t spawnChildProcess()
 {
     pid_t pid = fork();
     if(pid == 0) // child process
     {
         execl("/usr/bin/mpirun",
             "/usr/bin/mpirun", 
-            "-n", "8",
+            "-n", boost::lexical_cast<string>(NUM_NODES).c_str(),
             "--tag-output",
             "build/src/main/dwarf_mine", 
             "-m", "smp", 
             "-n", "1",
             "-w", "0",
             "-q",
-            "-i", "small_input.bin",
-            "-o", "small_output.bin",
-            "--import_configuration", "test_config.cfg",
+            "-i", INPUT_FILENAME,
+            "-o", OUTPUT_FILENAME,
+            "--import_configuration", CONF_FILENAME,
             nullptr
         );
         exit(-1);
     }
+    return pid;
+}
+
+TEST(MatrixIntegrationTest, TestSmallInputSMPScheduling)
+{
+    setupConfigFile();
+    pid_t pid = spawnChildProcess();
 
     auto future = async(std::launch::async, [pid]()->bool
     {
@@ -68,5 +87,6 @@ TEST(MatrixIntegrationTest, TestSmallInputSMPScheduling)
 
     EXPECT_TRUE(AreMatricesEquals(expectedMatrix, actualMatrix));
 
-    remove("small_output.bin");
+    remove(OUTPUT_FILENAME);
+    remove(CONF_FILENAME);
 }
