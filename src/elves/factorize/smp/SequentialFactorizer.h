@@ -1,6 +1,7 @@
 #pragma once
 
 #include "elves/factorize/BigInt.h"
+#include "elves/factorize/smp/SmpFactorizationElf.h"
 
 #include <functional>
 #include <map>
@@ -9,12 +10,13 @@
 class SequentialFactorizer
 {
 public:
-    SequentialFactorizer(const BigInt& m);
+    SequentialFactorizer(const BigInt& m, const SmpFactorizationElf& elf);
 
     void run();
     std::pair<BigInt, BigInt> result() const;
 
 private:
+    const SmpFactorizationElf& elf;
     BigInt m, p, q;
     std::multimap<BigInt, BigInt> remainders;
     std::uniform_int_distribution<uint32_t> distribution;

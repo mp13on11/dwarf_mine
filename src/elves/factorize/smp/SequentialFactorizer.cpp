@@ -5,15 +5,15 @@
 
 using namespace std;
 
-SequentialFactorizer::SequentialFactorizer(const BigInt& number) :
-        m(number), p(0), q(0), distribution(), engine(time(NULL)),
+SequentialFactorizer::SequentialFactorizer(const BigInt& number, const SmpFactorizationElf& e) :
+        elf(e), m(number), p(0), q(0), distribution(), engine(time(NULL)),
         generator(bind(distribution, engine))
 {
 }
 
 void SequentialFactorizer::run()
 {
-    while (p == 0 && q == 0)
+    while (!elf.finished && p == 0 && q == 0)
     {
         BigInt a = generateRandomNumberSmallerThan(m);
         BigInt aSquared = a * a;
