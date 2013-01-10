@@ -65,18 +65,18 @@ int main(int argc, char** argv)
     // used to ensure MPI::Finalize is called on exit of the application
     MpiGuard guard(argc, argv);
 
+    if (!MpiHelper::isMaster())
+	{
+    	// Silence cout on slaves
+        cout.rdbuf(nullptr);
+    }
+
     try
     {
         Configuration config(argc, argv);
 
         if (!config.parseArguments())
             return 2;
-
-        if (!MpiHelper::isMaster())
-        {
-            // Silence cout on slaves
-        	cout.rdbuf(nullptr);
-        }
 
         cout << config <<endl;
 
