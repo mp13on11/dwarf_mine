@@ -1,5 +1,6 @@
 #include "SequentialFactorizer.h"
 #include "SmpFactorizationElf.h"
+#include "main/MpiHelper.h"
 
 #include <ctime>
 #include <omp.h>
@@ -35,7 +36,12 @@ pair<BigInt, BigInt> SmpFactorizationElf::factorize(const BigInt& m)
     return pair<BigInt, BigInt>(p, q);
 }
 
+void SmpFactorizationElf::stop()
+{
+    finished = true;
+}
+
 size_t SmpFactorizationElf::randomSeed() const
 {
-    return time(NULL) * omp_get_thread_num();
+    return time(NULL) * (omp_get_thread_num() + 1) + MpiHelper::rank();
 }

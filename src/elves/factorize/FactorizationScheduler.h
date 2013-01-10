@@ -3,6 +3,8 @@
 #include "BigInt.h"
 #include "main/Scheduler.h"
 
+#include <future>
+
 class FactorizationScheduler : public Scheduler
 {
 public:
@@ -17,9 +19,15 @@ protected:
     virtual bool hasData();
 
 private:
+    typedef std::pair<BigInt, BigInt> BigIntPair;
+
     BigInt number;
     BigInt a, b;
 
     void distributeNumber();
-    void factorizeNumber();
+    BigIntPair factorizeNumber();
+    int distributeFinishedStateRegularly(std::future<BigIntPair>& f) const;
+    void sendResultToMaster(int rank, std::future<BigIntPair>& f);
+    void stopFactorization();
+    BigInt broadcast(const BigInt& number) const;
 };
