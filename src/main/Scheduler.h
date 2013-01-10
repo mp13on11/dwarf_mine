@@ -27,7 +27,6 @@ protected:
     virtual void doDispatch() = 0;
     virtual bool hasData() = 0;
 
-    bool nodesHaveRatings;
     BenchmarkResult nodeSet;
     NodeId rank;
     Elf* elf;

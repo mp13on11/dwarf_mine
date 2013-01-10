@@ -4,12 +4,12 @@
 #include <stdexcept>
 
 Scheduler::Scheduler() :
-    nodesHaveRatings(false), rank(MpiHelper::rank()), elf(nullptr)
+    rank(MpiHelper::rank()), elf(nullptr)
 {
 }
 
 Scheduler::Scheduler(const BenchmarkResult& benchmarkResult) :
-    nodesHaveRatings(true), nodeSet(benchmarkResult), rank(MpiHelper::rank()), elf(nullptr)
+    nodeSet(benchmarkResult), rank(MpiHelper::rank()), elf(nullptr)
 {
 }
 
