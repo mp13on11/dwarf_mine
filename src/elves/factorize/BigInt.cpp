@@ -22,6 +22,12 @@ BigInt::BigInt(uint32_t value)
     items.push_back(value);
 }
 
+BigInt::BigInt(const std::vector<uint32_t>& items) :
+        items(items)
+{
+    normalize();
+}
+
 BigInt::BigInt(const string& value)
 {
     istringstream stream(value);
