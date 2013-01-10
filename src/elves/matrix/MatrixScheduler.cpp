@@ -156,7 +156,7 @@ void MatrixScheduler::MatrixSchedulerImpl::collectResults(const vector<MatrixSli
     for (const auto& definition : sliceDefinitions)
     {
         auto nodeId = definition.getNodeId();
-        if (MpiHelper::isMaster(nodeId))
+        if (!MpiHelper::isMaster(nodeId))
         {
             Matrix<float> resultSlice = MatrixHelper::receiveMatrixFrom(nodeId);
             definition.injectSlice(resultSlice, result);
