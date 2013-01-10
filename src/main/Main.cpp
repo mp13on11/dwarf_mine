@@ -14,7 +14,7 @@ using namespace std;
 BenchmarkResult determineWeightedConfiguration(Configuration& config)
 {
     auto factory = config.getElfFactory();
-    auto statement = config.getProblemStatement();
+    auto statement = config.getProblemStatement(true);
     BenchmarkRunner runner(config);
     runner.runBenchmark(*statement, *factory);
     return runner.getWeightedResults();
@@ -54,7 +54,7 @@ BenchmarkResult importClusterConfiguration(const string& filename)
 BenchmarkResult runTimedMeasurement(Configuration& config, BenchmarkResult& weightedResults)
 {
     auto factory = config.getElfFactory();
-    auto statement = config.getProblemStatement(true);
+    auto statement = config.getProblemStatement();
     BenchmarkRunner runner(config, weightedResults);
     runner.runBenchmark(*statement, *factory);
     return runner.getTimedResults();
@@ -65,18 +65,18 @@ int main(int argc, char** argv)
     // used to ensure MPI::Finalize is called on exit of the application
     MpiGuard guard(argc, argv);
 
+    if (!MpiHelper::isMaster())
+	{
+    	// Silence cout on slaves
+        cout.rdbuf(nullptr);
+    }
+
     try
     {
         Configuration config(argc, argv);
 
         if (!config.parseArguments())
             return 2;
-
-        if (!MpiHelper::isMaster())
-        {
-            // Silence cout on slaves
-        	cout.rdbuf(nullptr);
-        }
 
         cout << config <<endl;
 
