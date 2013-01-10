@@ -12,6 +12,8 @@ INCLUDE_DIRECTORIES(
     ${PROJECT_SOURCE_DIR}/src/
     ${PROJECT_SOURCE_DIR}/src/elves/
     ${PROJECT_SOURCE_DIR}/src/elves/matrix/
+    ${PROJECT_SOURCE_DIR}/src/elves/montecarlo/
+    ${PROJECT_SOURCE_DIR}/src/elves/factorization/
     ${MPI_INCLUDE_PATH}
     # Add dependencies' include dirs here
 )
@@ -26,6 +28,7 @@ SET(ELF_LIBRARIES
     ${SMP_MATRIX_ELF_LIB}
     ${SHARED_MATRIX_LIB}
     ${SHARED_FACTORIZE_LIB}
+    ${SHARED_MONTECARLO_LIB}
 )
 
 IF(BUILD_WITH_CUDA)

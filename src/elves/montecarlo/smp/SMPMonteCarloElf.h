@@ -1,8 +1,9 @@
 #pragma once
 
-#include <MatrixElf.h>
+#include <MonteCarloElf.h>
 
-class SMPMonteCarloElf : public MatrixElf
+
+class SMPMonteCarloElf : public MonteCarloElf
 {
 public:
     virtual OthelloMove calculateMove(const OthelloState& left);

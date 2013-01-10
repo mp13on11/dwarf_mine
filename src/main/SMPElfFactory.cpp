@@ -2,6 +2,7 @@
 #include "matrix/MatrixScheduler.h"
 #include "montecarlo/smp/SMPMonteCarloElf.h"
 #include "main/SMPElfFactory.h"
+#include <stdexcept>
 
 using namespace std;
 
