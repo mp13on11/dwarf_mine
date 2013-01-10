@@ -60,6 +60,8 @@ bool Configuration::parseArguments()
         if(vm.count("mode") && (_mode != "smp" && _mode != "cuda"))
             throw logic_error("Mode must be smp or cuda");
 
+        _skipBenchmark = vm.count("skip_benchmark") > 0;
+
     }
     catch(const po::error& e)
     {
