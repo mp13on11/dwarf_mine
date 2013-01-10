@@ -1,9 +1,9 @@
+#include "MatrixIntegrationTest.h"
 #include "Utilities.h"
 #include <matrix/MatrixHelper.h>
 #include <matrix/Matrix.h>
 #include <matrix/MatrixElf.h>
 #include <main/ElfFactory.h>
-#include <gtest/gtest.h>
 
 #include <cstdlib>
 #include <string>
@@ -20,6 +20,13 @@ const int           NUM_NODES       = 8;
 const char* const   CONF_FILENAME   = "test_config.cfg";
 const char* const   INPUT_FILENAME  = "small_input.bin";
 const char* const   OUTPUT_FILENAME = "small_output.bin";
+const char* const   MPIRUN_PATH     = MPIEXEC; // defined by CMake file
+
+void MatrixIntegrationTest::TearDown()
+{
+    remove(OUTPUT_FILENAME);
+    remove(CONF_FILENAME);
+}
 
 void setupConfigFile()
 {
@@ -33,8 +40,8 @@ pid_t spawnChildProcess()
     pid_t pid = fork();
     if(pid == 0) // child process
     {
-        execl("/usr/bin/mpirun",
-            "/usr/bin/mpirun", 
+        execl(MPIRUN_PATH,
+            MPIRUN_PATH, 
             "-n", boost::lexical_cast<string>(NUM_NODES).c_str(),
             "--tag-output",
             "build/src/main/dwarf_mine", 
@@ -52,7 +59,7 @@ pid_t spawnChildProcess()
     return pid;
 }
 
-TEST(MatrixIntegrationTest, TestSmallInputSMPScheduling)
+TEST_F(MatrixIntegrationTest, TestSmallInputSMPScheduling)
 {
     setupConfigFile();
     pid_t pid = spawnChildProcess();
@@ -86,7 +93,4 @@ TEST(MatrixIntegrationTest, TestSmallInputSMPScheduling)
     auto expectedMatrix = static_cast<MatrixElf*>(elf.get())->multiply(leftMatrix, rightMatrix);
 
     EXPECT_TRUE(AreMatricesEquals(expectedMatrix, actualMatrix));
-
-    remove(OUTPUT_FILENAME);
-    remove(CONF_FILENAME);
 }

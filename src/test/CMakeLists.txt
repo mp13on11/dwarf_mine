@@ -4,6 +4,8 @@ ENABLE_CPP_11()
 
 # Dependencies
     
+ADD_DEFINITIONS("-DMPIEXEC=\"${MPIEXEC}\"")
+
 INCLUDE_DIRECTORIES(
     ${PROJECT_SOURCE_DIR}/gtest-1.6.0/include/
     # Add dependencies' include dirs here
