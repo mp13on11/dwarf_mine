@@ -11,15 +11,6 @@
 
 using namespace std;
 
-ostream& printResultOnMaster(ostream& o, string preamble, BenchmarkResult results, string unit = "")
-{
-    if (MpiHelper::isMaster())
-    {
-        o << preamble <<" "<<unit<< "\n" << results;
-    }
-    return o;
-}
-
 BenchmarkResult determineWeightedConfiguration(Configuration& config)
 {
     auto factory = config.getElfFactory();
@@ -81,17 +72,20 @@ int main(int argc, char** argv)
         if (!config.parseArguments())
             return 2;
 
-        if (MpiHelper::isMaster())
+        if (!MpiHelper::isMaster())
         {
-            cout << config <<endl;
+            // Silence cout on slaves
+        	cout.rdbuf(nullptr);
         }
+
+        cout << config <<endl;
 
         BenchmarkResult weightedResults;
         if (config.exportConfiguration() || !config.importConfiguration())
         {
             cout << "Calculating node weights" <<endl;
             weightedResults = determineWeightedConfiguration(config);
-            printResultOnMaster(cout, "Weighted", weightedResults);
+            cout << "Weighted " << endl << weightedResults;
         }
         if (config.exportConfiguration())
         {
@@ -107,7 +101,7 @@ int main(int argc, char** argv)
         {
             cout << "Running benchmark" <<endl;
             auto clusterResults = runTimedMeasurement(config, weightedResults);
-            printResultOnMaster(cout, "Measured Time:", clusterResults, "µs");
+            cout << "Measured Time: µs" << endl << clusterResults;
         }
     }
     catch (const logic_error& e)
