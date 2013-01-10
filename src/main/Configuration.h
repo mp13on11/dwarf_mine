@@ -34,7 +34,7 @@ private:
 
     int argc;
     bool _useFiles;
-	char** arguments;
+    char** arguments;
     std::string programName;
 
     bool _skipBenchmark;

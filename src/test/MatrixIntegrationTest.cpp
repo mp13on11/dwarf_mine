@@ -22,6 +22,38 @@ const char* const   INPUT_FILENAME  = "small_input.bin";
 const char* const   OUTPUT_FILENAME = "small_output.bin";
 const char* const   MPIRUN_PATH     = MPIEXEC; // defined by CMake file
 
+void setupConfigFile();
+pid_t spawnChildProcess();
+std::tuple<Matrix<float>, Matrix<float>> readMatrices();
+
+TEST_F(MatrixIntegrationTest, TestSmallInputSMPScheduling)
+{
+    setupConfigFile();
+    pid_t pid = spawnChildProcess();
+
+    auto future = async(std::launch::async, [pid]() -> bool
+    {
+        int status;
+        waitpid(pid, &status, 0);
+        return WIFEXITED(status) && (WEXITSTATUS(status) == 0);
+    });
+    auto status = future.wait_for(std::chrono::seconds(TIMEOUT_SECONDS));
+    future.wait();
+
+    if(status != future_status::ready)
+    {
+        kill(pid, SIGKILL);
+        FAIL() << "Process timed out";
+    }
+
+    ASSERT_TRUE(future.get()) << "Process not exited normally";
+
+    Matrix<float> expectedMatrix, actualMatrix;
+    std::tie(expectedMatrix, actualMatrix) = readMatrices();
+
+    EXPECT_TRUE(AreMatricesEquals(expectedMatrix, actualMatrix));
+}
+
 void MatrixIntegrationTest::TearDown()
 {
     remove(OUTPUT_FILENAME);
@@ -41,11 +73,11 @@ pid_t spawnChildProcess()
     if(pid == 0) // child process
     {
         execl(MPIRUN_PATH,
-            MPIRUN_PATH, 
+            MPIRUN_PATH,
             "-n", boost::lexical_cast<string>(NUM_NODES).c_str(),
             "--tag-output",
-            "build/src/main/dwarf_mine", 
-            "-m", "smp", 
+            "build/src/main/dwarf_mine",
+            "-m", "smp",
             "-n", "1",
             "-w", "0",
             "-q",
@@ -59,29 +91,8 @@ pid_t spawnChildProcess()
     return pid;
 }
 
-TEST_F(MatrixIntegrationTest, TestSmallInputSMPScheduling)
+std::tuple<Matrix<float>, Matrix<float>> readMatrices()
 {
-    setupConfigFile();
-    pid_t pid = spawnChildProcess();
-
-    auto future = async(std::launch::async, [pid]()->bool
-    {
-        int status;
-        waitpid(pid, &status, 0);
-        return WIFEXITED(status) && (WEXITSTATUS(status) == 0);
-    });
-
-    auto status = future.wait_for(std::chrono::seconds(TIMEOUT_SECONDS));
-
-    if(status != future_status::ready)
-    {
-        kill(pid, SIGKILL);
-        future.wait();
-        FAIL() << "Process timed out";
-    }
-
-    ASSERT_TRUE(future.get()) << "Process not exited normally";
-
     ifstream input("small_input.bin", ios_base::binary);
     auto inputMatrices = MatrixHelper::readMatrixPairFrom(input);
     auto actualMatrix = MatrixHelper::readMatrixFrom("small_output.bin");
@@ -91,6 +102,5 @@ TEST_F(MatrixIntegrationTest, TestSmallInputSMPScheduling)
 
     auto elf = createElfFactory("smp", "matrix")->createElf();
     auto expectedMatrix = static_cast<MatrixElf*>(elf.get())->multiply(leftMatrix, rightMatrix);
-
-    EXPECT_TRUE(AreMatricesEquals(expectedMatrix, actualMatrix));
+    return make_tuple<Matrix<float>, Matrix<float>>(move(expectedMatrix), move(actualMatrix));
 }

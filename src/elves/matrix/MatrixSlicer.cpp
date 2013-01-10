@@ -17,14 +17,14 @@ size_t MatrixSlicer::determinePivot(size_t rowsOrCols) const
         {
             overallPercentRatings += s.second;
             invertedOverallPercentRatings += 100 - s.second;
-		}
+        }
 
         if (overallPercentRatings > 0)
         {
-			double invertedRuntimePercentRating = 100 - ratings.front().second;
+            double invertedRuntimePercentRating = 100 - ratings.front().second;
 
             pivot = ceil(rowsOrCols * invertedRuntimePercentRating * (1.0 / invertedOverallPercentRatings));
-		}
+        }
         else
             pivot = 0;        
     }    

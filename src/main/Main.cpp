@@ -60,11 +60,15 @@ BenchmarkResult runTimedMeasurement(Configuration& config, BenchmarkResult& weig
     return runner.getTimedResults();
 }
 
-void silenceOutputStreams() 
+void silenceOutputStreams(bool keepErrorStreams = false)
 {
     cout.rdbuf(nullptr);
-    cerr.rdbuf(nullptr);
-    clog.rdbuf(nullptr);
+
+    if (!keepErrorStreams)
+    {
+        cerr.rdbuf(nullptr);
+        clog.rdbuf(nullptr);
+    }
 }
 
 int main(int argc, char** argv)
@@ -72,11 +76,9 @@ int main(int argc, char** argv)
     // used to ensure MPI::Finalize is called on exit of the application
     MpiGuard guard(argc, argv);
 
+    // Disable output on slaves
     if (!MpiHelper::isMaster())
-	{
-    	// Silence cout on slaves
         silenceOutputStreams();
-    }
 
     try
     {
@@ -86,7 +88,7 @@ int main(int argc, char** argv)
             return 2;
 
         if (config.getQuiet())
-            silenceOutputStreams();
+            silenceOutputStreams(true);
 
         cout << config <<endl;
 
@@ -100,8 +102,8 @@ int main(int argc, char** argv)
         if (config.exportConfiguration())
         {
             cout << "Exporting node weights" <<endl;
-    		exportClusterConfiguration(config.getExportConfigurationFilename(), weightedResults);
-		}
+            exportClusterConfiguration(config.getExportConfigurationFilename(), weightedResults);
+        }
         if (config.importConfiguration())
         {
             cout << "Importing node weights" <<endl;
