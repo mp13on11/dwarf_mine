@@ -1,6 +1,9 @@
 #include "SequentialFactorizer.h"
 #include "SmpFactorizationElf.h"
 
+#include <ctime>
+#include <omp.h>
+
 using namespace std;
 
 SmpFactorizationElf::SmpFactorizationElf() :
@@ -30,4 +33,9 @@ pair<BigInt, BigInt> SmpFactorizationElf::factorize(const BigInt& m)
     }
 
     return pair<BigInt, BigInt>(p, q);
+}
+
+size_t SmpFactorizationElf::randomSeed() const
+{
+    return time(NULL) * omp_get_thread_num();
 }

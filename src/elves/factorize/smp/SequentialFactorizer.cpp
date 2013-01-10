@@ -1,12 +1,11 @@
 #include "SequentialFactorizer.h"
 
-#include <ctime>
 #include <vector>
 
 using namespace std;
 
 SequentialFactorizer::SequentialFactorizer(const BigInt& number, const SmpFactorizationElf& e) :
-        elf(e), m(number), p(0), q(0), distribution(), engine(time(NULL)),
+        elf(e), m(number), p(0), q(0), distribution(), engine(e.randomSeed()),
         generator(bind(distribution, engine))
 {
 }
