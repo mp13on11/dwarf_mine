@@ -14,7 +14,7 @@ using namespace std;
 BenchmarkResult determineWeightedConfiguration(Configuration& config)
 {
     auto factory = config.getElfFactory();
-    auto statement = config.getProblemStatement();
+    auto statement = config.getProblemStatement(true);
     BenchmarkRunner runner(config);
     runner.runBenchmark(*statement, *factory);
     return runner.getWeightedResults();
@@ -54,7 +54,7 @@ BenchmarkResult importClusterConfiguration(const string& filename)
 BenchmarkResult runTimedMeasurement(Configuration& config, BenchmarkResult& weightedResults)
 {
     auto factory = config.getElfFactory();
-    auto statement = config.getProblemStatement(true);
+    auto statement = config.getProblemStatement();
     BenchmarkRunner runner(config, weightedResults);
     runner.runBenchmark(*statement, *factory);
     return runner.getTimedResults();
