@@ -71,8 +71,8 @@ private:
     std::vector<uint32_t> items;
 
     void normalize();
-    void reverse();
-    void reverse(uint32_t &item);
+    ssize_t highestBitIndex() const;
+    bool bit(std::size_t index) const;
 
     BigInt divMod(const BigInt& divisor);
 };

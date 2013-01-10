@@ -105,6 +105,22 @@ TEST(BigIntTest, testLargeMultiplication)
     EXPECT_EQ("98765432109876543210987654321098765432100000000", a.toString());
 }
 
+TEST(BigIntTest, testMultiplicationWithZero)
+{
+    BigInt a("89739847514365781347561873658761230102357816");
+
+    EXPECT_EQ(BigInt::ZERO, a * BigInt::ZERO);
+    EXPECT_EQ(BigInt::ZERO, BigInt::ZERO * a);
+}
+
+TEST(BigIntTest, testMultiplcaitionWithOne)
+{
+    BigInt a("12340898919834501231239487180439512934801234");
+
+    EXPECT_EQ(a, a * BigInt::ONE);
+    EXPECT_EQ(a, BigInt::ONE * a);
+}
+
 TEST(BigIntTest, testLargeModulo)
 {
     BigInt a("234981234987123478913489712834");
@@ -164,7 +180,7 @@ TEST(BigIntTest, testLargeAddition)
     EXPECT_EQ(
             "12121212121212121212121212121212121212121212121212121212121",
             c.toString()
-       );
+        );
 }
 
 TEST(BigIntTest, testLargeSubtraction)
@@ -176,5 +192,5 @@ TEST(BigIntTest, testLargeSubtraction)
     EXPECT_EQ(
             "10101010101010101010101010101010101010101010101010101010101",
             c.toString()
-       );
+        );
 }

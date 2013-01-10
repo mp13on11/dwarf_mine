@@ -131,36 +131,24 @@ BigInt& BigInt::operator-=(const BigInt& right)
     return *this;
 }
 
-BigInt& BigInt::operator*=(const BigInt& right)
+BigInt& BigInt::operator*=(const BigInt& factor)
 {
-    BigInt factor(right);
     BigInt original(*this);
-    uint32_t trailingZeroes = 0;
 
-    while (factor != ZERO && factor.isEven())
-    {
-        ++trailingZeroes;
-        factor >>= 1;
-    }
-
-    factor.reverse();
     *this = ZERO;
 
-    while (factor > ZERO)
+    for (ssize_t i = factor.highestBitIndex(); i >= 0; i--)
     {
-        if (factor.isEven())
+        if (factor.bit(i))
         {
-            factor >>= 1;
-            *this <<= 1;
-        }
-        else
-        {
-            --factor;
             *this += original;
         }
-    }
 
-    *this <<= trailingZeroes;
+        if (i > 0)
+        {
+            *this <<= 1;
+        }
+    }
 
     return *this;
 }
@@ -339,28 +327,29 @@ BigInt BigInt::divMod(const BigInt& right)
     return quotient;
 }
 
-void BigInt::reverse()
+ssize_t BigInt::highestBitIndex() const
 {
-    ::reverse(items.begin(), items.end());
+    uint32_t highOrderItem = items.back();
+    ssize_t result = (items.size() - 1) * BITS_PER_ITEM - 1;
 
-    for (size_t i=0; i<items.size(); ++i)
+    while (highOrderItem > 0)
     {
-        reverse(items[i]);
+        highOrderItem >>= 1;
+        ++result;
     }
+
+    return result;
 }
 
-void BigInt::reverse(uint32_t &v)
+bool BigInt::bit(size_t index) const
 {
-    // swap odd and even bits
-    v = ((v >> 1) & 0x55555555) | ((v & 0x55555555) << 1);
-    // swap consecutive pairs
-    v = ((v >> 2) & 0x33333333) | ((v & 0x33333333) << 2);
-    // swap nibbles ...
-    v = ((v >> 4) & 0x0F0F0F0F) | ((v & 0x0F0F0F0F) << 4);
-    // swap bytes
-    v = ((v >> 8) & 0x00FF00FF) | ((v & 0x00FF00FF) << 8);
-    // swap 2-byte long pairs
-    v = ( v >> 16             ) | ( v               << 16);
+    size_t itemOffset = index % BITS_PER_ITEM;
+    size_t blockOffset = index / BITS_PER_ITEM;
+
+    if (blockOffset > items.size())
+        return false;
+
+    return (items[blockOffset] & (1 << itemOffset)) > 0;
 }
 
 void BigInt::normalize()
