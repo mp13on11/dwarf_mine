@@ -12,27 +12,29 @@
 #include <sys/wait.h>
 #include <signal.h>
 
+const int TIMEOUT_SECONDS = 10;
+
 using namespace std;
 
-TEST(MatrixIntegrationTest, TestItNowwwwww)
+TEST(MatrixIntegrationTest, TestSmallInputSMPScheduling)
 {
-    const int TIMEOUT_SECONDS = 10;
     pid_t pid = fork();
     if(pid == 0) // child process
     {
-        char* argv[] = {(const char*)"/usr/bin/mpirun", 
-                        (const char*)"-n", "8",
-                        (const char*)"--tag-output",
-                        (const char*)"build/src/main/dwarf_mine", 
-                        (const char*)"-m", "smp", 
-                        (const char*)"-n", "1",
-                        (const char*)"-w", "0",
-                        (const char*)"-q",
-                        (const char*)"-i", "small_input.bin",
-                        (const char*)"-o", "small_output.bin",
-                        (const char*)"--import_configuration", "test_config.cfg",
-                        nullptr};
-        execv(argv[0], argv);
+        execl("/usr/bin/mpirun",
+            "/usr/bin/mpirun", 
+            "-n", "8",
+            "--tag-output",
+            "build/src/main/dwarf_mine", 
+            "-m", "smp", 
+            "-n", "1",
+            "-w", "0",
+            "-q",
+            "-i", "small_input.bin",
+            "-o", "small_output.bin",
+            "--import_configuration", "test_config.cfg",
+            nullptr
+        );
         exit(-1);
     }
 
