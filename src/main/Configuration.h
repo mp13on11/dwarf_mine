@@ -23,6 +23,7 @@ public:
     bool skipBenchmark() const;
     std::string getImportConfigurationFilename() const;
     std::string getExportConfigurationFilename() const;
+    bool getQuiet() const;
 
     friend std::ostream& operator<<(std::ostream& s, const Configuration& c);
 
@@ -37,6 +38,7 @@ private:
     std::string programName;
 
     bool _skipBenchmark;
+    bool _quiet;
     size_t _numberOfWarmUps;
     size_t _numberOfIterations;
     std::string _mode;

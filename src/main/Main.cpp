@@ -1,13 +1,13 @@
-#include <iostream>
-#include <string>
-#include <fstream>
-
 #include "BenchmarkRunner.h"
 #include "Configuration.h"
 #include "MpiGuard.h"
 #include "MpiHelper.h"
 #include "matrix/MatrixHelper.h"
 #include "matrix/Matrix.h"
+
+#include <iostream>
+#include <string>
+#include <fstream>
 
 using namespace std;
 
@@ -60,6 +60,13 @@ BenchmarkResult runTimedMeasurement(Configuration& config, BenchmarkResult& weig
     return runner.getTimedResults();
 }
 
+void silenceOutputStreams() 
+{
+    cout.rdbuf(nullptr);
+    cerr.rdbuf(nullptr);
+    clog.rdbuf(nullptr);
+}
+
 int main(int argc, char** argv)
 {
     // used to ensure MPI::Finalize is called on exit of the application
@@ -68,7 +75,7 @@ int main(int argc, char** argv)
     if (!MpiHelper::isMaster())
 	{
     	// Silence cout on slaves
-        cout.rdbuf(nullptr);
+        silenceOutputStreams();
     }
 
     try
@@ -77,6 +84,9 @@ int main(int argc, char** argv)
 
         if (!config.parseArguments())
             return 2;
+
+        if (config.getQuiet())
+            silenceOutputStreams();
 
         cout << config <<endl;
 
