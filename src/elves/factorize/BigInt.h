@@ -20,6 +20,7 @@ public:
 
     BigInt();
     BigInt(uint32_t value);
+    explicit BigInt(const std::vector<uint32_t>& items);
     explicit BigInt(const std::string& value);
     BigInt& operator=(uint32_t value);
     BigInt& operator=(const std::string& value);
@@ -62,6 +63,7 @@ public:
 
     void readFrom(std::istream& stream);
     std::string toString() const;
+    std::vector<uint32_t> buffer() const;
 
 private:
     static const uint32_t MAXIMUM_PRINTABLE_ITEM = 1000000000;
@@ -76,6 +78,11 @@ private:
 
     BigInt divMod(const BigInt& divisor);
 };
+
+inline std::vector<uint32_t> BigInt::buffer() const
+{
+    return items;
+}
 
 inline std::ostream& operator<<(std::ostream& out, const BigInt& value)
 {
