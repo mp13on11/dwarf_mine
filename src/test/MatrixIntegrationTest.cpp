@@ -38,11 +38,11 @@ TEST_F(MatrixIntegrationTest, TestSmallInputSMPScheduling)
         return WIFEXITED(status) && (WEXITSTATUS(status) == 0);
     });
     auto status = future.wait_for(std::chrono::seconds(TIMEOUT_SECONDS));
-    future.wait();
 
     if(status != future_status::ready)
     {
         kill(pid, SIGKILL);
+        future.wait();
         FAIL() << "Process timed out";
     }
 
