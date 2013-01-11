@@ -63,20 +63,15 @@ BigInt& BigInt::operator+=(const BigInt& right)
         return *this <<= 1;
     }
 
-    size_t carry = 0;
+    uint64_t carry = 0;
     size_t minimum = min(items.size(), right.items.size());
     size_t maximum = max(items.size(), right.items.size());
 
     for (size_t i=0; i<minimum; i++)
     {
-        uint32_t old = items[i];
-        items[i] += right.items[i] + carry;
-        carry = 0;
-
-        if (items[i] < old) // overflow
-        {
-            carry = 1;
-        }
+        uint64_t res = (uint64_t)items[i] + (uint64_t)right.items[i] + carry;
+        items[i] = res;
+        carry = res >> 32;
     }
 
     if (items.size() < right.items.size())
@@ -89,14 +84,9 @@ BigInt& BigInt::operator+=(const BigInt& right)
 
     for (size_t i=minimum; i<maximum && carry > 0; i++)
     {
-        uint32_t old = items[i];
-        items[i] += carry;
-        carry = 0;
-
-        if (items[i] < old) // overflow
-        {
-            carry = 1;
-        }
+        uint64_t res = (uint64_t)items[i] + carry;
+        items[i] = res;
+        carry = res >> 32;
     }
 
     if (carry == 1)
@@ -117,29 +107,19 @@ BigInt& BigInt::operator-=(const BigInt& right)
     if (*this < right)
         throw logic_error("underflow during subtraction");
 
-    uint32_t carry = 0;
+    uint64_t carry = 0;
     for (size_t i=0; i<right.items.size(); i++)
     {
-        uint32_t old = items[i];
-        items[i] -= right.items[i] + carry;
-        carry = 0;
-
-        if (items[i] > old) // underflow
-        {
-            carry = 1;
-        }
+        uint64_t res = (uint64_t)items[i] - (uint64_t)right.items[i] - carry;
+        items[i] = res;
+        carry = res >> 63;
     }
 
     for (size_t i=right.items.size(); i<items.size() && carry > 0; i++)
     {
-        uint32_t old = items[i];
-        items[i] -= carry;
-        carry = 0;
-
-        if (items[i] > old) // underflow
-        {
-            carry = 1;
-        }
+        uint64_t res = (uint64_t)items[i] - carry;
+        items[i] = res;
+        carry = res >> 63;
     }
 
     normalize();
@@ -151,26 +131,39 @@ BigInt& BigInt::operator*=(const BigInt& factor)
 {
     if(this == &factor)
     {
-        return *this = *this * factor;
+        return *this *= BigInt(factor);
     }
 
-    BigInt original(*this);
+    int maxlen = items.size() + factor.items.size() + 1;
+    BigInt result;
+    result.items.clear();
+    result.items.insert(result.items.begin(), maxlen, 0);
 
-    *this = ZERO;
-
-    for (ssize_t i = factor.highestBitIndex(); i >= 0; i--)
+    for(size_t i=0; i<factor.items.size(); i++)
     {
-        if (factor.bit(i))
-        {
-            *this += original;
-        }
+        uint64_t smallFactor = factor.items[i];
+        if(smallFactor == 0)
+            continue;
 
-        if (i > 0)
+        uint64_t carry = 0;
+
+        for(size_t k=0; k<items.size(); k++)
         {
-            *this <<= 1;
+            uint64_t res = (uint64_t)items[k] * smallFactor 
+                            + carry + (uint64_t)result.items[k+i];
+            result.items[k+i] = res;
+            carry = res >> 32;
+        }
+        for(size_t j=items.size()+i; j<result.items.size() && carry > 0; j++)
+        {
+            uint64_t res = carry + (uint64_t)result.items[j];
+            result.items[j] = res;
+            carry = res >> 32;
         }
     }
+    result.normalize();
 
+    *this = move(result);
     return *this;
 }
 
@@ -211,6 +204,7 @@ BigInt& BigInt::operator<<=(uint32_t offset)
 
     items.insert(items.begin(), blockOffset, 0);
 
+    this->normalize();
     return *this;
 }
 
