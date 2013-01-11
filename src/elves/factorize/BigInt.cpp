@@ -134,35 +134,36 @@ BigInt& BigInt::operator*=(const BigInt& factor)
         return *this *= BigInt(factor);
     }
 
-    BigInt result(0);
-    BigInt tempResult(*this);
-    tempResult <<= 32;
+    int maxlen = items.size() + factor.items.size() + 1;
+    BigInt result;
+    result.items.clear();
+    result.items.insert(result.items.begin(), maxlen, 0);
 
     for(size_t i=0; i<factor.items.size(); i++)
     {
-        tempResult.items.clear();
-        tempResult.items.insert(tempResult.items.begin(), this->items.size()+1, 0);
-        uint64_t carry = 0;
         uint64_t smallFactor = factor.items[i];
         if(smallFactor == 0)
             continue;
 
-        for(size_t k=0; k<this->items.size(); k++)
+        uint64_t carry = 0;
+
+        for(size_t k=0; k<items.size(); k++)
         {
-            uint64_t res = this->items[k] * smallFactor + carry;
-            tempResult.items[k] = res;
+            uint64_t res = (uint64_t)items[k] * smallFactor 
+                            + carry + (uint64_t)result.items[k+i];
+            result.items[k+i] = res;
             carry = res >> 32;
         }
-        if(carry > 0)
+        for(size_t j=items.size()+i; j<result.items.size() && carry > 0; j++)
         {
-            tempResult.items[this->items.size()] = carry;
+            uint64_t res = carry + (uint64_t)result.items[j];
+            result.items[j] = res;
+            carry = res >> 32;
         }
-
-        tempResult <<= 32 * i;
-        result += tempResult;
     }
+    result.normalize();
 
-    *this = result;
+    *this = move(result);
     return *this;
 }
 
