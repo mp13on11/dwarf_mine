@@ -199,7 +199,7 @@ TEST(BigIntTest, testLargeSubtraction)
 
 TEST(BigIntTest, testZeroDivisionOperator)
 {
-    BigInt a("24512354124");
+    BigInt a("123456789346545873246563762452465746764521398967478050785059870");
     BigInt b = BigInt::ZERO / a;
 
     EXPECT_EQ(BigInt::ZERO, b);
@@ -207,7 +207,7 @@ TEST(BigIntTest, testZeroDivisionOperator)
 
 TEST(BigIntTest, testArithmeticAssignmentAdditionOperator)
 {
-    BigInt a("1234567892342345");
+    BigInt a("123456789346545873246563762452465746764521398967478050785059870");
     
     BigInt expected = a + a;
     a += a;
@@ -217,7 +217,7 @@ TEST(BigIntTest, testArithmeticAssignmentAdditionOperator)
 
 TEST(BigIntTest, testArithmeticAssignmentSubtractionOperator)
 {
-    BigInt a("123456789000000");
+    BigInt a("123456789346545873246563762452465746764521398967478050785059870");
     
     BigInt expected = a - a;
     a -= a;
@@ -227,7 +227,7 @@ TEST(BigIntTest, testArithmeticAssignmentSubtractionOperator)
 
 TEST(BigIntTest, testArithmeticAssignmentMultiplyOperator)
 {
-    BigInt a("123456789000000");
+    BigInt a("123456789346545873246563762452465746764521398967478050785059870");
     
     BigInt expected = a * a;
     a *= a;
@@ -237,7 +237,7 @@ TEST(BigIntTest, testArithmeticAssignmentMultiplyOperator)
 
 TEST(BigIntTest, testArithmeticAssignmentDivisionOperator)
 {
-    BigInt a("123456789000000");
+    BigInt a("123456789346545873246563762452465746764521398967478050785059870");
     
     BigInt expected = a / a;
     a /= a;
@@ -247,7 +247,7 @@ TEST(BigIntTest, testArithmeticAssignmentDivisionOperator)
 
 TEST(BigIntTest, testArithmeticAssignmentRemainderOperator)
 {
-    BigInt a("123456789000000");
+    BigInt a("123456789346545873246563762452465746764521398967478050785059870");
     
     BigInt expected = a % a;
     a %= a;
