@@ -69,14 +69,9 @@ BigInt& BigInt::operator+=(const BigInt& right)
 
     for (size_t i=0; i<minimum; i++)
     {
-        uint32_t old = items[i];
-        items[i] += right.items[i] + carry;
-        carry = 0;
-
-        if (items[i] < old) // overflow
-        {
-            carry = 1;
-        }
+        uint64_t res = (uint64_t)items[i] + (uint64_t)right.items[i] + (uint64_t)carry;
+        items[i] = res;
+        carry = res >> 32;
     }
 
     if (items.size() < right.items.size())
@@ -89,14 +84,9 @@ BigInt& BigInt::operator+=(const BigInt& right)
 
     for (size_t i=minimum; i<maximum && carry > 0; i++)
     {
-        uint32_t old = items[i];
-        items[i] += carry;
-        carry = 0;
-
-        if (items[i] < old) // overflow
-        {
-            carry = 1;
-        }
+        uint64_t res = (uint64_t)items[i] + (uint64_t)carry;
+        items[i] = res;
+        carry = res >> 32;
     }
 
     if (carry == 1)
