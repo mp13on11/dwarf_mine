@@ -127,7 +127,6 @@ BigInt& BigInt::operator-=(const BigInt& right)
     return *this;
 }
 
-#include <iostream>
 BigInt& BigInt::operator*=(const BigInt& factor)
 {
     if(this == &factor)
@@ -136,11 +135,13 @@ BigInt& BigInt::operator*=(const BigInt& factor)
     }
 
     BigInt result(0);
+    BigInt tempResult(*this);
+    tempResult <<= 32;
 
     for(size_t i=0; i<factor.items.size(); i++)
     {
-        BigInt tempResult(0);
         tempResult.items.clear();
+        tempResult.items.insert(tempResult.items.begin(), this->items.size()+1, 0);
         uint64_t carry = 0;
         uint64_t smallFactor = factor.items[i];
         if(smallFactor == 0)
@@ -149,11 +150,13 @@ BigInt& BigInt::operator*=(const BigInt& factor)
         for(size_t k=0; k<this->items.size(); k++)
         {
             uint64_t res = this->items[k] * smallFactor + carry;
-            tempResult.items.push_back(res);
+            tempResult.items[k] = res;
             carry = res >> 32;
         }
         if(carry > 0)
-            tempResult.items.push_back(carry);
+        {
+            tempResult.items[this->items.size()] = carry;
+        }
 
         tempResult <<= 32 * i;
         result += tempResult;
