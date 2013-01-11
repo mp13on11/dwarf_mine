@@ -6,6 +6,8 @@
 
 using namespace std;
 
+std::mt19937 OthelloNode::_randomGenerator;
+
 function<size_t()> OthelloNode::getGenerator(size_t min, size_t max)
 {
 	uniform_int_distribution<size_t> distribution(min, max - 1);
