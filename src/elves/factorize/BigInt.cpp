@@ -52,6 +52,11 @@ BigInt& BigInt::operator=(const string& value)
 
 BigInt& BigInt::operator+=(const BigInt& right)
 {
+    if(this == &right)
+    {
+        return *this <<= 1;
+    }
+
     size_t carry = 0;
     size_t minimum = min(items.size(), right.items.size());
     size_t maximum = max(items.size(), right.items.size());
@@ -97,7 +102,12 @@ BigInt& BigInt::operator+=(const BigInt& right)
 }
 
 BigInt& BigInt::operator-=(const BigInt& right)
-{
+{    
+    if(this == &right)
+    {
+        return *this = BigInt::ZERO;
+    }
+
     if (*this < right)
         throw logic_error("underflow during subtraction");
 
@@ -133,6 +143,11 @@ BigInt& BigInt::operator-=(const BigInt& right)
 
 BigInt& BigInt::operator*=(const BigInt& factor)
 {
+    if(this == &factor)
+    {
+        return *this = *this * factor;
+    }
+
     BigInt original(*this);
 
     *this = ZERO;
@@ -301,8 +316,15 @@ bool BigInt::isEven() const
     return items[0] % 2 == 0;
 }
 
+/* returns the quotient and sets *this to the remainder */
 BigInt BigInt::divMod(const BigInt& right)
 {
+    if(this == &right)
+    {
+        *this = BigInt::ZERO;
+        return BigInt::ONE;
+    }
+
     BigInt divisor(right);
     BigInt quotient;
 

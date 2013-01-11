@@ -4,8 +4,10 @@
 #include <sstream>
 #include <stdexcept>
 #include <string>
+#include <chrono>
 
 using namespace std;
+using namespace chrono;
 using namespace testing;
 
 TEST(BigIntTest, testSmallComparison)
@@ -193,4 +195,62 @@ TEST(BigIntTest, testLargeSubtraction)
             "10101010101010101010101010101010101010101010101010101010101",
             c.toString()
         );
+}
+
+TEST(BigIntTest, testZeroDivisionOperator)
+{
+    BigInt a("24512354124");
+    BigInt b = BigInt::ZERO / a;
+
+    EXPECT_EQ(BigInt::ZERO, b);
+}
+
+TEST(BigIntTest, testArithmeticAssignmentAdditionOperator)
+{
+    BigInt a("1234567892342345");
+    
+    BigInt expected = a + a;
+    a += a;
+
+    EXPECT_EQ(expected, a);
+}
+
+TEST(BigIntTest, testArithmeticAssignmentSubtractionOperator)
+{
+    BigInt a("123456789000000");
+    
+    BigInt expected = a - a;
+    a -= a;
+
+    EXPECT_EQ(expected, a);
+}
+
+TEST(BigIntTest, testArithmeticAssignmentMultiplyOperator)
+{
+    BigInt a("123456789000000");
+    
+    BigInt expected = a * a;
+    a *= a;
+
+    EXPECT_EQ(expected, a);
+}
+
+TEST(BigIntTest, testArithmeticAssignmentDivisionOperator)
+{
+    BigInt a("123456789000000");
+    
+    BigInt expected = a / a;
+    a /= a;
+
+    EXPECT_EQ(expected, a);
+}
+
+TEST(BigIntTest, testArithmeticAssignmentRemainderOperator)
+{
+    BigInt a("123456789000000");
+    
+    BigInt expected = a % a;
+    a %= a;
+
+    EXPECT_EQ(expected, a);
 }
