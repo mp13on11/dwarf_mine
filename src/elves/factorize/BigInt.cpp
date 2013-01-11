@@ -141,30 +141,39 @@ BigInt& BigInt::operator-=(const BigInt& right)
     return *this;
 }
 
+#include <iostream>
 BigInt& BigInt::operator*=(const BigInt& factor)
 {
     if(this == &factor)
     {
-        return *this = *this * factor;
+        return *this *= BigInt(factor);
     }
 
-    BigInt original(*this);
+    BigInt result(0);
 
-    *this = ZERO;
-
-    for (ssize_t i = factor.highestBitIndex(); i >= 0; i--)
+    for(size_t i=0; i<factor.items.size(); i++)
     {
-        if (factor.bit(i))
-        {
-            *this += original;
-        }
+        BigInt tempResult(0);
+        tempResult.items.clear();
+        uint32_t carry = 0;
+        uint64_t smallFactor = factor.items[i];
+        if(smallFactor == 0)
+            continue;
 
-        if (i > 0)
+        for(size_t k=0; k<this->items.size(); k++)
         {
-            *this <<= 1;
+            uint64_t res = this->items[k] * smallFactor + carry;
+            tempResult.items.push_back(res);
+            carry = res >> 32;
         }
+        if(carry > 0)
+            tempResult.items.push_back(carry);
+
+        tempResult <<= 32 * i;
+        result += tempResult;
     }
 
+    *this = result;
     return *this;
 }
 
@@ -205,6 +214,7 @@ BigInt& BigInt::operator<<=(uint32_t offset)
 
     items.insert(items.begin(), blockOffset, 0);
 
+    this->normalize();
     return *this;
 }
 
