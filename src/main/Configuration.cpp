@@ -15,7 +15,7 @@ using namespace std;
 
 Configuration::Configuration(int argc, char** argv) : 
     argc(argc), _useFiles(false), arguments(argv), 
-    programName(argv[0]), _category("matrix")
+    programName(argv[0])
 {
 
 }
@@ -30,6 +30,7 @@ bool Configuration::parseArguments()
         desc.add_options()
             ("help", "Print help message")
             ("mode,m",               po::value<string>(&_mode)->required(), "Mode (smp|cuda)")
+            ("category,c",           po::value<string>(&_category)->default_value("matrix"), "Elf to be run (matrix|factorize)")
             ("numwarmups,w",         po::value<size_t>(&_numberOfWarmUps)->default_value(50), "Number of warmup rounds")
             ("numiter,n",            po::value<size_t>(&_numberOfIterations)->default_value(100), "Number of benchmark iterations")
             ("input,i",              po::value<string>(&_inputFile), "Input file")
