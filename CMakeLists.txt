@@ -16,7 +16,7 @@ ELSEIF(CMAKE_COMPILER_IS_GNUCXX)
 
     # Warnings as errors, unless disabled by the user
     OPTION(WARNINGS_AS_ERRORS "Set to off to disable treating warnings as errors" ON)
-    IF(NOT WARNINGS_AS_ERRORS)
+    IF(WARNINGS_AS_ERRORS)
         SET(CMAKE_CXX_FLAGS "-Werror ${CMAKE_CXX_FLAGS}")
     ENDIF()
 ENDIF()
