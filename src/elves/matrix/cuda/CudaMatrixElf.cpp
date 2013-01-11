@@ -1,5 +1,5 @@
 #include "CudaMatrixElf.h"
-#include "Memory.h"
+#include <cuda-utils/Memory.h>
 #include "MatrixMultiplication.h"
 #include <iostream>
 #include <vector>
