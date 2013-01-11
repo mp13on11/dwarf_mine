@@ -63,13 +63,13 @@ BigInt& BigInt::operator+=(const BigInt& right)
         return *this <<= 1;
     }
 
-    size_t carry = 0;
+    uint64_t carry = 0;
     size_t minimum = min(items.size(), right.items.size());
     size_t maximum = max(items.size(), right.items.size());
 
     for (size_t i=0; i<minimum; i++)
     {
-        uint64_t res = (uint64_t)items[i] + (uint64_t)right.items[i] + (uint64_t)carry;
+        uint64_t res = (uint64_t)items[i] + (uint64_t)right.items[i] + carry;
         items[i] = res;
         carry = res >> 32;
     }
@@ -84,7 +84,7 @@ BigInt& BigInt::operator+=(const BigInt& right)
 
     for (size_t i=minimum; i<maximum && carry > 0; i++)
     {
-        uint64_t res = (uint64_t)items[i] + (uint64_t)carry;
+        uint64_t res = (uint64_t)items[i] + carry;
         items[i] = res;
         carry = res >> 32;
     }
@@ -107,29 +107,19 @@ BigInt& BigInt::operator-=(const BigInt& right)
     if (*this < right)
         throw logic_error("underflow during subtraction");
 
-    uint32_t carry = 0;
+    uint64_t carry = 0;
     for (size_t i=0; i<right.items.size(); i++)
     {
-        uint32_t old = items[i];
-        items[i] -= right.items[i] + carry;
-        carry = 0;
-
-        if (items[i] > old) // underflow
-        {
-            carry = 1;
-        }
+        uint64_t res = (uint64_t)items[i] - (uint64_t)right.items[i] - carry;
+        items[i] = res;
+        carry = res >> 63;
     }
 
     for (size_t i=right.items.size(); i<items.size() && carry > 0; i++)
     {
-        uint32_t old = items[i];
-        items[i] -= carry;
-        carry = 0;
-
-        if (items[i] > old) // underflow
-        {
-            carry = 1;
-        }
+        uint64_t res = (uint64_t)items[i] - carry;
+        items[i] = res;
+        carry = res >> 63;
     }
 
     normalize();
@@ -151,7 +141,7 @@ BigInt& BigInt::operator*=(const BigInt& factor)
     {
         BigInt tempResult(0);
         tempResult.items.clear();
-        uint32_t carry = 0;
+        uint64_t carry = 0;
         uint64_t smallFactor = factor.items[i];
         if(smallFactor == 0)
             continue;
