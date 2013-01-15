@@ -11,13 +11,6 @@ ElfFactory::ElfFactory(const ElfCategory& category)
 {
 }
 
-unique_ptr<Elf> ElfFactory::createElf() const
-{
-    validate();
-
-    return createElfImplementation();
-}
-
 unique_ptr<Scheduler> ElfFactory::createScheduler() const
 {
     validate();

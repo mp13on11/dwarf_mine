@@ -4,34 +4,22 @@
 #include "MpiHelper.h"
 
 struct ProblemStatement;
-class Elf;
 
 class Scheduler
 {
 public:
     Scheduler();
-    explicit Scheduler(const BenchmarkResult& benchmarkResult);
-    virtual ~Scheduler();
+    virtual ~Scheduler() = 0;
 
-    virtual void provideData(ProblemStatement& statement) = 0;
-    virtual void outputData(ProblemStatement& statement) = 0;
-    void dispatch();
-    void dispatch(ProblemStatement& statement);
     void setNodeset(const BenchmarkResult& benchmarkResult);
     void setNodeset(NodeId singleNode);
 
-    Elf* getElf() const { return elf; }
-    void setElf(Elf* val) { elf = val; }
+    void dispatch(ProblemStatement& statement);
+    virtual void provideData(ProblemStatement& statement) = 0;
+    virtual void dispatch() = 0;
+    virtual void outputData(ProblemStatement& statement) = 0;
 
 protected:
-    virtual void doDispatch() = 0;
-    virtual bool hasData() = 0;
-
     BenchmarkResult nodeSet;
     NodeId rank;
-    Elf* elf;
 };
-
-inline Scheduler::~Scheduler()
-{
-}

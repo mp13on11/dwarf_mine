@@ -64,9 +64,6 @@ void BenchmarkRunner::runBenchmark(ProblemStatement& statement, const ElfFactory
 {
     unique_ptr<Scheduler> scheduler = factory.createScheduler();
 
-    unique_ptr<Elf> elf = factory.createElf();
-    scheduler->setElf(elf.get());
-
     if (MpiHelper::isMaster())
     {
         for (size_t nodeset = 0; nodeset < _nodesets.size(); ++nodeset)

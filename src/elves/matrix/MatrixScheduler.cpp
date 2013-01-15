@@ -35,13 +35,8 @@ struct MatrixScheduler::MatrixSchedulerImpl
     Matrix<float> result;
 };
 
-MatrixScheduler::MatrixScheduler() :
-    pImpl(new MatrixSchedulerImpl(this))
-{
-}
-
-MatrixScheduler::MatrixScheduler(const BenchmarkResult& benchmarkResult) :
-    Scheduler(benchmarkResult), pImpl(new MatrixSchedulerImpl(this))
+MatrixScheduler::MatrixScheduler(const function<ElfPointer()>& factory) :
+    SchedulerTemplate(factory), pImpl(new MatrixSchedulerImpl(this))
 {
 }
 
@@ -52,6 +47,7 @@ MatrixScheduler::~MatrixScheduler()
 
 void MatrixScheduler::provideData(ProblemStatement& statement)
 {
+	cout << "providing data..." << endl;
     pImpl->provideData(statement);
 }
 
@@ -87,10 +83,9 @@ MatrixPair sliceMatrices(const MatrixSlice& definition, const MatrixPair& matric
 
 void MatrixScheduler::MatrixSchedulerImpl::calculateOnSlave()
 {
-    MatrixElf* elf = static_cast<MatrixElf*>(self->elf);
     Matrix<float> left = MatrixHelper::receiveMatrixFrom(MpiHelper::MASTER);
     Matrix<float> right = MatrixHelper::receiveMatrixFrom(MpiHelper::MASTER);
-    Matrix<float> result = elf->multiply(left, right);
+    Matrix<float> result = self->elf->multiply(left, right);
     MatrixHelper::sendMatrixTo(result, MpiHelper::MASTER);
 }
 
@@ -166,8 +161,7 @@ void MatrixScheduler::MatrixSchedulerImpl::collectResults(const vector<MatrixSli
 
 void MatrixScheduler::MatrixSchedulerImpl::calculateOnMaster(const MatrixSlice& sliceDefinition, const MatrixPair& matrices, Matrix<float>& result)
 {
-    MatrixElf* elf = static_cast<MatrixElf*>(self->elf);
     MatrixPair slicedMatrices = sliceMatrices(sliceDefinition, matrices);
-    Matrix<float> resultSlice = elf->multiply(slicedMatrices.first, slicedMatrices.second);
+    Matrix<float> resultSlice = self->elf->multiply(slicedMatrices.first, slicedMatrices.second);
     sliceDefinition.injectSlice(resultSlice, result);
 }

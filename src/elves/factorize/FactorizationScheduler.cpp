@@ -10,13 +10,8 @@
 using namespace std;
 using namespace std::chrono;
 
-FactorizationScheduler::FactorizationScheduler() :
-    Scheduler()
-{
-}
-
-FactorizationScheduler::FactorizationScheduler(const BenchmarkResult& result) :
-    Scheduler(result)
+FactorizationScheduler::FactorizationScheduler(const function<ElfPointer()>& factory) :
+    SchedulerTemplate(factory)
 {
 }
 
@@ -39,11 +34,11 @@ void FactorizationScheduler::doDispatch()
     distributeNumber();
 
     future<BigIntPair> f = async(launch::async, [&]{
-            return factorizeNumber();
+            return elf->factorize(number);
         });
 
     int rank = distributeFinishedStateRegularly(f);
-    stopFactorization();
+    elf->stop();
     sendResultToMaster(rank, f);
 }
 
@@ -70,18 +65,6 @@ void FactorizationScheduler::distributeNumber()
 
         number = BigInt(vector<uint32_t>(items.get(), items.get() + size));
     }
-}
-
-FactorizationScheduler::BigIntPair FactorizationScheduler::factorizeNumber()
-{
-    FactorizationElf* factorizer = dynamic_cast<FactorizationElf*>(elf);
-
-    if (factorizer == nullptr)
-        return BigIntPair(0, 0);
-
-    BigIntPair result = factorizer->factorize(number);
-
-    return result;
 }
 
 void FactorizationScheduler::sendResultToMaster(int rank, future<BigIntPair>& f)
@@ -146,14 +129,4 @@ int FactorizationScheduler::distributeFinishedStateRegularly(future<BigIntPair>&
                 return i;
         }
     }
-}
-
-void FactorizationScheduler::stopFactorization()
-{
-    FactorizationElf* factorizer = dynamic_cast<FactorizationElf*>(elf);
-
-    if (factorizer == nullptr)
-        return;
-
-    factorizer->stop();
 }

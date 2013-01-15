@@ -11,18 +11,22 @@ SMPElfFactory::SMPElfFactory(const ElfCategory& category) :
 {
 }
 
-unique_ptr<Elf> SMPElfFactory::createElfImplementation() const
-{
-    if (_category == "matrix")
-        return unique_ptr<Elf>(new SMPMatrixElf());
-    else
-        return unique_ptr<Elf>(new SmpFactorizationElf());
-}
-
 unique_ptr<Scheduler> SMPElfFactory::createSchedulerImplementation() const
 {
     if (_category == "matrix")
-        return unique_ptr<Scheduler>(new MatrixScheduler());
+    {
+        return unique_ptr<Scheduler>(
+        		new MatrixScheduler(
+        				[]() { return new SMPMatrixElf(); }
+        			)
+        	);
+    }
     else
-        return unique_ptr<Scheduler>(new FactorizationScheduler());
+    {
+        return unique_ptr<Scheduler>(
+        		new FactorizationScheduler(
+        				[]() { return new SmpFactorizationElf(); }
+        			)
+        	);
+    }
 }

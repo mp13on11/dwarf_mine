@@ -1,15 +1,17 @@
 #pragma once
 
 #include "BigInt.h"
-#include "main/Scheduler.h"
+#include "main/SchedulerTemplate.h"
 
+#include <functional>
 #include <future>
 
-class FactorizationScheduler : public Scheduler
+class FactorizationElf;
+
+class FactorizationScheduler : public SchedulerTemplate<FactorizationElf>
 {
 public:
-    FactorizationScheduler();
-    explicit FactorizationScheduler(const BenchmarkResult& result);
+    FactorizationScheduler(const std::function<ElfPointer()>& factory);
 
     virtual void provideData(ProblemStatement& statement);
     virtual void outputData(ProblemStatement& statement);
@@ -25,9 +27,7 @@ private:
     BigInt a, b;
 
     void distributeNumber();
-    BigIntPair factorizeNumber();
     int distributeFinishedStateRegularly(std::future<BigIntPair>& f) const;
     void sendResultToMaster(int rank, std::future<BigIntPair>& f);
-    void stopFactorization();
     BigInt broadcast(const BigInt& number) const;
 };
