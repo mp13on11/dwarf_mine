@@ -20,13 +20,16 @@ public:
 protected:
     virtual void doDispatch() = 0;
     virtual bool hasData() = 0;
+    ElfType& elf() const;
 
-    std::unique_ptr<ElfType> elf;
+private:
+    std::unique_ptr<ElfType> _elf;
+    std::function<ElfPointer()> _factory;
 };
 
 template<typename ElfType>
 SchedulerTemplate<ElfType>::SchedulerTemplate(const std::function<ElfPointer()>& factory) :
-	elf(factory())
+    _factory(factory)
 {
 }
 
@@ -36,8 +39,15 @@ SchedulerTemplate<ElfType>::~SchedulerTemplate()
 }
 
 template<typename ElfType>
+ElfType& SchedulerTemplate<ElfType>::elf() const
+{
+    return *_elf;
+}
+
+template<typename ElfType>
 void SchedulerTemplate<ElfType>::dispatch()
 {
+    _elf.reset(_factory());
     if (MpiHelper::isMaster(rank))
     {
         if (!hasData())
@@ -50,6 +60,6 @@ void SchedulerTemplate<ElfType>::dispatch()
             throw std::runtime_error("SchedulerTemplate::dispatch(): Nodeset is empty!");
         }
     }
-
     doDispatch();
+    _elf.release();
 }

@@ -85,7 +85,7 @@ void MatrixScheduler::MatrixSchedulerImpl::calculateOnSlave()
 {
     Matrix<float> left = MatrixHelper::receiveMatrixFrom(MpiHelper::MASTER);
     Matrix<float> right = MatrixHelper::receiveMatrixFrom(MpiHelper::MASTER);
-    Matrix<float> result = self->elf->multiply(left, right);
+    Matrix<float> result = self->elf().multiply(left, right);
     MatrixHelper::sendMatrixTo(result, MpiHelper::MASTER);
 }
 
@@ -162,6 +162,6 @@ void MatrixScheduler::MatrixSchedulerImpl::collectResults(const vector<MatrixSli
 void MatrixScheduler::MatrixSchedulerImpl::calculateOnMaster(const MatrixSlice& sliceDefinition, const MatrixPair& matrices, Matrix<float>& result)
 {
     MatrixPair slicedMatrices = sliceMatrices(sliceDefinition, matrices);
-    Matrix<float> resultSlice = self->elf->multiply(slicedMatrices.first, slicedMatrices.second);
+    Matrix<float> resultSlice = self->elf().multiply(slicedMatrices.first, slicedMatrices.second);
     sliceDefinition.injectSlice(resultSlice, result);
 }

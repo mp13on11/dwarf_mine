@@ -34,11 +34,11 @@ void FactorizationScheduler::doDispatch()
     distributeNumber();
 
     future<BigIntPair> f = async(launch::async, [&]{
-            return elf->factorize(number);
+            return elf().factorize(number);
         });
 
     int rank = distributeFinishedStateRegularly(f);
-    elf->stop();
+    elf().stop();
     sendResultToMaster(rank, f);
 }
 
