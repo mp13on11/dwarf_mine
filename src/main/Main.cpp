@@ -73,21 +73,20 @@ void silenceOutputStreams(bool keepErrorStreams = false)
 
 int main(int argc, char** argv)
 {
+
+    cout << "HELLLOOOOOOOO" << endl;
     // used to ensure MPI::Finalize is called on exit of the application
     MpiGuard guard(argc, argv);
 
-    // Disable output on slaves
-    if (!MpiHelper::isMaster())
-        silenceOutputStreams();
 
     try
     {
         Configuration config(argc, argv);
 
-        if (!config.parseArguments())
+        if (!config.parseArguments(MpiHelper::isMaster()))
             return 2;
 
-        if (config.getQuiet())
+        if (!config.getVerbose() && (config.getQuiet() || !MpiHelper::isMaster()))
             silenceOutputStreams(true);
 
         cout << config <<endl;

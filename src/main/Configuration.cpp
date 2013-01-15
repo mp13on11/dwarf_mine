@@ -20,7 +20,7 @@ Configuration::Configuration(int argc, char** argv) :
 
 }
 
-bool Configuration::parseArguments()
+bool Configuration::parseArguments(bool showDescription)
 {
     namespace po = boost::program_options;
     po::options_description desc("Options");
@@ -39,6 +39,7 @@ bool Configuration::parseArguments()
             ("import_configuration", po::value<string>(&_importConfigurationFile), "Run benchmark with given configuration")
             ("skip_benchmark",       "Skip the benchmark run")
             ("quiet,q",              "Do not output anything")
+            ("verbose,v",            "Show output from all MPI processes")
             ("left_rows",            po::value<size_t>(&_leftMatrixRows)->default_value(500), "Number of left rows to be generated (overridden for benchmark by input file)")
             ("common_rows_columns",  po::value<size_t>(&_commonMatrixRowsColumns)->default_value(500), "Number of left columns / right rows to be generated (overridden for benchmark by input file)")
             ("right_columns",        po::value<size_t>(&_rightMatrixColumns)->default_value(500), "Number of right columns to be generated (overridden for benchmark by input file)");
@@ -66,10 +67,13 @@ bool Configuration::parseArguments()
 
         _quiet = vm.count("quiet") > 0;
 
+        _verbose = vm.count("verbose") > 0;
+
     }
     catch(const po::error& e)
     {
-        cerr << desc << endl;
+        if(showDescription)
+            cerr << desc << endl;
         throw;
     }
 
@@ -139,6 +143,10 @@ bool Configuration::skipBenchmark() const
 bool Configuration::getQuiet() const
 {
     return _quiet;
+}
+bool Configuration::getVerbose() const
+{
+    return _verbose;
 }
 
 std::string Configuration::getExportConfigurationFilename() const
