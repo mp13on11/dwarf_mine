@@ -57,7 +57,7 @@ void SequentialFactorizer::run()
             }
         }
 
-        remainders.insert(pair<BigInt, BigInt>(remainder, a));
+        remainders.insert({remainder, a});
     }
 }
 
