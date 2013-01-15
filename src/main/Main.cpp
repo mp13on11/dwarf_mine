@@ -73,8 +73,6 @@ void silenceOutputStreams(bool keepErrorStreams = false)
 
 int main(int argc, char** argv)
 {
-
-    cout << "HELLLOOOOOOOO" << endl;
     // used to ensure MPI::Finalize is called on exit of the application
     MpiGuard guard(argc, argv);
 
