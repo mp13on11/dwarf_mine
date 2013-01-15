@@ -50,6 +50,16 @@ void MatrixSlicerSquarified::setUnlayoutedSlice(const list<NodeRating>& stripRat
 	removeAll(_unlayoutedRatings, stripRatings);
 }
 
+void sortByRatingsAsc(list<NodeRating>& ratings)
+{
+	ratings.sort(
+        [](const NodeRating& a, const NodeRating& b)
+        {
+       		return a.second < b.second;
+        }
+    );
+}
+
 void MatrixSlicerSquarified::addToLayout(list<NodeRating> stripRatings)
 {
 	size_t longestSide = getLongestSide();
@@ -72,12 +82,7 @@ void MatrixSlicerSquarified::addToLayout(list<NodeRating> stripRatings)
 	size_t stripArea = pivotSideLength * smallestSide;
 	list<NodeRating> sortedStrips(stripRatings);
 	// sort ascending
-	sortedStrips.sort(
-        [](const NodeRating& a, const NodeRating& b)
-        {
-            return a.second < b.second;
-        }
-    );
+	sortByRatingsAsc(sortedStrips);
 
 	for (const auto& stripRating : sortedStrips)
 	{
@@ -178,7 +183,15 @@ void MatrixSlicerSquarified::setup(const BenchmarkResult& results, size_t area)
     {
     	_unlayoutedRatings.emplace_back(rating.first, (int)round(rating.second / ratingSum * area));
     }
-    _ratings = results;
+    // we shuffle the ratings a bit to make sure that large slices can be placed along small ones
+    // - to optimize this, it would result in binpacking which is np
+    // sortByRatingsAsc(_unlayoutedRatings);
+    // size_t n = _unlayoutedRatings.size();
+    // for (size_t i = 0; i < n / 2; ++i)
+    // {
+    // 	swap(_unlayoutedRatings[i], _unlayoutedRatings[n - i]);
+    // }
+    
 }
 
 vector<MatrixSlice> MatrixSlicerSquarified::layout(const BenchmarkResult& results, size_t rows, size_t columns)

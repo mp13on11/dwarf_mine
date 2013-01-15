@@ -16,13 +16,42 @@ typedef Matrix<float> TestGrid;
 
 TEST_F(MatrixSlicerSquarifiedTest, SimpleUnifiedSlicingTest)
 {
-    auto rows = 100;
-    auto columns = 100;
+    size_t rows = 100;
+    size_t columns = 100;
+    size_t area = rows * columns;
     auto slices = slicer.layout({{0, 1}, {1, 1}, {2, 1}, {3, 1}}, rows, columns);
-    ASSERT_EQ((size_t)4, slices.size());
     
-    verifySlice(slices[0],  0,  0, 50, 50);
-    verifySlice(slices[1], 50,  0, 50, 50);
-    verifySlice(slices[2],  0, 50, 50, 50);
-    verifySlice(slices[3], 50, 50, 50, 50);
+    size_t sliceArea = area / 4;
+    verifySlices(slices, vector<size_t>{sliceArea, sliceArea, sliceArea, sliceArea});
+    
+}
+
+TEST_F(MatrixSlicerSquarifiedTest, SimpleDifferentWeightSlicingTest)
+{
+    size_t rows = 100;
+    size_t columns = 100;
+    size_t area = rows * columns;
+    auto slices = slicer.layout({{0, 6}, {1, 2}, {2, 1}, {3, 1}}, rows, columns);
+    
+    verifySlices(slices, vector<size_t>{ 6 * area / 10, 2 * area / 10, area / 10, area / 10});
+}
+
+TEST_F(MatrixSlicerSquarifiedTest, UnifiedSlicingTest)
+{
+    size_t rows = 33;
+    size_t columns = 67;
+    
+    auto slices = slicer.layout({{0, 1}, {1, 1}, {2, 1}, {3, 1}}, rows, columns);
+    
+    verifySlices(slices, vector<size_t>{ 561 , 561, 561, 528});
+}
+
+TEST_F(MatrixSlicerSquarifiedTest, DifferentWeightSlicingTest)
+{
+    size_t rows = 33;
+    size_t columns = 67;
+    
+    auto slices = slicer.layout({{0, 6}, {1, 2}, {2, 1}, {3, 1}}, rows, columns);
+    
+    verifySlices(slices, vector<size_t>{ 1353 , 200, 208, 425});
 }

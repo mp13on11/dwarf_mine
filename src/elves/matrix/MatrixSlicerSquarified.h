@@ -16,7 +16,6 @@ class MatrixSlicerSquarified
 
     private:
     	SliceList _slices;
-    	BenchmarkResult _ratings;
     	MatrixSlice _unlayoutedSlice;
     	std::list<NodeRating> _unlayoutedRatings;
 
