@@ -96,6 +96,11 @@ void FactorizationScheduler::sendResultToMaster(int rank, future<BigIntPair>& f)
         b = pair.second;
     }
 
+    // if the master found the result, nothing more to do
+    if(MpiHelper::isMaster(rank))
+        return;
+
+    // a slave found the result, he has to send it to the master
     if (MpiHelper::isMaster())
     {
         unsigned long sizes[] = { 0, 0 };
