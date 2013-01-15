@@ -2,9 +2,12 @@
 
 #include <gtest/gtest.h>
 #include <sstream>
+#include <iostream>
 #include <stdexcept>
 #include <string>
 #include <chrono>
+#include <gmp.h>
+#include <gmpxx.h>
 
 using namespace std;
 using namespace chrono;
@@ -253,4 +256,44 @@ TEST(BigIntTest, testArithmeticAssignmentRemainderOperator)
     a %= a;
 
     EXPECT_EQ(expected, a);
+}
+
+TEST(BigIntTest, testFactorization)
+{
+    mpz_class p("551226983117");
+    mpz_class q("554724632351"); 
+
+    mpz_class m = p*q;
+
+    mpz_class n = sqrt(m);
+
+    mpz_class x = n;
+    mpz_class xx;
+    mpz_class y;
+    mpz_class yy;
+
+    auto start = high_resolution_clock::now();
+
+    for(uint64_t i=0; ;i++)
+    {
+        x = x + 1;
+
+        mpz_powm_ui(xx.get_mpz_t(), x.get_mpz_t(), 2, m.get_mpz_t());
+
+        y = sqrt(xx);
+
+        mpz_pow_ui(yy.get_mpz_t(), y.get_mpz_t(), 2);
+
+        if (xx == yy)
+        {
+            EXPECT_EQ(p, x-y);
+            EXPECT_EQ(q, x+y);
+            break;
+        }
+    }
+
+    auto end = high_resolution_clock::now();
+    milliseconds elapsed = duration_cast<milliseconds>(end - start);
+    std::cout << elapsed.count() / 1000.0 << '\n';  
+
 }

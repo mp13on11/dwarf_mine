@@ -9,6 +9,7 @@ ADD_DEFINITIONS("-DMPIEXEC=\"${MPIEXEC}\"")
 INCLUDE_DIRECTORIES(
     ${PROJECT_SOURCE_DIR}/gtest-1.6.0/include/
     # Add dependencies' include dirs here
+    ${GMP_INCLUDE_DIR}
 )
 
 FILE(GLOB AUTO_SOURCES
@@ -39,6 +40,8 @@ TARGET_LINK_LIBRARIES(${EXECUTABLE_NAME}
     ${ELF_LIBRARIES}
     ${MPI_LIBRARIES}
     ${Boost_LIBRARIES}
+    ${GMP_LIBRARIES}
+    ${GMPXX_LIBRARIES}
     "gtest"
 )    
     
