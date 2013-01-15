@@ -5,7 +5,6 @@
 
 #include <functional>
 #include <map>
-#include <random>
 
 class SequentialFactorizer
 {
@@ -19,14 +18,12 @@ private:
     const SmpFactorizationElf& elf;
     BigInt m, p, q;
     std::multimap<BigInt, BigInt> remainders;
-    std::uniform_int_distribution<uint32_t> distribution;
-    std::mt19937 engine;
-    std::function<uint32_t()> generator;
+    gmp_randclass generator;
 
     typedef std::multimap<BigInt, BigInt>::iterator iterator;
     typedef std::pair<iterator, iterator> iterator_pair;
 
-    BigInt generateRandomNumberSmallerThan(const BigInt& n) const;
+    BigInt generateRandomNumberSmallerThan(const BigInt& n);
 };
 
 inline std::pair<BigInt, BigInt> SequentialFactorizer::result() const

@@ -16,17 +16,17 @@ unique_ptr<Scheduler> SMPElfFactory::createSchedulerImplementation() const
     if (_category == "matrix")
     {
         return unique_ptr<Scheduler>(
-        		new MatrixScheduler(
-        				[]() { return new SMPMatrixElf(); }
-        			)
-        	);
+                new MatrixScheduler(
+                        []() { return new SMPMatrixElf(); }
+                    )
+            );
     }
     else
     {
         return unique_ptr<Scheduler>(
-        		new FactorizationScheduler(
-        				[]() { return new SmpFactorizationElf(); }
-        			)
-        	);
+                new FactorizationScheduler(
+                        []() { return new SmpFactorizationElf(); }
+                    )
+            );
     }
 }

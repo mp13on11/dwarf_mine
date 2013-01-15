@@ -47,7 +47,7 @@ MatrixScheduler::~MatrixScheduler()
 
 void MatrixScheduler::provideData(ProblemStatement& statement)
 {
-	cout << "providing data..." << endl;
+    cout << "providing data..." << endl;
     pImpl->provideData(statement);
 }
 

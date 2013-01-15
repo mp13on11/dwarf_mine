@@ -41,7 +41,7 @@ TEST(BigIntTest, testSmallSubtraction)
     BigInt b(7777);
 
     EXPECT_EQ(BigInt(2222), a - b);
-    EXPECT_THROW(b - a, logic_error);
+    EXPECT_EQ(BigInt(-2222), b - a);
 
     a -= b;
 
@@ -53,7 +53,7 @@ TEST(BigIntTest, regressionTestSubtractionWithZeroResult)
 {
     BigInt a(1234);
 
-    EXPECT_EQ(BigInt::ZERO, a - a);
+    EXPECT_EQ(0, a - a);
 }
 
 TEST(BigIntTest, testSmallMultiplication)
@@ -72,7 +72,7 @@ TEST(BigIntTest, testSmallMultiplication)
 
 TEST(BigIntTest, testAdditionSubtractionRoundTrip)
 {
-    BigInt a(BigInt::MAX_ITEM);
+    BigInt a("2346871365871234");
     BigInt b(12345);
     a += a;
 
@@ -99,7 +99,7 @@ TEST(BigIntTest, testStringRoundTrip)
     string value = "987654321098765432109876543210987654321";
     BigInt a(value);
 
-    EXPECT_EQ(value, a.toString());
+    EXPECT_EQ(value, a.get_str());
 }
 
 TEST(BigIntTest, testLargeMultiplication)
@@ -107,23 +107,23 @@ TEST(BigIntTest, testLargeMultiplication)
     BigInt a("987654321098765432109876543210987654321");
     a *= 100000000;
 
-    EXPECT_EQ("98765432109876543210987654321098765432100000000", a.toString());
+    EXPECT_EQ("98765432109876543210987654321098765432100000000", a.get_str());
 }
 
 TEST(BigIntTest, testMultiplicationWithZero)
 {
     BigInt a("89739847514365781347561873658761230102357816");
 
-    EXPECT_EQ(BigInt::ZERO, a * BigInt::ZERO);
-    EXPECT_EQ(BigInt::ZERO, BigInt::ZERO * a);
+    EXPECT_EQ(0, a * 0);
+    EXPECT_EQ(0, 0 * a);
 }
 
 TEST(BigIntTest, testMultiplcaitionWithOne)
 {
     BigInt a("12340898919834501231239487180439512934801234");
 
-    EXPECT_EQ(a, a * BigInt::ONE);
-    EXPECT_EQ(a, BigInt::ONE * a);
+    EXPECT_EQ(a, a * 1);
+    EXPECT_EQ(a, 1 * a);
 }
 
 TEST(BigIntTest, testLargeModulo)
@@ -131,7 +131,7 @@ TEST(BigIntTest, testLargeModulo)
     BigInt a("234981234987123478913489712834");
     a %= 100000000;
 
-    EXPECT_EQ("89712834", a.toString());
+    EXPECT_EQ("89712834", a.get_str());
 }
 
 TEST(BigIntTest, testLargeDivision)
@@ -139,7 +139,7 @@ TEST(BigIntTest, testLargeDivision)
     BigInt a("81234897128357891239878923649612356981237598123");
     a /= 1000000000;
 
-    EXPECT_EQ("81234897128357891239878923649612356981", a.toString());
+    EXPECT_EQ("81234897128357891239878923649612356981", a.get_str());
 }
 
 TEST(BigIntTest, testLeftShift)
@@ -147,16 +147,16 @@ TEST(BigIntTest, testLeftShift)
     BigInt a(1);
 
     a <<= 4;
-    EXPECT_EQ("16", a.toString());
+    EXPECT_EQ("16", a.get_str());
 
     a <<= 7;
-    EXPECT_EQ("2048", a.toString());
+    EXPECT_EQ("2048", a.get_str());
 
     a <<= 32;
-    EXPECT_EQ("8796093022208", a.toString());
+    EXPECT_EQ("8796093022208", a.get_str());
 
     a <<= 53;
-    EXPECT_EQ("79228162514264337593543950336", a.toString());
+    EXPECT_EQ("79228162514264337593543950336", a.get_str());
 }
 
 TEST(BigIntTest, testRightShift)
@@ -164,48 +164,48 @@ TEST(BigIntTest, testRightShift)
     BigInt a("79228162514264337593543950336");
 
     a >>= 53;
-    EXPECT_EQ("8796093022208", a.toString());
+    EXPECT_EQ("8796093022208", a.get_str());
 
     a >>= 32;
-    EXPECT_EQ("2048", a.toString());
+    EXPECT_EQ("2048", a.get_str());
 
     a >>= 7;
-    EXPECT_EQ("16", a.toString());
+    EXPECT_EQ("16", a.get_str());
 
     a >>= 4;
-    EXPECT_EQ("1", a.toString());
+    EXPECT_EQ("1", a.get_str());
 }
 
 TEST(BigIntTest, testLargeAddition)
 {
     BigInt a("10101010101010101010101010101010101010101010101010101010101");
-    BigInt b("02020202020202020202020202020202020202020202020202020202020");
+    BigInt b("2020202020202020202020202020202020202020202020202020202020");
     BigInt c = a + b;
 
     EXPECT_EQ(
             "12121212121212121212121212121212121212121212121212121212121",
-            c.toString()
+            c.get_str()
         );
 }
 
 TEST(BigIntTest, testLargeSubtraction)
 {
     BigInt a("12121212121212121212121212121212121212121212121212121212121");
-    BigInt b("02020202020202020202020202020202020202020202020202020202020");
+    BigInt b("2020202020202020202020202020202020202020202020202020202020");
     BigInt c = a - b;
 
     EXPECT_EQ(
             "10101010101010101010101010101010101010101010101010101010101",
-            c.toString()
+            c.get_str()
         );
 }
 
 TEST(BigIntTest, testZeroDivisionOperator)
 {
     BigInt a("123456789346545873246563762452465746764521398967478050785059870");
-    BigInt b = BigInt::ZERO / a;
+    BigInt b = 0 / a;
 
-    EXPECT_EQ(BigInt::ZERO, b);
+    EXPECT_EQ(0, b);
 }
 
 TEST(BigIntTest, testArithmeticAssignmentAdditionOperator)

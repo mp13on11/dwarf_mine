@@ -5,9 +5,9 @@
 using namespace std;
 
 SequentialFactorizer::SequentialFactorizer(const BigInt& number, const SmpFactorizationElf& e) :
-        elf(e), m(number), p(0), q(0), distribution(), engine(e.randomSeed()),
-        generator(bind(distribution, engine))
+        elf(e), m(number), p(0), q(0), generator(gmp_randinit_mt)
 {
+    generator.seed(elf.randomSeed());
 }
 
 void SequentialFactorizer::run()
@@ -31,7 +31,7 @@ void SequentialFactorizer::run()
                 {
                     BigInt tmp = a + b;
 
-                    if (tmp == BigInt::ONE || tmp == m)
+                    if (tmp == m)
                         continue;
 
                     p = tmp;
@@ -46,7 +46,7 @@ void SequentialFactorizer::run()
                 {
                     BigInt tmp = a + b;
 
-                    if (tmp == BigInt::ONE || tmp == m)
+                    if (tmp == m)
                         continue;
 
                     p = tmp;
@@ -61,30 +61,7 @@ void SequentialFactorizer::run()
     }
 }
 
-BigInt SequentialFactorizer::generateRandomNumberSmallerThan(const BigInt& number) const
+BigInt SequentialFactorizer::generateRandomNumberSmallerThan(const BigInt& number)
 {
-    BigInt result;
-    size_t maximumItems = number.buffer().size();
-
-    if (maximumItems == 1)
-    {
-        uint32_t n = number.buffer().back();
-        return BigInt(generator() % n);
-    }
-
-    do
-    {
-        size_t actualItems = generator() % maximumItems + 1;
-        vector<uint32_t> items;
-
-        for (size_t i=0; i<actualItems; i++)
-        {
-            items.push_back(generator());
-        }
-
-        result = BigInt(items);
-    }
-    while (result >= number);
-
-    return result;
+    return generator.get_z_range(number);
 }

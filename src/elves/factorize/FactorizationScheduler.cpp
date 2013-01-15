@@ -51,19 +51,22 @@ void FactorizationScheduler::distributeNumber()
 {
     if (MpiHelper::isMaster())
     {
-        vector<uint32_t> items = number.buffer();
-        unsigned long size = items.size();
+        string s = number.get_str();
+        unsigned long size = s.length();
         MPI::COMM_WORLD.Bcast(&size, 1, MPI::UNSIGNED_LONG, MpiHelper::MASTER);
-        MPI::COMM_WORLD.Bcast(items.data(), size, MPI::UNSIGNED, MpiHelper::MASTER);
+        MPI::COMM_WORLD.Bcast(
+                const_cast<char*>(s.c_str()), size,
+                MPI::CHAR, MpiHelper::MASTER
+            );
     }
     else
     {
         unsigned long size = 0;
         MPI::COMM_WORLD.Bcast(&size, 1, MPI::UNSIGNED_LONG, MpiHelper::MASTER);
-        unique_ptr<uint32_t[]> items(new uint32_t[size]);
-        MPI::COMM_WORLD.Bcast(items.get(), size, MPI::UNSIGNED, MpiHelper::MASTER);
+        unique_ptr<char[]> items(new char[size]);
+        MPI::COMM_WORLD.Bcast(items.get(), size, MPI::CHAR, MpiHelper::MASTER);
 
-        number = BigInt(vector<uint32_t>(items.get(), items.get() + size));
+        number = BigInt(string(items.get(), size));
     }
 }
 
@@ -89,24 +92,24 @@ void FactorizationScheduler::sendResultToMaster(int rank, future<BigIntPair>& f)
         unsigned long sizes[] = { 0, 0 };
         MPI::COMM_WORLD.Recv(sizes, 2, MPI::UNSIGNED_LONG, rank, 1);
 
-        unique_ptr<uint32_t[]> first(new uint32_t[sizes[0]]);
-        unique_ptr<uint32_t[]> second(new uint32_t[sizes[1]]);
+        unique_ptr<char[]> first(new char[sizes[0]]);
+        unique_ptr<char[]> second(new char[sizes[1]]);
 
-        MPI::COMM_WORLD.Recv(first.get(), sizes[0], MPI::UNSIGNED, rank, 2);
-        MPI::COMM_WORLD.Recv(second.get(), sizes[1], MPI::UNSIGNED, rank, 3);
+        MPI::COMM_WORLD.Recv(first.get(), sizes[0], MPI::CHAR, rank, 2);
+        MPI::COMM_WORLD.Recv(second.get(), sizes[1], MPI::CHAR, rank, 3);
 
-        a = BigInt(vector<uint32_t>(first.get(), first.get() + sizes[0]));
-        b = BigInt(vector<uint32_t>(second.get(), second.get() + sizes[1]));
+        a = BigInt(string(first.get(), sizes[0]));
+        b = BigInt(string(second.get(), sizes[1]));
     }
     else
     {
-        vector<uint32_t> first = a.buffer();
-        vector<uint32_t> second = b.buffer();
-        unsigned long sizes[] = { first.size(), second.size() };
+        string first = a.get_str();
+        string second = b.get_str();
+        unsigned long sizes[] = { first.length(), second.length() };
 
         MPI::COMM_WORLD.Send(sizes, 2, MPI::UNSIGNED_LONG, MpiHelper::MASTER, 1);
-        MPI::COMM_WORLD.Send(first.data(), first.size(), MPI::UNSIGNED, MpiHelper::MASTER, 2);
-        MPI::COMM_WORLD.Send(second.data(), second.size(), MPI::UNSIGNED, MpiHelper::MASTER, 3);
+        MPI::COMM_WORLD.Send(first.c_str(), first.size(), MPI::CHAR, MpiHelper::MASTER, 2);
+        MPI::COMM_WORLD.Send(second.c_str(), second.size(), MPI::CHAR, MpiHelper::MASTER, 3);
     }
 }
 

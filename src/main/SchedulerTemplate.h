@@ -10,9 +10,9 @@ template<typename ElfType>
 class SchedulerTemplate : public Scheduler
 {
 public:
-	typedef ElfType *ElfPointer;
+    typedef ElfType *ElfPointer;
 
-	SchedulerTemplate(const std::function<ElfPointer()>& factory);
+    SchedulerTemplate(const std::function<ElfPointer()>& factory);
     virtual ~SchedulerTemplate() = 0;
 
     virtual void dispatch();

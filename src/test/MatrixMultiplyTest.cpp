@@ -13,7 +13,7 @@ TYPED_TEST(MatrixMultiplyTest, SingleElementMatrixTest) {
 }
 
 TYPED_TEST(MatrixMultiplyTest, SmallSquareMatricesTest) {
-	this->initRandom(12345);
+    this->initRandom(12345);
     auto left = this->createRandomMatrix(5, 5);
     auto right = this->createRandomMatrix(5, 5);
 
@@ -24,7 +24,7 @@ TYPED_TEST(MatrixMultiplyTest, SmallSquareMatricesTest) {
 }
 
 TYPED_TEST(MatrixMultiplyTest, MediumShrinkingRectangularMatricesTest) {
-	this->initRandom(333);
+    this->initRandom(333);
     auto left = this->createRandomMatrix(30, 100);
     auto right = this->createRandomMatrix(100, 40);
 
@@ -36,7 +36,7 @@ TYPED_TEST(MatrixMultiplyTest, MediumShrinkingRectangularMatricesTest) {
 
 
 TYPED_TEST(MatrixMultiplyTest, MediumExpandingRectangularMatricesTest) {
-	this->initRandom(4567);
+    this->initRandom(4567);
     auto left = this->createRandomMatrix(110, 20);
     auto right = this->createRandomMatrix(20, 130);
 
@@ -47,7 +47,7 @@ TYPED_TEST(MatrixMultiplyTest, MediumExpandingRectangularMatricesTest) {
 }
 
 TYPED_TEST(MatrixMultiplyTest, PrimeRectangularMatricesTest) {
-	this->initRandom(6543452);
+    this->initRandom(6543452);
     auto left = this->createRandomMatrix(67, 83);
     auto right = this->createRandomMatrix(83, 109);
 
@@ -58,7 +58,7 @@ TYPED_TEST(MatrixMultiplyTest, PrimeRectangularMatricesTest) {
 }
 
 TYPED_TEST(MatrixMultiplyTest, BiggerPrimeRectangularMatricesTest) {
-	this->initRandom(73653);
+    this->initRandom(73653);
     auto left = this->createRandomMatrix(383, 269);
     auto right = this->createRandomMatrix(269, 193);
 
