@@ -1,9 +1,10 @@
 #include "MatrixIntegrationTest.h"
 #include "Utilities.h"
-#include <matrix/MatrixHelper.h>
-#include <matrix/Matrix.h>
-#include <matrix/MatrixElf.h>
-#include <main/ElfFactory.h>
+#include "matrix/MatrixHelper.h"
+#include "matrix/Matrix.h"
+#include "matrix/MatrixElf.h"
+#include "matrix/smp/SMPMatrixElf.h"
+#include "main/ElfFactory.h"
 
 #include <cstdlib>
 #include <string>
@@ -100,7 +101,7 @@ std::tuple<Matrix<float>, Matrix<float>> readMatrices()
     auto leftMatrix = inputMatrices.first;
     auto rightMatrix = inputMatrices.second;
 
-    auto elf = createElfFactory("smp", "matrix")->createElf();
-    auto expectedMatrix = static_cast<MatrixElf*>(elf.get())->multiply(leftMatrix, rightMatrix);
+    SMPMatrixElf elf;
+    auto expectedMatrix = elf.multiply(leftMatrix, rightMatrix);
     return make_tuple<Matrix<float>, Matrix<float>>(move(expectedMatrix), move(actualMatrix));
 }
