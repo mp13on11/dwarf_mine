@@ -3,6 +3,7 @@
 #include "MatrixHelper.h"
 #include "MatrixSlice.h"
 #include "MatrixSlicer.h"
+#include "MatrixSlicerSquarified.h"
 #include "MatrixElf.h"
 #include <Elf.h>
 #include <main/ProblemStatement.h>
@@ -119,8 +120,10 @@ void MatrixScheduler::MatrixSchedulerImpl::orchestrateCalculation()
 Matrix<float> MatrixScheduler::MatrixSchedulerImpl::dispatchAndReceive(const MatrixPair& matrices)
 {
     Matrix<float> result(matrices.first.rows(), matrices.second.columns());
-    MatrixSlicer slicer;
-    vector<MatrixSlice> sliceDefinitions = slicer.sliceAndDice(self->nodeSet, result.rows(), result.columns());
+    //MatrixSlicer slicer;
+    MatrixSlicerSquarified slicer;
+  //vector<MatrixSlice> sliceDefinitions = slicer.sliceAndDice(self->nodeSet, result.rows(), result.columns());
+    vector<MatrixSlice> sliceDefinitions = slicer.layout(self->nodeSet, result.rows(), result.columns());
     const MatrixSlice* masterSlice = distributeSlices(sliceDefinitions, matrices);
     if (masterSlice != nullptr)
     {

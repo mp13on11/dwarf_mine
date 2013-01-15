@@ -33,6 +33,6 @@ class MatrixSlicerSquarified
 		void addToLayout(std::list<NodeRating> stripRatings);
 		void squarify(std::list<NodeRating>& strip);
 
-		void setup(const BenchmarkResult& results);
+		void setup(const BenchmarkResult& results, size_t area);
 
 };

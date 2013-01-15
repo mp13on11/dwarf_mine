@@ -1,12 +1,12 @@
 #include "MatrixSlicerSquarified.h"
 #include <cmath>
 #include <numeric>
+#include <limits>
 
 using namespace std;
 
 double sum(list<NodeRating>::iterator begin, list<NodeRating>::iterator end, double sum = 0)
 {
-	//for (const auto& nodeRating : ratings)
 	for (auto i = begin; i != end; i++)
 		sum += (*i).second;
 	return sum;
@@ -46,7 +46,7 @@ size_t MatrixSlicerSquarified::getY()
 
 void MatrixSlicerSquarified::setUnlayoutedSlice(const list<NodeRating>& stripRatings, size_t x, size_t y, size_t rows, size_t columns)
 {
-	_unlayoutedSlice = MatrixSlice{0, x, y, rows, columns};
+	_unlayoutedSlice = MatrixSlice(0, x, y, rows, columns);
 	removeAll(_unlayoutedRatings, stripRatings);
 }
 
@@ -56,14 +56,19 @@ void MatrixSlicerSquarified::addToLayout(list<NodeRating> stripRatings)
 	size_t smallestSide = getSmallestSide();
 	size_t x = getX();
 	size_t y = getY();
+
 	removeAll(_unlayoutedRatings, stripRatings);
 
-	double sum_ratings = sum(stripRatings.begin(), stripRatings.end());
-	double sum_unlayouted_ratings = sum(_unlayoutedRatings.begin(), _unlayoutedRatings.end());
+	double sumRatings = sum(stripRatings.begin(), stripRatings.end());
+	if (sumRatings == 0)
+	{
+		sumRatings = 1;
+	}
+	double sumUnlayoutedRatings = sum(_unlayoutedRatings.begin(), _unlayoutedRatings.end());
 
-	double pivot_ratio = sum_ratings / (sum_unlayouted_ratings + sum_ratings);
+	double pivotRatio = sumRatings / (sumUnlayoutedRatings + sumRatings);
 	
-	size_t pivotSideLength = ceil(longestSide * pivot_ratio);
+	size_t pivotSideLength = ceil(longestSide * pivotRatio);
 	size_t stripArea = pivotSideLength * smallestSide;
 	list<NodeRating> sortedStrips(stripRatings);
 	// sort ascending
@@ -73,17 +78,18 @@ void MatrixSlicerSquarified::addToLayout(list<NodeRating> stripRatings)
             return a.second < b.second;
         }
     );
-	
+
 	for (const auto& stripRating : sortedStrips)
 	{
-		size_t sliceAreaRatio = (stripRating.second / sum_ratings) * stripArea;
-		size_t cols = sliceAreaRatio / smallestSide;
-		size_t rows = smallestSide;
+		size_t sliceAreaRatio = (stripRating.second / sumRatings) * stripArea;
+		size_t cols = sliceAreaRatio / pivotSideLength;
+		size_t rows = pivotSideLength;
 		if (isVerticalStrip())
 		{
 			swap(cols, rows);
 		}
-		_slices.push_back(MatrixSlice{stripRating.first, x, y, cols, rows});
+
+		_slices.push_back(MatrixSlice(stripRating.first, x, y, cols, rows));
 		if (isVerticalStrip())
 		{
 			y += rows;
@@ -95,11 +101,11 @@ void MatrixSlicerSquarified::addToLayout(list<NodeRating> stripRatings)
 	}
 	if (isVerticalStrip())
 	{
-		setUnlayoutedSlice(stripRatings, getX() + smallestSide, getY(), getSmallestSide(), getLongestSide() - pivotSideLength);
+		setUnlayoutedSlice(stripRatings, getX() + pivotSideLength, getY(), getSmallestSide(), getLongestSide() - pivotSideLength);
 	}
 	else
 	{
-		setUnlayoutedSlice(stripRatings, getX(), getY()  + smallestSide, getLongestSide() - pivotSideLength, getSmallestSide());
+		setUnlayoutedSlice(stripRatings, getX(), getY()  + pivotSideLength, getLongestSide() - pivotSideLength, getSmallestSide());
 	}
 }
 
@@ -113,26 +119,33 @@ double MatrixSlicerSquarified::calculateRatio(size_t smallestSide, list<NodeRati
 
 double MatrixSlicerSquarified::calculateRatio(size_t smallestSide, list<NodeRating> strip)
 {
-	double s_square = smallestSide * smallestSide;
-	double sum_weightings = sum(strip.begin(), strip.end());
-	double sum_weighting_square = sum_weightings * sum_weightings;
-
-	size_t worst_ratio = 0;
-
-	for(auto weighting : strip)
-	{	
-		auto ratio = max(sum_weighting_square * weighting.second / s_square, s_square / sum_weighting_square * weighting.second);
-		if(ratio > worst_ratio)
-		{
-			worst_ratio = ratio;
-		}
+	if (strip.size() == 0)
+	{
+		return 0;
 	}
-
-	return worst_ratio;
+	double w = smallestSide;
+	double s = 0;
+	int min_r = numeric_limits<int>::max();
+	int max_r = numeric_limits<int>::min();
+	for (const auto& rating : strip)
+	{
+		s += rating.second;
+		min_r = min(min_r, rating.second);
+		max_r = max(max_r, rating.second);
+	}
+	double w_squared = w * w;
+	double s_squared = s * s;
+	double worst = min((w_squared * max_r) / s_squared, s_squared / (w_squared * min_r));
+	return worst;
 }
 
 void MatrixSlicerSquarified::squarify(list<NodeRating>& strip)
 {
+	if (_unlayoutedRatings.size() == 0)
+	{
+		addToLayout(strip);
+		return;
+	}
 	auto head = _unlayoutedRatings.front();
 	auto smallestSide = getSmallestSide();
 
@@ -143,26 +156,34 @@ void MatrixSlicerSquarified::squarify(list<NodeRating>& strip)
 	{
 		strip.push_back(head);
 		_unlayoutedRatings.pop_front();
+		squarify(strip);
 	}
 	else 
 	{
 		addToLayout(strip);
 		strip.clear();
+		squarify(strip);
 	}
-	squarify(strip);
 }
 
-void MatrixSlicerSquarified::setup(const BenchmarkResult& results)
+void MatrixSlicerSquarified::setup(const BenchmarkResult& results, size_t area)
 {
     _slices.clear();
+    double ratingSum = 0;
     for (const auto& rating : results)
-    	_unlayoutedRatings.push_back(rating);
+    {
+    	ratingSum += rating.second;
+    }
+    for (const auto& rating : results)
+    {
+    	_unlayoutedRatings.emplace_back(rating.first, (int)round(rating.second / ratingSum * area));
+    }
     _ratings = results;
 }
 
 vector<MatrixSlice> MatrixSlicerSquarified::layout(const BenchmarkResult& results, size_t rows, size_t columns)
 {
-	setup(results);
+	setup(results, rows * columns);
 	
 	setUnlayoutedSlice(list<NodeRating>(), 0, 0, rows, columns);
 	list<NodeRating> ratings;
