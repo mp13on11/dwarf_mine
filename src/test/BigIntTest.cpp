@@ -6,8 +6,7 @@
 #include <stdexcept>
 #include <string>
 #include <chrono>
-#include <gmp.h>
-#include <gmpxx.h>
+#include <functional>
 
 using namespace std;
 using namespace chrono;
@@ -258,7 +257,7 @@ TEST(BigIntTest, testArithmeticAssignmentRemainderOperator)
     EXPECT_EQ(expected, a);
 }
 
-TEST(BigIntTest, testFactorization)
+TEST(BigIntTest, testFactorizationFermat)
 {
     mpz_class p("551226983117");
     mpz_class q("554724632351"); 
@@ -297,3 +296,107 @@ TEST(BigIntTest, testFactorization)
     std::cout << elapsed.count() / 1000.0 << '\n';  
 
 }
+
+TEST(BigIntTest, testFactorizationPollardRho)
+{
+    BigInt p("551226983117");
+    BigInt q("554724632351");
+
+    BigInt n = p*q; 
+
+    function<BigInt(BigInt)> f ([=](BigInt x){
+        BigInt result = (x*x+123) % n;
+        return result;
+    });
+
+    BigInt x(2);
+    BigInt y(x);
+    BigInt d(1);
+    BigInt absdiff;
+
+    auto start = high_resolution_clock::now();
+
+    while(d == 1)
+    {
+        x = f(x);
+        y = f(y);
+        y = f(y);
+        absdiff = abs(x-y);
+        mpz_gcd(d.get_mpz_t(), absdiff.get_mpz_t(), n.get_mpz_t());
+        if(1 < d && d < n)
+        {
+            BigInt pp = d;
+            BigInt qq = n / d;
+
+            if(pp > qq)
+            {
+                BigInt tmp(pp);
+                pp = qq;
+                qq = tmp;
+            }
+
+            EXPECT_EQ(p, pp);
+            EXPECT_EQ(q, qq);
+
+            break;
+        }
+    }
+
+    auto end = high_resolution_clock::now();
+    milliseconds elapsed = duration_cast<milliseconds>(end - start);
+    std::cout << elapsed.count() / 1000.0 << '\n';  
+
+}
+
+
+TEST(BigIntTest, testMediumLogarithm)
+{
+    BigInt x("5512269831137356765576856757");
+    uint32_t expected = 386524848;
+    uint32_t value = log_2_22(x);
+    ASSERT_EQ(expected, value);
+}
+
+TEST(BigIntTest, testLargeLogarithm)
+{
+    // x = 2^1024 - 3^566 + 754345635456
+    BigInt x("179769313486231590772930519078902473360674050183465318615124150632640673711093104016960323758140143493142850675912072669434503023118988778667670255207828346892449845296516189112513154426849212248606207767356019216813220245023618250939644892482318865089392246229406300098045608631491456495938256080472342279143");
+    uint32_t expected = 4294967295u;
+    uint32_t value = log_2_22(x);
+    ASSERT_EQ(expected, value);
+}
+
+TEST(BigIntTest, testSmallLogarithm)
+{
+    BigInt x("5687376457");
+    uint32_t expected = 135916908;
+    uint32_t value = log_2_22(x);
+    ASSERT_EQ(expected, value);
+}
+
+TEST(BigIntTest, testTinyLogarithm)
+{
+    BigInt x("11");
+    uint32_t expected = 14509907;
+    uint32_t value = log_2_22(x);
+    ASSERT_EQ(expected, value);
+}
+
+TEST(BigIntTest, test2Logarithm)
+{
+    BigInt x("2");
+    uint32_t expected = 4194304;
+    uint32_t value = log_2_22(x);
+    ASSERT_EQ(expected, value);
+}
+
+TEST(BigIntTest, testOneLogarithm)
+{
+    BigInt x("1");
+    uint32_t expected = 0;
+    uint32_t value = log_2_22(x);
+    ASSERT_EQ(expected, value);
+}
+
+
+
