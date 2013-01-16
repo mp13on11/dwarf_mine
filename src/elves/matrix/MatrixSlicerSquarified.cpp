@@ -2,6 +2,7 @@
 #include <cmath>
 #include <numeric>
 #include <limits>
+#include <algorithm>
 
 using namespace std;
 
@@ -59,6 +60,17 @@ void sortByRatingsAsc(list<NodeRating>& ratings)
         }
     );
 }
+
+void sortByRatingsAsc(vector<NodeRating>& ratings)
+{
+	sort(ratings.begin(), ratings.end(),
+        [](const NodeRating& a, const NodeRating& b)
+        {
+       		return a.second < b.second;
+        }
+    );
+}
+
 
 void MatrixSlicerSquarified::addToLayout(list<NodeRating> stripRatings)
 {
@@ -130,8 +142,8 @@ double MatrixSlicerSquarified::calculateRatio(size_t smallestSide, list<NodeRati
 	}
 	double w = smallestSide;
 	double s = 0;
-	int min_r = numeric_limits<int>::max();
-	int max_r = numeric_limits<int>::min();
+	Rating min_r = numeric_limits<Rating>::max();
+	Rating max_r = numeric_limits<Rating>::min();
 	for (const auto& rating : strip)
 	{
 		s += rating.second;
@@ -174,23 +186,37 @@ void MatrixSlicerSquarified::squarify(list<NodeRating>& strip)
 void MatrixSlicerSquarified::setup(const BenchmarkResult& results, size_t area)
 {
     _slices.clear();
-    double ratingSum = 0;
+    Rating ratingSum = 0;
+    Rating ratingMax = 0;
+    Rating ratingMin = numeric_limits<Rating>::max();
+    // 0.3 0.5 1 1
+    // 3, 2, 1, 1
+    // 7
+    vector<NodeRating> positiveRatings;
     for (const auto& rating : results)
     {
-    	ratingSum += rating.second;
+    	ratingMax = max(ratingMax, rating.second);
+    	ratingMin = min(ratingMin, rating.second);
     }
     for (const auto& rating : results)
     {
-    	_unlayoutedRatings.emplace_back(rating.first, (int)round(rating.second / ratingSum * area));
+    	Rating positiveRating = ratingMin / rating.second;
+    	ratingSum += positiveRating;
+    	positiveRatings.emplace_back(rating.first, positiveRating);
     }
+
     // we shuffle the ratings a bit to make sure that large slices can be placed along small ones
     // - to optimize this, it would result in binpacking which is np
-    // sortByRatingsAsc(_unlayoutedRatings);
-    // size_t n = _unlayoutedRatings.size();
+    // sortByRatingsAsc(positiveRatings);
+    // size_t n = positiveRatings.size();
     // for (size_t i = 0; i < n / 2; ++i)
     // {
-    // 	swap(_unlayoutedRatings[i], _unlayoutedRatings[n - i]);
+    // 	swap(positiveRatings[i], positiveRatings[n / 2 * i]);
     // }
+    for (const auto& rating : positiveRatings)
+    {
+    	_unlayoutedRatings.emplace_back(rating.first, round(rating.second / ratingSum * area));
+    }
     
 }
 
