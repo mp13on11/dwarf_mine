@@ -13,33 +13,15 @@ using namespace std;
 using namespace boost::program_options;
 
 CommandLineConfiguration::CommandLineConfiguration(int argc, char** argv) :
-    description("Options"), variables()
+    description(createDescription()), variables()
 {
-	description.add_options()
-		("help,h",               "Print help message")
-		("mode,m",               value<string>()->required(), "Mode (smp|cuda)")
-		("category,c",           value<string>()->default_value("matrix"), "Elf to be run (matrix|factorize)")
-		("numwarmups,w",         value<size_t>()->default_value(50), "Number of warmup rounds")
-		("numiter,n",            value<size_t>()->default_value(100), "Number of benchmark iterations")
-		("input,i",              value<string>(), "Input file")
-		("output,o",             value<string>(), "Output file")
-		("export_configuration", value<string>(), "Measure cluster and export configuration")
-		("import_configuration", value<string>(), "Run benchmark with given configuration")
-		("skip_benchmark",       "Skip the benchmark run")
-		("quiet,q",              "Do not output anything")
-		("verbose,v",            "Show output from all MPI processes")
-		("left_rows",            value<size_t>()->default_value(500), "Number of left rows to be generated (overridden for benchmark by input file)")
-		("common_rows_columns",  value<size_t>()->default_value(500), "Number of left columns / right rows to be generated (overridden for benchmark by input file)")
-		("right_columns",        value<size_t>()->default_value(500), "Number of right columns to be generated (overridden for benchmark by input file)");
-
 	store(parse_command_line(argc, argv, description), variables);
 	notify(variables);
 
+	if (mode() != "smp" && mode() != "cuda")
+		throw error("Mode must be smp or cuda");
 	if (variables.count("input") ^ variables.count("output"))
-		throw logic_error("Both input and output are needed, if one is given");
-
-	if (variables.count("mode") && (mode() != "smp" && mode() != "cuda"))
-		throw logic_error("Mode must be smp or cuda");
+		throw error("Both input and output are needed, if one is given");
 }
 
 unique_ptr<ProblemStatement> generateProblemStatement(string elfCategory, size_t leftRows, size_t commonRowsColumns, size_t rightColumns)
@@ -133,9 +115,32 @@ bool CommandLineConfiguration::shouldPrintHelp() const
 	return variables.count("help") > 0;
 }
 
-void CommandLineConfiguration::printHelp() const
+void CommandLineConfiguration::printHelp()
 {
-	cout << description << endl;
+	cout << createDescription() << endl;
+}
+
+options_description CommandLineConfiguration::createDescription()
+{
+	options_description description("Options");
+	description.add_options()
+		("help,h",               "Print help message")
+		("mode,m",               value<string>()->required(), "Mode (smp|cuda)")
+		("category,c",           value<string>()->default_value("matrix"), "Elf to be run (matrix|factorize)")
+		("numwarmups,w",         value<size_t>()->default_value(50), "Number of warmup rounds")
+		("numiter,n",            value<size_t>()->default_value(100), "Number of benchmark iterations")
+		("input,i",              value<string>(), "Input file")
+		("output,o",             value<string>(), "Output file")
+		("export_configuration", value<string>(), "Measure cluster and export configuration")
+		("import_configuration", value<string>(), "Run benchmark with given configuration")
+		("skip_benchmark",       "Skip the benchmark run")
+		("quiet,q",              "Do not output anything")
+		("verbose,v",            "Show output from all MPI processes")
+		("left_rows",            value<size_t>()->default_value(500), "Number of left rows to be generated (overridden for benchmark by input file)")
+		("common_rows_columns",  value<size_t>()->default_value(500), "Number of left columns / right rows to be generated (overridden for benchmark by input file)")
+		("right_columns",        value<size_t>()->default_value(500), "Number of right columns to be generated (overridden for benchmark by input file)");
+
+	return description;
 }
 
 string CommandLineConfiguration::mode() const

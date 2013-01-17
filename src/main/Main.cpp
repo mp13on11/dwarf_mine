@@ -118,8 +118,8 @@ int main(int argc, char** argv)
     }
     catch (const boost::program_options::error& e)
     {
+    	CommandLineConfiguration::printHelp();
     	cerr << e.what() << endl;
-    	cerr << "Use --help or -h to show valid options" << endl;
     	return 1;
     }
     catch (const logic_error& e)

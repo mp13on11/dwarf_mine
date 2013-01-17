@@ -10,6 +10,8 @@
 class CommandLineConfiguration : public Configuration
 {
 public:
+	static void printHelp();
+
 	CommandLineConfiguration(int argc, char** argv);
 
 	virtual std::unique_ptr<ProblemStatement> createProblemStatement(bool forceGenerated = false) const;
@@ -25,12 +27,14 @@ public:
 	virtual bool shouldBeQuiet() const;
 	virtual bool shouldBeVerbose() const;
 
+	void validate() const;
 	bool shouldPrintHelp() const;
-	void printHelp() const;
 
 	friend std::ostream& operator<<(std::ostream& s, const CommandLineConfiguration& c);
 
 private:
+	static boost::program_options::options_description createDescription();
+
     boost::program_options::options_description description;
     boost::program_options::variables_map variables;
 
