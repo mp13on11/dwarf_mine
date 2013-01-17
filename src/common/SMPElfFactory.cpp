@@ -7,7 +7,7 @@
 using namespace std;
 
 SMPElfFactory::SMPElfFactory(const ElfCategory& category) :
-    ElfFactory(category)
+    SchedulerFactory(category)
 {
 }
 

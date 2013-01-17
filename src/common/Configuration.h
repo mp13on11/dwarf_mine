@@ -4,16 +4,16 @@
 #include <string>
 #include <memory>
 #include <iosfwd>
-#include "ElfFactory.h"
 #include "ElfCategory.h"
 #include "ProblemStatement.h"
+#include "SchedulerFactory.h"
 
 class Configuration
 {
 public:
     Configuration(int argc, char** argv);
     std::unique_ptr<ProblemStatement> getProblemStatement(bool forceGenerated = false);
-    std::unique_ptr<ElfFactory> getElfFactory();
+    std::unique_ptr<SchedulerFactory> getElfFactory();
     std::string getElfCategory() const;
     bool parseArguments(bool showDescription);
     size_t getNumberOfWarmUps();

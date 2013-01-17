@@ -1,8 +1,8 @@
 #pragma once
 
-#include "ElfFactory.h"
+#include "SchedulerFactory.h"
 
-class CudaElfFactory : public ElfFactory
+class CudaElfFactory : public SchedulerFactory
 {
 public:
     CudaElfFactory(const ElfCategory& category);

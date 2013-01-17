@@ -1,8 +1,8 @@
 #pragma once
 
-#include "ElfFactory.h"
+#include "SchedulerFactory.h"
 
-class SMPElfFactory : public ElfFactory
+class SMPElfFactory : public SchedulerFactory
 {
 public:
     SMPElfFactory(const ElfCategory& category);

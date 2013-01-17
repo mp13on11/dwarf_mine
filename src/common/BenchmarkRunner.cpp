@@ -59,7 +59,7 @@ void BenchmarkRunner::getBenchmarked(Scheduler& scheduler)
         scheduler.dispatch(); // slave side
 }
 
-void BenchmarkRunner::runBenchmark(ProblemStatement& statement, const ElfFactory& factory)
+void BenchmarkRunner::runBenchmark(ProblemStatement& statement, const SchedulerFactory& factory)
 {
     unique_ptr<Scheduler> scheduler = factory.createScheduler();
 

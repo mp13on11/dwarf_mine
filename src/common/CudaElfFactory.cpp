@@ -12,7 +12,7 @@
 using namespace std;
 
 CudaElfFactory::CudaElfFactory(const ElfCategory& category) :
-    ElfFactory(category)
+    SchedulerFactory(category)
 {
 }
 

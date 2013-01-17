@@ -1,15 +1,15 @@
 #pragma once
 
 #include "ElfCategory.h"
-#include "Elf.h"
 #include "Scheduler.h"
+
 #include <memory>
 
-class ElfFactory
+class SchedulerFactory
 {
 public:
-    ElfFactory(const ElfCategory& category);
-    virtual ~ElfFactory() = 0;
+    SchedulerFactory(const ElfCategory& category);
+    virtual ~SchedulerFactory() = 0;
 
     std::unique_ptr<Scheduler> createScheduler() const;
 
@@ -22,8 +22,8 @@ private:
     void validate() const;
 };
 
-inline ElfFactory::~ElfFactory()
+inline SchedulerFactory::~SchedulerFactory()
 {
 }
 
-std::unique_ptr<ElfFactory> createElfFactory(const std::string& type, const ElfCategory& category);
+std::unique_ptr<SchedulerFactory> createElfFactory(const std::string& type, const ElfCategory& category);

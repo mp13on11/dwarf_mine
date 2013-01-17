@@ -105,7 +105,7 @@ unique_ptr<ProblemStatement> Configuration::getProblemStatement(bool forceGenera
     return unique_ptr<ProblemStatement>(new ProblemStatement(getElfCategory(), _inputFile, _outputFile));
 }
 
-unique_ptr<ElfFactory> Configuration::getElfFactory()
+unique_ptr<SchedulerFactory> Configuration::getElfFactory()
 {
     return createElfFactory(_mode, getElfCategory());
 }

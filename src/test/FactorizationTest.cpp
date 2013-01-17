@@ -1,9 +1,8 @@
 #include "FactorizationTest.h"
 #include "Utilities.h"
+#include "common/SchedulerFactory.h"
 #include "factorize/BigInt.h"
 #include "factorize/QuadraticSieve.h"
-#include "common/ElfFactory.h"
-#include "factorize/BigInt.h"
 #include "factorize/cuda/CudaFactorizationElf.h"
 
 #include <memory>
