@@ -2,7 +2,6 @@
 #include <limits>
 #include <memory>
 #include <vector>
-
 #include "BenchmarkRunner.h"
 #include "Elf.h"
 #include "MpiHelper.h"
@@ -19,7 +18,7 @@ BenchmarkRunner::BenchmarkRunner(Configuration& config)
     : _iterations(config.getNumberOfIterations()), _warmUps(config.getNumberOfWarmUps())
 {
     for (size_t i = 0; i < MpiHelper::numberOfNodes(); ++i)
-        _nodesets.push_back({{static_cast<NodeId>(i), 0}});
+        _nodesets.push_back({{static_cast<NodeId>(i), 1}});
 }
 
 /**

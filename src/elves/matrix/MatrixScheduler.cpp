@@ -1,12 +1,13 @@
-#include "Elf.h"
 #include "Matrix.h"
 #include "MatrixElf.h"
 #include "MatrixHelper.h"
 #include "MatrixScheduler.h"
 #include "MatrixSlice.h"
 #include "MatrixSlicer.h"
-#include "main/ProblemStatement.h"
-
+#include "MatrixSlicerSquarified.h"
+#include <Elf.h>
+#include <main/ProblemStatement.h>
+#include <sstream>
 #include <iostream>
 #include <memory>
 #include <sstream>
@@ -47,7 +48,6 @@ MatrixScheduler::~MatrixScheduler()
 
 void MatrixScheduler::provideData(ProblemStatement& statement)
 {
-    cout << "providing data..." << endl;
     pImpl->provideData(statement);
 }
 
@@ -114,8 +114,10 @@ void MatrixScheduler::MatrixSchedulerImpl::orchestrateCalculation()
 Matrix<float> MatrixScheduler::MatrixSchedulerImpl::dispatchAndReceive(const MatrixPair& matrices)
 {
     Matrix<float> result(matrices.first.rows(), matrices.second.columns());
-    MatrixSlicer slicer;
-    vector<MatrixSlice> sliceDefinitions = slicer.sliceAndDice(self->nodeSet, result.rows(), result.columns());
+    //MatrixSlicer slicer;
+    MatrixSlicerSquarified slicer;
+    //vector<MatrixSlice> sliceDefinitions = slicer.sliceAndDice(self->nodeSet, result.rows(), result.columns());
+    vector<MatrixSlice> sliceDefinitions = slicer.layout(self->nodeSet, result.rows(), result.columns());
     const MatrixSlice* masterSlice = distributeSlices(sliceDefinitions, matrices);
     if (masterSlice != nullptr)
     {
