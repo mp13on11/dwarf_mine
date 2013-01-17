@@ -28,7 +28,7 @@ __device__ void setElement(Matrix m, int row, int col, float value)
 
 __device__ float getElement(Matrix m, int row, int col)
 {
-    if (row >= m.rows || col >= m.cols) return 0;
+    if (row >= m.rows || col >= m.cols) return 0.0f;
     return m.data[(m.stride * row) + col];
 }
 
@@ -88,7 +88,8 @@ __global__ void gemmKernel(int m, int n, int k, float* left, float* right, float
 
         for (int i = 0; i < blockDim.x; ++i)
         {
-            sum += leftSub_s[row][i] * rightSub_s[i][col];
+            sum = __fmaf_rn(leftSub_s[row][i], rightSub_s[i][col], sum);
+            //sum += leftSub_s[row][i] * rightSub_s[i][col];
         }
     }
 
