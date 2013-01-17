@@ -13,12 +13,19 @@
 
 using namespace std;
 
-SchedulerFactory::SchedulerFactory(const string& type, const ElfCategory& category)
+unique_ptr<SchedulerFactory> SchedulerFactory::createFor(const string& type, const ElfCategory& category)
 {
 	validateType(type);
 	validateCategory(category);
 
-	factory = createFactory(type, category);
+	return unique_ptr<SchedulerFactory>(
+			new SchedulerFactory(createFactory(type, category))
+		);
+}
+
+SchedulerFactory::SchedulerFactory(const function<Scheduler*()>& factory) :
+		factory(factory)
+{
 }
 
 SchedulerFactory::~SchedulerFactory()

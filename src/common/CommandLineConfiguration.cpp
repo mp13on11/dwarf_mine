@@ -55,9 +55,7 @@ unique_ptr<ProblemStatement> CommandLineConfiguration::createProblemStatement(bo
 
 unique_ptr<SchedulerFactory> CommandLineConfiguration::createSchedulerFactory() const
 {
-    return unique_ptr<SchedulerFactory>(
-    		new SchedulerFactory(mode(), category())
-    	);
+    return SchedulerFactory::createFor(mode(), category());
 }
 
 size_t CommandLineConfiguration::iterations() const

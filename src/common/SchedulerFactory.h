@@ -10,10 +10,14 @@
 class SchedulerFactory
 {
 public:
-    SchedulerFactory(const std::string& type, const ElfCategory& category);
+    static std::unique_ptr<SchedulerFactory> createFor(const std::string& type, const ElfCategory& category);
+
     ~SchedulerFactory();
 
     std::unique_ptr<Scheduler> createScheduler() const;
+
+protected:
+    SchedulerFactory(const std::function<Scheduler*()>& factory);
 
 private:
     static void validateType(const std::string& type);
