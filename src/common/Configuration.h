@@ -11,8 +11,7 @@
 class Configuration
 {
 public:
-    Configuration(int argc, char** argv);
-    bool parseArguments(bool showDescription);
+    Configuration(int argc, char** argv, bool showDescriptionOnError);
 
     std::unique_ptr<ProblemStatement> createProblemStatement(bool forceGenerated = false) const;
     std::unique_ptr<SchedulerFactory> createSchedulerFactory() const;
@@ -35,11 +34,7 @@ private:
     void usageError();
     void printUsage();
 
-    int argc;
     bool _useFiles;
-    char** arguments;
-    std::string programName;
-
     bool _skipBenchmark;
     bool _quiet;
     bool _verbose;

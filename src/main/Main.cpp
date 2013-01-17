@@ -79,10 +79,7 @@ int main(int argc, char** argv)
 
     try
     {
-        Configuration config(argc, argv);
-
-        if (!config.parseArguments(MpiHelper::isMaster()))
-            return 2;
+        Configuration config(argc, argv, MpiHelper::isMaster());
 
         if (!config.shouldBeVerbose() && (config.shouldBeQuiet() || !MpiHelper::isMaster()))
             silenceOutputStreams(true);

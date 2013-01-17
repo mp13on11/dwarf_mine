@@ -11,14 +11,8 @@
 
 using namespace std;
 
-Configuration::Configuration(int argc, char** argv) : 
-    argc(argc), _useFiles(false), arguments(argv), 
-    programName(argv[0])
-{
-
-}
-
-bool Configuration::parseArguments(bool showDescription)
+Configuration::Configuration(int argc, char** argv, bool showDescriptionOnError) :
+    _useFiles(false)
 {
     namespace po = boost::program_options;
     po::options_description desc("Options");
@@ -43,13 +37,12 @@ bool Configuration::parseArguments(bool showDescription)
             ("right_columns",        po::value<size_t>(&_rightMatrixColumns)->default_value(500), "Number of right columns to be generated (overridden for benchmark by input file)");
 
         po::variables_map vm;
-        po::store(po::parse_command_line(argc, arguments, desc), vm);
+        po::store(po::parse_command_line(argc, argv, desc), vm);
         po::notify(vm);
 
         if(vm.count("help") || argc == 1)
         {
             cout << "Dwarf Mine Benchmark" << endl << desc << endl;
-            return false;
         }
 
         if(vm.count("input") ^ vm.count("output"))
@@ -70,12 +63,10 @@ bool Configuration::parseArguments(bool showDescription)
     }
     catch(const po::error& e)
     {
-        if(showDescription)
+        if (showDescriptionOnError)
             cerr << desc << endl;
         throw;
     }
-
-    return true;
 }
 
 unique_ptr<ProblemStatement> generateProblemStatement(string elfCategory, size_t leftRows, size_t commonRowsColumns, size_t rightColumns)
