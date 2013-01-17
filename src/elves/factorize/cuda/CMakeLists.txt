@@ -8,9 +8,8 @@ LINK_DIRECTORIES(
 )
 
 # Dependencies
-FIND_PACKAGE(CUDA REQUIRED)
-
 INCLUDE_DIRECTORIES(
+    ${CUDA_TOOLKIT_INCLUDE}
     # Add dependencies' include dirs here
 )
 
@@ -20,7 +19,7 @@ FILE(GLOB GCC_SOURCES
 )
 
 FILE(GLOB CUDA_SOURCES
-    "*.h"
+    "*.cuh"
     "*.cu"
 )
 

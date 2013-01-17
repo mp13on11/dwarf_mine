@@ -19,6 +19,10 @@ INCLUDE_DIRECTORIES(
 
 OPTION(BUILD_WITH_CUDA "Set to ON to build with cuda elves. (Requires Cuda support.)" ON)
 
+IF(BUILD_WITH_CUDA)
+    FIND_PACKAGE(CUDA REQUIRED)
+ENDIF()
+
 # This will generate the variables used
 # to set ELV_LIBRARIES below
 ADD_SUBDIRECTORY(elves) 

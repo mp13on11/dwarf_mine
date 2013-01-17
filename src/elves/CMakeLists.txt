@@ -1,6 +1,4 @@
 IF(BUILD_WITH_CUDA)
-    # Dependencies
-    FIND_PACKAGE(CUDA REQUIRED)
     ADD_SUBDIRECTORY(cuda-utils)
 ENDIF()
 
