@@ -5,6 +5,7 @@ OthelloMove OthelloGamePlay::getBestMoveFor(OthelloState& state, size_t iteratio
 {
 	OthelloNode node(state);
 
+
 	for(size_t i = 0; i < iterations; ++i)
 	{
 		auto currentNode(node);

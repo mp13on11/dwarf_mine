@@ -26,9 +26,14 @@ OthelloNode::OthelloNode(const OthelloNode& node)
 }
 
 OthelloNode::OthelloNode(const OthelloState& state) 
-	: _parent(nullptr), _triggerMove(nullptr), _state(make_shared<OthelloState>(state))
+	: _parent(nullptr), _triggerMove(nullptr), _state(make_shared<OthelloState>(state)), _visits(0), _wins(0)
 {
 	_untriedMoves = _state->getPossibleMoves();
+}
+
+OthelloNode::~OthelloNode()
+{
+
 }
 
 OthelloNode& OthelloNode::operator=(const OthelloNode& node)
@@ -88,6 +93,11 @@ bool OthelloNode::hasUntriedMoves()
 	return !_untriedMoves.empty();
 }
 
+void OthelloNode::setParent(OthelloNode& node)
+{
+	_parent = &node;
+}
+
 OthelloMove& OthelloNode::getRandomUntriedMove()
 {
 	if (!hasUntriedMoves())
@@ -100,8 +110,8 @@ OthelloMove& OthelloNode::getRandomUntriedMove()
 
 OthelloNode& OthelloNode::addChild(OthelloMove& move, const OthelloState& state)
 {
-	OthelloNode child(state);
-	_children.emplace_back(state);
+	_children.push_back(state);
+	_children.back()._parent = this;
 	_children.back().setTriggerMove(move);
 	return _children.back();
 }
@@ -120,7 +130,7 @@ Player OthelloNode::currentPlayer()
 	
 OthelloNode& OthelloNode::parent()
 {
-	return *(_parent.get());
+	return *_parent;
 }
 	
 bool OthelloNode::hasParent()
@@ -130,18 +140,23 @@ bool OthelloNode::hasParent()
 
 double OthelloNode::successRate()
 {
+	if (_visits == 0)
+		return 0;
 	return 1.0 * _wins / _visits;
 }
 
 OthelloNode& OthelloNode::getFavoriteChild()
 {
-	assert(_children.size() > 1);
+	assert(_children.size() > 0);
 	size_t favorite = 0;
-	for (size_t i = 1; i < _children.size(); ++i)
+	if (_children.size() > 1)
 	{
-		if (_children[favorite].successRate() < _children[i].successRate())
+		for (size_t i = 1; i < _children.size(); ++i)
 		{
-			favorite = i;
+			if (_children[favorite].successRate() < _children[i].successRate())
+			{
+				favorite = i;
+			}
 		}
 	}
 	return _children[favorite];

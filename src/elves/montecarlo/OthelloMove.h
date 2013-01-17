@@ -10,8 +10,15 @@ struct OthelloMove
 	OthelloMove& operator+=(const OthelloMove& other);
 	OthelloMove operator+(const OthelloMove& second) const;
 
+    friend bool operator==(const OthelloMove& first, const OthelloMove& second);
+
     friend std::ostream& operator<<(std::ostream& stream, const OthelloMove& move);
 };
+
+inline bool operator==(const OthelloMove& first, const OthelloMove& second)
+{
+    return first.x == second.x && first.y == second.y;
+}
 
 inline OthelloMove OthelloMove::operator+(const OthelloMove& second) const
 {

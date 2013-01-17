@@ -1,5 +1,6 @@
 
 #include "OthelloStateTest.h"
+#include "OthelloUtil.h"
 #include <montecarlo/OthelloMove.h>
 #include <montecarlo/OthelloExceptions.h>
 #include <iostream>
@@ -44,23 +45,6 @@ TEST_F(OthelloStateTest, DoMoveThrowOnAccessOccupiedFieldTest)
     ASSERT_THROW(state->doMove(OthelloMove{4, 4}), OccupiedFieldException);
 }
 
-void verifyMoves(const vector<OthelloMove>& expectedMoves, const vector<OthelloMove>& actualMoves)
-{    
-    vector<OthelloMove> matchedMoves;
-    ASSERT_EQ(expectedMoves.size(), actualMoves.size());
-    for (const auto& actualMove : actualMoves)
-    {
-        for (auto j = expectedMoves.begin(); j != expectedMoves.end(); ++j)
-        {
-            if (actualMove.x == (*j).x
-                && actualMove.y == (*j).y)
-            {
-                matchedMoves.push_back(*j);
-            }
-        }
-    }
-    ASSERT_EQ(expectedMoves.size(), matchedMoves.size());
-}
 
 TEST_F(OthelloStateTest, GetPossibleMovesTest)
 {
@@ -74,14 +58,7 @@ TEST_F(OthelloStateTest, GetPossibleMovesTest)
     verifyMoves(expectedMoves, actualMoves);
 }
 
-ostream& operator<<(ostream& out, const vector<OthelloMove>& moves)
-{
-    for ( const auto& move : moves)
-    {
-        out << "{"<<move.x<<", "<<move.y<<"}\n";
-    }
-    return out;
-}
+
 
 TEST_F(OthelloStateTest, SimpleFlippingTest)
 {
@@ -105,18 +82,6 @@ TEST_F(OthelloStateTest, SimpleFlippingTest)
 #define _B Field::Black
 
 
-void verifyPlayfield(vector<Field> expectedField, OthelloState& state)
-{
-    int sideLength = sqrt(expectedField.size());
-    ASSERT_EQ(sideLength, state.playfieldSideLength());
-    for (int i = 0; i < sideLength; ++i)
-    {
-        for (int j = 0; j < sideLength; ++j)
-        {
-            ASSERT_EQ(expectedField[j*sideLength + i], state.atPosition(i, j));
-        }
-    }
-}
 
 TEST_F(OthelloStateTest, FlippingTest)
 {
