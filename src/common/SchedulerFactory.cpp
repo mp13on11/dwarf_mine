@@ -14,18 +14,11 @@
 using namespace std;
 
 SchedulerFactory::SchedulerFactory(const string& type, const ElfCategory& category)
-    : _type(type), _category(category)
 {
-	if (type != "cuda" && type != "smp")
-		throw runtime_error("Unknown scheduler type " + type + " in " __FILE__);
+	validateType(type);
+	validateCategory(category);
 
-#ifndef HAVE_CUDA
-	if (type == "cuda")
-	    throw runtime_error("You have to build with Cuda support in order to create cuda elves");
-#endif
-
-    if (_category != "factorize" && _category != "matrix")
-        throw runtime_error("Unknown elf category: " + _category + " in " __FILE__);
+	factory = createFactory(type, category);
 }
 
 SchedulerFactory::~SchedulerFactory()
@@ -34,52 +27,64 @@ SchedulerFactory::~SchedulerFactory()
 
 unique_ptr<Scheduler> SchedulerFactory::createScheduler() const
 {
-	if (_type == "cuda")
-		return createCudaScheduler();
-	else
-		return createSmpScheduler();
+	return unique_ptr<Scheduler>(factory());
 }
 
-unique_ptr<Scheduler> SchedulerFactory::createCudaScheduler() const
+void SchedulerFactory::validateType(const string& type)
 {
+	if (type != "cuda" && type != "smp")
+		throw runtime_error("Unknown scheduler type " + type + " in " __FILE__);
+
 #ifndef HAVE_CUDA
-	return nullptr;
-#else
-    if (_category == "matrix")
-    {
-        return unique_ptr<Scheduler>(
-                new MatrixScheduler(
-                        []() { return new CudaMatrixElf(); }
-                    )
-            );
-    }
-    else
-    {
-        return unique_ptr<Scheduler>(
-                new FactorizationScheduler(
-                        []() { return new CudaFactorizationElf(); }
-                    )
-            );
-    }
+	if (type == "cuda")
+	    throw runtime_error("You have to build with Cuda support in order to create cuda elves in " __FILE__);
 #endif
 }
 
-unique_ptr<Scheduler> SchedulerFactory::createSmpScheduler() const
+void SchedulerFactory::validateCategory(const ElfCategory& category)
 {
-    if (_category == "matrix")
-    {
-        return unique_ptr<Scheduler>(
-                new MatrixScheduler(
-                        []() { return new SMPMatrixElf(); }
-                    )
-            );
-    }
+    if (category != "factorize" && category != "matrix")
+        throw runtime_error("Unknown elf category: " + category + " in " __FILE__);
+}
+
+function<Scheduler*()> SchedulerFactory::createFactory(const string& type, const ElfCategory& category)
+{
+	if (type == "smp")
+		return createSmpFactory(category);
+#ifdef HAVE_CUDA
+	else if (type == "cuda")
+		return createCudaFactory(category);
+#endif
+	else
+		throw runtime_error(
+				"This is here to make the compiler happy in the case"
+				" when HAVE_CUDA is not defined..."
+			);
+}
+
+function<Scheduler*()> SchedulerFactory::createSmpFactory(const ElfCategory& category)
+{
+    if (category == "matrix")
+    	return createFactory<MatrixScheduler, SMPMatrixElf>();
     else
-    {
-        return unique_ptr<Scheduler>(
-                new FactorizationScheduler(
-                        []() { return new SmpFactorizationElf(); }
-                    )
-            );
-    }
+    	return createFactory<FactorizationScheduler, SmpFactorizationElf>();
+}
+
+#ifdef HAVE_CUDA
+function<Scheduler*()> SchedulerFactory::createCudaFactory(const ElfCategory& category)
+{
+    if (category == "matrix")
+    	return createFactory<MatrixScheduler, CudaMatrixElf>();
+    else
+    	return createFactory<FactorizationScheduler, CudaFactorizationElf>();
+}
+#endif
+
+template<typename SchedulerType, typename ElfType>
+function<Scheduler*()> SchedulerFactory::createFactory()
+{
+	return []()
+		{
+			return new SchedulerType([]() { return new ElfType(); });
+		};
 }

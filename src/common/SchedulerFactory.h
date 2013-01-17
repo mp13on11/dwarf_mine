@@ -3,6 +3,7 @@
 #include "ElfCategory.h"
 #include "Scheduler.h"
 
+#include <functional>
 #include <memory>
 #include <string>
 
@@ -15,9 +16,16 @@ public:
     std::unique_ptr<Scheduler> createScheduler() const;
 
 private:
-    std::string _type;
-    ElfCategory _category;
+    static void validateType(const std::string& type);
+    static void validateCategory(const ElfCategory& category);
+    static std::function<Scheduler*()> createFactory(const std::string& type, const ElfCategory& category);
+    static std::function<Scheduler*()> createSmpFactory(const ElfCategory& category);
+#ifdef HAVE_CUDA
+    static std::function<Scheduler*()> createCudaFactory(const ElfCategory& category);
+#endif
 
-    std::unique_ptr<Scheduler> createCudaScheduler() const;
-    std::unique_ptr<Scheduler> createSmpScheduler() const;
+    template<typename SchedulerType, typename ElfType>
+    static std::function<Scheduler*()> createFactory();
+
+    std::function<Scheduler*()> factory;
 };
