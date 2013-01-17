@@ -79,12 +79,18 @@ int main(int argc, char** argv)
 
     try
     {
-        CommandLineConfiguration config(argc, argv, MpiHelper::isMaster());
+        CommandLineConfiguration config(argc, argv);
+
+        if (config.shouldPrintHelp())
+        {
+        	config.printHelp();
+        	return 0;
+        }
 
         if (!config.shouldBeVerbose() && (config.shouldBeQuiet() || !MpiHelper::isMaster()))
             silenceOutputStreams(true);
 
-        cout << config <<endl;
+        cout << config << endl;
 
         BenchmarkResult weightedResults;
         if (config.shouldExportConfiguration() || !config.shouldImportConfiguration())
@@ -109,6 +115,12 @@ int main(int argc, char** argv)
             auto clusterResults = runTimedMeasurement(config, weightedResults);
             cout << "Measured Time: µs" << endl << clusterResults;
         }
+    }
+    catch (const boost::program_options::error& e)
+    {
+    	cerr << e.what() << endl;
+    	cerr << "Use --help or -h to show valid options" << endl;
+    	return 1;
     }
     catch (const logic_error& e)
     {

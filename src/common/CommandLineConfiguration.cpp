@@ -9,66 +9,37 @@
 #include <iostream>
 #include <fstream>
 
-#include <boost/program_options.hpp>
-
 using namespace std;
+using namespace boost::program_options;
 
-CommandLineConfiguration::CommandLineConfiguration(int argc, char** argv, bool showDescriptionOnError) :
-    _useFiles(false)
+CommandLineConfiguration::CommandLineConfiguration(int argc, char** argv) :
+    description("Options"), variables()
 {
-    namespace po = boost::program_options;
-    po::options_description desc("Options");
+	description.add_options()
+		("help,h",               "Print help message")
+		("mode,m",               value<string>()->required(), "Mode (smp|cuda)")
+		("category,c",           value<string>()->default_value("matrix"), "Elf to be run (matrix|factorize)")
+		("numwarmups,w",         value<size_t>()->default_value(50), "Number of warmup rounds")
+		("numiter,n",            value<size_t>()->default_value(100), "Number of benchmark iterations")
+		("input,i",              value<string>(), "Input file")
+		("output,o",             value<string>(), "Output file")
+		("export_configuration", value<string>(), "Measure cluster and export configuration")
+		("import_configuration", value<string>(), "Run benchmark with given configuration")
+		("skip_benchmark",       "Skip the benchmark run")
+		("quiet,q",              "Do not output anything")
+		("verbose,v",            "Show output from all MPI processes")
+		("left_rows",            value<size_t>()->default_value(500), "Number of left rows to be generated (overridden for benchmark by input file)")
+		("common_rows_columns",  value<size_t>()->default_value(500), "Number of left columns / right rows to be generated (overridden for benchmark by input file)")
+		("right_columns",        value<size_t>()->default_value(500), "Number of right columns to be generated (overridden for benchmark by input file)");
 
-    try
-    {
-        desc.add_options()
-            ("help", "Print help message")
-            ("mode,m",               po::value<string>(&_mode)->required(), "Mode (smp|cuda)")
-            ("category,c",           po::value<string>(&_category)->default_value("matrix"), "Elf to be run (matrix|factorize)")
-            ("numwarmups,w",         po::value<size_t>(&_numberOfWarmUps)->default_value(50), "Number of warmup rounds")
-            ("numiter,n",            po::value<size_t>(&_numberOfIterations)->default_value(100), "Number of benchmark iterations")
-            ("input,i",              po::value<string>(&_inputFile), "Input file")
-            ("output,o",             po::value<string>(&_outputFile), "Output file")
-            ("export_configuration", po::value<string>(&_exportConfigurationFile), "Measure cluster and export configuration")
-            ("import_configuration", po::value<string>(&_importConfigurationFile), "Run benchmark with given configuration")
-            ("skip_benchmark",       "Skip the benchmark run")
-            ("quiet,q",              "Do not output anything")
-            ("verbose,v",            "Show output from all MPI processes")
-            ("left_rows",            po::value<size_t>(&_leftMatrixRows)->default_value(500), "Number of left rows to be generated (overridden for benchmark by input file)")
-            ("common_rows_columns",  po::value<size_t>(&_commonMatrixRowsColumns)->default_value(500), "Number of left columns / right rows to be generated (overridden for benchmark by input file)")
-            ("right_columns",        po::value<size_t>(&_rightMatrixColumns)->default_value(500), "Number of right columns to be generated (overridden for benchmark by input file)");
+	store(parse_command_line(argc, argv, description), variables);
+	notify(variables);
 
-        po::variables_map vm;
-        po::store(po::parse_command_line(argc, argv, desc), vm);
-        po::notify(vm);
+	if (variables.count("input") ^ variables.count("output"))
+		throw logic_error("Both input and output are needed, if one is given");
 
-        if(vm.count("help") || argc == 1)
-        {
-            cout << "Dwarf Mine Benchmark" << endl << desc << endl;
-        }
-
-        if(vm.count("input") ^ vm.count("output"))
-            throw logic_error("Both input and output are needed, if one is given");
-
-        if(vm.count("input") && vm.count("output"))
-           _useFiles = true;
-
-        if(vm.count("mode") && (_mode != "smp" && _mode != "cuda"))
-            throw logic_error("Mode must be smp or cuda");
-
-        _skipBenchmark = vm.count("skip_benchmark") > 0;
-
-        _quiet = vm.count("quiet") > 0;
-
-        _verbose = vm.count("verbose") > 0;
-
-    }
-    catch(const po::error& e)
-    {
-        if (showDescriptionOnError)
-            cerr << desc << endl;
-        throw;
-    }
+	if (variables.count("mode") && (mode() != "smp" && mode() != "cuda"))
+		throw logic_error("Mode must be smp or cuda");
 }
 
 unique_ptr<ProblemStatement> generateProblemStatement(string elfCategory, size_t leftRows, size_t commonRowsColumns, size_t rightColumns)
@@ -88,76 +59,150 @@ unique_ptr<ProblemStatement> generateProblemStatement(string elfCategory, size_t
 
 unique_ptr<ProblemStatement> CommandLineConfiguration::createProblemStatement(bool forceGenerated) const
 {
-    if(!_useFiles || forceGenerated)
+    if(!useFiles() || forceGenerated)
     {
-        return generateProblemStatement(_category, _leftMatrixRows, _commonMatrixRowsColumns, _rightMatrixColumns);
+        return generateProblemStatement(
+        		category(), leftMatrixRows(),
+        		commonMatrixRowsColumns(), rightMatrixColumns()
+        	);
     }
-    return unique_ptr<ProblemStatement>(new ProblemStatement(_category, _inputFile, _outputFile));
+    return unique_ptr<ProblemStatement>(
+    		new ProblemStatement(category(), inputFilename(), outputFilename())
+    	);
 }
 
 unique_ptr<SchedulerFactory> CommandLineConfiguration::createSchedulerFactory() const
 {
-    return unique_ptr<SchedulerFactory>(new SchedulerFactory(_mode, _category));
+    return unique_ptr<SchedulerFactory>(
+    		new SchedulerFactory(mode(), category())
+    	);
 }
 
 size_t CommandLineConfiguration::iterations() const
 {
-    return _numberOfIterations;
+    return variables["numiter"].as<size_t>();
 }
 
 size_t CommandLineConfiguration::warmUps() const
 {
-    return _numberOfWarmUps;
+    return variables["numwarmups"].as<size_t>();
 }
 
 bool CommandLineConfiguration::shouldExportConfiguration() const
 {
-    return _exportConfigurationFile != "";
+    return exportConfigurationFilename() != "";
 }
 
 bool CommandLineConfiguration::shouldImportConfiguration() const
 {
-    return _importConfigurationFile != "";
+    return importConfigurationFilename() != "";
 }
 
 bool CommandLineConfiguration::shouldSkipBenchmark() const
 {
-    return _skipBenchmark;
+    return variables.count("skip_benchmark") > 0;
 }
 
 bool CommandLineConfiguration::shouldBeQuiet() const
 {
-    return _quiet;
+    return variables.count("quiet") > 0;
 }
 bool CommandLineConfiguration::shouldBeVerbose() const
 {
-    return _verbose;
+    return variables.count("verbose") > 0;
 }
 
 std::string CommandLineConfiguration::exportConfigurationFilename() const
 {
-    return _exportConfigurationFile;
+	if (variables.count("export_configuration") == 0)
+		return "";
+
+    return variables["export_configuration"].as<string>();
 }
 
 std::string CommandLineConfiguration::importConfigurationFilename() const
 {
-    return _importConfigurationFile;
+	if (variables.count("import_configuration") == 0)
+		return "";
+
+    return variables["import_configuration"].as<string>();
+}
+
+bool CommandLineConfiguration::shouldPrintHelp() const
+{
+	return variables.count("help") > 0;
+}
+
+void CommandLineConfiguration::printHelp() const
+{
+	cout << description << endl;
+}
+
+string CommandLineConfiguration::mode() const
+{
+	return variables["mode"].as<string>();
+}
+
+string CommandLineConfiguration::category() const
+{
+	return variables["category"].as<string>();
+}
+
+bool CommandLineConfiguration::useFiles() const
+{
+	return inputFilename() != "" && outputFilename() != "";
+}
+
+string CommandLineConfiguration::inputFilename() const
+{
+	if (variables.count("input") == 0)
+		return "";
+
+	return variables["input"].as<string>();
+}
+
+string CommandLineConfiguration::outputFilename() const
+{
+	if (variables.count("output") == 0)
+		return "";
+
+	return variables["output"].as<string>();
+}
+
+size_t CommandLineConfiguration::leftMatrixRows() const
+{
+	return variables["left_rows"].as<size_t>();
+}
+
+size_t CommandLineConfiguration::commonMatrixRowsColumns() const
+{
+	return variables["common_rows_columns"].as<size_t>();
+}
+
+size_t CommandLineConfiguration::rightMatrixColumns() const
+{
+	return variables["right_columns"].as<size_t>();
 }
 
 std::ostream& operator<<(std::ostream& s, const CommandLineConfiguration& c)
 {
-    s   << "Configuation: "
-        << "\n\tMode: "<< c._mode
-        << "\n\tWarmUps: " << c._numberOfWarmUps
-        << "\n\tIterations: " << c._numberOfIterations;
-    if (c._useFiles)
+    s << "Configuation: "
+    		<< "\n\tMode: "<< c.mode()
+    		<< "\n\tWarmUps: " << c.warmUps()
+    		<< "\n\tIterations: " << c.iterations();
+
+    if (c.useFiles())
     {
-        s   << "\n\tInput: " << c._inputFile
-            << "\n\tOutput: " << c._outputFile;
+        s << "\n\tInput: " << c.inputFilename()
+        		<< "\n\tOutput: " << c.outputFilename();
     }
     else
     {
-        s   << "\n\tMatrices: ("<<c._leftMatrixRows<<" x "<<c._commonMatrixRowsColumns<<") x ("<<c._commonMatrixRowsColumns<<" x "<<c._rightMatrixColumns<<")";
+        s << "\n\tMatrices: ("
+        		<< c.leftMatrixRows() << " x " <<c.commonMatrixRowsColumns()
+        		<< ") x ("
+        		<< c.commonMatrixRowsColumns() << " x " << c.rightMatrixColumns()
+        		<< ")";
     }
     return s;
 }

@@ -2,6 +2,7 @@
 
 #include "Configuration.h"
 
+#include <boost/program_options.hpp>
 #include <iosfwd>
 #include <memory>
 #include <string>
@@ -9,7 +10,7 @@
 class CommandLineConfiguration : public Configuration
 {
 public:
-	CommandLineConfiguration(int argc, char** argv, bool showDescriptionOnError);
+	CommandLineConfiguration(int argc, char** argv);
 
 	virtual std::unique_ptr<ProblemStatement> createProblemStatement(bool forceGenerated = false) const;
 	virtual std::unique_ptr<SchedulerFactory> createSchedulerFactory() const;
@@ -24,28 +25,21 @@ public:
 	virtual bool shouldBeQuiet() const;
 	virtual bool shouldBeVerbose() const;
 
+	bool shouldPrintHelp() const;
+	void printHelp() const;
 
-    friend std::ostream& operator<<(std::ostream& s, const CommandLineConfiguration& c);
+	friend std::ostream& operator<<(std::ostream& s, const CommandLineConfiguration& c);
 
 private:
+    boost::program_options::options_description description;
+    boost::program_options::variables_map variables;
 
-    void usageError();
-    void printUsage();
-
-    bool _useFiles;
-    bool _skipBenchmark;
-    bool _quiet;
-    bool _verbose;
-    size_t _numberOfWarmUps;
-    size_t _numberOfIterations;
-    std::string _mode;
-    std::string _category;
-    std::string _inputFile;
-    std::string _outputFile;
-    std::string _exportConfigurationFile;
-    std::string _importConfigurationFile;
-    size_t _leftMatrixRows;
-    size_t _commonMatrixRowsColumns;
-    size_t _rightMatrixColumns;
-
+    std::string mode() const;
+    std::string category() const;
+    std::string inputFilename() const;
+    std::string outputFilename() const;
+    size_t leftMatrixRows() const;
+    size_t commonMatrixRowsColumns() const;
+    size_t rightMatrixColumns() const;
+    bool useFiles() const;
 };
