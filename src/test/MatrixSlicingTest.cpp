@@ -13,6 +13,7 @@ const size_t NODE_COUNTS[] = { 1, 2, 3, 5, 7, 12, 25, 80, 110, 127 };
 typedef Matrix<float> TestGrid;
 
 using namespace std;
+typedef MatrixSlicer::SliceList SliceList;
 
 BenchmarkResult makeUniformRatings(size_t number)
 {

@@ -3,6 +3,7 @@
 #include <matrix/MatrixSlice.h>
 #include <vector>
 #include <cstddef>
+#include <iosfwd>
 
 typedef std::vector<MatrixSlice> SliceList;
 typedef std::vector<size_t> AreaList;

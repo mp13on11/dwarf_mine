@@ -1,6 +1,7 @@
 #pragma once
 
-#include "MpiUtils.h"
+#include "MpiHelper.h"
+
 #include <map>
 #include <iosfwd>
 

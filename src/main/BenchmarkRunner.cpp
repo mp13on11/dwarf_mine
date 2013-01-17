@@ -1,11 +1,10 @@
-
-#include <mpi.h>
-#include <vector>
-#include <memory>
 #include <cmath>
 #include <limits>
-#include "Elf.h"
+#include <memory>
+#include <vector>
 #include "BenchmarkRunner.h"
+#include "Elf.h"
+#include "MpiHelper.h"
 #include "Scheduler.h"
 
 using namespace std;
@@ -18,8 +17,8 @@ const size_t WARMUP_ITERATIONS = 50;
 BenchmarkRunner::BenchmarkRunner(Configuration& config)
     : _iterations(config.getNumberOfIterations()), _warmUps(config.getNumberOfWarmUps())
 {
-    for (NodeId i = 0; i < MPI::COMM_WORLD.Get_size(); ++i)
-        _nodesets.push_back({{i, 0}});
+    for (size_t i = 0; i < MpiHelper::numberOfNodes(); ++i)
+        _nodesets.push_back({{static_cast<NodeId>(i), 1}});
 }
 
 /**
@@ -64,10 +63,7 @@ void BenchmarkRunner::runBenchmark(ProblemStatement& statement, const ElfFactory
 {
     unique_ptr<Scheduler> scheduler = factory.createScheduler();
 
-    unique_ptr<Elf> elf = factory.createElf();
-    scheduler->setElf(elf.get());
-
-    if (MPI::COMM_WORLD.Get_rank() == MASTER)
+    if (MpiHelper::isMaster())
     {
         for (size_t nodeset = 0; nodeset < _nodesets.size(); ++nodeset)
         {

@@ -1,7 +1,10 @@
 #include "CudaMatrixElf.h"
-#include "Memory.h"
+#include <cuda-utils/Memory.h>
 #include "MatrixMultiplication.h"
+#include <iostream>
 #include <vector>
+#include <cmath>
+#include "../MatrixHelper.h"
 #include "../Matrix.h"
 
 MatrixElf::MatrixT CudaMatrixElf::multiply(const MatrixT& left, const MatrixT& right)
@@ -25,8 +28,7 @@ MatrixElf::MatrixT CudaMatrixElf::multiply(const MatrixT& left, const MatrixT& r
     right_d.transferFrom(right.buffer());
     result_d.transferFrom(result_h.data());
 
-    for (int i=0; i < 1; ++i)
-        gemm(leftRows, rightCols, middle, left_d.get(), right_d.get(), result_d.get(), 32);
+    gemm(leftRows, rightCols, middle, left_d.get(), right_d.get(), result_d.get());
 
     result_d.transferTo(result_h.data());
 

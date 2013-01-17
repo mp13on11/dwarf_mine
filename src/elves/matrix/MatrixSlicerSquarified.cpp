@@ -3,6 +3,7 @@
 #include <numeric>
 #include <limits>
 #include <algorithm>
+#include <iostream>
 
 using namespace std;
 
@@ -53,8 +54,12 @@ void MatrixSlicerSquarified::setUnlayoutedSlice(const list<NodeRating>& stripRat
 
 void sortByRatingsAsc(list<NodeRating>& ratings)
 {
+	if(ratings.size() <= 1)
+	{
+		return;
+	}
 	ratings.sort(
-        [](const NodeRating& a, const NodeRating& b)
+        [](const NodeRating& a, const NodeRating& b) -> bool
         {
        		return a.second < b.second;
         }
@@ -63,8 +68,12 @@ void sortByRatingsAsc(list<NodeRating>& ratings)
 
 void sortByRatingsAsc(vector<NodeRating>& ratings)
 {
+	if(ratings.size() <= 1)
+	{
+		return;
+	}
 	sort(ratings.begin(), ratings.end(),
-        [](const NodeRating& a, const NodeRating& b)
+        [](const NodeRating& a, const NodeRating& b) -> bool
         {
        		return a.second < b.second;
         }
@@ -95,17 +104,30 @@ void MatrixSlicerSquarified::addToLayout(list<NodeRating> stripRatings)
 	list<NodeRating> sortedStrips(stripRatings);
 	// sort ascending
 	sortByRatingsAsc(sortedStrips);
-
 	for (const auto& stripRating : sortedStrips)
 	{
-		size_t sliceAreaRatio = (stripRating.second / sumRatings) * stripArea;
-		size_t cols = sliceAreaRatio / pivotSideLength;
+		size_t sliceArea = (stripRating.second / sumRatings) * stripArea;
+		size_t cols = sliceArea / pivotSideLength;
 		size_t rows = pivotSideLength;
+
 		if (isVerticalStrip())
 		{
 			swap(cols, rows);
 		}
 
+		if(stripRating == sortedStrips.back())
+		{
+			if(isVerticalStrip())
+			{
+				rows = _unlayoutedSlice.getStartY() + smallestSide - y;
+		
+			}
+			else
+			{
+				cols = _unlayoutedSlice.getStartX() + smallestSide - x;	
+				
+			}
+		}
 		_slices.push_back(MatrixSlice(stripRating.first, x, y, cols, rows));
 		if (isVerticalStrip())
 		{
@@ -204,7 +226,6 @@ void MatrixSlicerSquarified::setup(const BenchmarkResult& results, size_t area)
     	ratingSum += positiveRating;
     	positiveRatings.emplace_back(rating.first, positiveRating);
     }
-
     // we shuffle the ratings a bit to make sure that large slices can be placed along small ones
     // - to optimize this, it would result in binpacking which is np
     // sortByRatingsAsc(positiveRatings);
@@ -227,6 +248,13 @@ vector<MatrixSlice> MatrixSlicerSquarified::layout(const BenchmarkResult& result
 	setUnlayoutedSlice(list<NodeRating>(), 0, 0, rows, columns);
 	list<NodeRating> ratings;
 	squarify(ratings);
-
+	// for(auto slice : _slices)
+	// {
+	// 	cout << "("
+ //        << slice.getStartX() << ", "
+ //        << slice.getStartY() << ", "
+ //        << slice.getColumns() << ", "
+ //        << slice.getRows() << ")" << endl;
+	// }
 	return _slices;
 }

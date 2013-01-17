@@ -1,6 +1,7 @@
 #pragma once
 
-#include <main/MpiUtils.h>
+#include "main/MpiHelper.h"
+
 #include <cstddef>
 
 template<typename T>

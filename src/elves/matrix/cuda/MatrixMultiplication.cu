@@ -1,5 +1,5 @@
 #include "MatrixMultiplication.h"
-#include "ErrorHandling.h"
+#include <cuda-utils/ErrorHandling.h>
 #include <main/Utils.h>
 
 #include <cuda.h>
@@ -12,6 +12,8 @@ __global__ void gemmKernel(int m, int n, int k, float* left, float* right, float
 void gemm(int m, int n, int k, float* left, float* right, float* out, int blockSize)
 {
 	using namespace std;
+
+	cudaFuncSetCacheConfig(gemmKernel, cudaFuncCachePreferL1);
 
     dim3 dimGrid(div_ceil(n, blockSize), div_ceil(m, blockSize));
     dim3 dimBlock(blockSize, blockSize);

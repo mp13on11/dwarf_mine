@@ -1,11 +1,12 @@
 #pragma once
 
+#include "main/MpiHelper.h"
+
 #include <iosfwd>
 #include <memory>
 #include <string>
 #include <vector>
 #include <functional>
-#include <main/MpiUtils.h>
 
 template<typename T>
 class Matrix;

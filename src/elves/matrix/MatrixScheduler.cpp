@@ -1,16 +1,16 @@
-#include "MatrixScheduler.h"
 #include "Matrix.h"
+#include "MatrixElf.h"
 #include "MatrixHelper.h"
+#include "MatrixScheduler.h"
 #include "MatrixSlice.h"
 #include "MatrixSlicer.h"
 #include "MatrixSlicerSquarified.h"
-#include "MatrixElf.h"
 #include <Elf.h>
 #include <main/ProblemStatement.h>
 #include <sstream>
 #include <iostream>
 #include <memory>
-#include <mpi.h>
+#include <sstream>
 
 using namespace std;
 using MatrixHelper::MatrixPair;
@@ -36,13 +36,8 @@ struct MatrixScheduler::MatrixSchedulerImpl
     Matrix<float> result;
 };
 
-MatrixScheduler::MatrixScheduler() :
-    pImpl(new MatrixSchedulerImpl(this))
-{
-}
-
-MatrixScheduler::MatrixScheduler(const BenchmarkResult& benchmarkResult) :
-    Scheduler(benchmarkResult), pImpl(new MatrixSchedulerImpl(this))
+MatrixScheduler::MatrixScheduler(const function<ElfPointer()>& factory) :
+    SchedulerTemplate(factory), pImpl(new MatrixSchedulerImpl(this))
 {
 }
 
@@ -68,7 +63,7 @@ void MatrixScheduler::outputData(ProblemStatement& statement)
 
 void MatrixScheduler::doDispatch()
 {
-    if (rank == MASTER)
+    if (MpiHelper::isMaster(rank))
     {
         pImpl->orchestrateCalculation();
     }
@@ -88,11 +83,10 @@ MatrixPair sliceMatrices(const MatrixSlice& definition, const MatrixPair& matric
 
 void MatrixScheduler::MatrixSchedulerImpl::calculateOnSlave()
 {
-    MatrixElf* elf = static_cast<MatrixElf*>(self->elf);
-    Matrix<float> left = MatrixHelper::receiveMatrixFrom(MASTER);
-    Matrix<float> right = MatrixHelper::receiveMatrixFrom(MASTER);
-    Matrix<float> result = elf->multiply(left, right);
-    MatrixHelper::sendMatrixTo(result, MASTER);
+    Matrix<float> left = MatrixHelper::receiveMatrixFrom(MpiHelper::MASTER);
+    Matrix<float> right = MatrixHelper::receiveMatrixFrom(MpiHelper::MASTER);
+    Matrix<float> result = self->elf().multiply(left, right);
+    MatrixHelper::sendMatrixTo(result, MpiHelper::MASTER);
 }
 
 void MatrixScheduler::MatrixSchedulerImpl::provideData(ProblemStatement& statement)
@@ -122,7 +116,7 @@ Matrix<float> MatrixScheduler::MatrixSchedulerImpl::dispatchAndReceive(const Mat
     Matrix<float> result(matrices.first.rows(), matrices.second.columns());
     //MatrixSlicer slicer;
     MatrixSlicerSquarified slicer;
-  //vector<MatrixSlice> sliceDefinitions = slicer.sliceAndDice(self->nodeSet, result.rows(), result.columns());
+    //vector<MatrixSlice> sliceDefinitions = slicer.sliceAndDice(self->nodeSet, result.rows(), result.columns());
     vector<MatrixSlice> sliceDefinitions = slicer.layout(self->nodeSet, result.rows(), result.columns());
     const MatrixSlice* masterSlice = distributeSlices(sliceDefinitions, matrices);
     if (masterSlice != nullptr)
@@ -140,7 +134,7 @@ const MatrixSlice* MatrixScheduler::MatrixSchedulerImpl::distributeSlices(const 
     for(const auto& definition : sliceDefinitions)
     {
         auto nodeId = definition.getNodeId();
-        if (nodeId == MASTER)
+        if (MpiHelper::isMaster(nodeId))
         {
             masterSliceDefinition = &definition;
         }
@@ -159,7 +153,7 @@ void MatrixScheduler::MatrixSchedulerImpl::collectResults(const vector<MatrixSli
     for (const auto& definition : sliceDefinitions)
     {
         auto nodeId = definition.getNodeId();
-        if (nodeId != MASTER)
+        if (!MpiHelper::isMaster(nodeId))
         {
             Matrix<float> resultSlice = MatrixHelper::receiveMatrixFrom(nodeId);
             definition.injectSlice(resultSlice, result);
@@ -169,8 +163,7 @@ void MatrixScheduler::MatrixSchedulerImpl::collectResults(const vector<MatrixSli
 
 void MatrixScheduler::MatrixSchedulerImpl::calculateOnMaster(const MatrixSlice& sliceDefinition, const MatrixPair& matrices, Matrix<float>& result)
 {
-    MatrixElf* elf = static_cast<MatrixElf*>(self->elf);
     MatrixPair slicedMatrices = sliceMatrices(sliceDefinition, matrices);
-    Matrix<float> resultSlice = elf->multiply(slicedMatrices.first, slicedMatrices.second);
+    Matrix<float> resultSlice = self->elf().multiply(slicedMatrices.first, slicedMatrices.second);
     sliceDefinition.injectSlice(resultSlice, result);
 }
