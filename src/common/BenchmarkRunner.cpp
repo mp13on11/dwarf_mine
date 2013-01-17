@@ -14,8 +14,8 @@ const size_t WARMUP_ITERATIONS = 50;
 /**
  * BenchmarkRunner determines the available devices and benchmarks them idenpendently
  */
-BenchmarkRunner::BenchmarkRunner(Configuration& config)
-    : _iterations(config.getNumberOfIterations()), _warmUps(config.getNumberOfWarmUps())
+BenchmarkRunner::BenchmarkRunner(const Configuration& config)
+    : _iterations(config.iterations()), _warmUps(config.warmUps())
 {
     for (size_t i = 0; i < MpiHelper::numberOfNodes(); ++i)
         _nodesets.push_back({{static_cast<NodeId>(i), 1}});
@@ -24,8 +24,8 @@ BenchmarkRunner::BenchmarkRunner(Configuration& config)
 /**
  * BenchmarkRunner uses the given (weighted) result to benchmark the nodeset as cluster
  */
-BenchmarkRunner::BenchmarkRunner(Configuration& config, const BenchmarkResult& result)
-    : _iterations(config.getNumberOfIterations()), _warmUps(config.getNumberOfWarmUps())
+BenchmarkRunner::BenchmarkRunner(const Configuration& config, const BenchmarkResult& result)
+    : _iterations(config.iterations()), _warmUps(config.warmUps())
 {
     _nodesets.push_back(result);
 }

@@ -12,19 +12,20 @@ class Configuration
 {
 public:
     Configuration(int argc, char** argv);
-    std::unique_ptr<ProblemStatement> getProblemStatement(bool forceGenerated = false);
-    std::unique_ptr<SchedulerFactory> getElfFactory();
-    std::string getElfCategory() const;
     bool parseArguments(bool showDescription);
-    size_t getNumberOfWarmUps();
-    size_t getNumberOfIterations();
-    bool exportConfiguration() const;
-    bool importConfiguration() const;
-    bool skipBenchmark() const;
-    std::string getImportConfigurationFilename() const;
-    std::string getExportConfigurationFilename() const;
-    bool getQuiet() const;
-    bool getVerbose() const;
+
+    std::unique_ptr<ProblemStatement> createProblemStatement(bool forceGenerated = false) const;
+    std::unique_ptr<SchedulerFactory> createSchedulerFactory() const;
+
+    size_t warmUps() const;
+    size_t iterations() const;
+    bool shouldExportConfiguration() const;
+    bool shouldImportConfiguration() const;
+    bool shouldSkipBenchmark() const;
+    std::string importConfigurationFilename() const;
+    std::string exportConfigurationFilename() const;
+    bool shouldBeQuiet() const;
+    bool shouldBeVerbose() const;
 
 
     friend std::ostream& operator<<(std::ostream& s, const Configuration& c);

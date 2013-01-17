@@ -11,10 +11,10 @@
 
 using namespace std;
 
-BenchmarkResult determineWeightedConfiguration(Configuration& config)
+BenchmarkResult determineWeightedConfiguration(const Configuration& config)
 {
-    auto factory = config.getElfFactory();
-    auto statement = config.getProblemStatement(true);
+    auto factory = config.createSchedulerFactory();
+    auto statement = config.createProblemStatement(true);
     BenchmarkRunner runner(config);
     runner.runBenchmark(*statement, *factory);
     return runner.getWeightedResults();
@@ -51,10 +51,10 @@ BenchmarkResult importClusterConfiguration(const string& filename)
     return result;
 }
 
-BenchmarkResult runTimedMeasurement(Configuration& config, BenchmarkResult& weightedResults)
+BenchmarkResult runTimedMeasurement(const Configuration& config, BenchmarkResult& weightedResults)
 {
-    auto factory = config.getElfFactory();
-    auto statement = config.getProblemStatement();
+    auto factory = config.createSchedulerFactory();
+    auto statement = config.createProblemStatement();
     BenchmarkRunner runner(config, weightedResults);
     runner.runBenchmark(*statement, *factory);
     return runner.getTimedResults();
@@ -84,29 +84,29 @@ int main(int argc, char** argv)
         if (!config.parseArguments(MpiHelper::isMaster()))
             return 2;
 
-        if (!config.getVerbose() && (config.getQuiet() || !MpiHelper::isMaster()))
+        if (!config.shouldBeVerbose() && (config.shouldBeQuiet() || !MpiHelper::isMaster()))
             silenceOutputStreams(true);
 
         cout << config <<endl;
 
         BenchmarkResult weightedResults;
-        if (config.exportConfiguration() || !config.importConfiguration())
+        if (config.shouldExportConfiguration() || !config.shouldImportConfiguration())
         {
             cout << "Calculating node weights" <<endl;
             weightedResults = determineWeightedConfiguration(config);
             cout << "Weighted " << endl << weightedResults;
         }
-        if (config.exportConfiguration())
+        if (config.shouldExportConfiguration())
         {
             cout << "Exporting node weights" <<endl;
-            exportClusterConfiguration(config.getExportConfigurationFilename(), weightedResults);
+            exportClusterConfiguration(config.exportConfigurationFilename(), weightedResults);
         }
-        if (config.importConfiguration())
+        if (config.shouldImportConfiguration())
         {
             cout << "Importing node weights" <<endl;
-            weightedResults = importClusterConfiguration(config.getImportConfigurationFilename());
+            weightedResults = importClusterConfiguration(config.importConfigurationFilename());
         }
-        if (!config.skipBenchmark())
+        if (!config.shouldSkipBenchmark())
         {
             cout << "Running benchmark" <<endl;
             auto clusterResults = runTimedMeasurement(config, weightedResults);

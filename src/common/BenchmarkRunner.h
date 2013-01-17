@@ -25,8 +25,8 @@ private:
     void weightTimedResults();
 
 public:
-    explicit BenchmarkRunner(Configuration& config);
-    BenchmarkRunner(Configuration& config, const BenchmarkResult& result);
+    explicit BenchmarkRunner(const Configuration& config);
+    BenchmarkRunner(const Configuration& config, const BenchmarkResult& result);
     void runBenchmark(ProblemStatement& statement, const SchedulerFactory& factory);
     BenchmarkResult getWeightedResults();
     BenchmarkResult getTimedResults();

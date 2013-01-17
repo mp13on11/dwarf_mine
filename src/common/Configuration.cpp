@@ -93,66 +93,60 @@ unique_ptr<ProblemStatement> generateProblemStatement(string elfCategory, size_t
     return statement;
 }
 
-unique_ptr<ProblemStatement> Configuration::getProblemStatement(bool forceGenerated)
+unique_ptr<ProblemStatement> Configuration::createProblemStatement(bool forceGenerated) const
 {
-
     if(!_useFiles || forceGenerated)
     {
         return generateProblemStatement(_category, _leftMatrixRows, _commonMatrixRowsColumns, _rightMatrixColumns);
     }
-    return unique_ptr<ProblemStatement>(new ProblemStatement(getElfCategory(), _inputFile, _outputFile));
+    return unique_ptr<ProblemStatement>(new ProblemStatement(_category, _inputFile, _outputFile));
 }
 
-unique_ptr<SchedulerFactory> Configuration::getElfFactory()
+unique_ptr<SchedulerFactory> Configuration::createSchedulerFactory() const
 {
     return unique_ptr<SchedulerFactory>(new SchedulerFactory(_mode, _category));
 }
 
-size_t Configuration::getNumberOfIterations()
+size_t Configuration::iterations() const
 {
     return _numberOfIterations;
 }
 
-size_t Configuration::getNumberOfWarmUps()
+size_t Configuration::warmUps() const
 {
     return _numberOfWarmUps;
 }
 
-string Configuration::getElfCategory() const
-{
-    return _category;
-}
-
-bool Configuration::exportConfiguration() const
+bool Configuration::shouldExportConfiguration() const
 {
     return _exportConfigurationFile != "";
 }
 
-bool Configuration::importConfiguration() const
+bool Configuration::shouldImportConfiguration() const
 {
     return _importConfigurationFile != "";
 }
 
-bool Configuration::skipBenchmark() const
+bool Configuration::shouldSkipBenchmark() const
 {
     return _skipBenchmark;
 }
 
-bool Configuration::getQuiet() const
+bool Configuration::shouldBeQuiet() const
 {
     return _quiet;
 }
-bool Configuration::getVerbose() const
+bool Configuration::shouldBeVerbose() const
 {
     return _verbose;
 }
 
-std::string Configuration::getExportConfigurationFilename() const
+std::string Configuration::exportConfigurationFilename() const
 {
     return _exportConfigurationFile;
 }
 
-std::string Configuration::getImportConfigurationFilename() const
+std::string Configuration::importConfigurationFilename() const
 {
     return _importConfigurationFile;
 }
