@@ -1,5 +1,5 @@
 #include "common/BenchmarkRunner.h"
-#include "common/Configuration.h"
+#include "common/CommandLineConfiguration.h"
 #include "common/MpiGuard.h"
 #include "common/MpiHelper.h"
 #include "matrix/MatrixHelper.h"
@@ -79,7 +79,7 @@ int main(int argc, char** argv)
 
     try
     {
-        Configuration config(argc, argv, MpiHelper::isMaster());
+        CommandLineConfiguration config(argc, argv, MpiHelper::isMaster());
 
         if (!config.shouldBeVerbose() && (config.shouldBeQuiet() || !MpiHelper::isMaster()))
             silenceOutputStreams(true);

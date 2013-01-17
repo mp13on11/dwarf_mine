@@ -1,6 +1,8 @@
-#include "Configuration.h"
-#include <matrix/Matrix.h>
-#include <matrix/MatrixHelper.h>
+#include "CommandLineConfiguration.h"
+#include "ProblemStatement.h"
+#include "SchedulerFactory.h"
+#include "matrix/Matrix.h"
+#include "matrix/MatrixHelper.h"
 
 #include <stdexcept>
 #include <cstdlib>
@@ -11,7 +13,7 @@
 
 using namespace std;
 
-Configuration::Configuration(int argc, char** argv, bool showDescriptionOnError) :
+CommandLineConfiguration::CommandLineConfiguration(int argc, char** argv, bool showDescriptionOnError) :
     _useFiles(false)
 {
     namespace po = boost::program_options;
@@ -84,7 +86,7 @@ unique_ptr<ProblemStatement> generateProblemStatement(string elfCategory, size_t
     return statement;
 }
 
-unique_ptr<ProblemStatement> Configuration::createProblemStatement(bool forceGenerated) const
+unique_ptr<ProblemStatement> CommandLineConfiguration::createProblemStatement(bool forceGenerated) const
 {
     if(!_useFiles || forceGenerated)
     {
@@ -93,56 +95,56 @@ unique_ptr<ProblemStatement> Configuration::createProblemStatement(bool forceGen
     return unique_ptr<ProblemStatement>(new ProblemStatement(_category, _inputFile, _outputFile));
 }
 
-unique_ptr<SchedulerFactory> Configuration::createSchedulerFactory() const
+unique_ptr<SchedulerFactory> CommandLineConfiguration::createSchedulerFactory() const
 {
     return unique_ptr<SchedulerFactory>(new SchedulerFactory(_mode, _category));
 }
 
-size_t Configuration::iterations() const
+size_t CommandLineConfiguration::iterations() const
 {
     return _numberOfIterations;
 }
 
-size_t Configuration::warmUps() const
+size_t CommandLineConfiguration::warmUps() const
 {
     return _numberOfWarmUps;
 }
 
-bool Configuration::shouldExportConfiguration() const
+bool CommandLineConfiguration::shouldExportConfiguration() const
 {
     return _exportConfigurationFile != "";
 }
 
-bool Configuration::shouldImportConfiguration() const
+bool CommandLineConfiguration::shouldImportConfiguration() const
 {
     return _importConfigurationFile != "";
 }
 
-bool Configuration::shouldSkipBenchmark() const
+bool CommandLineConfiguration::shouldSkipBenchmark() const
 {
     return _skipBenchmark;
 }
 
-bool Configuration::shouldBeQuiet() const
+bool CommandLineConfiguration::shouldBeQuiet() const
 {
     return _quiet;
 }
-bool Configuration::shouldBeVerbose() const
+bool CommandLineConfiguration::shouldBeVerbose() const
 {
     return _verbose;
 }
 
-std::string Configuration::exportConfigurationFilename() const
+std::string CommandLineConfiguration::exportConfigurationFilename() const
 {
     return _exportConfigurationFile;
 }
 
-std::string Configuration::importConfigurationFilename() const
+std::string CommandLineConfiguration::importConfigurationFilename() const
 {
     return _importConfigurationFile;
 }
 
-std::ostream& operator<<(std::ostream& s, const Configuration& c)
+std::ostream& operator<<(std::ostream& s, const CommandLineConfiguration& c)
 {
     s   << "Configuation: "
         << "\n\tMode: "<< c._mode
