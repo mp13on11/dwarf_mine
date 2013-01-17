@@ -4,6 +4,7 @@
 #include <vector>
 #include <memory>
 #include <set>
+#include <iosfwd>
 
 
 enum class Field { Free, Black, White };
@@ -14,6 +15,7 @@ class OthelloState
 {
 public:
 	OthelloState(const OthelloState& state);
+	OthelloState(const std::vector<Field>& playfield, Player nextPlayer);
 	OthelloState(size_t sideLength = 8);
 
 	void doMove(const OthelloMove& move);
@@ -23,6 +25,9 @@ public:
 	bool hasPossibleMoves();
 	bool hasWon(Player player);
 
+	Field atPosition(int x, int y);
+	int playfieldSideLength() const;
+
 private:
 	// row - column
 	std::vector<Field> _playfield;
@@ -30,12 +35,19 @@ private:
 	Player _player;
 
 	bool onBoard(const OthelloMove& move) const;
-	std::vector<OthelloMove> getAllSandwichCounters(const OthelloMove& move);
+	std::vector<OthelloMove> getAllEnclosedCounters(const OthelloMove& move);
 	std::vector<OthelloMove> getAdjacentEnemyDirections(const OthelloMove& move);
-	std::vector<OthelloMove> getSandwichedCounters(const OthelloMove& move, const OthelloMove& direction);
-	bool existsSandwichedCounters(const OthelloMove& move);
+	std::vector<OthelloMove> getEnclosedCounters(const OthelloMove& move, const OthelloMove& direction);
+	bool existsEnclosedCounters(const OthelloMove& move);
 	Field& playfield(const OthelloMove& move);
+
+	friend std::ostream& operator<<(std::ostream& stream, const OthelloState& state);
 };
+
+inline int OthelloState::playfieldSideLength() const
+{
+	return _sideLength;
+}
 
 inline Field& OthelloState::playfield(const OthelloMove& move)
 {
