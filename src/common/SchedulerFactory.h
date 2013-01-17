@@ -4,26 +4,20 @@
 #include "Scheduler.h"
 
 #include <memory>
+#include <string>
 
 class SchedulerFactory
 {
 public:
-    SchedulerFactory(const ElfCategory& category);
-    virtual ~SchedulerFactory() = 0;
+    SchedulerFactory(const std::string& type, const ElfCategory& category);
+    ~SchedulerFactory();
 
     std::unique_ptr<Scheduler> createScheduler() const;
 
-protected:
+private:
+    std::string _type;
     ElfCategory _category;
 
-    virtual std::unique_ptr<Scheduler> createSchedulerImplementation() const = 0;
-
-private:
-    void validate() const;
+    std::unique_ptr<Scheduler> createCudaScheduler() const;
+    std::unique_ptr<Scheduler> createSmpScheduler() const;
 };
-
-inline SchedulerFactory::~SchedulerFactory()
-{
-}
-
-std::unique_ptr<SchedulerFactory> createElfFactory(const std::string& type, const ElfCategory& category);

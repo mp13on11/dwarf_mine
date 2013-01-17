@@ -1,6 +1,4 @@
 #include "Configuration.h"
-#include "CudaElfFactory.h"
-#include "SMPElfFactory.h"
 #include <matrix/Matrix.h>
 #include <matrix/MatrixHelper.h>
 
@@ -107,7 +105,7 @@ unique_ptr<ProblemStatement> Configuration::getProblemStatement(bool forceGenera
 
 unique_ptr<SchedulerFactory> Configuration::getElfFactory()
 {
-    return createElfFactory(_mode, getElfCategory());
+    return unique_ptr<SchedulerFactory>(new SchedulerFactory(_mode, _category));
 }
 
 size_t Configuration::getNumberOfIterations()
