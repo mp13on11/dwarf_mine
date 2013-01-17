@@ -86,12 +86,3 @@ function<Scheduler*()> SchedulerFactory::createCudaFactory(const ElfCategory& ca
     	return createFactory<FactorizationScheduler, CudaFactorizationElf>();
 }
 #endif
-
-template<typename SchedulerType, typename ElfType>
-function<Scheduler*()> SchedulerFactory::createFactory()
-{
-	return []()
-		{
-			return new SchedulerType([]() { return new ElfType(); });
-		};
-}

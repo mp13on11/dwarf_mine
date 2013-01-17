@@ -32,14 +32,16 @@ public:
 
 	friend std::ostream& operator<<(std::ostream& s, const CommandLineConfiguration& c);
 
+protected:
+    std::string mode() const;
+    std::string category() const;
+
 private:
 	static boost::program_options::options_description createDescription();
 
     boost::program_options::options_description description;
     boost::program_options::variables_map variables;
 
-    std::string mode() const;
-    std::string category() const;
     std::string inputFilename() const;
     std::string outputFilename() const;
     size_t leftMatrixRows() const;
