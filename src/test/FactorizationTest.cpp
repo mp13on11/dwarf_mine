@@ -41,11 +41,14 @@ TEST(BigIntTest, testFactorizationQuadraticSieve)
     std::cout << "total time: " << elapsed.count() / 1000.0 << " seconds" << endl;  
 
 
-    cout << "Solution found! :-D" << endl;
-    cout << " N  = " << n << endl;
-    cout << " p  = " << pq.first << endl;
-    cout << " q  = " << pq.second << endl;
-    cout << "p*q = " << pq.first * pq.second << endl;
+    BigInt actualP = pq.first;
+    BigInt actualQ = pq.second;
+
+    if(actualP > actualQ)
+        swap(actualP, actualQ);
+
+    ASSERT_EQ(p, actualP);
+    ASSERT_EQ(q, actualQ);
 }
 
 
