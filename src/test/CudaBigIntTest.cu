@@ -5,6 +5,8 @@ extern __global__ void testAddKernel(PNumData pLeft, PNumData pRight, PNumData o
 extern __global__ void testSubKernel(PNumData pLeft, PNumData pRight, PNumData output);
 extern __global__ void testMulKernel(PNumData pLeft, PNumData pRight, PNumData output);
 extern __global__ void testDivKernel(PNumData pLeft, PNumData pRight, PNumData output);
+extern __global__ void testSmallerThanKernel(PNumData pLeft, PNumData pRight, bool* output);
+extern __global__ void testShiftLeftKernel(PNumData pLeft, uint32_t offset, PNumData output);
 
 void testAdd(PNumData left, PNumData right, PNumData result)
 {
@@ -27,5 +29,17 @@ void testMul(PNumData left, PNumData right, PNumData result)
 void testDiv(PNumData left, PNumData right, PNumData result)
 {
     testDivKernel<<<1, 1>>>(left, right, result);
+    CudaUtils::checkState();
+}
+
+void testSmallerThan(PNumData left, PNumData right, bool* result)
+{
+    testSmallerThanKernel<<<1, 1>>>(left, right, result);
+    CudaUtils::checkState();
+}
+
+void testShiftLeft(PNumData left,uint32_t offset, PNumData result)
+{
+    testShiftLeftKernel<<<1, 1>>>(left, offset, result);
     CudaUtils::checkState();
 }

@@ -8,6 +8,13 @@ struct Number
 {
     NumData fields;
 
+     __device__ Number(const uint64_t data)
+     {
+         fields[0] = static_cast<uint32_t>(data);
+         fields[1] = static_cast<uint32_t>(data >> 32);
+         memset(fields + 2, 0, NUM_FIELDS - 2);
+     }
+
     __device__ Number(const NumData data)
     {
         memcpy(fields, data, sizeof(uint32_t)*NUM_FIELDS);
@@ -42,6 +49,7 @@ struct Number
             this->fields[i] = static_cast<uint32_t>(result);
             carry = result >> 63;
         }
+        return *this;
     }
 
     __device__ Number operator-(const Number& other) const
@@ -93,8 +101,6 @@ struct Number
 
     __device__ Number& operator/=(const Number& other)
     {
-        //Number result(1);
-
 
     }
 
@@ -104,4 +110,62 @@ struct Number
         result /= other;
         return result;
     }
+
+    __device__ bool operator<(const Number& other) const
+    {
+        for (int i = NUM_FIELDS-1; i > 0; --i)
+        {
+            if (fields[i] < other.fields[i])
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    __device__ bool operator<=(const Number& other) const
+    {
+        return *this < other || *this == other;
+    }
+
+    __device__ bool operator>(const Number& other) const
+    {
+        return !(*this < other) && !(*this == other);
+    }
+
+    __device__ bool operator==(const Number& other) const
+    {
+       return (!(*this < other) && !(other < *this));
+    }
+
+    __device__ Number& operator<<=(uint32_t offset)
+    {
+        uint32_t itemOffset = offset % 32;
+        uint32_t blockOffset = offset / 32;
+        uint32_t carry = 0;
+
+        for (int i = 0; i < NUM_FIELDS; ++i)
+        {
+            uint32_t old = fields[i];
+            fields[i] = carry | (fields[i] << itemOffset);
+            carry = old >> (32 - itemOffset);
+        }
+
+        for (int i = NUM_FIELDS-1; blockOffset > 0 && i >= blockOffset; --i)
+        {
+            fields[i] = fields[i - blockOffset];
+        }
+        memset(fields, 0, blockOffset);
+
+        return *this;
+    }
+
+
+    __device__ Number operator<<(uint32_t offset) const
+    {
+        Number result(*this);
+        result <<= offset;
+        return result;
+    }
+
 };

@@ -42,3 +42,19 @@ __global__ void testDivKernel(PNumData pLeft, PNumData pRight, PNumData output)
 {
     TEST_OP(/)
 }
+
+__global__ void testSmallerThanKernel(PNumData pLeft, PNumData pRight, bool* output)
+{
+    Number left(pLeft);
+    Number right(pRight);
+    bool result(left < right);
+    memcpy(output, &result, sizeof(bool));
+}
+
+
+__global__ void testShiftLeftKernel(PNumData pLeft, uint32_t offset, PNumData output)
+{
+    Number left(pLeft);
+    Number result(left << offset);
+    memcpy(output, &result,  sizeof(uint32_t)*NUM_FIELDS);
+}
