@@ -11,8 +11,7 @@ pair<BigInt, BigInt> QuadraticSieve::factorize()
 {
     pair<BigInt, BigInt> factors = TRIVIAL_FACTORS;
 
-    createFactorBase(50);
-
+    createFactorBase(150);
 
     // sieve
     cout << "sieving relations ..." << endl; 
@@ -21,9 +20,8 @@ pair<BigInt, BigInt> QuadraticSieve::factorize()
         return factors;
 
     // bring relations into lower diagonal form
-    cout << "perform gaussian elimination ..." << endl;
+    cout << "performing gaussian elimination ..." << endl;
     performGaussianElimination();
-
 
     cout << "combining random congruences ..." << endl;
     factors = searchForRandomCongruence(100);
@@ -54,7 +52,7 @@ pair<BigInt, BigInt> QuadraticSieve::sieve()
 {
     BigInt intervalStart = sqrt(n)+1;
     BigInt intervalEnd = sqrt(n)+1 + BigInt("10000000");
-    return sieveInterval(intervalStart, intervalEnd, factorBase.size() + 20);
+    return sieveInterval(intervalStart, intervalEnd, factorBase.size() + 2);
 }
 
 
@@ -73,6 +71,8 @@ pair<BigInt, BigInt> QuadraticSieve::sieveInterval(const BigInt& start, const Bi
 
         Relation relation(x, factorization);
         //cout << "NEW: ", print(relation);
+        //cout << "R#=" << relations.size() << endl;
+
         if(relation.isPerfectCongruence())
         {
             auto factors = factorsFromCongruence(x, sqrt(factorization).multiply());
@@ -85,7 +85,7 @@ pair<BigInt, BigInt> QuadraticSieve::sieveInterval(const BigInt& start, const Bi
         
         relations.push_back(relation);
         
-        if(relations.size() > maxRelations)
+        if(relations.size() >= maxRelations)
             break;
 
     }
@@ -115,6 +115,9 @@ void QuadraticSieve::print(const Relation& r) const
     }
     cout << "]";
     */
+
+    //cout << " depends on: " << r.dependsOnPrime;
+
     cout << endl;
 }
 
@@ -173,15 +176,19 @@ typedef struct {
         auto aStart = upper_bound(a.oddPrimePowers.indices.begin(), a.oddPrimePowers.indices.end(), minPrime);
         auto bStart = upper_bound(b.oddPrimePowers.indices.begin(), b.oddPrimePowers.indices.end(), minPrime);
 
-        auto aIt=aStart, bIt=bStart;
-        for(aIt=aStart, bIt=bStart; aIt != a.oddPrimePowers.indices.end() && bIt != b.oddPrimePowers.indices.end(); aIt++, bIt++)
+        if(aStart < a.oddPrimePowers.indices.end() && bStart < b.oddPrimePowers.indices.end())
         {
-            if(*aIt < *bIt)
+            if(*aStart < *bStart)
                 return true;
-            else if (*aIt > *bIt)
+            if (*aStart > *bStart)
                 return false;
+            return (a.oddPrimePowers.indices.end() - aStart) < (b.oddPrimePowers.indices.end() - bStart);
         }
-        return aIt != a.oddPrimePowers.indices.end();
+
+        if(aStart < a.oddPrimePowers.indices.end())
+            return true;
+        else
+            return false;
     }
     uint32_t minPrime;
 } RelationComparator;
@@ -194,9 +201,11 @@ void QuadraticSieve::performGaussianElimination()
 
     for(size_t i=0; i<relations.size(); i++)
     {
-        // sort ascending, according to remaining primes (bigger than currentPrime)
+        // swap next smallest relation to top, according to remaining primes (bigger than currentPrime)
         comparator.minPrime = currentPrime;
-        sort(relations.begin()+i, relations.end(), comparator);
+
+        auto minRelation = min_element(relations.begin()+i, relations.end(), comparator);
+        swap(*minRelation, relations[i]);
 
         auto nextPrimeIterator = upper_bound(relations[i].oddPrimePowers.indices.begin(), relations[i].oddPrimePowers.indices.end(), currentPrime);
 
@@ -219,7 +228,7 @@ void QuadraticSieve::performGaussianElimination()
                 auto start = relations[k].oddPrimePowers.indices.begin();
                 auto last = relations[k].oddPrimePowers.indices.end();
                 if(find(start, last, currentPrime) == last)
-                    break;
+                    continue;
 
 
                 //cout << "\t eliminating " << primeToRemove << " at: ", relations[k].print();

@@ -25,8 +25,12 @@ TEST(BigIntTest, testFactorizationQuadraticSieve)
 {
     //BigInt p("551226983117");
     //BigInt q("554724632351");
-    BigInt p("1313839");
-    BigInt q("1327901");
+    BigInt p("15485863");
+    BigInt q("15534733");
+    //BigInt p("1313839");
+    //BigInt q("1327901");
+    //BigInt p("547");
+    //BigInt q("719");
     BigInt n = p*q; 
 
 
