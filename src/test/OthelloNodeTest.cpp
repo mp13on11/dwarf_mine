@@ -101,25 +101,20 @@ TEST_F(OthelloNodeTest, SelectFavoriteChild)
     }, Player::White);
 
     OthelloNodeStub root(state);
-    root.setGenerator([](){ return 0U; });
-    
+   
     auto possibleMoves = state.getPossibleMoves();
     state.doMove(possibleMoves[0]);
-    root.addChild(possibleMoves[0], OthelloState(state));
+    OthelloNode* looser = &(root.addChild(possibleMoves[0], OthelloState(state)));
 
-    auto looser = root.getRandomChildNode();
-    looser.updateSuccessProbability(true);
-    looser.updateSuccessProbability(false);
-    ASSERT_EQ(0.5, looser.successRate());
+    looser->updateSuccessProbability(true);
+    looser->updateSuccessProbability(false);
+    ASSERT_EQ(0.5, looser->successRate());
 
-    root.setGenerator([](){ return 1U; });
-    
     state.doMove(possibleMoves[1]);
-    root.addChild(possibleMoves[1], OthelloState(state));
+    OthelloNode* winner = &(root.addChild(possibleMoves[1], OthelloState(state)));
 
-    auto winner = root.getRandomChildNode();
-    winner.updateSuccessProbability(true);
-    ASSERT_EQ(1, winner.successRate());
+    winner->updateSuccessProbability(true);
+    ASSERT_EQ(1, winner->successRate());
 
-    ASSERT_EQ(&(winner), &(root.getFavoriteChild()));
+    ASSERT_EQ(winner, &(root.getFavoriteChild()));
 }
