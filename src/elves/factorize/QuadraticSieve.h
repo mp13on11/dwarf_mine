@@ -8,7 +8,6 @@
 #include <vector>
 #include <list>
 #include <random>
-#include <mutex>
 
 class Relation;
 class PrimeFactorization;
@@ -25,11 +24,13 @@ public:
 
 private:
     void createFactorBase(size_t numberOfPrimes);
-    std::pair<BigInt, BigInt> sieve(const BigInt& start, const BigInt& end, size_t maxRelations);
+    std::pair<BigInt, BigInt> sieve();
+    std::pair<BigInt, BigInt> sieveInterval(const BigInt& start, const BigInt& end, size_t maxRelations);
     bool isNonTrivial(const std::pair<BigInt, BigInt>& pair) const;
     std::pair<BigInt,BigInt> factorsFromCongruence(const BigInt& a, const BigInt& b) const;
     void performGaussianElimination();
-    std::pair<BigInt,BigInt> combineRandomCongruence() const;
+    std::pair<BigInt,BigInt> searchForRandomCongruence(size_t times) const;
+    std::pair<BigInt,BigInt> pickRandomCongruence() const;
     PrimeFactorization factorizeOverBase(const BigInt& x) const;
 
     void print(const Relation& r) const;
@@ -40,7 +41,6 @@ private:
 
     mutable std::uniform_int_distribution<int> binaryDistribution;
     mutable std::mt19937 randomEngine;
-    mutable std::mutex relations_mutex;  // protects relations
 
     static const std::pair<BigInt,BigInt> TRIVIAL_FACTORS;
 };

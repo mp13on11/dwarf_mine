@@ -9,51 +9,26 @@ const pair<BigInt,BigInt> QuadraticSieve::TRIVIAL_FACTORS(0,0);
 
 pair<BigInt, BigInt> QuadraticSieve::factorize()
 {
-    size_t numberOfPrimes = 500;
+    pair<BigInt, BigInt> factors = TRIVIAL_FACTORS;
 
-    createFactorBase(numberOfPrimes);
+    createFactorBase(50);
+
 
     // sieve
-    cout << "sieving relations ..." << endl;
-    vector<future<void>> futures;
-    for(int k=1; k<=1; k++)
-    {
-        BigInt intervalStart = sqrt(k*n)+1;
-        BigInt intervalEnd = sqrt(k*n)+1 + BigInt("10000000");
-
-        futures.push_back(async(std::launch::async, [=]()
-            {
-                this->sieve(intervalStart, intervalEnd, numberOfPrimes + 20);
-            }));
-        //auto factors = 
-        //if(isNonTrivial(factors))
-        //    return factors;
-    }
-    for(const future<void>& f : futures)
-    {
-        f.wait();
-    }
+    cout << "sieving relations ..." << endl; 
+    factors = sieve();
+    if(isNonTrivial(factors))
+        return factors;
 
     // bring relations into lower diagonal form
     cout << "perform gaussian elimination ..." << endl;
     performGaussianElimination();
 
-    /*cout << "------ FINAL RELATIONS -----" << endl;
-    for(auto r : relations)
-    {
-        print (r);
-    }
-    */
 
     cout << "combining random congruences ..." << endl;
-    for(int i=0; i<10; i++)
-    {
-        pair<BigInt, BigInt> result = combineRandomCongruence();
-        if(isNonTrivial(result))
-            return result;
-    }
+    factors = searchForRandomCongruence(100);
 
-    return TRIVIAL_FACTORS;
+    return factors;
 }
 
 pair<BigInt,BigInt> QuadraticSieve::factorsFromCongruence(const BigInt& a, const BigInt& b) const
@@ -75,8 +50,15 @@ bool QuadraticSieve::isNonTrivial(const pair<BigInt,BigInt>& factors) const
 }
 
 
+pair<BigInt, BigInt> QuadraticSieve::sieve()
+{
+    BigInt intervalStart = sqrt(n)+1;
+    BigInt intervalEnd = sqrt(n)+1 + BigInt("10000000");
+    return sieveInterval(intervalStart, intervalEnd, factorBase.size() + 20);
+}
 
-pair<BigInt, BigInt> QuadraticSieve::sieve(const BigInt& start, const BigInt& end, size_t maxRelations)
+
+pair<BigInt, BigInt> QuadraticSieve::sieveInterval(const BigInt& start, const BigInt& end, size_t maxRelations)
 {
     BigInt remainder;
 
@@ -90,7 +72,7 @@ pair<BigInt, BigInt> QuadraticSieve::sieve(const BigInt& start, const BigInt& en
 
 
         Relation relation(x, factorization);
-        cout << "NEW: ", print(relation);
+        //cout << "NEW: ", print(relation);
         if(relation.isPerfectCongruence())
         {
             auto factors = factorsFromCongruence(x, sqrt(factorization).multiply());
@@ -101,12 +83,10 @@ pair<BigInt, BigInt> QuadraticSieve::sieve(const BigInt& start, const BigInt& en
             }
         }       
         
-        {
-            lock_guard<std::mutex> lock(relations_mutex);
-            relations.push_back(relation);
-            if(relations.size() > maxRelations)
-                break;
-        }
+        relations.push_back(relation);
+        
+        if(relations.size() > maxRelations)
+            break;
 
     }
 
@@ -139,7 +119,18 @@ void QuadraticSieve::print(const Relation& r) const
 }
 
 
-pair<BigInt,BigInt> QuadraticSieve::combineRandomCongruence() const
+pair<BigInt,BigInt> QuadraticSieve::searchForRandomCongruence(size_t times) const
+{
+    for(size_t i=0; i<times; i++)
+    {
+        pair<BigInt, BigInt> result = pickRandomCongruence();
+        if(isNonTrivial(result))
+            return result;
+    }
+    return TRIVIAL_FACTORS;
+}
+
+pair<BigInt,BigInt> QuadraticSieve::pickRandomCongruence() const
 {
     vector<bool> primeMask(factorBase.back()+1);
 
