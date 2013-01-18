@@ -10,6 +10,7 @@ class Matrix;
 class MatrixSlice
 {
 public:
+    MatrixSlice() = default;
     MatrixSlice(
         NodeId responsibleNode,
         std::size_t startX,

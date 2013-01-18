@@ -1,6 +1,6 @@
 #pragma once
 
-#include <OthelloResult.h>
+#include <OthelloUtil.h>
 #include <OthelloState.h>
 
 class OthelloGamePlay

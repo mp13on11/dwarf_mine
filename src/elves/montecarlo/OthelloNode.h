@@ -6,7 +6,7 @@
 #include <functional>
 #include "OthelloState.h"
 #include "OthelloMove.h"
-#include "OthelloResult.h"
+#include "OthelloUtil.h"
 
 class OthelloNode
 {

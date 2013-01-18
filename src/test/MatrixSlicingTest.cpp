@@ -1,4 +1,5 @@
 #include "MatrixSlicingTest.h"
+#include "MatrixSlicerUtil.h"
 #include <matrix/Matrix.h>
 #include <matrix/MatrixHelper.h>
 #include <matrix/MatrixSlice.h>
@@ -13,32 +14,6 @@ typedef Matrix<float> TestGrid;
 
 using namespace std;
 typedef MatrixSlicer::SliceList SliceList;
-
-ostream& operator<<(ostream& stream, const MatrixSlice& slice)
-{
-    return stream
-        << "("
-        << slice.getStartX() << ", "
-        << slice.getStartY() << ", "
-        << slice.getColumns() << ", "
-        << slice.getRows() << ")";
-}
-
-ostream& operator<<(ostream& stream, const SliceList& slices)
-{
-    stream << "[";
-    bool first = true;
-    for (const auto& slice : slices)
-    {
-        if (!first)
-            stream << ", ";
-        stream << slice;
-        first = false;
-    }
-    stream << "]";
-
-    return stream;
-}
 
 BenchmarkResult makeUniformRatings(size_t number)
 {
@@ -115,14 +90,6 @@ void checkTestGrid(const TestGrid& testGrid, const SliceList& slices)
                 << ", " << j << "). Slices: " << slices;
         }
     }
-}
-
-void verifySlice(MatrixSlice& slice, size_t x, size_t y, size_t columns, size_t rows)
-{
-	EXPECT_EQ(slice.getStartX(), (size_t)x);
-    EXPECT_EQ(slice.getStartY(), (size_t)y);
-    EXPECT_EQ(slice.getRows(), rows);
-    EXPECT_EQ(slice.getColumns(), columns);
 }
 
 TEST_F(MatrixSlicingTest, PivotMatrixSliceTest)

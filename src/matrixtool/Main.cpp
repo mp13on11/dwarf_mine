@@ -14,7 +14,7 @@ using namespace std;
 void printUsage();
 void printUsage(const string&);
 
-void verifyMatrices(const vector<string>& args)
+void verifyMatrices(const vector<string>&)
 {
     throw runtime_error("Not implemented yet!");
 }

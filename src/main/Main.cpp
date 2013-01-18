@@ -1,7 +1,3 @@
-#include <iostream>
-#include <string>
-#include <fstream>
-
 #include "BenchmarkRunner.h"
 #include "Configuration.h"
 #include "MpiGuard.h"
@@ -9,21 +5,16 @@
 #include "matrix/MatrixHelper.h"
 #include "matrix/Matrix.h"
 
-using namespace std;
+#include <iostream>
+#include <string>
+#include <fstream>
 
-ostream& printResultOnMaster(ostream& o, string preamble, BenchmarkResult results, string unit = "")
-{
-    if (MpiHelper::isMaster())
-    {
-        o << preamble <<" "<<unit<< "\n" << results;
-    }
-    return o;
-}
+using namespace std;
 
 BenchmarkResult determineWeightedConfiguration(Configuration& config)
 {
     auto factory = config.getElfFactory();
-    auto statement = config.getProblemStatement();
+    auto statement = config.getProblemStatement(true);
     BenchmarkRunner runner(config);
     runner.runBenchmark(*statement, *factory);
     return runner.getWeightedResults();
@@ -63,10 +54,21 @@ BenchmarkResult importClusterConfiguration(const string& filename)
 BenchmarkResult runTimedMeasurement(Configuration& config, BenchmarkResult& weightedResults)
 {
     auto factory = config.getElfFactory();
-    auto statement = config.getProblemStatement(true);
+    auto statement = config.getProblemStatement();
     BenchmarkRunner runner(config, weightedResults);
     runner.runBenchmark(*statement, *factory);
     return runner.getTimedResults();
+}
+
+void silenceOutputStreams(bool keepErrorStreams = false)
+{
+    cout.rdbuf(nullptr);
+
+    if (!keepErrorStreams)
+    {
+        cerr.rdbuf(nullptr);
+        clog.rdbuf(nullptr);
+    }
 }
 
 int main(int argc, char** argv)
@@ -74,30 +76,31 @@ int main(int argc, char** argv)
     // used to ensure MPI::Finalize is called on exit of the application
     MpiGuard guard(argc, argv);
 
+
     try
     {
         Configuration config(argc, argv);
 
-        if (!config.parseArguments())
+        if (!config.parseArguments(MpiHelper::isMaster()))
             return 2;
 
-        if (MpiHelper::isMaster())
-        {
-            cout << config <<endl;
-        }
+        if (!config.getVerbose() && (config.getQuiet() || !MpiHelper::isMaster()))
+            silenceOutputStreams(true);
+
+        cout << config <<endl;
 
         BenchmarkResult weightedResults;
         if (config.exportConfiguration() || !config.importConfiguration())
         {
             cout << "Calculating node weights" <<endl;
             weightedResults = determineWeightedConfiguration(config);
-            printResultOnMaster(cout, "Weighted", weightedResults);
+            cout << "Weighted " << endl << weightedResults;
         }
         if (config.exportConfiguration())
         {
             cout << "Exporting node weights" <<endl;
-    		exportClusterConfiguration(config.getExportConfigurationFilename(), weightedResults);
-		}
+            exportClusterConfiguration(config.getExportConfigurationFilename(), weightedResults);
+        }
         if (config.importConfiguration())
         {
             cout << "Importing node weights" <<endl;
@@ -107,7 +110,7 @@ int main(int argc, char** argv)
         {
             cout << "Running benchmark" <<endl;
             auto clusterResults = runTimedMeasurement(config, weightedResults);
-            printResultOnMaster(cout, "Measured Time:", clusterResults, "µs");
+            cout << "Measured Time: µs" << endl << clusterResults;
         }
     }
     catch (const logic_error& e)

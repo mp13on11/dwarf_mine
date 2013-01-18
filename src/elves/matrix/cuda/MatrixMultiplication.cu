@@ -1,5 +1,5 @@
 #include "MatrixMultiplication.h"
-#include "ErrorHandling.h"
+#include <cuda-utils/ErrorHandling.h>
 #include <main/Utils.h>
 
 #include <cuda.h>

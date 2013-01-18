@@ -1,7 +1,7 @@
 #pragma once
 
 #include <Elf.h>
-#include <OthelloResult.h>
+#include <OthelloUtil.h>
 #include <OthelloState.h>
 
 class MonteCarloElf : public Elf

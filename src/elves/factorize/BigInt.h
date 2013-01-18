@@ -1,176 +1,34 @@
 #pragma once
 
-#include <inttypes.h>
-#include <iosfwd>
-#include <vector>
-#include <string>
+#include <gmpxx.h>
+#include <gmp.h>
+#include <cmath>
 
-class BigInt;
+typedef mpz_class BigInt;
 
-std::ostream& operator<<(std::ostream& out, const BigInt& i);
-std::istream& operator>>(std::istream& in, BigInt& i);
-
-class BigInt
+// Computes the binary logarithm with 32bit precision
+inline double lb(BigInt& x)
 {
-public:
-    static const uint32_t MAX_ITEM = -1;
-
-    static const BigInt& ZERO;
-    static const BigInt& ONE;
-
-    BigInt();
-    BigInt(uint32_t value);
-    explicit BigInt(const std::string& value);
-    BigInt& operator=(uint32_t value);
-    BigInt& operator=(const std::string& value);
-
-    BigInt& operator++();
-    BigInt operator++(int postfix);
-    BigInt& operator--();
-    BigInt operator--(int postfix);
-
-    BigInt operator+(const BigInt& right) const;
-    BigInt& operator+=(const BigInt& right);
-
-    BigInt operator-(const BigInt& right) const;
-    BigInt& operator-=(const BigInt& right);
-
-    BigInt operator*(const BigInt& right) const;
-    BigInt& operator*=(const BigInt& right);
-
-    BigInt operator/(const BigInt& right) const;
-    BigInt& operator/=(const BigInt& right);
-
-    BigInt operator%(const BigInt& right) const;
-    BigInt& operator%=(const BigInt& right);
-
-    BigInt operator<<(uint32_t offset) const;
-    BigInt& operator<<=(uint32_t offset);
-
-    BigInt operator>>(uint32_t offset) const;
-    BigInt& operator>>=(uint32_t offset);
-
-    bool operator==(const BigInt& right) const;
-    bool operator!=(const BigInt& right) const;
-    bool operator>(const BigInt& right) const;
-    bool operator>=(const BigInt& right) const;
-    bool operator<(const BigInt& right) const;
-    bool operator<=(const BigInt& right) const;
-
-    bool isEven() const;
-    bool isOdd() const;
-
-    void readFrom(std::istream& stream);
-    std::string toString() const;
-
-private:
-    static const uint32_t MAXIMUM_PRINTABLE_ITEM = 1000000000;
-    static const uint32_t PRINTABLE_ITEM_WIDTH = 9;
-    static const std::size_t BITS_PER_ITEM = 32;
-
-    std::vector<uint32_t> items;
-
-    void normalize();
-    void reverse();
-    void reverse(uint32_t &item);
-
-    BigInt divMod(const BigInt& divisor);
-};
-
-inline std::ostream& operator<<(std::ostream& out, const BigInt& value)
-{
-    return out << value.toString();
+    auto bits = mpz_sizeinbase(x.get_mpz_t(), 2);
+    mp_bitcnt_t overbits;
+    if(bits > 32)
+    {
+        overbits = bits - 32;
+    }
+    else
+    {
+        overbits = 0;
+    }
+    BigInt r = (x >> overbits);
+    return log(r.get_d())/log(2) + overbits;
 }
 
-inline std::istream& operator>>(std::istream& in, BigInt& value)
+// Computes the logarithm of base 2^(1/22)
+// Thus the binary logarithm scaled by 2^22,
+// so that all BigInts < 2^1024 will be mapped 
+// to the entire uint32_t range
+// yielding the maximum precision after rounding
+inline uint32_t log_2_22(BigInt& x)
 {
-    value.readFrom(in);
-
-    return in;
-}
-
-inline BigInt BigInt::operator+(const BigInt& right) const
-{
-    return BigInt(*this) += right;
-}
-
-inline BigInt BigInt::operator-(const BigInt& right) const
-{
-    return BigInt(*this) -= right;
-}
-
-inline BigInt BigInt::operator*(const BigInt& right) const
-{
-    return BigInt(*this) *= right;
-}
-
-inline BigInt BigInt::operator/(const BigInt& right) const
-{
-    return BigInt(*this) /= right;
-}
-
-inline BigInt BigInt::operator%(const BigInt& right) const
-{
-    return BigInt(*this) %= right;
-}
-
-inline BigInt BigInt::operator<<(uint32_t offset) const
-{
-    return BigInt(*this) <<= offset;
-}
-
-inline BigInt BigInt::operator>>(uint32_t offset) const
-{
-    return BigInt(*this) >>= offset;
-}
-
-inline BigInt& BigInt::operator++() // prefix
-{
-    return *this += ONE;
-}
-
-inline BigInt BigInt::operator++(int) // postfix
-{
-    BigInt result(*this);
-    *this += ONE;
-
-    return result;
-}
-
-inline BigInt& BigInt::operator--() // prefix
-{
-    return *this -= ONE;
-}
-
-inline BigInt BigInt::operator--(int) // postfix
-{
-    BigInt result(*this);
-    *this -= ONE;
-
-    return result;
-}
-
-inline bool BigInt::operator!=(const BigInt& right) const
-{
-    return !(*this == right);
-}
-
-inline bool BigInt::operator>(const BigInt& right) const
-{
-    return !(right >= *this);
-}
-
-inline bool BigInt::operator<(const BigInt& right) const
-{
-    return !(*this >= right);
-}
-
-inline bool BigInt::operator<=(const BigInt& right) const
-{
-    return right >= *this;
-}
-
-inline bool BigInt::isOdd() const
-{
-    return !isEven();
+    return (uint32_t)(lb(x) * (1 << 22));
 }

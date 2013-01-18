@@ -195,18 +195,7 @@ ostream& operator<<(ostream& stream, const OthelloState& state)
 		for (int j = 0; j < state._sideLength; ++j)	
 		{
 			auto field = state._playfield[i * state._sideLength + j];
-			if (field == Field::Black)
-			{
-				stream << " B";
-			}
-			else if (field == Field::White)
-			{
-				stream << " W";
-			}
-			else 
-			{
-				stream << " .";
-			}
+			stream << " " << field;
 		}
 		stream << "\n";
 	}

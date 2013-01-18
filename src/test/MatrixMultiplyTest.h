@@ -1,12 +1,18 @@
 #pragma once
 
-#include <gtest/gtest.h>
-#include <matrix/MatrixElf.h>
+#include "GoldMatrixElf.h"
+#include "matrix/Matrix.h"
+#include "matrix/MatrixElf.h"
+#include "matrix/MatrixHelper.h"
+
 #include <cstdlib>
 #include <functional>
+#include <gtest/gtest.h>
 #include <memory>
+#include <random>
 
-class MatrixMultiplyTest : public testing::TestWithParam<const char*>
+template<typename T>
+class MatrixMultiplyTest : public testing::Test
 {
 protected:
     //
@@ -29,3 +35,53 @@ protected:
     std::unique_ptr<MatrixElf> referenceImplementation;
     std::unique_ptr<MatrixElf> currentImplementation;
 };
+
+template<typename T>
+void MatrixMultiplyTest<T>::SetUp()
+{
+    inputBFile = "b.txt";
+    outputFile = "c.txt";
+    currentImplementation.reset(new T());
+    referenceImplementation.reset(new GoldMatrixElf());
+}
+
+template<typename T>
+void MatrixMultiplyTest<T>::TearDown()
+{
+    remove(inputAFile.c_str());
+    remove(inputBFile.c_str());
+    remove(outputFile.c_str());
+}
+
+template<typename T>
+Matrix<float> MatrixMultiplyTest<T>::createRandomMatrix(size_t rows, size_t columns)
+{
+    Matrix<float> m(rows, columns);
+    MatrixHelper::fill(m, generator);
+    return m;
+}
+
+template<typename T>
+void MatrixMultiplyTest<T>::initRandom(uint seed)
+{
+    auto distribution = std::uniform_real_distribution<float>(-100, +100);
+    auto engine = std::mt19937(seed);
+    generator = bind(distribution, engine);
+}
+
+template<typename T>
+Matrix<float> MatrixMultiplyTest<T>::executeMultiplication(MatrixElf& elf, const Matrix<float>& a, const Matrix<float>& b)
+{
+    return elf.multiply(a, b);
+}
+
+#include "matrix/smp/SMPMatrixElf.h"
+
+#ifdef HAVE_CUDA
+#include "matrix/cuda/CudaMatrixElf.h"
+typedef testing::Types<CudaMatrixElf, SMPMatrixElf> MatrixElfTypes;
+#else
+typedef testing::Types<SMPMatrixElf> MatrixElfTypes;
+#endif
+
+TYPED_TEST_CASE(MatrixMultiplyTest, MatrixElfTypes);

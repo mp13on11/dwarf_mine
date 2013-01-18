@@ -12,7 +12,13 @@ INCLUDE(Utils)
 IF(MSVC)
     SET(CMAKE_CXX_FLAGS "/W4 ${CMAKE_CXX_FLAGS}")
 ELSEIF(CMAKE_COMPILER_IS_GNUCXX)
-    SET(CMAKE_CXX_FLAGS "-Wall -Wextra -W -pedantic ${CMAKE_CXX_FLAGS}")
+    SET(CMAKE_CXX_FLAGS "-Wall -Wextra -W -pedantic ${CMAKE_CXX_FLAGS}")    
+
+    # Warnings as errors, unless disabled by the user
+    OPTION(WARNINGS_AS_ERRORS "Set to off to disable treating warnings as errors" ON)
+    IF(WARNINGS_AS_ERRORS)
+        SET(CMAKE_CXX_FLAGS "-Werror ${CMAKE_CXX_FLAGS}")
+    ENDIF()
 ENDIF()
 
 # Require Visual Studio 2012 or newer,

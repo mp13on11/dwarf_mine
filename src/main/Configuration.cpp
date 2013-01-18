@@ -13,13 +13,14 @@
 
 using namespace std;
 
-Configuration::Configuration(int argc, char** argv)
-    : argc(argc), _useFiles(false), arguments(argv), programName(argv[0]), _category("matrix")
+Configuration::Configuration(int argc, char** argv) : 
+    argc(argc), _useFiles(false), arguments(argv), 
+    programName(argv[0])
 {
 
 }
 
-bool Configuration::parseArguments()
+bool Configuration::parseArguments(bool showDescription)
 {
     namespace po = boost::program_options;
     po::options_description desc("Options");
@@ -29,6 +30,7 @@ bool Configuration::parseArguments()
         desc.add_options()
             ("help", "Print help message")
             ("mode,m",               po::value<string>(&_mode)->required(), "Mode (smp|cuda)")
+            ("category,c",           po::value<string>(&_category)->default_value("matrix"), "Elf to be run (matrix|factorize)")
             ("numwarmups,w",         po::value<size_t>(&_numberOfWarmUps)->default_value(50), "Number of warmup rounds")
             ("numiter,n",            po::value<size_t>(&_numberOfIterations)->default_value(100), "Number of benchmark iterations")
             ("input,i",              po::value<string>(&_inputFile), "Input file")
@@ -36,20 +38,21 @@ bool Configuration::parseArguments()
             ("export_configuration", po::value<string>(&_exportConfigurationFile), "Measure cluster and export configuration")
             ("import_configuration", po::value<string>(&_importConfigurationFile), "Run benchmark with given configuration")
             ("skip_benchmark",       "Skip the benchmark run")
+            ("quiet,q",              "Do not output anything")
+            ("verbose,v",            "Show output from all MPI processes")
             ("left_rows",            po::value<size_t>(&_leftMatrixRows)->default_value(500), "Number of left rows to be generated (overridden for benchmark by input file)")
             ("common_rows_columns",  po::value<size_t>(&_commonMatrixRowsColumns)->default_value(500), "Number of left columns / right rows to be generated (overridden for benchmark by input file)")
             ("right_columns",        po::value<size_t>(&_rightMatrixColumns)->default_value(500), "Number of right columns to be generated (overridden for benchmark by input file)");
 
         po::variables_map vm;
         po::store(po::parse_command_line(argc, arguments, desc), vm);
+        po::notify(vm);
 
         if(vm.count("help") || argc == 1)
         {
             cout << "Dwarf Mine Benchmark" << endl << desc << endl;
             return false;
         }
-
-        po::notify(vm);
 
         if(vm.count("input") ^ vm.count("output"))
             throw logic_error("Both input and output are needed, if one is given");
@@ -60,10 +63,17 @@ bool Configuration::parseArguments()
         if(vm.count("mode") && (_mode != "smp" && _mode != "cuda"))
             throw logic_error("Mode must be smp or cuda");
 
+        _skipBenchmark = vm.count("skip_benchmark") > 0;
+
+        _quiet = vm.count("quiet") > 0;
+
+        _verbose = vm.count("verbose") > 0;
+
     }
     catch(const po::error& e)
     {
-        cerr << desc << endl;
+        if(showDescription)
+            cerr << desc << endl;
         throw;
     }
 
@@ -128,6 +138,15 @@ bool Configuration::importConfiguration() const
 bool Configuration::skipBenchmark() const
 {
     return _skipBenchmark;
+}
+
+bool Configuration::getQuiet() const
+{
+    return _quiet;
+}
+bool Configuration::getVerbose() const
+{
+    return _verbose;
 }
 
 std::string Configuration::getExportConfigurationFilename() const

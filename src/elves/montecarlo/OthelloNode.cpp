@@ -148,7 +148,7 @@ double OthelloNode::successRate()
 OthelloResult OthelloNode::collectedResult()
 {
 	auto move = getTriggerMove();
-	return OthelloResult{move.x, move.y, _visits, _wins};
+	return OthelloResult{(size_t)move.x, (size_t)move.y, _visits, _wins};
 }
 
 OthelloNode& OthelloNode::getFavoriteChild()

@@ -61,8 +61,8 @@ namespace MatrixHelper
 
     void writeMatrixTo(ostream& output, const Matrix<float>& matrix)
     {
-        size_t dimensions[] = { matrix.rows(), matrix.columns() };
-        output.write(reinterpret_cast<const char*>(dimensions), sizeof(size_t)*2);
+        uint64_t dimensions[] = { matrix.rows(), matrix.columns() };
+        output.write(reinterpret_cast<const char*>(dimensions), sizeof(dimensions));
         output.write(reinterpret_cast<const char*>(matrix.buffer()), sizeof(float)*matrix.rows()*matrix.columns());
 
         if (output.bad())
@@ -122,11 +122,11 @@ namespace MatrixHelper
     {
         try
         {
-            size_t dimensions[2];
-            stream.read(reinterpret_cast<char*>(dimensions), sizeof(size_t)*2);
+            uint64_t dimensions[2];
+            stream.read(reinterpret_cast<char*>(dimensions), sizeof(dimensions));
 
-            size_t rows(dimensions[0]);
-            size_t columns(dimensions[1]);
+            uint64_t rows(dimensions[0]);
+            uint64_t columns(dimensions[1]);
 
             Matrix<float> matrix(rows, columns);
             stream.read(reinterpret_cast<char*>(matrix.buffer()), sizeof(float) * rows * columns);

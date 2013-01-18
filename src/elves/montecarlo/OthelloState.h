@@ -1,20 +1,14 @@
 #pragma once
 
 #include "OthelloMove.h"
+#include "OthelloUtil.h"
 #include <vector>
 #include <memory>
 #include <set>
 #include <iosfwd>
 
 
-enum class Field { Free, Black, White };
 
-// shortcuts
-#define F Field::Free
-#define W Field::White
-#define B Field::Black
-
-typedef Field Player;
 
 class OthelloState
 {
@@ -32,6 +26,7 @@ public:
 
 	Field atPosition(int x, int y);
 	int playfieldSideLength() const;
+	Field* playfieldBuffer();
 
 private:
 	// row - column
@@ -57,4 +52,9 @@ inline int OthelloState::playfieldSideLength() const
 inline Field& OthelloState::playfield(const OthelloMove& move)
 {
 	return _playfield[move.y * _sideLength + move.x];
+}
+
+inline Field* OthelloState::playfieldBuffer()
+{
+	return _playfield.data();
 }

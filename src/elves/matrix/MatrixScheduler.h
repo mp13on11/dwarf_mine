@@ -1,19 +1,22 @@
 #pragma once
 
-#include "../main/Scheduler.h"
+#include "main/SchedulerTemplate.h"
 
-class MatrixScheduler: public Scheduler
+#include <functional>
+
+class MatrixElf;
+
+class MatrixScheduler: public SchedulerTemplate<MatrixElf>
 {
 public:
-    MatrixScheduler();
-    explicit MatrixScheduler(const BenchmarkResult& benchmarkResult);
+    MatrixScheduler(const std::function<ElfPointer()>& factory);
     virtual ~MatrixScheduler();
 
-    virtual bool hasData();
     virtual void provideData(ProblemStatement& statement);
     virtual void outputData(ProblemStatement& statement);
 
 protected:
+    virtual bool hasData();
     virtual void doDispatch();
 
 private:

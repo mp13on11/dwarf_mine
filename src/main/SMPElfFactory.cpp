@@ -1,8 +1,10 @@
+#include "factorize/smp/SmpFactorizationElf.h"
+#include "factorize/FactorizationScheduler.h"
 #include "matrix/smp/SMPMatrixElf.h"
 #include "matrix/MatrixScheduler.h"
+#include "montecarlo/MonteCarloScheduler.h"
 #include "montecarlo/smp/SMPMonteCarloElf.h"
 #include "main/SMPElfFactory.h"
-#include <stdexcept>
 
 using namespace std;
 
@@ -11,18 +13,30 @@ SMPElfFactory::SMPElfFactory(const ElfCategory& category) :
 {
 }
 
-unique_ptr<Elf> SMPElfFactory::createElfImplementation() const
-{
-    if (_category == "matrix")
-        return unique_ptr<Elf>(new SMPMatrixElf());
-    else if (_category == "montecarlo")
-        return unique_ptr<Elf>(new SMPMonteCarloElf());
-    else
-        throw runtime_error("createElfImplementation(): category must be one of matrix|montecarlo");
-
-}
-
 unique_ptr<Scheduler> SMPElfFactory::createSchedulerImplementation() const
 {
-    return unique_ptr<Scheduler>(new MatrixScheduler());
+    if (_category == "matrix")
+    {
+        return unique_ptr<Scheduler>(
+                new MatrixScheduler(
+                        []() { return new SMPMatrixElf(); }
+                    )
+            );
+    }
+	else if (_category == "montecarlo")
+	{
+		return unique_ptr<Scheduler>(
+				new MonteCarloScheduler(
+						[]() { return new SMPMonteCarloElf(); }
+					)
+			);
+	}
+    else
+    {
+        return unique_ptr<Scheduler>(
+                new FactorizationScheduler(
+                        []() { return new SmpFactorizationElf(); }
+                    )
+            );
+    }
 }
