@@ -27,7 +27,7 @@ void ElfFactory::validate() const
 unique_ptr<ElfFactory> createElfFactory(const std::string& type, const ElfCategory& category)
 {
     if (type == "smp")
-        return unique_ptr<ElfFactory>(new SMPElfFactory(category));
+        return  unique_ptr<ElfFactory>(new SMPElfFactory(category));
     else if (type == "cuda")
         return unique_ptr<ElfFactory>(new CudaElfFactory(category));
     else
