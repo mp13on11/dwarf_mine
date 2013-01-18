@@ -81,6 +81,18 @@ TEST(CudaBigIntTest, testMultiplication)
     EXPECT_EQ(expected, actual);
 }
 
+TEST(CudaBigIntTest, testMultiplicationSmallNumbers)
+{
+    BigInt left("5");
+    BigInt right("8");
+    BigInt expected("40");
+
+    auto actual = invokeKernel(left, right, [](PNumData l, PNumData r, PNumData o) { testMul(l, r, o); });
+
+    EXPECT_EQ(expected, actual);
+}
+
+
 TEST(CudaBigIntTest, testDivision)
 {
     BigInt left("90887891231490623");
