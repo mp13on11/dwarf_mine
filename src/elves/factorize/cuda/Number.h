@@ -101,7 +101,43 @@ struct Number
 
     __device__ Number& operator/=(const Number& other)
     {
+        Number remainder(*this);
+        Number quotient = remainder.divMod(other);
 
+        memcpy(fields, quotient.fields, sizeof(uint32_t)*NUM_FIELDS);
+        return *this;
+    }
+
+    __device__ Number divMod(const Number& other)
+    {
+        if(this == &other)
+        {
+            *this = Number(static_cast<uint64_t>(0));
+            return Number(1);
+        }
+
+        Number divisor(other);
+        Number quotient(static_cast<uint64_t>(0));
+
+        while (*this > divisor)
+        {
+            divisor <<= 32;
+        }
+
+        while (divisor >= other)
+        {
+            quotient <<= 1;
+
+            if (*this >= divisor)
+            {
+                *this -= divisor;
+                quotient += 1;
+            }
+
+            divisor >>= 1;
+        }
+
+        return quotient;
     }
 
     __device__ Number operator/(const Number& other) const
@@ -133,9 +169,19 @@ struct Number
         return !(*this < other) && !(*this == other);
     }
 
+    __device__ bool operator>=(const Number& other) const
+    {
+        return !(*this < other) || (*this == other);
+    }
+
     __device__ bool operator==(const Number& other) const
     {
        return (!(*this < other) && !(other < *this));
+    }
+
+    __device__ bool operator !=(const Number& other) const
+    {
+        return !(*this == other);
     }
 
     __device__ Number& operator<<=(uint32_t offset)
@@ -160,11 +206,41 @@ struct Number
         return *this;
     }
 
-
     __device__ Number operator<<(uint32_t offset) const
     {
         Number result(*this);
         result <<= offset;
+        return result;
+    }
+
+    __device__ Number& operator>>=(uint32_t offset)
+    {
+        uint32_t itemOffset = offset % 32;
+        uint32_t blockOffset = offset / 32;
+        uint32_t carry = 0;
+
+        for (int i = NUM_FIELDS-1; i >= 0 ; --i)
+        {
+            if (fields[i] == 0) continue;
+
+            uint32_t old = fields[i];
+            fields[i] = carry | (fields[i] >> itemOffset);
+            carry = old << (32 - itemOffset);
+        }
+
+        for (int i = 0; i < NUM_FIELDS - blockOffset; ++i)
+        {
+            fields[i] = fields[i + blockOffset];
+        }
+
+
+        return *this;
+    }
+
+    __device__ Number operator>>(uint32_t offset) const
+    {
+        Number result(*this);
+        result >>= offset;
         return result;
     }
 

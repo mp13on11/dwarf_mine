@@ -58,3 +58,10 @@ __global__ void testShiftLeftKernel(PNumData pLeft, uint32_t offset, PNumData ou
     Number result(left << offset);
     memcpy(output, &result,  sizeof(uint32_t)*NUM_FIELDS);
 }
+
+__global__ void testShiftRightKernel(PNumData pLeft, uint32_t offset, PNumData output)
+{
+    Number left(pLeft);
+    Number result(left >> offset);
+    memcpy(output, &result,  sizeof(uint32_t)*NUM_FIELDS);
+}
