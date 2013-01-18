@@ -3,6 +3,17 @@
 #include <iostream>
 #include <stdexcept>
 
+
+
+std::ostream& operator<<(std::ostream& out, const std::vector<OthelloMove>& moves)
+{
+    for ( const auto& move : moves)
+    {
+        out << "{"<<move.x<<", "<<move.y<<"} ";
+    }
+    return out;
+}
+
 std::ostream& operator<<(std::ostream& stream, OthelloResult& result)
 {
     stream << result.x << result.y << result.visits << result.wins;

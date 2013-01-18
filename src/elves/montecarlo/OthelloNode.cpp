@@ -6,14 +6,6 @@
 
 using namespace std;
 
-std::mt19937 OthelloNode::_randomGenerator;
-
-function<size_t()> OthelloNode::getGenerator(size_t min, size_t max)
-{
-	uniform_int_distribution<size_t> distribution(min, max - 1);
-	return bind(distribution, OthelloNode::_randomGenerator);
-}
-
 OthelloNode::OthelloNode(const OthelloNode& node)
 {
 	_untriedMoves = node._untriedMoves;
@@ -53,7 +45,7 @@ bool OthelloNode::hasChildren()
 	return !_children.empty();
 }
 
-OthelloNode& OthelloNode::getRandomChildNode()
+OthelloNode& OthelloNode::getRandomChildNode(RandomGenerator generator)
 {
 	if (!hasChildren())
 	{
@@ -63,11 +55,10 @@ OthelloNode& OthelloNode::getRandomChildNode()
 	{
 		return _children[0];
 	}
-	auto random = getGenerator(0, _children.size());
-	return _children[random()];
+	return _children[generator(_children.size())];
 }
 
-OthelloMove& OthelloNode::getTriggerMove()
+OthelloMove OthelloNode::getTriggerMove()
 {
 	if (!_triggerMove)
 	{
@@ -81,11 +72,10 @@ void OthelloNode::setTriggerMove(OthelloMove& move)
 	_triggerMove = make_shared<OthelloMove>(move);
 }
 
-OthelloMove& OthelloNode::getRandomMove()
+OthelloMove OthelloNode::getRandomMove(RandomGenerator generator)
 {
 	auto moves = _state->getPossibleMoves();
-	auto random = getGenerator(0, moves.size());
-	return moves[random()];
+	return moves[generator(moves.size())];
 }
 
 bool OthelloNode::hasUntriedMoves()
@@ -93,19 +83,23 @@ bool OthelloNode::hasUntriedMoves()
 	return !_untriedMoves.empty();
 }
 
+void OthelloNode::removeFromUntriedMoves(const OthelloMove& move)
+{
+	_untriedMoves.remove(move);
+}
+
 void OthelloNode::setParent(OthelloNode& node)
 {
 	_parent = &node;
 }
 
-OthelloMove& OthelloNode::getRandomUntriedMove()
+OthelloMove OthelloNode::getRandomUntriedMove(RandomGenerator generator)
 {
 	if (!hasUntriedMoves())
 	{
 		throw runtime_error("OthelloNode::getRandomUntriedMove(): No untried move");
 	}
-	auto random = getGenerator(0, _untriedMoves.size());
-	return _untriedMoves[random()];
+	return _untriedMoves[generator(_untriedMoves.size())];
 }
 
 OthelloNode& OthelloNode::addChild(OthelloMove& move, const OthelloState& state)

@@ -9,27 +9,6 @@
 
 using namespace std;
 
-class OthelloNodeStub : public OthelloNode
-{
-public:
-    OthelloNodeStub(const OthelloNode& node) : OthelloNode(node) {}
-    OthelloNodeStub(const OthelloState& state) : OthelloNode(state) {}
-    ~OthelloNodeStub() {}
-
-    void setGenerator(std::function<size_t()> generator)
-    {
-        _generator = generator;
-    }
-
-protected:
-    std::function<size_t()> _generator;
-
-    virtual std::function<size_t()> getGenerator(size_t, size_t)
-    {
-        return _generator;
-    }
-};
-
 #define _F Field::Free
 #define _W Field::White
 #define _B Field::Black
@@ -46,7 +25,7 @@ TEST_F(OthelloNodeTest, SimpleTest)
         _F, _F, _F, _F, _F, _F, _F, _F, 
         _F, _F, _F, _F, _F, _F, _F, _F
     }, Player::White);
-    OthelloNodeStub stub(state);
+    OthelloNode stub(state);
     ASSERT_FALSE(stub.hasChildren());
     ASSERT_THROW(stub.getTriggerMove(), runtime_error);
 
@@ -69,16 +48,19 @@ TEST_F(OthelloNodeTest, MakeMoveTest)
         _F, _F, _F, _F, _F, _F, _F, _F, 
         _F, _F, _F, _F, _F, _F, _F, _F
     }, Player::White);
-    OthelloNodeStub stub(state);
-    stub.setGenerator([](){ return 0U; });
+    OthelloNode stub(state);
+    auto generator = [](size_t){ return 0U; };
+
     auto possibleMoves = state.getPossibleMoves();
-    ASSERT_EQ(possibleMoves[0], stub.getRandomUntriedMove());
+    ASSERT_EQ(possibleMoves[0], stub.getRandomUntriedMove(generator));
+    
     state.doMove(possibleMoves[0]);
     stub.addChild(possibleMoves[0], OthelloState(state));
     ASSERT_TRUE(stub.hasChildren());
 
-    auto child = stub.getRandomChildNode();
+    auto child = stub.getRandomChildNode(generator);
     ASSERT_EQ(possibleMoves[0], child.getTriggerMove());
+    
     child.updateSuccessProbability(true);
     child.updateSuccessProbability(false);
     ASSERT_EQ(0.5, child.successRate());
@@ -100,7 +82,7 @@ TEST_F(OthelloNodeTest, SelectFavoriteChild)
         _F, _F, _F, _F, _F, _F, _F, _F
     }, Player::White);
 
-    OthelloNodeStub root(state);
+    OthelloNode root(state);
    
     auto possibleMoves = state.getPossibleMoves();
     state.doMove(possibleMoves[0]);

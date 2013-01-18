@@ -2,6 +2,10 @@
 
 #include <iosfwd>
 #include <vector>
+#include <functional>
+#include "OthelloMove.h"
+
+typedef std::function<size_t(size_t)> RandomGenerator;
 
 struct OthelloResult
 {
@@ -29,6 +33,9 @@ enum class Field { Free, Black, White };
 #define B Field::Black
 
 typedef Field Player;
+
+std::ostream& operator<<(std::ostream& out, const std::vector<OthelloMove>& moves);
+
 
 std::ostream& operator<<(std::ostream& stream, OthelloResult& result);
 

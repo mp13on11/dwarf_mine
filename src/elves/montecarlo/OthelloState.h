@@ -19,6 +19,7 @@ public:
 
 	void doMove(const OthelloMove& move);
 	std::vector<OthelloMove> getPossibleMoves();
+	OthelloMove getRandomMove(RandomGenerator generator);
 	Player getCurrentPlayer() const;
 	Player getCurrentEnemy() const;
 	bool hasPossibleMoves();
@@ -29,11 +30,11 @@ public:
 	Field* playfieldBuffer();
 
 private:
-	// row - column
 	std::vector<Field> _playfield;
 	int _sideLength;
 	Player _player;
 
+	void flipCounters(const std::vector<OthelloMove>& counterPositions, Player player);
 	bool onBoard(const OthelloMove& move) const;
 	std::vector<OthelloMove> getAllEnclosedCounters(const OthelloMove& move);
 	std::vector<OthelloMove> getAdjacentEnemyDirections(const OthelloMove& move);

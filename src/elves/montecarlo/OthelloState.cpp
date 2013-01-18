@@ -56,13 +56,17 @@ void OthelloState::doMove(const OthelloMove& move)
 	auto enclosedCounterPositions = getAllEnclosedCounters(move);
 
 	playfield(move) = _player;
-
-	for (const auto& position : enclosedCounterPositions)
-	{
-		playfield(position) = _player;
-	}
+	flipCounters(enclosedCounterPositions, _player);
 
 	_player = getCurrentEnemy();
+}
+
+void OthelloState::flipCounters(const vector<OthelloMove>& counterPostions, Player player)
+{
+	for (const auto& position : counterPostions)
+	{
+		playfield(position) = player;
+	}
 }
 
 bool OthelloState::onBoard(const OthelloMove& move) const
@@ -112,6 +116,12 @@ vector<OthelloMove> OthelloState::getEnclosedCounters(const OthelloMove& move, c
 	}
 	counters.clear();
 	return counters;
+}
+
+OthelloMove OthelloState::getRandomMove(RandomGenerator generator)
+{
+	auto moves = getPossibleMoves();
+	return moves[generator(moves.size())];
 }
 
 vector<OthelloMove> OthelloState::getPossibleMoves()
@@ -190,12 +200,22 @@ Field OthelloState::atPosition(int x, int y)
 
 ostream& operator<<(ostream& stream, const OthelloState& state)
 {
+	stream << "  ";
 	for (int i = 0; i < state._sideLength; ++i)
 	{
+		stream << " " << i;
+	}
+	stream << "\n";
+	for (int i = 0; i < state._sideLength; ++i)
+	{
+		stream << " "<< i;
 		for (int j = 0; j < state._sideLength; ++j)	
 		{
 			auto field = state._playfield[i * state._sideLength + j];
-			stream << " " << field;
+			if (field != Field::Free)
+				stream << " " << field;
+			else
+				stream << "  ";
 		}
 		stream << "\n";
 	}

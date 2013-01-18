@@ -20,11 +20,13 @@ public:
     bool hasUntriedMoves();
     bool hasChildren();
     OthelloNode& getFavoriteChild();
-    OthelloNode& getRandomChildNode();
-    OthelloMove& getTriggerMove();
-    OthelloMove& getRandomMove();
-    OthelloMove& getRandomUntriedMove();
+    OthelloNode& getRandomChildNode(RandomGenerator generator);
     OthelloNode& addChild(OthelloMove& move, const OthelloState& state);
+    std::vector<OthelloNode>& getChildren();
+    OthelloMove getTriggerMove();
+    OthelloMove getRandomMove(RandomGenerator generator);
+    OthelloMove getRandomUntriedMove(RandomGenerator generator);
+    void removeFromUntriedMoves(const OthelloMove& move);
     void updateSuccessProbability(bool hasWon);
     Player currentPlayer();
     OthelloNode& parent();
@@ -33,7 +35,6 @@ public:
     OthelloResult collectedResult();
 
 private:
-    static std::mt19937 _randomGenerator;
 
     std::vector<OthelloMove> _untriedMoves;
     OthelloNode* _parent;
@@ -44,7 +45,9 @@ private:
     size_t _wins;
     void setParent(OthelloNode& parent);
     void setTriggerMove(OthelloMove& move);
-
-protected:
-    virtual std::function<size_t()> getGenerator(size_t min, size_t max);
 };
+
+inline std::vector<OthelloNode>& OthelloNode::getChildren()
+{
+    return _children;
+}

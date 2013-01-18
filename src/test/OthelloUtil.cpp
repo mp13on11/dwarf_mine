@@ -8,14 +8,6 @@
 
 using namespace std;
 
-ostream& operator<<(ostream& out, const vector<OthelloMove>& moves)
-{
-    for ( const auto& move : moves)
-    {
-        out << "{"<<move.x<<", "<<move.y<<"}\n";
-    }
-    return out;
-}
 
 
 void verifyPlayfield(vector<Field> expectedField, OthelloState& state)

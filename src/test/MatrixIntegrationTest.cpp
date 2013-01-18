@@ -81,7 +81,7 @@ pid_t spawnChildProcess()
             "-m", "smp",
             "-n", "1",
             "-w", "0",
-            //"-q",
+            "-q",
             "-i", INPUT_FILENAME,
             "-o", OUTPUT_FILENAME,
             "--import_configuration", CONF_FILENAME,

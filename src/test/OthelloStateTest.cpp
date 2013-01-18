@@ -147,3 +147,42 @@ TEST_F(OthelloStateTest, LockedWhiteStateTest)
     auto actualMoves = blackState.getPossibleMoves();
     verifyMoves({OthelloMove{1, 0}}, actualMoves);
 }
+
+TEST_F(OthelloStateTest, ChangeOfPossibleMovesTest)
+{
+    auto startMoves = state->getPossibleMoves();
+    
+    state->doMove(OthelloMove{4, 2}); // White
+    state->doMove(OthelloMove{5, 4}); // Black
+    state->doMove(OthelloMove{3, 5}); // White
+    state->doMove(OthelloMove{4, 1}); // Black
+    
+    auto endMoves = state->getPossibleMoves();
+    ASSERT_NE(startMoves.size(), endMoves.size());
+}
+
+TEST_F(OthelloStateTest, ChangeOfPlayersAfterMoveTest)
+{
+    state->doMove(OthelloMove{3, 5});
+    
+    ASSERT_EQ(Player::Black, state->getCurrentPlayer());
+
+    vector<Field> expectedField = {
+        F, F, F, F, F, F, F, F,
+        F, F, F, F, F, F, F, F,
+        F, F, F, F, F, F, F, F,
+        F, F, F, W, B, F, F, F,      
+        F, F, F, W, W, F, F, F,      
+        F, F, F, W, F, F, F, F,
+        F, F, F, F, F, F, F, F,
+        F, F, F, F, F, F, F, F
+    };
+    verifyPlayfield(expectedField, *state);
+    auto actualMoves = state->getPossibleMoves();
+    vector<OthelloMove> expectedMoves = {
+        OthelloMove{2, 3}, 
+        OthelloMove{4, 5},
+        OthelloMove{2, 5}
+    };
+    verifyMoves(expectedMoves, actualMoves);
+}

@@ -102,12 +102,13 @@ void MonteCarloScheduler::MonteCarloSchedulerImpl::orchestrateCalculation()
     collectResults();
 }
 
+
 void MonteCarloScheduler::MonteCarloSchedulerImpl::distribute()
 {
     size_t bufferSize = 0;
     if (MpiHelper::isMaster())
     {
-        bufferSize = state.playfieldSideLength() * state.playfieldSideLength() * sizeof(Field);
+        bufferSize = state.playfieldSideLength() * state.playfieldSideLength();
     }
     MPI::COMM_WORLD.Bcast(&bufferSize, 1, MPI::UNSIGNED, MpiHelper::MASTER);
     
@@ -116,8 +117,9 @@ void MonteCarloScheduler::MonteCarloSchedulerImpl::distribute()
     {
         playfield.assign(state.playfieldBuffer(), state.playfieldBuffer() + bufferSize);
     }
-    // TODO Field - not defined for MPI
-    MPI::COMM_WORLD.Bcast(playfield.data(), bufferSize, /*Field*/ MPI::CHAR, MpiHelper::MASTER);
+    
+    auto MPI_FIELD = MPI::INT;
+    MPI::COMM_WORLD.Bcast(playfield.data(), bufferSize, MPI_FIELD, MpiHelper::MASTER);
     state = OthelloState(playfield, Player::White);
 }
 
