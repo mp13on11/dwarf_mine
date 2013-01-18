@@ -11,6 +11,7 @@ extern void testMul(PNumData left, PNumData right, PNumData result);
 extern void testDiv(PNumData left, PNumData right, PNumData result);
 extern void testSmallerThan(PNumData left, PNumData right, bool* result);
 extern void testShiftLeft(PNumData left, uint32_t offset, PNumData result);
+extern void testShiftRight(PNumData left, uint32_t offset, PNumData result);
 
 using namespace std;
 
@@ -196,3 +197,26 @@ TEST(CudaBigIntTest, testShiftLeftBiggerNumber)
 
     EXPECT_EQ(expected, actual);
 }
+
+TEST(CudaBigIntTest, testShiftRight)
+{
+    BigInt left("4294967296");
+    uint32_t offset(32);
+    BigInt expected("1");
+
+    auto actual = invokeShiftKernel(left, offset, [](PNumData l, uint32_t r, PNumData o) { testShiftRight(l, r, o); });
+
+    EXPECT_EQ(expected, actual);
+}
+
+TEST(CudaBigIntTest, testShiftRightBiggerNumber)
+{
+    BigInt left("1301820391234234234342");
+    uint32_t offset(33);
+    BigInt expected("151551839806");
+
+    auto actual = invokeShiftKernel(left, offset, [](PNumData l, uint32_t r, PNumData o) { testShiftRight(l, r, o); });
+
+    EXPECT_EQ(expected, actual);
+}
+
