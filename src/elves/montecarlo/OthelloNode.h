@@ -6,6 +6,7 @@
 #include <functional>
 #include "OthelloState.h"
 #include "OthelloMove.h"
+#include "OthelloResult.h"
 
 class OthelloNode
 {
@@ -29,6 +30,7 @@ public:
     OthelloNode& parent();
     bool hasParent();
     double successRate();
+    OthelloResult collectedResult();
 
 private:
     static std::mt19937 _randomGenerator;

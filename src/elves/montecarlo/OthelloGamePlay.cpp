@@ -1,7 +1,7 @@
 #include "OthelloGamePlay.h"
 #include "OthelloNode.h"
 
-OthelloMove OthelloGamePlay::getBestMoveFor(OthelloState& state, size_t iterations)
+OthelloResult OthelloGamePlay::getBestMoveFor(OthelloState& state, size_t iterations)
 {
 	OthelloNode node(state);
 
@@ -43,5 +43,5 @@ OthelloMove OthelloGamePlay::getBestMoveFor(OthelloState& state, size_t iteratio
 		while(currentNode->hasParent());
 	}
 
-	return node.getFavoriteChild().getTriggerMove();
+	return node.getFavoriteChild().collectedResult();
 }

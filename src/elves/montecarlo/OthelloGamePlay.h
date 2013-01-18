@@ -1,9 +1,10 @@
 #pragma once
 
-#include <OthelloMove.h>
+#include <OthelloResult.h>
 #include <OthelloState.h>
 
 class OthelloGamePlay
 {
-	OthelloMove getBestMoveFor(OthelloState& state, size_t iterations);
+public:
+	OthelloResult getBestMoveFor(OthelloState& state, size_t iterations);
 };

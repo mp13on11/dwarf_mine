@@ -6,5 +6,5 @@
 class SMPMonteCarloElf : public MonteCarloElf
 {
 public:
-    virtual OthelloMove calculateMove(const OthelloState& left);
+    virtual OthelloResult calculateBestMove(const OthelloState& state);
 };

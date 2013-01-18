@@ -77,12 +77,6 @@ TEST_F(OthelloStateTest, SimpleFlippingTest)
     verifyMoves(expectedMoves, actualMoves);
 }
 
-#define _F Field::Free
-#define _W Field::White
-#define _B Field::Black
-
-
-
 TEST_F(OthelloStateTest, FlippingTest)
 {
     state->doMove(OthelloMove{4, 2}); // White
@@ -92,14 +86,14 @@ TEST_F(OthelloStateTest, FlippingTest)
 
     ASSERT_EQ(Player::White, state->getCurrentPlayer());
     vector<Field> playfield = {
-        _F, _F, _F, _F, _F, _F, _F, _F,
-        _F, _F, _F, _F, _B, _F, _F, _F,
-        _F, _F, _F, _F, _B, _F, _F, _F,
-        _F, _F, _F, _W, _B, _F, _F, _F,
-        _F, _F, _F, _W, _B, _B, _F, _F,
-        _F, _F, _F, _W, _F, _F, _F, _F,
-        _F, _F, _F, _F, _F, _F, _F, _F,
-        _F, _F, _F, _F, _F, _F, _F, _F
+        F, F, F, F, F, F, F, F,
+        F, F, F, F, B, F, F, F,
+        F, F, F, F, B, F, F, F,
+        F, F, F, W, B, F, F, F,
+        F, F, F, W, B, B, F, F,
+        F, F, F, W, F, F, F, F,
+        F, F, F, F, F, F, F, F,
+        F, F, F, F, F, F, F, F
     };
     verifyPlayfield(playfield, *state);
 
@@ -117,10 +111,10 @@ TEST_F(OthelloStateTest, FlippingTest)
 TEST_F(OthelloStateTest, LockedStateTest)
 {
     vector<Field> playfield = {
-        _B, _F, _W, _W,
-        _F, _B, _B, _B,
-        _W, _B, _B, _B,
-        _W, _B, _B, _W,
+        B, F, W, W,
+        F, B, B, B,
+        W, B, B, B,
+        W, B, B, W,
     };
     OthelloState lockedState(playfield, Player::White);
 
@@ -136,10 +130,10 @@ TEST_F(OthelloStateTest, LockedStateTest)
 TEST_F(OthelloStateTest, LockedWhiteStateTest)
 {
     vector<Field> playfield = {
-        _B, _F, _W, _B,
-        _F, _B, _B, _B,
-        _W, _B, _B, _B,
-        _W, _B, _B, _W,
+        B, F, W, B,
+        F, B, B, B,
+        W, B, B, B,
+        W, B, B, W,
     };
     OthelloState lockedWhiteState(playfield, Player::White);
 

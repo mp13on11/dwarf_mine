@@ -1,11 +1,22 @@
 #include "MonteCarloElf.h"
+#include <vector>
 
-void MonteCarloElf::run(std::istream& input, std::ostream& output)
+using namespace std;
+
+void MonteCarloElf::run(istream& input, ostream& output)
 {
-    //TODO: Generate OthelloState from input
-
-    //OthelloState state;
-    //OthelloMove move = calculateMove(state);
+    vector<Field> playfield = {
+        F, F, F, F, F, F, F, F,
+        F, F, F, F, F, F, F, F,
+        F, F, F, F, F, F, F, F,
+        F, F, F, W, B, F, F, F,
+        F, F, F, B, W, F, F, F,
+        F, F, F, F, F, F, F, F,
+        F, F, F, F, F, F, F, F,
+        F, F, F, F, F, F, F, F
+    };
     
-    // TODO: Write Move to outputstream
+    OthelloState state(playfield, Player::White);
+    OthelloResult result = calculateBestMove(state);
+    result.operator<<(output);// << result;
 }

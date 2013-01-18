@@ -1,6 +1,10 @@
 #include "SMPMonteCarloElf.h"
+#include <OthelloGamePlay.h>
 
-OthelloMove SMPMonteCarloElf::calculateMove(const OthelloState& left)
+
+OthelloResult SMPMonteCarloElf::calculateBestMove(const OthelloState& state)
 {
-	return OthelloMove();
+	OthelloGamePlay game;
+    OthelloState copy = state;
+    return game.getBestMoveFor(copy, 100U);
 }

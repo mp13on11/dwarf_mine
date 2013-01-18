@@ -9,6 +9,11 @@
 
 enum class Field { Free, Black, White };
 
+// shortcuts
+#define F Field::Free
+#define W Field::White
+#define B Field::Black
+
 typedef Field Player;
 
 class OthelloState
