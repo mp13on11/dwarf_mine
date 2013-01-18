@@ -30,7 +30,7 @@ bool Configuration::parseArguments(bool showDescription)
         desc.add_options()
             ("help", "Print help message")
             ("mode,m",               po::value<string>(&_mode)->required(), "Mode (smp|cuda)")
-            ("category,c",           po::value<string>(&_category)->default_value("matrix"), "Elf to be run (matrix|factorize)")
+            ("category,c",           po::value<string>(&_category)->default_value("matrix"), "Elf to be run (matrix|factorize|montecarlo)")
             ("numwarmups,w",         po::value<size_t>(&_numberOfWarmUps)->default_value(50), "Number of warmup rounds")
             ("numiter,n",            po::value<size_t>(&_numberOfIterations)->default_value(100), "Number of benchmark iterations")
             ("input,i",              po::value<string>(&_inputFile), "Input file")
@@ -80,9 +80,8 @@ bool Configuration::parseArguments(bool showDescription)
     return true;
 }
 
-unique_ptr<ProblemStatement> generateProblemStatement(string elfCategory, size_t leftRows, size_t commonRowsColumns, size_t rightColumns)
+void generateMatrixProblemStatement(ProblemStatement* statement, size_t leftRows, size_t commonRowsColumns, size_t rightColumns)
 {
-    auto statement = unique_ptr<ProblemStatement>(new ProblemStatement(elfCategory));
     Matrix<float> left(leftRows, commonRowsColumns);
     Matrix<float> right(commonRowsColumns, rightColumns);
     auto distribution = uniform_real_distribution<float> (-100, +100);
@@ -92,15 +91,39 @@ unique_ptr<ProblemStatement> generateProblemStatement(string elfCategory, size_t
     MatrixHelper::fill(right, generator);
     MatrixHelper::writeMatrixTo(*(statement->input), left);
     MatrixHelper::writeMatrixTo(*(statement->input), right);
-    return statement;
 }
+
+void generateMonteCarloProblemStatement(ProblemStatement* statement)
+{
+    for (int i = 0; i < 8; ++i)
+    {
+        for (int j = 0; j < 8; ++j)
+        {
+            if (i >= 3 && i <= 4 && j >= 3 && j <= 4)
+            {
+                *(statement->input) << ((i + j) % 2 == 0 ? "W" : "B");
+            }
+            else
+            {
+                *(statement->input) << "F";
+            }
+        }
+    }
+}
+
 
 unique_ptr<ProblemStatement> Configuration::getProblemStatement(bool forceGenerated)
 {
 
     if(!_useFiles || forceGenerated)
     {
-        return generateProblemStatement(_category, _leftMatrixRows, _commonMatrixRowsColumns, _rightMatrixColumns);
+        auto statement = unique_ptr<ProblemStatement>(new ProblemStatement(_category));
+        if (_category == "matrix")
+            generateMatrixProblemStatement(statement.get(), _leftMatrixRows, _commonMatrixRowsColumns, _rightMatrixColumns);
+        else if (_category ==  "montecarlo")
+            generateMonteCarloProblemStatement(statement.get());
+        else throw new runtime_error("No creation of problem statement defined for "+_category);
+        return statement;
     }
     return unique_ptr<ProblemStatement>(new ProblemStatement(getElfCategory(), _inputFile, _outputFile));
 }

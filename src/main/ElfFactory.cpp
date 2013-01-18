@@ -20,7 +20,9 @@ unique_ptr<Scheduler> ElfFactory::createScheduler() const
 
 void ElfFactory::validate() const
 {
-    if (_category != "matrix" && _category != "factorize")
+    if (_category != "matrix" 
+        && _category != "factorize"
+        && _category != "montecarlo")
         throw runtime_error("Unknown elf category: " + _category + " in " __FILE__);
 }
 
