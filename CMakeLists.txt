@@ -10,14 +10,14 @@ INCLUDE(Utils)
 
 # Enable strict warnings
 IF(MSVC)
-    SET(CMAKE_CXX_FLAGS "/W4 ${CMAKE_CXX_FLAGS}")
+    ADD_CXX_FLAGS("/W4")
 ELSEIF(CMAKE_COMPILER_IS_GNUCXX)
-    SET(CMAKE_CXX_FLAGS "-Wall -Wextra -W -pedantic ${CMAKE_CXX_FLAGS}")    
+    ADD_CXX_FLAGS("-Wall -Wextra -W -pedantic")
 
     # Warnings as errors, unless disabled by the user
     OPTION(WARNINGS_AS_ERRORS "Set to off to disable treating warnings as errors" ON)
     IF(WARNINGS_AS_ERRORS)
-        SET(CMAKE_CXX_FLAGS "-Werror ${CMAKE_CXX_FLAGS}")
+        ADD_CXX_FLAGS("-Werror")
     ENDIF()
 ENDIF()
 
@@ -34,7 +34,7 @@ IF(MSVC)
     # Provide an option to enable multithreaded compilation in Visual Studio
     OPTION(WIN32_USE_MP "Set to ON to build with the /MP option." ON)
     IF(WIN32_USE_MP)
-        SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /MP")
+        ADD_CXX_FLAGS("/MP")
     ENDIF()
 ENDIF()
 
