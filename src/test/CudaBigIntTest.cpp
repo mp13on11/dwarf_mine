@@ -1,5 +1,6 @@
 #include <elves/factorize/BigInt.h>
 #include <elves/factorize/cuda/Factorize.h>
+#include <elves/factorize/cuda/NumberHelper.h>
 #include <elves/cuda-utils/Memory.h>
 #include <gtest/gtest.h>
 #include <functional>
@@ -17,44 +18,20 @@ using namespace std;
 
 BigInt invokeShiftKernel(const BigInt& left, const uint32_t right, function<void (PNumData, uint32_t, PNumData)> kernelCall)
 {
-    NumData leftData;
-    uint32_t rightData = right;
-    NumData outputData;
-    memset(leftData, 0, sizeof(uint32_t) * NUM_FIELDS);
-    //memset(rightData, 0, sizeof(uint32_t) * NUM_FIELDS);
-    mpz_export(leftData, nullptr, -1, sizeof(uint32_t), 0, 0, left.get_mpz_t());
-
-    CudaUtils::Memory<uint32_t> left_d(NUM_FIELDS);
-
+    CudaUtils::Memory<uint32_t> left_d(NumberHelper::BigIntToNumber(left));
     CudaUtils::Memory<uint32_t> out_d(NUM_FIELDS);
 
-    left_d.transferFrom(leftData);
-
-    kernelCall(left_d.get(), rightData, out_d.get());
-    out_d.transferTo(outputData);
-
-    BigInt mpzResult;
-    mpz_import(mpzResult.get_mpz_t(), NUM_FIELDS, -1, sizeof(uint32_t), 0, 0, outputData);
-    return mpzResult;
+    kernelCall(left_d.get(), right, out_d.get());
+    return NumberHelper::NumberToBigInt(out_d);
 }
 
 bool invokeBoolKernel(const BigInt& left, const BigInt& right, function<void (PNumData, PNumData, bool*)> kernelCall)
 {
-    NumData leftData;
-    NumData rightData;
     bool outputData;
-    memset(leftData, 0, sizeof(uint32_t) * NUM_FIELDS);
-    memset(rightData, 0, sizeof(uint32_t) * NUM_FIELDS);
 
-    mpz_export(leftData, nullptr, -1, sizeof(uint32_t), 0, 0, left.get_mpz_t());
-    mpz_export(rightData, nullptr, -1, sizeof(uint32_t), 0, 0, right.get_mpz_t());
-
-    CudaUtils::Memory<uint32_t> left_d(NUM_FIELDS);
-    CudaUtils::Memory<uint32_t> right_d(NUM_FIELDS);
+    CudaUtils::Memory<uint32_t> left_d(NumberHelper::BigIntToNumber(left));
+    CudaUtils::Memory<uint32_t> right_d(NumberHelper::BigIntToNumber(right));
     CudaUtils::Memory<bool> out_d(1);
-
-    left_d.transferFrom(leftData);
-    right_d.transferFrom(rightData);
 
     kernelCall(left_d.get(), right_d.get(), out_d.get());
     out_d.transferTo(&outputData);
@@ -64,26 +41,13 @@ bool invokeBoolKernel(const BigInt& left, const BigInt& right, function<void (PN
 
 BigInt invokeKernel(const BigInt& left, const BigInt& right, function<void (PNumData, PNumData, PNumData)> kernelCall)
 {
-    NumData leftData;
-    NumData rightData;
-    NumData outputData;
-    memset(leftData, 0, sizeof(uint32_t) * NUM_FIELDS);
-    memset(rightData, 0, sizeof(uint32_t) * NUM_FIELDS);
-    mpz_export(leftData, nullptr, -1, sizeof(uint32_t), 0, 0, left.get_mpz_t());
-    mpz_export(rightData, nullptr, -1, sizeof(uint32_t), 0, 0, right.get_mpz_t());
-
-    CudaUtils::Memory<uint32_t> left_d(NUM_FIELDS);
-    CudaUtils::Memory<uint32_t> right_d(NUM_FIELDS);
+    CudaUtils::Memory<uint32_t> left_d(NumberHelper::BigIntToNumber(left));
+    CudaUtils::Memory<uint32_t> right_d(NumberHelper::BigIntToNumber(right));
     CudaUtils::Memory<uint32_t> out_d(NUM_FIELDS);
 
-    left_d.transferFrom(leftData);
-    right_d.transferFrom(rightData);
     kernelCall(left_d.get(), right_d.get(), out_d.get());
-    out_d.transferTo(outputData);
 
-    BigInt mpzResult;
-    mpz_import(mpzResult.get_mpz_t(), NUM_FIELDS, -1, sizeof(uint32_t), 0, 0, outputData);
-    return mpzResult;
+    return NumberHelper::NumberToBigInt(out_d);
 }
 
 TEST(CudaBigIntTest, testMpzConversion)
@@ -219,4 +183,3 @@ TEST(CudaBigIntTest, testShiftRightBiggerNumber)
 
     EXPECT_EQ(expected, actual);
 }
-

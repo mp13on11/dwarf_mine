@@ -56,7 +56,7 @@ namespace CudaUtils
             size = newSize;
         }
 
-        void transferTo(MemType* hostPtr)
+        void transferTo(MemType* hostPtr) const
         {
             checkError(
                 cudaMemcpy(hostPtr, gpuPtr, sizeInBytes(), cudaMemcpyDeviceToHost)
