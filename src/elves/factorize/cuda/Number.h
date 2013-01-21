@@ -17,7 +17,12 @@ struct Number
 
     __device__ Number(const NumData data)
     {
-        memcpy(fields, data, sizeof(uint32_t)*NUM_FIELDS);
+        memcpy(fields, data, DATA_SIZE_BYTES);
+    }
+
+    __device__ void writeTo(PNumData out)
+    {
+        memcpy(out, fields, DATA_SIZE_BYTES);
     }
 
     __device__ Number& operator+=(const Number& other)
@@ -62,7 +67,7 @@ struct Number
     __device__ Number& operator*=(const Number& other)
     {
         NumData nfields;
-        memset(nfields, 0, sizeof(uint32_t) * NUM_FIELDS);
+        memset(nfields, 0, DATA_SIZE_BYTES);
 
         uint32_t carry = 0;
 
@@ -87,7 +92,7 @@ struct Number
             }
         }
 
-        memcpy(fields, nfields, sizeof(uint32_t)*NUM_FIELDS);
+        memcpy(fields, nfields, DATA_SIZE_BYTES);
 
         return *this;
     }
@@ -104,7 +109,7 @@ struct Number
         Number remainder(*this);
         Number quotient = remainder.divMod(other);
 
-        memcpy(fields, quotient.fields, sizeof(uint32_t)*NUM_FIELDS);
+        memcpy(fields, quotient.fields, DATA_SIZE_BYTES);
         return *this;
     }
 

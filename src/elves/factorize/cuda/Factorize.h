@@ -7,9 +7,12 @@ typedef unsigned int uint32_t;
 #include <cstdint>
 #endif
 
-const int NUM_FIELDS = 10;
+typedef uint32_t FieldType;
 
-typedef uint32_t NumData[NUM_FIELDS];
-typedef uint32_t* PNumData;
+const int NUM_FIELDS = 10;
+const size_t DATA_SIZE_BYTES = sizeof(FieldType)*NUM_FIELDS;
+
+typedef FieldType NumData[NUM_FIELDS];
+typedef FieldType* PNumData;
 
 extern void factorize(PNumData input, PNumData output);
