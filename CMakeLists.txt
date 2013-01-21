@@ -8,6 +8,11 @@ SET(CMAKE_DEBUG_POSTFIX "d")
 
 INCLUDE(Utils)
 
+# Enable C++ 11 and threading for gcc
+IF(CMAKE_COMPILER_IS_GNUCXX)
+    ADD_CXX_FLAGS("-std=c++0x -pthread")
+ENDIF()
+
 # Enable strict warnings
 IF(MSVC)
     ADD_CXX_FLAGS("/W4")

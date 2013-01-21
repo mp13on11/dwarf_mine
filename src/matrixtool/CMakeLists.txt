@@ -1,9 +1,6 @@
 SET(EXECUTABLE_NAME matrixtool)
 
-ENABLE_CPP_11()
-
 # Dependencies
-    
 INCLUDE_DIRECTORIES(
     # Add dependencies' include dirs here
 )
@@ -23,7 +20,6 @@ ADD_EXECUTABLE(${EXECUTABLE_NAME} ${AUTO_SOURCES} ${ADDITIONAL_SOURCES})
 
 TARGET_LINK_LIBRARIES(${EXECUTABLE_NAME}
     # Add dependencies' libraries here
-#    ${ELF_LIBRARIES}
     ${MPI_LIBRARIES}
 )
 

@@ -1,11 +1,10 @@
 SET(EXECUTABLE_NAME test)
 
-ENABLE_CPP_11()
-
-# Dependencies
-    
+# Make mpiexec command name available to
+# test code
 ADD_DEFINITIONS("-DMPIEXEC=\"${MPIEXEC}\"")
 
+# Dependencies
 INCLUDE_DIRECTORIES(
     ${PROJECT_SOURCE_DIR}/gtest-1.6.0/include/
     # Add dependencies' include dirs here

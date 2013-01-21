@@ -1,9 +1,6 @@
 SET(EXECUTABLE_NAME dwarf_mine)
 
-ENABLE_CPP_11()
-
 # Dependencies
-    
 INCLUDE_DIRECTORIES(
     # Add dependencies' include dirs here
 )
