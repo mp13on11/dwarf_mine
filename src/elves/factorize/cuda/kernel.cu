@@ -1,17 +1,12 @@
 #include "kernel.cuh"
 
-__device__ const NumData exampleData = { 0, 0xFFFFFFFF, 0, 0, 0, 0, 0, 0, 0, 0 };
-__device__ const NumData example2 = { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-
 __global__ void factorizeKernel(PNumData input, PNumData output)
 {
     unsigned int index = blockIdx.x * blockDim.x + threadIdx.x;
 
     if (index == 0)
     {
-        Number test(exampleData);
-        Number test2(example2);
-        Number outputNum(test - test2);
+        Number outputNum(42);
         outputNum.writeTo(output);
     }
 }

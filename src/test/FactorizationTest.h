@@ -1,15 +1,18 @@
 #pragma once
 
 #include <elves/factorize/FactorizationElf.h>
+#include <factorize/BigInt.h>
 
 #include <memory>
+#include <map>
 #include <gtest/gtest.h>
 
-class FactorizationTest : public testing::TestWithParam<const char*>
+class FactorizationTest : public testing::TestWithParam<std::pair<BigInt, BigInt>>
 {
 protected:
-
     virtual void SetUp();
 
-    std::unique_ptr<FactorizationElf> elf;
+    BigInt p;
+    BigInt q;
+    BigInt product;
 };

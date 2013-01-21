@@ -3,11 +3,10 @@ SET(LIBRARY_NAME smp-matrix)
 # Export library for main subproject
 SET(SMP_MATRIX_ELF_LIB ${LIBRARY_NAME} CACHE STRING INTERNAL FORCE)
 
+# Dependencies
 LINK_DIRECTORIES(
     ${CMAKE_CURRENT_BINARY_DIR}
 )
-
-# Dependencies
     
 INCLUDE_DIRECTORIES(
     # Add dependencies' include dirs here
@@ -22,9 +21,9 @@ FILE(GLOB GCC_SOURCES
 ENABLE_CPP_11()
 SET(LINKING_MODE SHARED)
 
-if(CMAKE_COMPILER_IS_GNUCXX)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -fopenmp -funroll-loops")        ## Optimize
-endif()
+IF(CMAKE_COMPILER_IS_GNUCXX)
+    ADD_CXX_FLAGS("-O3 -fopenmp -funroll-loops")        ## Optimize
+ENDIF()
 
 ADD_LIBRARY(${LIBRARY_NAME} ${LINKING_MODE}
     ${GCC_SOURCES} 

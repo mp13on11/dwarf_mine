@@ -210,7 +210,7 @@ TEST(BigIntTest, testZeroDivisionOperator)
 TEST(BigIntTest, testArithmeticAssignmentAdditionOperator)
 {
     BigInt a("123456789346545873246563762452465746764521398967478050785059870");
-    
+
     BigInt expected = a + a;
     a += a;
 
@@ -220,7 +220,7 @@ TEST(BigIntTest, testArithmeticAssignmentAdditionOperator)
 TEST(BigIntTest, testArithmeticAssignmentSubtractionOperator)
 {
     BigInt a("123456789346545873246563762452465746764521398967478050785059870");
-    
+
     BigInt expected = a - a;
     a -= a;
 
@@ -230,7 +230,7 @@ TEST(BigIntTest, testArithmeticAssignmentSubtractionOperator)
 TEST(BigIntTest, testArithmeticAssignmentMultiplyOperator)
 {
     BigInt a("123456789346545873246563762452465746764521398967478050785059870");
-    
+
     BigInt expected = a * a;
     a *= a;
 
@@ -240,7 +240,7 @@ TEST(BigIntTest, testArithmeticAssignmentMultiplyOperator)
 TEST(BigIntTest, testArithmeticAssignmentDivisionOperator)
 {
     BigInt a("123456789346545873246563762452465746764521398967478050785059870");
-    
+
     BigInt expected = a / a;
     a /= a;
 
@@ -250,104 +250,12 @@ TEST(BigIntTest, testArithmeticAssignmentDivisionOperator)
 TEST(BigIntTest, testArithmeticAssignmentRemainderOperator)
 {
     BigInt a("123456789346545873246563762452465746764521398967478050785059870");
-    
+
     BigInt expected = a % a;
     a %= a;
 
     EXPECT_EQ(expected, a);
 }
-
-TEST(BigIntTest, testFactorizationFermat)
-{
-    mpz_class p("551226983117");
-    mpz_class q("554724632351"); 
-
-    mpz_class m = p*q;
-
-    mpz_class n = sqrt(m);
-
-    mpz_class x = n;
-    mpz_class xx;
-    mpz_class y;
-    mpz_class yy;
-
-    auto start = high_resolution_clock::now();
-
-    for(uint64_t i=0; ;i++)
-    {
-        x = x + 1;
-
-        mpz_powm_ui(xx.get_mpz_t(), x.get_mpz_t(), 2, m.get_mpz_t());
-
-        y = sqrt(xx);
-
-        mpz_pow_ui(yy.get_mpz_t(), y.get_mpz_t(), 2);
-
-        if (xx == yy)
-        {
-            EXPECT_EQ(p, x-y);
-            EXPECT_EQ(q, x+y);
-            break;
-        }
-    }
-
-    auto end = high_resolution_clock::now();
-    milliseconds elapsed = duration_cast<milliseconds>(end - start);
-    std::cout << elapsed.count() / 1000.0 << '\n';  
-
-}
-
-TEST(BigIntTest, testFactorizationPollardRho)
-{
-    BigInt p("551226983117");
-    BigInt q("554724632351");
-
-    BigInt n = p*q; 
-
-    function<BigInt(BigInt)> f ([=](BigInt x){
-        BigInt result = (x*x+123) % n;
-        return result;
-    });
-
-    BigInt x(2);
-    BigInt y(x);
-    BigInt d(1);
-    BigInt absdiff;
-
-    auto start = high_resolution_clock::now();
-
-    while(d == 1)
-    {
-        x = f(x);
-        y = f(y);
-        y = f(y);
-        absdiff = abs(x-y);
-        mpz_gcd(d.get_mpz_t(), absdiff.get_mpz_t(), n.get_mpz_t());
-        if(1 < d && d < n)
-        {
-            BigInt pp = d;
-            BigInt qq = n / d;
-
-            if(pp > qq)
-            {
-                BigInt tmp(pp);
-                pp = qq;
-                qq = tmp;
-            }
-
-            EXPECT_EQ(p, pp);
-            EXPECT_EQ(q, qq);
-
-            break;
-        }
-    }
-
-    auto end = high_resolution_clock::now();
-    milliseconds elapsed = duration_cast<milliseconds>(end - start);
-    std::cout << elapsed.count() / 1000.0 << '\n';  
-
-}
-
 
 TEST(BigIntTest, testMediumLogarithm)
 {
