@@ -1,9 +1,7 @@
 SET(EXECUTABLE_NAME test)
 
-ENABLE_CPP_11()
-
-# Dependencies
-    
+# Make mpiexec command name available to
+# test code
 ADD_DEFINITIONS("-DMPIEXEC=\"${MPIEXEC}\"")
 
 INCLUDE_DIRECTORIES(
@@ -58,3 +56,4 @@ TARGET_LINK_LIBRARIES(${EXECUTABLE_NAME}
 )    
     
 ADD_COMMON_MSVC_PROPS(${EXECUTABLE_NAME})
+
