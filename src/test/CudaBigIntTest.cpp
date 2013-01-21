@@ -68,7 +68,7 @@ TEST(CudaBigIntTest, testAddition)
     BigInt right("21317833214213");
     BigInt expected("12314927549065355456");
 
-    auto actual = invokeKernel(left, right, [](PNumData l, PNumData r, PNumData o) { testAdd(l, r, o); });
+    auto actual = invokeKernel(left, right, testAdd);
 
     EXPECT_EQ(expected, actual);
 }
@@ -79,7 +79,7 @@ TEST(CudaBigIntTest, testSubtraction)
     BigInt right("779789821317833");
     BigInt expected("90108101410172790");
 
-    auto actual = invokeKernel(left, right, [](PNumData l, PNumData r, PNumData o) { testSub(l, r, o); });
+    auto actual = invokeKernel(left, right, testSub);
 
     EXPECT_EQ(expected, actual);
 }
@@ -90,7 +90,7 @@ TEST(CudaBigIntTest, testMultiplication)
     BigInt right("779789821317833");
     BigInt expected("70873452463358713606126842179959");
 
-    auto actual = invokeKernel(left, right, [](PNumData l, PNumData r, PNumData o) { testMul(l, r, o); });
+    auto actual = invokeKernel(left, right,  testMul);
 
     EXPECT_EQ(expected, actual);
 }
@@ -101,7 +101,7 @@ TEST(CudaBigIntTest, testMultiplicationSmallNumbers)
     BigInt right("8");
     BigInt expected("40");
 
-    auto actual = invokeKernel(left, right, [](PNumData l, PNumData r, PNumData o) { testMul(l, r, o); });
+    auto actual = invokeKernel(left, right,  testMul);
 
     EXPECT_EQ(expected, actual);
 }
@@ -113,7 +113,7 @@ TEST(CudaBigIntTest, testDivision)
     BigInt right("779789821317833");
     BigInt expected("116");
 
-    auto actual = invokeKernel(left, right, [](PNumData l, PNumData r, PNumData o) { testDiv(l, r, o); });
+    auto actual = invokeKernel(left, right,  testDiv);
 
     EXPECT_EQ(expected, actual);
 }
@@ -124,7 +124,7 @@ TEST(CudaBigIntTest, testSmallerThan)
     BigInt right("7797822229821317833");
     bool expected(true);
 
-    auto actual = invokeBoolKernel(left, right, [](PNumData l, PNumData r, bool* o) { testSmallerThan(l, r, o); });
+    auto actual = invokeBoolKernel(left, right, testSmallerThan);
 
     EXPECT_EQ(expected, actual);
 }
@@ -135,7 +135,7 @@ TEST(CudaBigIntTest, testSmallerThanWithEqualOperands)
     BigInt right("90887891231490623");
     bool expected(false);
 
-    auto actual = invokeBoolKernel(left, right, [](PNumData l, PNumData r, bool* o) { testSmallerThan(l, r, o); });
+    auto actual = invokeBoolKernel(left, right, testSmallerThan);
 
     EXPECT_EQ(expected, actual);
 }
@@ -146,7 +146,7 @@ TEST(CudaBigIntTest, testShiftLeft)
     uint32_t offset(32);
     BigInt expected("4294967296");
 
-    auto actual = invokeShiftKernel(left, offset, [](PNumData l, uint32_t r, PNumData o) { testShiftLeft(l, r, o); });
+    auto actual = invokeShiftKernel(left, offset, testShiftLeft);
 
     EXPECT_EQ(expected, actual);
 }
@@ -157,7 +157,7 @@ TEST(CudaBigIntTest, testShiftLeftBiggerNumber)
     uint32_t offset(23);
     BigInt expected("10762110931694518272");
 
-    auto actual = invokeShiftKernel(left, offset, [](PNumData l, uint32_t r, PNumData o) { testShiftLeft(l, r, o); });
+    auto actual = invokeShiftKernel(left, offset, testShiftLeft);
 
     EXPECT_EQ(expected, actual);
 }
@@ -168,7 +168,7 @@ TEST(CudaBigIntTest, testShiftRight)
     uint32_t offset(32);
     BigInt expected("1");
 
-    auto actual = invokeShiftKernel(left, offset, [](PNumData l, uint32_t r, PNumData o) { testShiftRight(l, r, o); });
+    auto actual = invokeShiftKernel(left, offset, testShiftRight);
 
     EXPECT_EQ(expected, actual);
 }
@@ -179,7 +179,7 @@ TEST(CudaBigIntTest, testShiftRightBiggerNumber)
     uint32_t offset(33);
     BigInt expected("151551839806");
 
-    auto actual = invokeShiftKernel(left, offset, [](PNumData l, uint32_t r, PNumData o) { testShiftRight(l, r, o); });
+    auto actual = invokeShiftKernel(left, offset, testShiftRight);
 
     EXPECT_EQ(expected, actual);
 }
