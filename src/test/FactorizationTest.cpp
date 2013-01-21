@@ -39,14 +39,13 @@ void FactorizationTest::SetUp()
     product = p*q;
 }
 
-/*
 TEST_P(FactorizationTest, testFactorizationCuda)
 {
     unique_ptr<CudaFactorizationElf> elf(new CudaFactorizationElf());
     auto actual = elf->factorize(product);
     EXPECT_EQ(p, actual.first);
     EXPECT_EQ(q, actual.second);
-}*/
+}
 
 TEST_P(FactorizationTest, testFactorizationFermat)
 {
