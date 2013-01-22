@@ -194,7 +194,7 @@ TEST(CudaBigIntTest, testShiftLeftBiggerNumber)
     EXPECT_EQ(expected, actual);
 }
 
-TEST(CudaBigIntTest, testShiftLeftBiggerNumber2)
+TEST(CudaBigIntTest, testShiftLeftWithBigShiftOffset)
 {
     BigInt left("1282943598234");
     uint32_t offset(3333);
@@ -238,7 +238,7 @@ TEST(CudaBigIntTest, testShiftRightBiggerNumber2)
     EXPECT_EQ(expected, actual);
 }
 
-TEST(CudaBigIntTest, testShiftRightOutrageousShiftOffset)
+TEST(CudaBigIntTest, testShiftRightWithBigShiftOffset)
 {
     BigInt left("1");
     uint32_t offset(33333);
