@@ -8,6 +8,10 @@
 #include "OthelloMove.h"
 #include "OthelloUtil.h"
 
+class OthelloNode;
+
+typedef std::vector<OthelloNode> NodeList;
+
 class OthelloNode
 {
 
@@ -17,28 +21,28 @@ public:
     ~OthelloNode();
     OthelloNode& operator=(const OthelloNode& node);
 
-    bool hasUntriedMoves();
-    bool hasChildren();
+    bool hasUntriedMoves() const;
+    bool hasChildren() const;
     OthelloNode& getFavoriteChild();
     OthelloNode& getRandomChildNode(RandomGenerator generator);
     OthelloNode& addChild(OthelloMove& move, const OthelloState& state);
-    std::vector<OthelloNode>& getChildren();
-    OthelloMove getTriggerMove();
-    OthelloMove getRandomMove(RandomGenerator generator);
-    OthelloMove getRandomUntriedMove(RandomGenerator generator);
+    const NodeList& getChildren() const;
+    OthelloMove getTriggerMove() const;
+    OthelloMove getRandomMove(RandomGenerator generator) const;
+    OthelloMove getRandomUntriedMove(RandomGenerator generator) const;
     void removeFromUntriedMoves(const OthelloMove& move);
     void updateSuccessProbability(bool hasWon);
-    Player currentPlayer();
-    OthelloNode& parent();
-    bool hasParent();
-    double successRate();
-    OthelloResult collectedResult();
+    Player currentPlayer() const;
+    OthelloNode& parent() const;
+    bool hasParent() const;
+    double successRate() const;
+    OthelloResult collectedResult() const;
 
 private:
 
-    std::vector<OthelloMove> _untriedMoves;
+    MoveList _untriedMoves;
     OthelloNode* _parent;
-    std::vector<OthelloNode> _children;
+    NodeList _children;
     std::shared_ptr<OthelloMove> _triggerMove;
     std::shared_ptr<OthelloState> _state;
     size_t _visits;
@@ -47,7 +51,7 @@ private:
     void setTriggerMove(OthelloMove& move);
 };
 
-inline std::vector<OthelloNode>& OthelloNode::getChildren()
+inline const NodeList& OthelloNode::getChildren() const
 {
     return _children;
 }

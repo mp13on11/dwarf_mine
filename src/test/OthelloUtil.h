@@ -6,8 +6,8 @@
 #include <vector>
 #include <cmath>
 
-using namespace std;
-
 void verifyPlayfield(std::vector<Field> expectedField, OthelloState& state);
 
 void verifyMoves(const std::vector<OthelloMove>& expectedMoves, const std::vector<OthelloMove>& actualMoves);
+
+std::ostream& operator<<(std::ostream& out, const std::vector<OthelloMove>& moves);

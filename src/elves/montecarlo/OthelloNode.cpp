@@ -40,7 +40,7 @@ OthelloNode& OthelloNode::operator=(const OthelloNode& node)
 	return *this;
 }
 
-bool OthelloNode::hasChildren()
+bool OthelloNode::hasChildren() const
 {
 	return !_children.empty();
 }
@@ -58,7 +58,7 @@ OthelloNode& OthelloNode::getRandomChildNode(RandomGenerator generator)
 	return _children[generator(_children.size())];
 }
 
-OthelloMove OthelloNode::getTriggerMove()
+OthelloMove OthelloNode::getTriggerMove() const
 {
 	if (!_triggerMove)
 	{
@@ -72,13 +72,13 @@ void OthelloNode::setTriggerMove(OthelloMove& move)
 	_triggerMove = make_shared<OthelloMove>(move);
 }
 
-OthelloMove OthelloNode::getRandomMove(RandomGenerator generator)
+OthelloMove OthelloNode::getRandomMove(RandomGenerator generator) const
 {
 	auto moves = _state->getPossibleMoves();
 	return moves[generator(moves.size())];
 }
 
-bool OthelloNode::hasUntriedMoves()
+bool OthelloNode::hasUntriedMoves() const
 {
 	return !_untriedMoves.empty();
 }
@@ -100,7 +100,7 @@ void OthelloNode::setParent(OthelloNode& node)
 	_parent = &node;
 }
 
-OthelloMove OthelloNode::getRandomUntriedMove(RandomGenerator generator)
+OthelloMove OthelloNode::getRandomUntriedMove(RandomGenerator generator) const
 {
 	if (!hasUntriedMoves())
 	{
@@ -124,29 +124,29 @@ void OthelloNode::updateSuccessProbability(bool hasWon)
 		++_wins;
 }
 	
-Player OthelloNode::currentPlayer()
+Player OthelloNode::currentPlayer() const
 {
 	return _state->getCurrentPlayer();
 }
 	
-OthelloNode& OthelloNode::parent()
+OthelloNode& OthelloNode::parent() const
 {
 	return *_parent;
 }
 	
-bool OthelloNode::hasParent()
+bool OthelloNode::hasParent() const
 {
 	return _parent != nullptr;
 }
 
-double OthelloNode::successRate()
+double OthelloNode::successRate() const
 {
 	if (_visits == 0)
 		return 0;
 	return 1.0 * _wins / _visits;
 }
 
-OthelloResult OthelloNode::collectedResult()
+OthelloResult OthelloNode::collectedResult() const
 {
 	auto move = getTriggerMove();
 	return OthelloResult{(size_t)move.x, (size_t)move.y, _visits, _wins};
@@ -158,7 +158,7 @@ OthelloNode& OthelloNode::getFavoriteChild()
 	size_t favorite = 0;
 	if (_children.size() > 1)
 	{
-		for (size_t i = 1; i < _children.size(); ++i)
+		for (size_t i = 0; i < _children.size(); ++i)
 		{
 			if (_children[favorite].successRate() < _children[i].successRate())
 			{

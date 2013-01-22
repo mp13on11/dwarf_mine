@@ -3,58 +3,46 @@
 #include <iostream>
 #include <stdexcept>
 
-
-
-std::ostream& operator<<(std::ostream& out, const std::vector<OthelloMove>& moves)
+namespace OthelloHelper
 {
-    for ( const auto& move : moves)
+    void writeResultToStream(std::ostream& stream, OthelloResult& result)
     {
-        out << "{"<<move.x<<", "<<move.y<<"} ";
+        stream << result.x << result.y << result.visits << result.wins;
     }
-    return out;
-}
 
-std::ostream& operator<<(std::ostream& stream, OthelloResult& result)
-{
-    stream << result.x << result.y << result.visits << result.wins;
-    return stream;
-}
-
-std::istream& operator>>(std::istream& stream, OthelloResult& result)
-{
-    stream >> result.x;
-    stream >> result.y;
-    stream >> result.visits;
-    stream >> result.wins;
-    return stream;
-}
-
-std::ostream& operator<<(std::ostream& stream, const std::vector<Field>& playfield)
-{
-    for (const auto& field : playfield)
+    void readResultFromStream(std::istream& stream, OthelloResult& result)
     {
-        stream << field;
+        stream >> result.x;
+        stream >> result.y;
+        stream >> result.visits;
+        stream >> result.wins;
     }
-    return stream;
-}
 
-std::istream& operator>>(std::istream& stream, std::vector<Field>& playfield)
-{
-    if (stream.good())
+    void writePlayfieldToStream(std::ostream& stream, const std::vector<Field>& playfield)
     {
-        do 
+        for (const auto& field : playfield)
         {
-            Field field;
-            stream >> field;
-            playfield.push_back(field);
+            stream << field;
         }
-        while (stream.good());
     }
-    else
+
+    void readPlayfieldFromStream(std::istream& stream, std::vector<Field>& playfield)
     {
-        throw std::runtime_error("Unexpected empty stream");
+        if (stream.good())
+        {
+            do 
+            {
+                Field field;
+                stream >> field;
+                playfield.push_back(field);
+            }
+            while (stream.good());
+        }
+        else
+        {
+            throw std::runtime_error("Unexpected empty stream");
+        }
     }
-    return stream;
 }
 
 std::ostream& operator<<(std::ostream& stream, const Field field)

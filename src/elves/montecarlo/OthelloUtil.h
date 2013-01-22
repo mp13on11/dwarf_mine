@@ -7,6 +7,16 @@
 
 typedef std::function<size_t(size_t)> RandomGenerator;
 
+enum class Field { Free, Black, White };
+
+// shortcuts
+#define F Field::Free
+#define W Field::White
+#define B Field::Black
+
+typedef Field Player;
+typedef std::vector<Field> Playfield;
+
 struct OthelloResult
 {
     size_t x;
@@ -25,25 +35,16 @@ struct OthelloResult
     }
 };
 
-enum class Field { Free, Black, White };
+namespace OthelloHelper
+{
+    void writeResultToStream(std::ostream& stream, OthelloResult& result);
 
-// shortcuts
-#define F Field::Free
-#define W Field::White
-#define B Field::Black
-
-typedef Field Player;
-
-std::ostream& operator<<(std::ostream& out, const std::vector<OthelloMove>& moves);
-
-
-std::ostream& operator<<(std::ostream& stream, OthelloResult& result);
-
-std::istream& operator>>(std::istream& stream, OthelloResult& result);
-
-std::ostream& operator<<(std::ostream& stream, const std::vector<Field>& playfield);
-
-std::istream& operator>>(std::istream& stream, std::vector<Field>& playfield);
+    void readResultFromStream(std::istream& stream, OthelloResult& result);
+    
+    void writePlayfieldToStream(std::ostream& stream, const Playfield& playfield);
+    
+    void readPlayfieldFromStream(std::istream& stream, Playfield& playfield);
+}
 
 std::ostream& operator<<(std::ostream& stream, const Field field);
 

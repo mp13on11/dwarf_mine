@@ -21,8 +21,6 @@ OthelloState::OthelloState(const OthelloState& state)
 OthelloState::OthelloState(const vector<Field>& playfield, Player nextPlayer)
 	: _playfield(playfield), _sideLength(sqrt(playfield.size())), _player(nextPlayer)
 {
-	//cout << "Playfield " << _sideLength<<endl;
-	//cout << playfield << endl;
 	if (_sideLength % 2 != 0)
 	{
 		throw InvalidFieldSizeException(_sideLength);
@@ -32,7 +30,6 @@ OthelloState::OthelloState(const vector<Field>& playfield, Player nextPlayer)
 OthelloState::OthelloState(size_t sideLength)
 	: _sideLength((int)sideLength), _player(Player::White)
 {
-	//cout << "SideLength " << _sideLength<<endl;
 	if (_sideLength % 2 != 0)
 	{
 		throw InvalidFieldSizeException(sideLength);
@@ -65,7 +62,7 @@ void OthelloState::doMove(const OthelloMove& move)
 	_player = getCurrentEnemy();
 }
 
-void OthelloState::flipCounters(const vector<OthelloMove>& counterPostions, Player player)
+void OthelloState::flipCounters(const vector<OthelloMove>& counterPostions, Player player) 
 {
 	for (const auto& position : counterPostions)
 	{
@@ -78,7 +75,7 @@ bool OthelloState::onBoard(const OthelloMove& move) const
 	return move.x < _sideLength && move.x >= 0 && move.y < _sideLength && move.y >= 0;
 }
 
-vector<OthelloMove> OthelloState::getAdjacentEnemyDirections(const OthelloMove& move)
+vector<OthelloMove> OthelloState::getAdjacentEnemyDirections(const OthelloMove& move) const
 {
 	vector<OthelloMove> directions;
 	for (const auto& direction : DIRECTIONS)
@@ -92,7 +89,7 @@ vector<OthelloMove> OthelloState::getAdjacentEnemyDirections(const OthelloMove& 
 	return directions;
 }
 
-vector<OthelloMove> OthelloState::getAllEnclosedCounters(const OthelloMove& move)
+vector<OthelloMove> OthelloState::getAllEnclosedCounters(const OthelloMove& move) const
 {
 	vector<OthelloMove> counters;
 	vector<OthelloMove> enemyDirections = getAdjacentEnemyDirections(move);
@@ -105,7 +102,7 @@ vector<OthelloMove> OthelloState::getAllEnclosedCounters(const OthelloMove& move
 	return counters;
 }
 
-vector<OthelloMove> OthelloState::getEnclosedCounters(const OthelloMove& move, const OthelloMove& direction)
+MoveList OthelloState::getEnclosedCounters(const OthelloMove& move, const OthelloMove& direction) const
 {
 	auto position = move + direction;
 	vector<OthelloMove> counters;
@@ -122,13 +119,13 @@ vector<OthelloMove> OthelloState::getEnclosedCounters(const OthelloMove& move, c
 	return counters;
 }
 
-OthelloMove OthelloState::getRandomMove(RandomGenerator generator)
+OthelloMove OthelloState::getRandomMove(RandomGenerator generator) const
 {
 	auto moves = getPossibleMoves();
 	return moves[generator(moves.size())];
 }
 
-vector<OthelloMove> OthelloState::getPossibleMoves()
+MoveList OthelloState::getPossibleMoves() const
 {
 	vector<OthelloMove> moves;
 	for (int i = 0; i < _sideLength; ++i)
@@ -147,7 +144,7 @@ vector<OthelloMove> OthelloState::getPossibleMoves()
 }
 // enclosed
 
-bool OthelloState::existsEnclosedCounters(const OthelloMove& move)
+bool OthelloState::existsEnclosedCounters(const OthelloMove& move) const
 {
 	auto directions = getAdjacentEnemyDirections(move);
 	for (const auto& direction : directions)
@@ -161,12 +158,12 @@ bool OthelloState::existsEnclosedCounters(const OthelloMove& move)
 }
 
 // TODO optimize - cache of some fancy rule to detect a move
-bool OthelloState::hasPossibleMoves()
+bool OthelloState::hasPossibleMoves() const
 {
 	return getPossibleMoves().size() > 0;
 }
 
-bool OthelloState::hasWon(Player player)
+bool OthelloState::hasWon(Player player) const
 {
 	size_t playerCounter = 0;
 	size_t enemyCounter = 0;
@@ -197,7 +194,7 @@ Player OthelloState::getCurrentPlayer() const
 	return _player;
 }
 
-Field OthelloState::atPosition(int x, int y)
+Field OthelloState::atPosition(int x, int y) const
 {
 	return playfield(OthelloMove{x, y});
 }

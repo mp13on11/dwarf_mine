@@ -7,25 +7,22 @@
 #include <set>
 #include <iosfwd>
 
-
-
-
 class OthelloState
 {
 public:
-	OthelloState(const OthelloState& state);
-	OthelloState(const std::vector<Field>& playfield, Player nextPlayer);
 	OthelloState(size_t sideLength = 8);
+	OthelloState(const OthelloState& state);
+	OthelloState(const Playfield& playfield, Player nextPlayer);
 
 	void doMove(const OthelloMove& move);
-	std::vector<OthelloMove> getPossibleMoves();
-	OthelloMove getRandomMove(RandomGenerator generator);
+	MoveList getPossibleMoves() const;
+	OthelloMove getRandomMove(RandomGenerator generator) const;
 	Player getCurrentPlayer() const;
 	Player getCurrentEnemy() const;
-	bool hasPossibleMoves();
-	bool hasWon(Player player);
+	bool hasPossibleMoves() const;
+	bool hasWon(Player player) const;
 
-	Field atPosition(int x, int y);
+	Field atPosition(int x, int y) const;
 	int playfieldSideLength() const;
 	Field* playfieldBuffer();
 
@@ -36,11 +33,12 @@ private:
 
 	void flipCounters(const std::vector<OthelloMove>& counterPositions, Player player);
 	bool onBoard(const OthelloMove& move) const;
-	std::vector<OthelloMove> getAllEnclosedCounters(const OthelloMove& move);
-	std::vector<OthelloMove> getAdjacentEnemyDirections(const OthelloMove& move);
-	std::vector<OthelloMove> getEnclosedCounters(const OthelloMove& move, const OthelloMove& direction);
-	bool existsEnclosedCounters(const OthelloMove& move);
+	MoveList getAllEnclosedCounters(const OthelloMove& move) const;
+	MoveList getAdjacentEnemyDirections(const OthelloMove& move) const;
+	MoveList getEnclosedCounters(const OthelloMove& move, const OthelloMove& direction) const;
+	bool existsEnclosedCounters(const OthelloMove& move) const;
 	Field& playfield(const OthelloMove& move);
+	Field playfield(const OthelloMove& move) const;
 
 	friend std::ostream& operator<<(std::ostream& stream, const OthelloState& state);
 };
@@ -51,6 +49,11 @@ inline int OthelloState::playfieldSideLength() const
 }
 
 inline Field& OthelloState::playfield(const OthelloMove& move)
+{
+	return _playfield[move.y * _sideLength + move.x];
+}
+
+inline Field OthelloState::playfield(const OthelloMove& move) const
 {
 	return _playfield[move.y * _sideLength + move.x];
 }

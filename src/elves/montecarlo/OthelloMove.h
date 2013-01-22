@@ -1,6 +1,7 @@
 #pragma once
 
 #include <iostream>
+#include <vector>
 
 struct OthelloMove
 {
@@ -14,6 +15,8 @@ struct OthelloMove
 
     friend std::ostream& operator<<(std::ostream& stream, const OthelloMove& move);
 };
+
+typedef std::vector<OthelloMove> MoveList;
 
 inline bool operator==(const OthelloMove& first, const OthelloMove& second)
 {

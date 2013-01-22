@@ -81,14 +81,13 @@ void MonteCarloScheduler::MonteCarloSchedulerImpl::provideData(ProblemStatement&
     statement.input->clear();
     statement.input->seekg(0);
     vector<Field> playfield;
-    *(statement.input )>>playfield;
-    cout << "\t" << playfield << endl;
+    OthelloHelper::readPlayfieldFromStream(*(statement.input), playfield);
     state = OthelloState(playfield, Player::White);
 }
 
 void MonteCarloScheduler::MonteCarloSchedulerImpl::outputData(ProblemStatement& statement)
 {
-    *(statement.output) << result;
+    OthelloHelper::writeResultToStream(*(statement.output), result);
 }
 
 bool MonteCarloScheduler::MonteCarloSchedulerImpl::hasData()
@@ -113,7 +112,7 @@ void MonteCarloScheduler::MonteCarloSchedulerImpl::distribute()
     }
     MPI::COMM_WORLD.Bcast(&bufferSize, 1, MPI::UNSIGNED, MpiHelper::MASTER);
     
-    vector<Field> playfield(bufferSize);
+    Playfield playfield(bufferSize);
     if (MpiHelper::isMaster())
     {
         playfield.assign(state.playfieldBuffer(), state.playfieldBuffer() + bufferSize);
@@ -124,27 +123,42 @@ void MonteCarloScheduler::MonteCarloSchedulerImpl::distribute()
     state = OthelloState(playfield, Player::White);
 }
 
-void MonteCarloScheduler::MonteCarloSchedulerImpl::collectResults()
+vector<OthelloResult> gatherResults(OthelloResult& localResult)
 {
     size_t numberOfNodes = MpiHelper::numberOfNodes();
     vector<OthelloResult> results(numberOfNodes);
-    // TODO OthelloResult - not defined for MPI
 
     MPI_Datatype MPI_OthelloResult;
-    MPI_Datatype type[] = { MPI::INT, MPI::INT, MPI::UNSIGNED, MPI::UNSIGNED };
-    int blocklen[] = { 1, 1, 1, 1 };
-    MPI_Aint disp[] = { 
+    MPI_Datatype elementTypes[] = { 
+        MPI::INT, 
+        MPI::INT, 
+        MPI::UNSIGNED, 
+        MPI::UNSIGNED 
+    };
+    int elementLengths[] = { 
+        1, 
+        1, 
+        1, 
+        1 
+    };
+    MPI_Aint elementDisplacements[] = { 
         0,
         sizeof(size_t),
         2 * sizeof(size_t),
         3 * sizeof(size_t)
     };
 
-    MPI_Type_create_struct(4, blocklen, disp, type, &MPI_OthelloResult);
+    MPI_Type_create_struct(4, elementLengths, elementDisplacements, elementTypes, &MPI_OthelloResult);
     MPI_Type_commit(&MPI_OthelloResult);
     MPI_Gather(
-        &result, 1, MPI_OthelloResult, 
+        &localResult, 1, MPI_OthelloResult, 
         results.data(), numberOfNodes, MPI_OthelloResult, MpiHelper::MASTER, MPI_COMM_WORLD);
+    return results;
+}
+
+void MonteCarloScheduler::MonteCarloSchedulerImpl::collectResults()
+{
+    vector<OthelloResult> results = gatherResults(result);
 
     vector<OthelloResult> accumulatedResults;
     OthelloResult* bestMove;

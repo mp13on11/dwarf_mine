@@ -53,7 +53,7 @@ unique_ptr<ProblemStatement> generateMonteCarloProblemStatement(string category)
         F, F, F, F, F, F, F, F,
         F, F, F, F, F, F, F, F
     };
-    *(statement->input)<<playfield;
+    OthelloHelper::writePlayfieldToStream(*(statement->input), playfield);
     return statement;
 }
 

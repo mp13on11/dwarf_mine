@@ -41,3 +41,13 @@ void verifyMoves(const vector<OthelloMove>& expectedMoves, const vector<OthelloM
     }
     ASSERT_EQ(expectedMoves.size(), matchedMoves.size());
 }
+
+
+ostream& operator<<(ostream& out, const vector<OthelloMove>& moves)
+{
+    for ( const auto& move : moves)
+    {
+        out << "{"<<move.x<<", "<<move.y<<"} ";
+    }
+    return out;
+}
