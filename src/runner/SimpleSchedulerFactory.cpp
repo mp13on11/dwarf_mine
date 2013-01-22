@@ -6,6 +6,7 @@
 
 #ifdef HAVE_CUDA
 #include "matrix/cuda/CudaMatrixElf.h"
+#include "factorize/cuda/CudaFactorizationElf.h"
 #endif
 
 using namespace std;
