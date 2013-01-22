@@ -1,10 +1,10 @@
 #include "MonteCarloScheduler.h"
 #include <Elf.h>
-#include <main/ProblemStatement.h>
+#include <common/ProblemStatement.h>
 #include <iostream>
 #include <memory>
 #include <sstream>
-#include <main/MpiHelper.h>
+#include <common/MpiHelper.h>
 #include <mpi.h>
 
 using namespace std;
@@ -82,6 +82,7 @@ void MonteCarloScheduler::MonteCarloSchedulerImpl::provideData(ProblemStatement&
     statement.input->seekg(0);
     vector<Field> playfield;
     *(statement.input )>>playfield;
+    cout << "\t" << playfield << endl;
     state = OthelloState(playfield, Player::White);
 }
 

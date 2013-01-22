@@ -85,7 +85,14 @@ bool OthelloNode::hasUntriedMoves()
 
 void OthelloNode::removeFromUntriedMoves(const OthelloMove& move)
 {
-	_untriedMoves.remove(move);
+	auto i = _untriedMoves.begin();
+	for (; i != _untriedMoves.end(); ++i)
+	{
+		if (*i == move)
+			break;
+	}
+	if (i != _untriedMoves.end())
+		_untriedMoves.erase(i);
 }
 
 void OthelloNode::setParent(OthelloNode& node)

@@ -1,10 +1,13 @@
 #pragma once
 
-#include "main/SchedulerTemplate.h"
+#include "Matrix.h"
+#include "common/SchedulerTemplate.h"
 
 #include <functional>
+#include <vector>
 
 class MatrixElf;
+class MatrixSlice;
 
 class MatrixScheduler: public SchedulerTemplate<MatrixElf>
 {
@@ -16,10 +19,19 @@ public:
     virtual void outputData(ProblemStatement& statement);
 
 protected:
+    Matrix<float> left;
+    Matrix<float> right;
+    Matrix<float> result;
+
     virtual bool hasData();
     virtual void doDispatch();
 
 private:
-    struct MatrixSchedulerImpl;
-    MatrixSchedulerImpl* pImpl;
+    void calculateOnSlave();
+    void orchestrateCalculation();
+    Matrix<float> dispatchAndReceive() const;
+    const MatrixSlice* distributeSlices(const std::vector<MatrixSlice>& slices) const;
+    void calculateOnMaster(const MatrixSlice& definition, Matrix<float>& result) const;
+    void collectResults(const std::vector<MatrixSlice>& slices, Matrix<float>& result) const;
+    std::pair<Matrix<float>, Matrix<float>> sliceMatrices(const MatrixSlice& definition) const;
 };

@@ -8,9 +8,8 @@ LINK_DIRECTORIES(
 )
 
 # Dependencies
-FIND_PACKAGE(CUDA REQUIRED)
-
 INCLUDE_DIRECTORIES(
+    ${CUDA_TOOLKIT_INCLUDE}
     # Add dependencies' include dirs here
 )
 
@@ -20,12 +19,11 @@ FILE(GLOB GCC_SOURCES
 )
 
 FILE(GLOB CUDA_SOURCES
-    "*.h"
+    "*.cuh"
     "*.cu"
 )
 
 # Build executable out of sources
-ENABLE_CPP_11()
 SET(LINKING_MODE SHARED)
 SET(CUDA_PROPAGATE_HOST_FLAGS 0)
 
@@ -34,12 +32,6 @@ CUDA_COMPILE(CUDA_OBJECTS ${CUDA_SOURCES} ${LINKING_MODE} OPTIONS "--generate-co
 ADD_LIBRARY(${LIBRARY_NAME} ${LINKING_MODE}
     ${GCC_SOURCES}
     ${CUDA_OBJECTS}
-)
-
-TARGET_LINK_LIBRARIES(${LIBRARY_NAME}
-    # Add dependencies' libraries here
-    ${CUDA_CUDA_LIBRARY}
-    ${CUDA_CUDART_LIBRARY}
 )
 
 ADD_COMMON_MSVC_PROPS(${LIBRARY_NAME})

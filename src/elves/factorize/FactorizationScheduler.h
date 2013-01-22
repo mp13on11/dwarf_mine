@@ -1,7 +1,7 @@
 #pragma once
 
 #include "BigInt.h"
-#include "main/SchedulerTemplate.h"
+#include "common/SchedulerTemplate.h"
 
 #include <functional>
 #include <future>
@@ -17,15 +17,15 @@ public:
     virtual void outputData(ProblemStatement& statement);
 
 protected:
+    typedef std::pair<BigInt, BigInt> BigIntPair;
+
+    BigInt number;
+    BigInt p, q;
+
     virtual void doDispatch();
     virtual bool hasData();
 
 private:
-    typedef std::pair<BigInt, BigInt> BigIntPair;
-
-    BigInt number;
-    BigInt a, b;
-
     void distributeNumber();
     int distributeFinishedStateRegularly(std::future<BigIntPair>& f) const;
     void sendResultToMaster(int rank, std::future<BigIntPair>& f);

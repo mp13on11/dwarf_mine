@@ -1,9 +1,6 @@
 SET(EXECUTABLE_NAME dwarf_mine)
 
-ENABLE_CPP_11()
-
 # Dependencies
-    
 INCLUDE_DIRECTORIES(
     # Add dependencies' include dirs here
 )
@@ -18,11 +15,9 @@ ADD_EXECUTABLE(${EXECUTABLE_NAME} ${AUTO_SOURCES})
 
 TARGET_LINK_LIBRARIES(${EXECUTABLE_NAME}
     # Add dependencies' libraries here
+    ${COMMON_LIBRARY}
     ${ELF_LIBRARIES}
-    ${MPI_LIBRARIES}
-    ${Boost_LIBRARIES}
-    ${GMP_LIBRARIES}
-    ${GMPXX_LIBRARIES}
+    ${SUPPORT_LIBRARIES}
 )
 
 ADD_COMMON_MSVC_PROPS(${EXECUTABLE_NAME})

@@ -3,10 +3,10 @@
 #include <vector>
 #include <chrono>
 #include <memory>
-#include "ElfFactory.h"
 #include "BenchmarkResults.h"
-#include "ProblemStatement.h"
 #include "Configuration.h"
+#include "ProblemStatement.h"
+#include "SchedulerFactory.h"
 
 class Scheduler;
 
@@ -25,9 +25,9 @@ private:
     void weightTimedResults();
 
 public:
-    explicit BenchmarkRunner(Configuration& config);
-    BenchmarkRunner(Configuration& config, const BenchmarkResult& result);
-    void runBenchmark(ProblemStatement& statement, const ElfFactory& factory);
+    explicit BenchmarkRunner(const Configuration& config);
+    BenchmarkRunner(const Configuration& config, const BenchmarkResult& result);
+    void runBenchmark(ProblemStatement& statement, const SchedulerFactory& factory);
     BenchmarkResult getWeightedResults();
     BenchmarkResult getTimedResults();
 };

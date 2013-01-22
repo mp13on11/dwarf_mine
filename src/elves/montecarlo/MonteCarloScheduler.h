@@ -1,6 +1,6 @@
 #pragma once
 
-#include "main/SchedulerTemplate.h"
+#include "common/SchedulerTemplate.h"
 #include "MonteCarloElf.h"
 #include <functional>
 

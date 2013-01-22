@@ -1,6 +1,6 @@
 #include "FactorizationElf.h"
 #include "FactorizationScheduler.h"
-#include "main/ProblemStatement.h"
+#include "common/ProblemStatement.h"
 
 #include <memory>
 #include <mpi.h>
@@ -25,8 +25,8 @@ void FactorizationScheduler::provideData(ProblemStatement& statement)
 
 void FactorizationScheduler::outputData(ProblemStatement& statement)
 {
-    *(statement.output) << a << endl;
-    *(statement.output) << b << endl;
+    *(statement.output) << p << endl;
+    *(statement.output) << q << endl;
 }
 
 void FactorizationScheduler::doDispatch()
@@ -78,8 +78,8 @@ void FactorizationScheduler::sendResultToMaster(int rank, future<BigIntPair>& f)
     if (rank == MpiHelper::rank())
     {
         BigIntPair pair = f.get();
-        a = pair.first;
-        b = pair.second;
+        p = pair.first;
+        q = pair.second;
     }
 
     // if the master found the result, nothing more to do
@@ -98,13 +98,13 @@ void FactorizationScheduler::sendResultToMaster(int rank, future<BigIntPair>& f)
         MPI::COMM_WORLD.Recv(first.get(), sizes[0], MPI::CHAR, rank, 2);
         MPI::COMM_WORLD.Recv(second.get(), sizes[1], MPI::CHAR, rank, 3);
 
-        a = BigInt(string(first.get(), sizes[0]));
-        b = BigInt(string(second.get(), sizes[1]));
+        p = BigInt(string(first.get(), sizes[0]));
+        q = BigInt(string(second.get(), sizes[1]));
     }
     else
     {
-        string first = a.get_str();
-        string second = b.get_str();
+        string first = p.get_str();
+        string second = q.get_str();
         unsigned long sizes[] = { first.length(), second.length() };
 
         MPI::COMM_WORLD.Send(sizes, 2, MPI::UNSIGNED_LONG, MpiHelper::MASTER, 1);

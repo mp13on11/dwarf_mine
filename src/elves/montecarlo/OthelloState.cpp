@@ -2,6 +2,7 @@
 #include "OthelloExceptions.h"
 #include <stdexcept>
 #include <cmath>
+#include <iostream>
 
 using namespace std;
 
@@ -20,6 +21,8 @@ OthelloState::OthelloState(const OthelloState& state)
 OthelloState::OthelloState(const vector<Field>& playfield, Player nextPlayer)
 	: _playfield(playfield), _sideLength(sqrt(playfield.size())), _player(nextPlayer)
 {
+	//cout << "Playfield " << _sideLength<<endl;
+	//cout << playfield << endl;
 	if (_sideLength % 2 != 0)
 	{
 		throw InvalidFieldSizeException(_sideLength);
@@ -29,6 +32,7 @@ OthelloState::OthelloState(const vector<Field>& playfield, Player nextPlayer)
 OthelloState::OthelloState(size_t sideLength)
 	: _sideLength((int)sideLength), _player(Player::White)
 {
+	//cout << "SideLength " << _sideLength<<endl;
 	if (_sideLength % 2 != 0)
 	{
 		throw InvalidFieldSizeException(sideLength);

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <elves/factorize/FactorizationElf.h>
+#include <vector>
 
 class CudaFactorizationElf : public FactorizationElf
 {

@@ -19,7 +19,6 @@ FILE(GLOB GCC_SOURCES
 )
 
 # Build executable out of sources
-ENABLE_CPP_11()
 SET(LINKING_MODE SHARED)
 
 if(CMAKE_COMPILER_IS_GNUCXX)

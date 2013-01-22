@@ -1,6 +1,3 @@
-# Added by mp13on11 team:
-ENABLE_CPP_11()
-
 ########################################################################
 # CMake build script for Google Test.
 #
