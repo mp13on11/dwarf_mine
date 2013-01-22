@@ -195,6 +195,8 @@ struct Number
         uint32_t blockOffset = offset / 32;
         uint32_t carry = 0;
 
+        blockOffset = blockOffset > NUM_FIELDS ? NUM_FIELDS: blockOffset;
+
         for (int i = 0; i < NUM_FIELDS; ++i)
         {
             uint32_t old = fields[i];
@@ -224,6 +226,8 @@ struct Number
         uint32_t blockOffset = offset / 32;
         uint32_t carry = 0;
 
+        blockOffset = blockOffset > NUM_FIELDS ? NUM_FIELDS : blockOffset;
+
         for (int i = NUM_FIELDS-1; i >= 0 ; --i)
         {
             if (fields[i] == 0) continue;
@@ -238,6 +242,10 @@ struct Number
             fields[i] = fields[i + blockOffset];
         }
 
+        for (int i = NUM_FIELDS - blockOffset;  i < NUM_FIELDS; ++i)
+        {
+            fields[i] = 0;
+        }
 
         return *this;
     }
