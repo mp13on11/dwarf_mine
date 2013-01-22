@@ -19,14 +19,14 @@ public:
     virtual void outputData(ProblemStatement& statement);
 
 protected:
-    virtual bool hasData();
-    virtual void doDispatch();
-
-private:
     Matrix<float> left;
     Matrix<float> right;
     Matrix<float> result;
 
+    virtual bool hasData();
+    virtual void doDispatch();
+
+private:
     void calculateOnSlave();
     void orchestrateCalculation();
     Matrix<float> dispatchAndReceive() const;

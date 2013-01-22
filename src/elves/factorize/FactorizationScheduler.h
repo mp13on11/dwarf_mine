@@ -17,15 +17,15 @@ public:
     virtual void outputData(ProblemStatement& statement);
 
 protected:
-    virtual void doDispatch();
-    virtual bool hasData();
-
-private:
     typedef std::pair<BigInt, BigInt> BigIntPair;
 
     BigInt number;
     BigInt a, b;
 
+    virtual void doDispatch();
+    virtual bool hasData();
+
+private:
     void distributeNumber();
     int distributeFinishedStateRegularly(std::future<BigIntPair>& f) const;
     void sendResultToMaster(int rank, std::future<BigIntPair>& f);
