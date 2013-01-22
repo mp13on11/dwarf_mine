@@ -20,7 +20,7 @@ protected:
     typedef std::pair<BigInt, BigInt> BigIntPair;
 
     BigInt number;
-    BigInt a, b;
+    BigInt p, q;
 
     virtual void doDispatch();
     virtual bool hasData();
