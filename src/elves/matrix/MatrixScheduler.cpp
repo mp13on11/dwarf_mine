@@ -15,143 +15,101 @@
 using namespace std;
 using MatrixHelper::MatrixPair;
 
-struct MatrixScheduler::MatrixSchedulerImpl
-{
-    MatrixSchedulerImpl(MatrixScheduler* self) : self(self) {}
-
-    void orchestrateCalculation();
-    void calculateOnSlave();
-    Matrix<float> dispatchAndReceive(const MatrixPair& matrices);
-    const MatrixSlice* distributeSlices(const std::vector<MatrixSlice>& sliceDefinitions, const MatrixPair& matrices);
-    void calculateOnMaster(const MatrixSlice& sliceDefinition, const MatrixPair& matrices, Matrix<float>& result);
-    void collectResults(const std::vector<MatrixSlice>& sliceDefinitions, Matrix<float>& result);
-
-    void outputData(ProblemStatement& statement);
-    bool hasData();
-    void provideData(ProblemStatement& statement);
-
-    // Reference to containing MatrixScheduler
-    MatrixScheduler* self;
-    MatrixPair matrices;
-    Matrix<float> result;
-};
-
 MatrixScheduler::MatrixScheduler(const function<ElfPointer()>& factory) :
-    SchedulerTemplate(factory), pImpl(new MatrixSchedulerImpl(this))
+    SchedulerTemplate(factory)
 {
 }
 
 MatrixScheduler::~MatrixScheduler()
 {
-    delete pImpl;
 }
 
 void MatrixScheduler::provideData(ProblemStatement& statement)
 {
-    cout << "providing data..." << endl;
-    pImpl->provideData(statement);
+    statement.input->clear();
+    statement.input->seekg(0);
+    auto matrices = MatrixHelper::readMatrixPairFrom(*(statement.input));
+    left = matrices.first;
+    right = matrices.second;
 }
 
 bool MatrixScheduler::hasData()
 {
-    return pImpl->hasData();
+    return !left.empty() || !right.empty();
 }
 
 void MatrixScheduler::outputData(ProblemStatement& statement)
 {
-    pImpl->outputData(statement);
+    MatrixHelper::writeMatrixTo(*(statement.output), result);
 }
 
 void MatrixScheduler::doDispatch()
 {
     if (MpiHelper::isMaster(rank))
     {
-        pImpl->orchestrateCalculation();
+        orchestrateCalculation();
     }
     else
     {
-        pImpl->calculateOnSlave();
+        calculateOnSlave();
     }
 }
 
-MatrixPair sliceMatrices(const MatrixSlice& definition, const MatrixPair& matrices)
-{
-    Matrix<float> slicedLeft = definition.extractSlice(matrices.first, true);
-    Matrix<float> slicedRight = definition.extractSlice(matrices.second, false);
-
-    return { move(slicedLeft), move(slicedRight) };
-}
-
-void MatrixScheduler::MatrixSchedulerImpl::calculateOnSlave()
+void MatrixScheduler::calculateOnSlave()
 {
     Matrix<float> left = MatrixHelper::receiveMatrixFrom(MpiHelper::MASTER);
     Matrix<float> right = MatrixHelper::receiveMatrixFrom(MpiHelper::MASTER);
-    Matrix<float> result = self->elf().multiply(left, right);
+    Matrix<float> result = elf().multiply(left, right);
     MatrixHelper::sendMatrixTo(result, MpiHelper::MASTER);
 }
 
-void MatrixScheduler::MatrixSchedulerImpl::provideData(ProblemStatement& statement)
+void MatrixScheduler::orchestrateCalculation()
 {
-    statement.input->clear();
-    statement.input->seekg(0);
-    matrices = MatrixHelper::readMatrixPairFrom(*(statement.input));
+    result = dispatchAndReceive();
 }
 
-void MatrixScheduler::MatrixSchedulerImpl::outputData(ProblemStatement& statement)
+Matrix<float> MatrixScheduler::dispatchAndReceive() const
 {
-    MatrixHelper::writeMatrixTo(*(statement.output), result);
-}
-
-bool MatrixScheduler::MatrixSchedulerImpl::hasData()
-{
-    return !matrices.first.empty() || !matrices.second.empty();
-}
-
-void MatrixScheduler::MatrixSchedulerImpl::orchestrateCalculation()
-{
-    result = dispatchAndReceive(matrices);
-}
-
-Matrix<float> MatrixScheduler::MatrixSchedulerImpl::dispatchAndReceive(const MatrixPair& matrices)
-{
-    Matrix<float> result(matrices.first.rows(), matrices.second.columns());
+    Matrix<float> result(left.rows(), right.columns());
     //MatrixSlicer slicer;
     MatrixSlicerSquarified slicer;
-    //vector<MatrixSlice> sliceDefinitions = slicer.sliceAndDice(self->nodeSet, result.rows(), result.columns());
-    vector<MatrixSlice> sliceDefinitions = slicer.layout(self->nodeSet, result.rows(), result.columns());
-    const MatrixSlice* masterSlice = distributeSlices(sliceDefinitions, matrices);
+    //vector<MatrixSlice> sliceDefinitions = slicer.sliceAndDice(nodeSet, result.rows(), result.columns());
+    vector<MatrixSlice> sliceDefinitions = slicer.layout(nodeSet, result.rows(), result.columns());
+    const MatrixSlice* masterSlice = distributeSlices(sliceDefinitions);
     if (masterSlice != nullptr)
     {
-        calculateOnMaster(*masterSlice, matrices, result);
+        calculateOnMaster(*masterSlice, result);
     }
     collectResults(sliceDefinitions, result);
     return result;
 }
 
-const MatrixSlice* MatrixScheduler::MatrixSchedulerImpl::distributeSlices(const vector<MatrixSlice>& sliceDefinitions, const MatrixPair& matrices)
+const MatrixSlice* MatrixScheduler::distributeSlices(const vector<MatrixSlice>& sliceDefinitions) const
 {
     const MatrixSlice* masterSliceDefinition = nullptr;
 
-    for(const auto& definition : sliceDefinitions)
+    for (const MatrixSlice& definition : sliceDefinitions)
     {
         auto nodeId = definition.getNodeId();
+
         if (MpiHelper::isMaster(nodeId))
         {
             masterSliceDefinition = &definition;
         }
         else
         {
-            auto inputMatrices = sliceMatrices(definition, matrices);
+            auto inputMatrices = sliceMatrices(definition);
             MatrixHelper::sendMatrixTo(inputMatrices.first, nodeId);
             MatrixHelper::sendMatrixTo(inputMatrices.second, nodeId);
         }
     }
+
     return masterSliceDefinition;
 }
 
-void MatrixScheduler::MatrixSchedulerImpl::collectResults(const vector<MatrixSlice>& sliceDefinitions, Matrix<float>& result)
+void MatrixScheduler::collectResults(const vector<MatrixSlice>& sliceDefinitions, Matrix<float>& result) const
 {
-    for (const auto& definition : sliceDefinitions)
+    for (const MatrixSlice& definition : sliceDefinitions)
     {
         auto nodeId = definition.getNodeId();
         if (!MpiHelper::isMaster(nodeId))
@@ -162,9 +120,17 @@ void MatrixScheduler::MatrixSchedulerImpl::collectResults(const vector<MatrixSli
     }
 }
 
-void MatrixScheduler::MatrixSchedulerImpl::calculateOnMaster(const MatrixSlice& sliceDefinition, const MatrixPair& matrices, Matrix<float>& result)
+void MatrixScheduler::calculateOnMaster(const MatrixSlice& sliceDefinition, Matrix<float>& result) const
 {
-    MatrixPair slicedMatrices = sliceMatrices(sliceDefinition, matrices);
-    Matrix<float> resultSlice = self->elf().multiply(slicedMatrices.first, slicedMatrices.second);
+    MatrixPair slicedMatrices = sliceMatrices(sliceDefinition);
+    Matrix<float> resultSlice = elf().multiply(slicedMatrices.first, slicedMatrices.second);
     sliceDefinition.injectSlice(resultSlice, result);
+}
+
+MatrixPair MatrixScheduler::sliceMatrices(const MatrixSlice& definition) const
+{
+    Matrix<float> slicedLeft = definition.extractSlice(left, true);
+    Matrix<float> slicedRight = definition.extractSlice(right, false);
+
+    return { move(slicedLeft), move(slicedRight) };
 }
