@@ -9,13 +9,11 @@ const pair<BigInt,BigInt> QuadraticSieve::TRIVIAL_FACTORS(0,0);
 
 pair<BigInt, BigInt> QuadraticSieve::factorize()
 {
-    pair<BigInt, BigInt> factors = TRIVIAL_FACTORS;
-
     createFactorBase(150);
 
     // sieve
-    cout << "sieving relations ..." << endl; 
-    factors = sieve();
+    cout << "sieving relations ..." << endl;
+    pair<BigInt, BigInt> factors = sieve();
     if(isNonTrivial(factors))
         return factors;
 
@@ -24,9 +22,8 @@ pair<BigInt, BigInt> QuadraticSieve::factorize()
     performGaussianElimination();
 
     cout << "combining random congruences ..." << endl;
-    factors = searchForRandomCongruence(100);
 
-    return factors;
+    return searchForRandomCongruence(100);
 }
 
 pair<BigInt,BigInt> QuadraticSieve::factorsFromCongruence(const BigInt& a, const BigInt& b) const
@@ -63,7 +60,7 @@ pair<BigInt, BigInt> QuadraticSieve::sieveInterval(const BigInt& start, const Bi
     for(BigInt x = start; x < end; x++)
     {
         remainder = (x*x) % n;
-   
+
         PrimeFactorization factorization = factorizeOverBase(remainder);
         if(factorization.empty())
             continue;
@@ -81,10 +78,10 @@ pair<BigInt, BigInt> QuadraticSieve::sieveInterval(const BigInt& start, const Bi
                 continue;
                 return factors;
             }
-        }       
-        
+        }
+
         relations.push_back(relation);
-        
+
         if(relations.size() >= maxRelations)
             break;
 
@@ -99,7 +96,7 @@ void QuadraticSieve::print(const Relation& r) const
     cout << r.a << "^2%%N=\t";
     for(const smallPrime_t& prime : factorBase)
     {
-       cout << ((find(r.oddPrimePowers.indices.begin(), r.oddPrimePowers.indices.end(), prime) == r.oddPrimePowers.indices.end()) ? 0 : 1); 
+       cout << ((find(r.oddPrimePowers.indices.begin(), r.oddPrimePowers.indices.end(), prime) == r.oddPrimePowers.indices.end()) ? 0 : 1);
     }
     cout << " (";
     for(uint32_t p : r.oddPrimePowers.indices)
@@ -143,13 +140,13 @@ pair<BigInt,BigInt> QuadraticSieve::pickRandomCongruence() const
         const Relation& relation = *relIter;
 
         if((relation.dependsOnPrime == 0 &&  binaryDistribution(randomEngine) == 1) || (relation.dependsOnPrime > 0 && primeMask[relation.dependsOnPrime]))
-        {   
+        {
             selectedRelations.push_back(relation);
             for(uint32_t p : relation.oddPrimePowers.indices)
                 primeMask[p] = !primeMask[p];
         }
     }
-    
+
     if(selectedRelations.empty())
         return TRIVIAL_FACTORS;
 
@@ -171,8 +168,8 @@ pair<BigInt,BigInt> QuadraticSieve::pickRandomCongruence() const
 
 
 typedef struct {
-    bool operator() (const Relation& a, const Relation& b) 
-    { 
+    bool operator() (const Relation& a, const Relation& b)
+    {
         auto aStart = upper_bound(a.oddPrimePowers.indices.begin(), a.oddPrimePowers.indices.end(), minPrime);
         auto bStart = upper_bound(b.oddPrimePowers.indices.begin(), b.oddPrimePowers.indices.end(), minPrime);
 
@@ -274,7 +271,7 @@ PrimeFactorization QuadraticSieve::factorizeOverBase(const BigInt& number) const
         uint32_t power = 0;
         do
         {
-            mpz_fdiv_qr_ui(q.get_mpz_t(), r.get_mpz_t(), x.get_mpz_t(), prime);            
+            mpz_fdiv_qr_ui(q.get_mpz_t(), r.get_mpz_t(), x.get_mpz_t(), prime);
             if(r == 0)
             {
                 power++;
@@ -317,10 +314,10 @@ double binarySolve(function<double(double)> f, double y)
 }
 
 
-void QuadraticSieve::createFactorBase(size_t numberOfPrimes) 
+void QuadraticSieve::createFactorBase(size_t numberOfPrimes)
 {
     uint32_t numbersToCheck = (uint32_t) binarySolve(
-                                            [](double x){return x / log(x);}, 
+                                            [](double x){return x / log(x);},
                                             numberOfPrimes) * 2;
 
     vector<uint32_t> isPrime(numbersToCheck, true);
@@ -353,7 +350,7 @@ PrimeFactorization PrimeFactorization::sqrt() const
     for(auto primeEntry : primePowers)
     {
         result.primePowers.push_back({primeEntry.first, primeEntry.second / 2});
-    } 
+    }
     return result;
 }
 
@@ -379,7 +376,7 @@ PrimeFactorization PrimeFactorization::combine(const PrimeFactorization& other) 
         {
             result.primePowers.push_back(*bIt);
             bIt++;
-            continue;       
+            continue;
         }
         result.primePowers.push_back({aIt->first, aIt->second + bIt->second});
         aIt++;
@@ -402,7 +399,7 @@ BigInt PrimeFactorization::multiply() const
         prime = primeEntry.first;
         mpz_pow_ui(primePower.get_mpz_t(), prime.get_mpz_t(), primeEntry.second);
         result *= primePower;
-    } 
+    }
     return result;
 }
 
@@ -413,7 +410,7 @@ SparseVector<smallPrime_t> PrimeFactorization::oddPrimePowers() const
     {
         if(primeEntry.second % 2 == 1)
             result.indices.push_back(primeEntry.first);
-    } 
+    }
     return result;
 }
 
