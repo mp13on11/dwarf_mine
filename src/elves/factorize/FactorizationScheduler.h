@@ -1,7 +1,7 @@
 #pragma once
 
 #include "BigInt.h"
-#include "main/SchedulerTemplate.h"
+#include "common/SchedulerTemplate.h"
 
 #include <functional>
 #include <future>

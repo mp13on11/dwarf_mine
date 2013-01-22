@@ -3,7 +3,7 @@
 #include "factorize/cuda/CudaFactorizationElf.h"
 #endif
 
-#include "main/CudaElfFactory.h"
+#include "CudaElfFactory.h"
 #include "matrix/MatrixScheduler.h"
 #include "factorize/FactorizationScheduler.h"
 

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "main/MpiHelper.h"
+#include "common/MpiHelper.h"
 
 #include <iosfwd>
 #include <memory>

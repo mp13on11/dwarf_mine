@@ -1,3 +1,4 @@
+#include "Elf.h"
 #include "Matrix.h"
 #include "MatrixElf.h"
 #include "MatrixHelper.h"
@@ -5,9 +6,8 @@
 #include "MatrixSlice.h"
 #include "MatrixSlicer.h"
 #include "MatrixSlicerSquarified.h"
-#include <Elf.h>
-#include <main/ProblemStatement.h>
-#include <sstream>
+#include "common/ProblemStatement.h"
+
 #include <iostream>
 #include <memory>
 #include <sstream>
@@ -48,6 +48,7 @@ MatrixScheduler::~MatrixScheduler()
 
 void MatrixScheduler::provideData(ProblemStatement& statement)
 {
+    cout << "providing data..." << endl;
     pImpl->provideData(statement);
 }
 

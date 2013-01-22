@@ -1,7 +1,7 @@
-#include "BenchmarkRunner.h"
-#include "Configuration.h"
-#include "MpiGuard.h"
-#include "MpiHelper.h"
+#include "common/BenchmarkRunner.h"
+#include "common/Configuration.h"
+#include "common/MpiGuard.h"
+#include "common/MpiHelper.h"
 #include "matrix/MatrixHelper.h"
 #include "matrix/Matrix.h"
 

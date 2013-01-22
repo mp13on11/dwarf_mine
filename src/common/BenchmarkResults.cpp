@@ -1,5 +1,3 @@
-
-
 #include "BenchmarkResults.h"
 #include <iostream>
 

@@ -1,3 +1,5 @@
+#ifdef HAVE_CUDA
+
 #include <elves/factorize/BigInt.h>
 #include <elves/factorize/cuda/Factorize.h>
 #include <elves/factorize/cuda/NumberHelper.h>
@@ -183,3 +185,5 @@ TEST(CudaBigIntTest, testShiftRightBiggerNumber)
 
     EXPECT_EQ(expected, actual);
 }
+
+#endif /* HAVE_CUDA */

@@ -1,6 +1,6 @@
 #include "FactorizationElf.h"
 #include "FactorizationScheduler.h"
-#include "main/ProblemStatement.h"
+#include "common/ProblemStatement.h"
 
 #include <memory>
 #include <mpi.h>

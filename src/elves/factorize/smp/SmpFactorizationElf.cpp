@@ -1,6 +1,6 @@
 #include "SequentialFactorizer.h"
 #include "SmpFactorizationElf.h"
-#include "main/MpiHelper.h"
+#include "common/MpiHelper.h"
 
 #include <ctime>
 #include <omp.h>

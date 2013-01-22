@@ -1,6 +1,6 @@
 #pragma once
 
-#include "main/ElfFactory.h"
+#include "ElfFactory.h"
 
 class CudaElfFactory : public ElfFactory
 {

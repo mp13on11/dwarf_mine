@@ -1,6 +1,6 @@
-#include "main/ElfFactory.h"
-#include "main/SMPElfFactory.h"
-#include "main/CudaElfFactory.h"
+#include "ElfFactory.h"
+#include "SMPElfFactory.h"
+#include "CudaElfFactory.h"
 
 #include <stdexcept>
 

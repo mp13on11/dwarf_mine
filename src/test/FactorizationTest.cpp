@@ -2,9 +2,9 @@
 #include "Utilities.h"
 #include "factorize/BigInt.h"
 #include "factorize/QuadraticSieve.h"
-#include <main/ElfFactory.h>
-#include <elves/factorize/BigInt.h>
-#include <elves/factorize/cuda/CudaFactorizationElf.h>
+#include "common/ElfFactory.h"
+#include "factorize/BigInt.h"
+#include "factorize/cuda/CudaFactorizationElf.h"
 
 #include <memory>
 #include <vector>

@@ -1,8 +1,8 @@
+#include "SMPElfFactory.h"
 #include "factorize/smp/SmpFactorizationElf.h"
 #include "factorize/FactorizationScheduler.h"
 #include "matrix/smp/SMPMatrixElf.h"
 #include "matrix/MatrixScheduler.h"
-#include "main/SMPElfFactory.h"
 
 using namespace std;
 

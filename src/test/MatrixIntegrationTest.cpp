@@ -4,7 +4,7 @@
 #include "matrix/Matrix.h"
 #include "matrix/MatrixElf.h"
 #include "matrix/smp/SMPMatrixElf.h"
-#include "main/ElfFactory.h"
+#include "common/ElfFactory.h"
 
 #include <cstdlib>
 #include <string>

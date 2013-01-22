@@ -4,8 +4,8 @@
 #include <random>
 #include <omp.h>
 #include <functional>
-#include <main/Utils.h>
-#include "../Matrix.h"
+#include "common/Utils.h"
+#include "Matrix.h"
 
 SMPMatrixElf::MatrixT SMPMatrixElf::multiply(const MatrixT& left, const MatrixT& right)
 {

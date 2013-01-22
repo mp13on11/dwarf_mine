@@ -1,7 +1,7 @@
 #pragma once
 
 #include "MatrixSlice.h"
-#include <main/BenchmarkResults.h>
+#include "common/BenchmarkResults.h"
 #include <list>
 #include <vector>
 
