@@ -8,9 +8,9 @@
 class SimpleSchedulerFactory : public SchedulerFactory
 {
 public:
-	static std::unique_ptr<SchedulerFactory> createFor(const std::string& type, const ElfCategory& category);
+    static std::unique_ptr<SchedulerFactory> createFor(const std::string& type, const ElfCategory& category);
 
-	SimpleSchedulerFactory(const std::function<Scheduler*()>& factory);
+    SimpleSchedulerFactory(const std::function<Scheduler*()>& factory);
 
 private:
     static std::function<Scheduler*()> createFactory(const std::string& type, const ElfCategory& category);

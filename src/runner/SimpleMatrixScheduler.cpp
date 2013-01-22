@@ -4,11 +4,11 @@
 using namespace std;
 
 SimpleMatrixScheduler::SimpleMatrixScheduler(const function<ElfPointer()>& factory) :
-		MatrixScheduler(factory)
+        MatrixScheduler(factory)
 {
 }
 
 void SimpleMatrixScheduler::doDispatch()
 {
-	result = elf().multiply(left, right);
+    result = elf().multiply(left, right);
 }

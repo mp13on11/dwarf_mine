@@ -7,8 +7,8 @@
 class SimpleFactorizationScheduler : public FactorizationScheduler
 {
 public:
-	SimpleFactorizationScheduler(const std::function<ElfPointer()>& factory);
+    SimpleFactorizationScheduler(const std::function<ElfPointer()>& factory);
 
 protected:
-	virtual void doDispatch();
+    virtual void doDispatch();
 };

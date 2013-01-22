@@ -83,8 +83,8 @@ int main(int argc, char** argv)
 
         if (config.shouldPrintHelp())
         {
-        	config.printHelp();
-        	return 0;
+            config.printHelp();
+            return 0;
         }
 
         if (!config.shouldBeVerbose() && (config.shouldBeQuiet() || !MpiHelper::isMaster()))
@@ -118,9 +118,9 @@ int main(int argc, char** argv)
     }
     catch (const boost::program_options::error& e)
     {
-    	CommandLineConfiguration::printHelp();
-    	cerr << e.what() << endl;
-    	return 1;
+        CommandLineConfiguration::printHelp();
+        cerr << e.what() << endl;
+        return 1;
     }
     catch (const logic_error& e)
     {

@@ -38,8 +38,8 @@ private:
 template<typename SchedulerType, typename ElfType>
 std::function<Scheduler*()> SchedulerFactory::createFactory()
 {
-	return []()
-		{
-			return new SchedulerType([]() { return new ElfType(); });
-		};
+    return []()
+        {
+            return new SchedulerType([]() { return new ElfType(); });
+        };
 }

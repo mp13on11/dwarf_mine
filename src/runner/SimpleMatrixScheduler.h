@@ -7,8 +7,8 @@
 class SimpleMatrixScheduler : public MatrixScheduler
 {
 public:
-	SimpleMatrixScheduler(const std::function<ElfPointer()>& factory);
+    SimpleMatrixScheduler(const std::function<ElfPointer()>& factory);
 
 protected:
-	virtual void doDispatch();
+    virtual void doDispatch();
 };

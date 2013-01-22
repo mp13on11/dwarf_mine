@@ -94,12 +94,12 @@ void checkTestGrid(const TestGrid& testGrid, const SliceList& slices)
 
 TEST_F(MatrixSlicingTest, PivotMatrixSliceTest)
 {
-	auto slices = slicer.sliceAndDice({{0, 10}, {1, 10}, {2, 80}}, 100, 100);
-	ASSERT_EQ(slices.size(), (size_t)3);
-	
-	verifySlice(slices[0], 0, 0, 45, 100);
-	verifySlice(slices[1], 45, 0, 55, 82);
-	verifySlice(slices[2], 45, 82, 55, 18);
+    auto slices = slicer.sliceAndDice({{0, 10}, {1, 10}, {2, 80}}, 100, 100);
+    ASSERT_EQ(slices.size(), (size_t)3);
+    
+    verifySlice(slices[0], 0, 0, 45, 100);
+    verifySlice(slices[1], 45, 0, 55, 82);
+    verifySlice(slices[2], 45, 82, 55, 18);
 }
 
 TEST_F(MatrixSlicingTest, SingleNodeKeepsWholeMatrixTest)

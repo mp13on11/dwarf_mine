@@ -9,7 +9,7 @@ class SchedulerFactory;
 class Configuration
 {
 public:
-	virtual ~Configuration() = 0;
+    virtual ~Configuration() = 0;
 
     virtual std::unique_ptr<ProblemStatement> createProblemStatement(bool forceGenerated = false) const = 0;
     virtual std::unique_ptr<SchedulerFactory> createSchedulerFactory() const = 0;
