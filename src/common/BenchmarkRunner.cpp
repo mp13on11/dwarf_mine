@@ -9,8 +9,6 @@
 
 using namespace std;
 
-const size_t WARMUP_ITERATIONS = 50;
-
 /**
  * BenchmarkRunner determines the available devices and benchmarks them idenpendently
  */
