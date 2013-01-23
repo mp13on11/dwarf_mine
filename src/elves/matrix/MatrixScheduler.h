@@ -23,7 +23,7 @@ protected:
     Matrix<float> right;
     Matrix<float> result;
 
-    virtual bool hasData();
+    virtual bool hasData() const;
     virtual void doDispatch();
 
 private:

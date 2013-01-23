@@ -23,7 +23,7 @@ protected:
     BigInt p, q;
 
     virtual void doDispatch();
-    virtual bool hasData();
+    virtual bool hasData() const;
 
 private:
     void distributeNumber();

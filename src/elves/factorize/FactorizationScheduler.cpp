@@ -42,7 +42,7 @@ void FactorizationScheduler::doDispatch()
     sendResultToMaster(rank, f);
 }
 
-bool FactorizationScheduler::hasData()
+bool FactorizationScheduler::hasData() const
 {
     return number != 0;
 }
