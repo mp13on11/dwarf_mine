@@ -106,13 +106,17 @@ def plotBurnDown(threadTimes, fileName):
 
 
 file_dir = sys.argv[1]
+iterations = int(sys.argv[2]) if (len(sys.argv)>2) else 100
+warmups = iterations / 10
 
 
 def timeFile(threads, ext = ".txt"):
     return os.path.join(file_dir, "matmul_smp_{0}_1000{1}".format(threads, ext))
 
 def commandLine(threads):
-    return "OMP_NUM_THREADS=%i ./build/src/runner/elf_runner -m smp --left_rows 1000 --common_rows_columns 1000 --right_columns 1000 -w 10 -n 100 --time_output %s" % (threads, timeFile(threads))
+    return  "OMP_NUM_THREADS={0} ./build/src/runner/elf_runner "\
+            "-m smp --left_rows 1000 --common_rows_columns 1000 --right_columns 1000 "\
+            "-w {1} -n {2} --time_output {3}".format(threads, warmups, iterations, timeFile(threads))
 
 
 def main():
