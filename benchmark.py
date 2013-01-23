@@ -123,10 +123,12 @@ def main():
     numberOfThreads = range(1, 65, 1)
 
     for threads in numberOfThreads:
+        print "Executing with", threads, "thread(s)"
         os.system(commandLine(threads))
 
     alltimes = dict((threads, timesFromFile(timeFile(threads))) for threads in numberOfThreads)
 
+    print "Plotting..."
     plotSpeedUp(alltimes, timeFile("all", "_speedup.png"))
     plotBurnDown(alltimes, timeFile("all", "_burndown.png"))
 
