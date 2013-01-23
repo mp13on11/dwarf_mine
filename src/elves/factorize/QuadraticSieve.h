@@ -21,6 +21,7 @@ public:
         n(n), binaryDistribution(0,1)
     {}
     std::pair<BigInt, BigInt> factorize();
+    static BigInt rootModPrime(const BigInt& n, const BigInt& primeMod);
 
 private:
     void createFactorBase(size_t numberOfPrimes);

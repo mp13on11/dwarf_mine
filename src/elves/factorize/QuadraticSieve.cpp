@@ -292,6 +292,20 @@ PrimeFactorization QuadraticSieve::factorizeOverBase(const BigInt& number) const
 }
 
 
+BigInt QuadraticSieve::rootModPrime(const BigInt& n, const BigInt& primeMod)
+{
+    BigInt rem;
+    for(BigInt i=1; i<primeMod; i++)
+    {
+        mpz_powm_ui(rem.get_mpz_t(), i.get_mpz_t(), 2, primeMod.get_mpz_t());
+        if(rem == n)
+        {
+            return i;
+        }
+    }
+    return 0;
+}
+
 double binarySolve(function<double(double)> f, double y)
 {
     double xLo = 2;

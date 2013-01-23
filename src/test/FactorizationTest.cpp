@@ -150,3 +150,27 @@ TEST_P(FactorizationTest, testFactorizationQuadraticSieve)
     ASSERT_EQ(p, actualP);
     ASSERT_EQ(q, actualQ);
 }
+
+
+TEST(QuadraticSieveTest, testModularSquareRoot)
+{
+    BigInt primeMod("104729");
+    BigInt expectedRoot("24565");
+    BigInt n = (expectedRoot*expectedRoot) % primeMod;
+
+    BigInt root = QuadraticSieve::rootModPrime(n, primeMod);
+
+    ASSERT_NE(0, root);
+    ASSERT_EQ(n, (root*root)%primeMod);
+}
+
+
+TEST(QuadraticSieveTest, testModularSquareRootInvalid)
+{
+    BigInt primeMod("7");
+    BigInt n("3");
+
+    BigInt root = QuadraticSieve::rootModPrime(n, primeMod);
+
+    ASSERT_EQ(0, root);
+}
