@@ -3,6 +3,7 @@
 #include "common/MpiGuard.h"
 
 #include <exception>
+#include <fstream>
 #include <iostream>
 
 using namespace std;
@@ -31,8 +32,16 @@ int main(int argc, char** argv)
             return 0;
         }
 
+        ofstream file(config.timeOutputFilename(), ios::app);
+
+        if (!file.is_open())
+        {
+            cerr << "Failed to open file " << config.timeOutputFilename() << endl;
+            return 1;
+        }
+
         SimpleBenchmarkRunner runner(config);
-        cout << runner.run() << endl;
+        file << runner.run();
     }
     catch (const boost::program_options::error& e)
     {

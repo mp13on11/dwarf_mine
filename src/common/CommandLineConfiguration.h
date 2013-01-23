@@ -26,6 +26,7 @@ public:
     virtual std::string exportConfigurationFilename() const;
     virtual bool shouldBeQuiet() const;
     virtual bool shouldBeVerbose() const;
+    virtual std::string timeOutputFilename() const;
 
     void validate() const;
     bool shouldPrintHelp() const;
