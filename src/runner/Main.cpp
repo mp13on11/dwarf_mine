@@ -14,6 +14,14 @@ int main(int argc, char** argv)
         MpiGuard guard(argc, argv);
         SimpleConfiguration config(argc, argv);
 
+        if (config.shouldPrintHelp())
+        {
+            SimpleConfiguration::printHelp();
+            return 0;
+        }
+
+        cout << config << endl;
+
         BenchmarkResult rating;
         rating.insert({0, 1});
         BenchmarkRunner runner(config, rating);
