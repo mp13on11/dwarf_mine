@@ -1,11 +1,22 @@
+#include "SimpleBenchmarkRunner.h"
 #include "SimpleConfiguration.h"
-#include "common/BenchmarkRunner.h"
 #include "common/MpiGuard.h"
 
 #include <exception>
 #include <iostream>
 
 using namespace std;
+using namespace std::chrono;
+
+ostream& operator<<(ostream& out, const vector<microseconds>& measurements)
+{
+    for (const auto& time : measurements)
+    {
+        out << time.count() << endl;
+    }
+
+    return out;
+}
 
 int main(int argc, char** argv)
 {
@@ -20,14 +31,8 @@ int main(int argc, char** argv)
             return 0;
         }
 
-        cout << config << endl;
-
-        BenchmarkResult rating;
-        rating.insert({0, 1});
-        BenchmarkRunner runner(config, rating);
-        auto statement = config.createProblemStatement(false);
-        auto factory = config.createSchedulerFactory();
-        runner.runBenchmark(*statement, *factory);
+        SimpleBenchmarkRunner runner(config);
+        cout << runner.run() << endl;
     }
     catch (const boost::program_options::error& e)
     {
