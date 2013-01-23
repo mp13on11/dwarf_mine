@@ -5,6 +5,7 @@
 #include <functional>
 #include "OthelloMove.h"
 
+
 typedef std::function<size_t(size_t)> RandomGenerator;
 
 enum class Field { Free, Black, White };

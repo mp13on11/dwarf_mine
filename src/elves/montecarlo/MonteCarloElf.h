@@ -7,6 +7,6 @@
 class MonteCarloElf : public Elf
 {
 public:
-    virtual OthelloResult calculateBestMove(const OthelloState& state) = 0;
+    virtual OthelloResult getBestMoveFor(OthelloState& state, size_t reiterations) = 0;
     virtual void run(std::istream& input, std::ostream& output);
 };

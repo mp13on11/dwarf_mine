@@ -8,6 +8,6 @@ void MonteCarloElf::run(istream& input, ostream& output)
     vector<Field> playfield;
     OthelloHelper::readPlayfieldFromStream(input, playfield);
     OthelloState state(playfield, Player::White);
-    OthelloResult result = calculateBestMove(state);
+    OthelloResult result = getBestMoveFor(state, 100U);
     OthelloHelper::writeResultToStream(output, result);
 }

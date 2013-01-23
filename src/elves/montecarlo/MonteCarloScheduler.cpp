@@ -9,6 +9,9 @@
 
 using namespace std;
 
+const size_t REITERATIONS = 100U;
+const Player DEFAULTPLAYER = Player::White;
+
 struct MonteCarloScheduler::MonteCarloSchedulerImpl
 {
     MonteCarloSchedulerImpl(MonteCarloScheduler* self) : self(self) {}
@@ -68,7 +71,7 @@ void MonteCarloScheduler::doDispatch()
 
 void MonteCarloScheduler::MonteCarloSchedulerImpl::calculateOnSlave()
 {
-   result = self->elf().calculateBestMove(state);
+    result = self->elf().getBestMoveFor(state, REITERATIONS);
 }
 
 inline void MonteCarloScheduler::MonteCarloSchedulerImpl::calculateOnMaster()
@@ -82,7 +85,7 @@ void MonteCarloScheduler::MonteCarloSchedulerImpl::provideData(ProblemStatement&
     statement.input->seekg(0);
     vector<Field> playfield;
     OthelloHelper::readPlayfieldFromStream(*(statement.input), playfield);
-    state = OthelloState(playfield, Player::White);
+    state = OthelloState(playfield, DEFAULTPLAYER);
 }
 
 void MonteCarloScheduler::MonteCarloSchedulerImpl::outputData(ProblemStatement& statement)
