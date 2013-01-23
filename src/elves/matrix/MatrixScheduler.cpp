@@ -45,7 +45,7 @@ void MatrixScheduler::outputData(ProblemStatement& statement)
 
 void MatrixScheduler::doDispatch()
 {
-    if (MpiHelper::isMaster(rank))
+    if (MpiHelper::isMaster())
     {
         orchestrateCalculation();
     }

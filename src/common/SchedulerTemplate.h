@@ -1,5 +1,6 @@
 #pragma once
 
+#include "MpiHelper.h"
 #include "Scheduler.h"
 
 #include <functional>
@@ -48,7 +49,7 @@ template<typename ElfType>
 void SchedulerTemplate<ElfType>::dispatch()
 {
     _elf.reset(_factory());
-    if (MpiHelper::isMaster(rank))
+    if (MpiHelper::isMaster())
     {
         if (!hasData())
         {
