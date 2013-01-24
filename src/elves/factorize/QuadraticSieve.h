@@ -27,6 +27,7 @@ private:
     void createFactorBase(size_t numberOfPrimes);
     std::pair<BigInt, BigInt> sieve();
     std::pair<BigInt, BigInt> sieveInterval(const BigInt& start, const BigInt& end, size_t maxRelations);
+    std::pair<BigInt, BigInt> sieveIntervalFast(const BigInt& start, const BigInt& end, size_t maxRelations);
     bool isNonTrivial(const std::pair<BigInt, BigInt>& pair) const;
     std::pair<BigInt,BigInt> factorsFromCongruence(const BigInt& a, const BigInt& b) const;
     void performGaussianElimination();
@@ -66,6 +67,21 @@ public:
     BigInt multiply() const;
     SparseVector<smallPrime_t> oddPrimePowers() const;
     void add(const smallPrime_t& prime, uint32_t power);
+    void print() const
+    {
+        bool first = true;
+        for(const auto& pairy : primePowers)
+        {
+            if(first)
+                first = false;
+            else
+                std::cout << " * ";
+            std::cout << pairy.first;
+            if(pairy.second > 1)
+                std::cout << "^" << pairy.second;
+        }
+        std::cout << std::endl;
+    }
 
 private:
     std::list<std::pair<smallPrime_t, uint32_t>> primePowers;

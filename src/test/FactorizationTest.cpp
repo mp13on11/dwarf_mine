@@ -23,10 +23,10 @@ INSTANTIATE_TEST_CASE_P(
     FactorizationTest,
     testing::Values(
         // The large pair takes too long at the moment
-        //make_pair(BigInt("551226983117"), BigInt("554724632351")),
-        make_pair(BigInt("15485863"), BigInt("15534733")),
-        make_pair(BigInt("1313839"), BigInt("1327901")),
-        make_pair(BigInt("547"), BigInt("719"))
+        make_pair(BigInt("551226983117"), BigInt("554724632351"))
+        //make_pair(BigInt("15485863"), BigInt("15534733")),
+        //make_pair(BigInt("1313839"), BigInt("1327901")),
+        //make_pair(BigInt("547"), BigInt("719"))
     )
 );
 
@@ -155,13 +155,33 @@ TEST_P(FactorizationTest, testFactorizationQuadraticSieve)
 TEST(QuadraticSieveTest, testModularSquareRoot)
 {
     BigInt primeMod("104729");
-    BigInt expectedRoot("24565");
-    BigInt n = (expectedRoot*expectedRoot) % primeMod;
 
-    BigInt root = QuadraticSieve::rootModPrime(n, primeMod);
+    vector<string> roots = {"2", "12321", "4563", "34513", "13", "567856", "103729"};
 
-    ASSERT_NE(0, root);
-    ASSERT_EQ(n, (root*root)%primeMod);
+    for(const string& rootstring : roots)
+    {
+        BigInt expectedRoot(rootstring);
+        BigInt n = (expectedRoot*expectedRoot) % primeMod;
+        BigInt root = QuadraticSieve::rootModPrime(n, primeMod);
+        ASSERT_NE(0, root);
+        ASSERT_EQ(n, (root*root)%primeMod);
+    }
+}
+
+TEST(QuadraticSieveTest, testModularSquareRoot2)
+{
+    BigInt primeMod("2909");
+
+    vector<string> roots = {"305779185551528709018067"};
+
+    for(const string& rootstring : roots)
+    {
+        BigInt expectedRoot(rootstring);
+        BigInt n = (expectedRoot*expectedRoot) % primeMod;
+        BigInt root = QuadraticSieve::rootModPrime(n, primeMod);
+        ASSERT_NE(0, root);
+        ASSERT_EQ(n, (root*root)%primeMod);
+    }
 }
 
 
