@@ -120,7 +120,7 @@ def commandLine(threads):
 
 
 def main():
-    numberOfThreads = range(1, 65, 1)
+    numberOfThreads = range(1, 151, 1)
 
     for threads in numberOfThreads:
         print "Executing with", threads, "thread(s)"
