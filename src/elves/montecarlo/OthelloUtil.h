@@ -4,7 +4,7 @@
 #include <vector>
 #include <functional>
 #include "OthelloMove.h"
-
+#include <iostream>
 
 typedef std::function<size_t(size_t)> RandomGenerator;
 

@@ -25,7 +25,6 @@ protected:
     OthelloState _state;
     OthelloResult _result;
     size_t _repetitions;
-    MPI_Comm _scheduledCOMM;
 
 private:
     void orchestrateCalculation();
