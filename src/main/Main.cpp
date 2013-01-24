@@ -13,10 +13,8 @@ using namespace std;
 
 BenchmarkResult determineWeightedConfiguration(const Configuration& config)
 {
-    auto factory = config.createSchedulerFactory();
-    auto statement = config.createProblemStatement(true);
     BenchmarkRunner runner(config);
-    runner.runBenchmark(*statement, *factory);
+    runner.runBenchmark();
     return runner.getWeightedResults();
 }
 
@@ -53,10 +51,8 @@ BenchmarkResult importClusterConfiguration(const string& filename)
 
 BenchmarkResult runTimedMeasurement(const Configuration& config, BenchmarkResult& weightedResults)
 {
-    auto factory = config.createSchedulerFactory();
-    auto statement = config.createProblemStatement();
     BenchmarkRunner runner(config, weightedResults);
-    runner.runBenchmark(*statement, *factory);
+    runner.runBenchmark();
     return runner.getTimedResults();
 }
 

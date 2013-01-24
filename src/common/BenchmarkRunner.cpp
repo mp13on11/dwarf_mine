@@ -1,31 +1,36 @@
-#include <cmath>
-#include <limits>
-#include <memory>
-#include <vector>
 #include "BenchmarkRunner.h"
-#include "Elf.h"
+#include "Configuration.h"
 #include "MpiHelper.h"
-#include "Scheduler.h"
+#include "SchedulerFactory.h"
+
 
 using namespace std;
 
 /**
  * BenchmarkRunner determines the available devices and benchmarks them idenpendently
  */
-BenchmarkRunner::BenchmarkRunner(const Configuration& config)
-    : _iterations(config.iterations()), _warmUps(config.warmUps())
+BenchmarkRunner::BenchmarkRunner(const Configuration& config) :
+        _iterations(config.iterations()), _warmUps(config.warmUps()),
+        problemStatement(config.createProblemStatement(true))
 {
     for (size_t i = 0; i < MpiHelper::numberOfNodes(); ++i)
         _nodesets.push_back({{static_cast<NodeId>(i), 1}});
+
+    auto factory = config.createSchedulerFactory();
+    scheduler = factory->createScheduler();
 }
 
 /**
  * BenchmarkRunner uses the given (weighted) result to benchmark the nodeset as cluster
  */
-BenchmarkRunner::BenchmarkRunner(const Configuration& config, const BenchmarkResult& result)
-    : _iterations(config.iterations()), _warmUps(config.warmUps())
+BenchmarkRunner::BenchmarkRunner(const Configuration& config, const BenchmarkResult& result) :
+        _iterations(config.iterations()), _warmUps(config.warmUps()),
+        problemStatement(config.createProblemStatement(false))
 {
     _nodesets.push_back(result);
+
+    auto factory = config.createSchedulerFactory();
+    scheduler = factory->createScheduler();
 }
 
 std::chrono::microseconds BenchmarkRunner::measureCall(Scheduler& scheduler) {
@@ -35,44 +40,42 @@ std::chrono::microseconds BenchmarkRunner::measureCall(Scheduler& scheduler) {
     return clock::now() - before;
 }
 
-unsigned int BenchmarkRunner::benchmarkNodeset(ProblemStatement& statement, Scheduler& scheduler)
+unsigned int BenchmarkRunner::benchmarkNodeset()
 {
-    scheduler.provideData(statement);
+    scheduler->provideData(*problemStatement);
     for (size_t i = 0; i < _warmUps; ++i)
     {
-        measureCall(scheduler);
+        measureCall(*scheduler);
     }
     chrono::microseconds sum(0);
     for (size_t i = 0; i < _iterations; ++i)
     {
-        sum += measureCall(scheduler);
+        sum += measureCall(*scheduler);
     }
-    scheduler.outputData(statement);
+    scheduler->outputData(*problemStatement);
     return (sum / _iterations).count();
 }
 
-void BenchmarkRunner::getBenchmarked(Scheduler& scheduler)
+void BenchmarkRunner::getBenchmarked()
 {
     for (size_t i = 0; i < _iterations + _warmUps; ++i)
-        scheduler.dispatch(); // slave side
+        scheduler->dispatch(); // slave side
 }
 
-void BenchmarkRunner::runBenchmark(ProblemStatement& statement, const SchedulerFactory& factory)
+void BenchmarkRunner::runBenchmark()
 {
-    unique_ptr<Scheduler> scheduler = factory.createScheduler();
-
     if (MpiHelper::isMaster())
     {
         for (size_t nodeset = 0; nodeset < _nodesets.size(); ++nodeset)
         {
             scheduler->setNodeset(_nodesets[nodeset]);
-            _timedResults[nodeset] = benchmarkNodeset(statement, *scheduler);
+            _timedResults[nodeset] = benchmarkNodeset();
         }
         weightTimedResults();
     }
     else
     {
-        getBenchmarked(*scheduler);
+        getBenchmarked();
     }
 }
 
