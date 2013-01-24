@@ -89,7 +89,9 @@ void benchmarkWith(const Configuration& config)
         for (const auto& measurement : clusterResults)
         {
             cout << "\t" << measurement.count() << endl;
-            timeFile << measurement.count() << endl;
+
+            if (MpiHelper::isMaster())
+                timeFile << measurement.count() << endl;
         }
     }
 }
