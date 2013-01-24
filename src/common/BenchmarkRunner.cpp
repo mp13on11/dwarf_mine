@@ -46,11 +46,12 @@ vector<Measurement> BenchmarkRunner::runBenchmark(const BenchmarkResult& nodeWei
         scheduler->setNodeset(nodeWeights);
         return benchmarkNodeset(problem);
     }
-    else
+    else if (slaveShouldRunWith(nodeWeights))
     {
         getBenchmarked();
-        return vector<Measurement>(iterations, Measurement(0));
     }
+
+    return vector<Measurement>(iterations, Measurement(0));
 }
 
 vector<Measurement> BenchmarkRunner::benchmarkNodeset(ProblemStatement& problem) const
@@ -114,4 +115,10 @@ Measurement BenchmarkRunner::averageOf(const vector<Measurement>& runTimes)
         sum += runTime;
 
     return sum / runTimes.size();
+}
+
+bool BenchmarkRunner::slaveShouldRunWith(const BenchmarkResult& nodeWeights)
+{
+    // returns true if the slave's rank is included in the nodeWeights
+    return nodeWeights.find(MpiHelper::rank()) != nodeWeights.end();
 }
