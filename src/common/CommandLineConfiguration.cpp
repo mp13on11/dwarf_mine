@@ -53,6 +53,16 @@ unique_ptr<ProblemStatement> generateMonteCarloProblemStatement(string category)
         F, F, F, F, F, F, F, F,
         F, F, F, F, F, F, F, F
     };
+    // vector<Field> playfield = {
+    //     B, B, B, W, W, W, W, W,
+    //     B, B, B, B, W, W, W, W,
+    //     B, B, B, B, W, W, W, W,
+    //     B, B, B, B, W, W, W, W,      
+    //     B, B, B, B, W, W, W, W,      
+    //     B, B, B, B, W, W, W, W,
+    //     B, B, B, B, W, W, W, W,
+    //     W, B, B, F, B, B, B, W
+    // };
     OthelloHelper::writePlayfieldToStream(*(statement->input), playfield);
     return statement;
 }
@@ -151,7 +161,7 @@ options_description CommandLineConfiguration::createDescription()
     description.add_options()
         ("help,h",               "Print help message")
         ("mode,m",               value<string>()->required(), "Mode (smp|cuda)")
-        ("category,c",           value<string>()->default_value("matrix"), "Elf to be run (matrix|factorize)")
+        ("category,c",           value<string>()->default_value("matrix"), "Elf to be run (matrix|factorize|montecarlo)")
         ("numwarmups,w",         value<size_t>()->default_value(50), "Number of warmup rounds")
         ("numiter,n",            value<size_t>()->default_value(100), "Number of benchmark iterations")
         ("input,i",              value<string>(), "Input file")

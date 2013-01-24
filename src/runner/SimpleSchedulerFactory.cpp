@@ -1,7 +1,9 @@
 #include "SimpleFactorizationScheduler.h"
 #include "SimpleMatrixScheduler.h"
 #include "SimpleSchedulerFactory.h"
+#include "SimpleMonteCarloScheduler.h"
 #include "factorize/smp/SmpFactorizationElf.h"
+#include "montecarlo/smp/SMPMonteCarloElf.h"
 #include "matrix/smp/SMPMatrixElf.h"
 
 #ifdef HAVE_CUDA
@@ -45,6 +47,8 @@ function<Scheduler*()> SimpleSchedulerFactory::createSmpFactory(const ElfCategor
 {
     if (category == "matrix")
         return SchedulerFactory::createFactory<SimpleMatrixScheduler, SMPMatrixElf>();
+    else if (category == "montecarlo")
+        return SchedulerFactory::createFactory<SimpleMonteCarloScheduler, SMPMonteCarloElf>();
     else
         return SchedulerFactory::createFactory<SimpleFactorizationScheduler, SmpFactorizationElf>();
 }
@@ -54,6 +58,8 @@ function<Scheduler*()> SimpleSchedulerFactory::createCudaFactory(const ElfCatego
 {
     if (category == "matrix")
         return SchedulerFactory::createFactory<SimpleMatrixScheduler, CudaMatrixElf>();
+    else if (category == "montecarlo")
+        throw runtime_error("CUDA for MonteCarlo not yet implemnted");
     else
         return SchedulerFactory::createFactory<SimpleFactorizationScheduler, CudaFactorizationElf>();
 }
