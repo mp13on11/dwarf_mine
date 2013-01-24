@@ -24,8 +24,8 @@ private:
     static Measurement averageOf(const std::vector<Measurement>& runTimes);
     static BenchmarkResult calculateNodeWeights(const std::vector<Measurement>& averageRunTimes);
 
-    size_t _iterations;
-    size_t _warmUps;
+    size_t iterations;
+    size_t warmUps;
     std::unique_ptr<ProblemStatement> individualProblem;
     std::unique_ptr<ProblemStatement> clusterProblem;
     std::unique_ptr<Scheduler> scheduler;

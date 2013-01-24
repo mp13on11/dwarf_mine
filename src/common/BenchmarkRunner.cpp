@@ -12,7 +12,7 @@ typedef BenchmarkRunner::Measurement Measurement;
  * BenchmarkRunner determines the available devices and benchmarks them idenpendently
  */
 BenchmarkRunner::BenchmarkRunner(const Configuration& config) :
-        _iterations(config.iterations()), _warmUps(config.warmUps()),
+        iterations(config.iterations()), warmUps(config.warmUps()),
         individualProblem(config.createProblemStatement(true)),
         clusterProblem(config.createProblemStatement(false)),
         scheduler(config.createScheduler())
@@ -49,7 +49,7 @@ vector<Measurement> BenchmarkRunner::runBenchmark(const BenchmarkResult& nodeWei
     else
     {
         getBenchmarked();
-        return vector<Measurement>(_iterations, Measurement(0));
+        return vector<Measurement>(iterations, Measurement(0));
     }
 }
 
@@ -59,11 +59,11 @@ vector<Measurement> BenchmarkRunner::benchmarkNodeset(ProblemStatement& problem)
 
     scheduler->provideData(problem);
 
-    for (size_t i = 0; i < _warmUps; ++i)
+    for (size_t i = 0; i < warmUps; ++i)
     {
         measureCall();
     }
-    for (size_t i = 0; i < _iterations; ++i)
+    for (size_t i = 0; i < iterations; ++i)
     {
         result.push_back(measureCall());
     }
@@ -75,7 +75,7 @@ vector<Measurement> BenchmarkRunner::benchmarkNodeset(ProblemStatement& problem)
 
 void BenchmarkRunner::getBenchmarked()
 {
-    for (size_t i = 0; i < _iterations + _warmUps; ++i)
+    for (size_t i = 0; i < iterations + warmUps; ++i)
         scheduler->dispatch(); // slave side
 }
 
