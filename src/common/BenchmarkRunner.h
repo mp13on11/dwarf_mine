@@ -16,8 +16,8 @@ public:
     explicit BenchmarkRunner(const Configuration& config);
     BenchmarkRunner(const Configuration& config, const BenchmarkResult& result);
     void runBenchmark();
-    BenchmarkResult getWeightedResults();
-    BenchmarkResult getTimedResults();
+    BenchmarkResult getWeightedResults() const;
+    BenchmarkResult getTimedResults() const;
 
 private:
     size_t _iterations;
@@ -33,3 +33,13 @@ private:
     std::chrono::microseconds measureCall(Scheduler& scheduler);
     void weightTimedResults();
 };
+
+inline BenchmarkResult BenchmarkRunner::getWeightedResults() const
+{
+    return _weightedResults;
+}
+
+inline BenchmarkResult BenchmarkRunner::getTimedResults() const
+{
+    return _timedResults;
+}

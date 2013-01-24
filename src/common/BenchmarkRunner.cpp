@@ -4,6 +4,7 @@
 #include "SchedulerFactory.h"
 
 using namespace std;
+using namespace std::chrono;
 
 /**
  * BenchmarkRunner determines the available devices and benchmarks them idenpendently
@@ -28,11 +29,21 @@ BenchmarkRunner::BenchmarkRunner(const Configuration& config, const BenchmarkRes
     _nodesets.push_back(result);
 }
 
-std::chrono::microseconds BenchmarkRunner::measureCall(Scheduler& scheduler) {
-    typedef chrono::high_resolution_clock clock;
-    clock::time_point before = clock::now();
-    scheduler.dispatch();
-    return clock::now() - before;
+void BenchmarkRunner::runBenchmark()
+{
+    if (MpiHelper::isMaster())
+    {
+        for (size_t nodeset = 0; nodeset < _nodesets.size(); ++nodeset)
+        {
+            scheduler->setNodeset(_nodesets[nodeset]);
+            _timedResults[nodeset] = benchmarkNodeset();
+        }
+        weightTimedResults();
+    }
+    else
+    {
+        getBenchmarked();
+    }
 }
 
 unsigned int BenchmarkRunner::benchmarkNodeset()
@@ -57,21 +68,11 @@ void BenchmarkRunner::getBenchmarked()
         scheduler->dispatch(); // slave side
 }
 
-void BenchmarkRunner::runBenchmark()
+microseconds BenchmarkRunner::measureCall(Scheduler& scheduler)
 {
-    if (MpiHelper::isMaster())
-    {
-        for (size_t nodeset = 0; nodeset < _nodesets.size(); ++nodeset)
-        {
-            scheduler->setNodeset(_nodesets[nodeset]);
-            _timedResults[nodeset] = benchmarkNodeset();
-        }
-        weightTimedResults();
-    }
-    else
-    {
-        getBenchmarked();
-    }
+    high_resolution_clock::time_point before = high_resolution_clock::now();
+    scheduler.dispatch();
+    return high_resolution_clock::now() - before;
 }
 
 void BenchmarkRunner::weightTimedResults()
@@ -81,18 +82,8 @@ void BenchmarkRunner::weightTimedResults()
     {
         runtimeSum += nodeResult.second;
     }
-    for (const auto& nodeResult :  _timedResults)
+    for (const auto& nodeResult : _timedResults)
     {
         _weightedResults[nodeResult.first] = (nodeResult.second * 1.0 / runtimeSum) * 100;
     }
-}
-
-BenchmarkResult BenchmarkRunner::getWeightedResults()
-{
-    return _weightedResults;
-}
-
-BenchmarkResult BenchmarkRunner::getTimedResults()
-{
-    return _timedResults;
 }
