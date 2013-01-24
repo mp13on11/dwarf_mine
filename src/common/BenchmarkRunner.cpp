@@ -48,7 +48,7 @@ vector<Measurement> BenchmarkRunner::runBenchmark(const BenchmarkResult& nodeWei
     }
     else if (slaveShouldRunWith(nodeWeights))
     {
-        getBenchmarked();
+        benchmarkSlave();
     }
 
     return vector<Measurement>(iterations, Measurement(0));
@@ -74,7 +74,7 @@ vector<Measurement> BenchmarkRunner::benchmarkNodeset(ProblemStatement& problem)
     return result;
 }
 
-void BenchmarkRunner::getBenchmarked() const
+void BenchmarkRunner::benchmarkSlave() const
 {
     for (size_t i = 0; i < iterations + warmUps; ++i)
         scheduler->dispatch(); // slave side

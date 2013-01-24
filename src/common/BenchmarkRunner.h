@@ -33,6 +33,6 @@ private:
 
     std::vector<Measurement> runBenchmark(const BenchmarkResult& nodeWeights, ProblemStatement& problem) const;
     std::vector<Measurement> benchmarkNodeset(ProblemStatement& problem) const;
-    void getBenchmarked() const;
+    void benchmarkSlave() const;
     Measurement measureCall() const;
 };
