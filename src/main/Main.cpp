@@ -11,12 +11,6 @@
 
 using namespace std;
 
-BenchmarkResult determineWeightedConfiguration(const Configuration& config)
-{
-    BenchmarkRunner runner(config);
-    return runner.benchmarkIndividualNodes();
-}
-
 void exportClusterConfiguration(const string& filename, BenchmarkResult& result)
 {
     fstream file(filename, fstream::out);
@@ -46,12 +40,6 @@ BenchmarkResult importClusterConfiguration(const string& filename)
         exit(1);
     }
     return result;
-}
-
-vector<BenchmarkRunner::Measurement> runTimedMeasurement(const Configuration& config, const BenchmarkResult& nodeWeights)
-{
-    BenchmarkRunner runner(config);
-    return runner.runBenchmark(nodeWeights);
 }
 
 void silenceOutputStreams(bool keepErrorStreams = false)
@@ -86,27 +74,28 @@ int main(int argc, char** argv)
 
         cout << config << endl;
 
-        BenchmarkResult weightedResults;
+        BenchmarkRunner runner(config);
+        BenchmarkResult nodeWeights;
         if (config.shouldExportConfiguration() || !config.shouldImportConfiguration())
         {
             cout << "Calculating node weights" <<endl;
-            weightedResults = determineWeightedConfiguration(config);
-            cout << "Weighted " << endl << weightedResults;
+            nodeWeights = runner.benchmarkIndividualNodes();
+            cout << "Weighted " << endl << nodeWeights;
         }
         if (config.shouldExportConfiguration())
         {
             cout << "Exporting node weights" <<endl;
-            exportClusterConfiguration(config.exportConfigurationFilename(), weightedResults);
+            exportClusterConfiguration(config.exportConfigurationFilename(), nodeWeights);
         }
         if (config.shouldImportConfiguration())
         {
             cout << "Importing node weights" <<endl;
-            weightedResults = importClusterConfiguration(config.importConfigurationFilename());
+            nodeWeights = importClusterConfiguration(config.importConfigurationFilename());
         }
         if (!config.shouldSkipBenchmark())
         {
             cout << "Running benchmark" <<endl;
-            auto clusterResults = runTimedMeasurement(config, weightedResults);
+            auto clusterResults = runner.runBenchmark(nodeWeights);
             cout << "Measured Times: µs" << endl;
 
             for (const auto& measurement : clusterResults)
