@@ -120,11 +120,43 @@ TEST(CudaBigIntTest, testDivision)
     EXPECT_EQ(expected, actual);
 }
 
+TEST(CudaBigIntTest, testDivisionEqualValues)
+{
+    BigInt left("90887891231490623");
+    BigInt right("90887891231490623");
+    BigInt expected("1");
+
+    auto actual = invokeKernel(left, right,  testDiv);
+
+    EXPECT_EQ(expected, actual);
+}
+
+TEST(CudaBigIntTest, testDivisionEqualOperands)
+{
+    BigInt left("90887891231490623");
+    BigInt expected("1");
+
+    auto actual = invokeKernel(left, left,  testDiv);
+
+    EXPECT_EQ(expected, actual);
+}
+
 TEST(CudaBigIntTest, testSmallerThan)
 {
     BigInt left("90887891231490623");
     BigInt right("7797822229821317833");
     bool expected(true);
+
+    auto actual = invokeBoolKernel(left, right, testSmallerThan);
+
+    EXPECT_EQ(expected, actual);
+}
+
+TEST(CudaBigIntTest, testNotSmallerThan)
+{
+    BigInt left("90887891231490624");
+    BigInt right("90887891231490623");
+    bool expected(false);
 
     auto actual = invokeBoolKernel(left, right, testSmallerThan);
 
@@ -164,6 +196,17 @@ TEST(CudaBigIntTest, testShiftLeftBiggerNumber)
     EXPECT_EQ(expected, actual);
 }
 
+TEST(CudaBigIntTest, testShiftLeftWithBigShiftOffset)
+{
+    BigInt left("1282943598234");
+    uint32_t offset(3333);
+    BigInt expected("0");
+
+    auto actual = invokeShiftKernel(left, offset, testShiftLeft);
+
+    EXPECT_EQ(expected, actual);
+}
+
 TEST(CudaBigIntTest, testShiftRight)
 {
     BigInt left("4294967296");
@@ -185,5 +228,28 @@ TEST(CudaBigIntTest, testShiftRightBiggerNumber)
 
     EXPECT_EQ(expected, actual);
 }
+
+TEST(CudaBigIntTest, testShiftRightBiggerNumber2)
+{
+    BigInt left("2135987035920910082395021706169552114602704522356652769947041607822219725780640550022962086936575");
+    uint32_t offset(33);
+    BigInt expected("248661618204893321077691124073410420050228075398673858720231988446579748506266687766527");
+
+    auto actual = invokeShiftKernel(left, offset, testShiftRight);
+
+    EXPECT_EQ(expected, actual);
+}
+
+TEST(CudaBigIntTest, testShiftRightWithBigShiftOffset)
+{
+    BigInt left("1");
+    uint32_t offset(33333);
+    BigInt expected("0");
+
+    auto actual = invokeShiftKernel(left, offset, testShiftRight);
+
+    EXPECT_EQ(expected, actual);
+}
+
 
 #endif /* HAVE_CUDA */
