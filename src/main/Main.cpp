@@ -5,20 +5,12 @@
 #include "matrix/MatrixHelper.h"
 #include "matrix/Matrix.h"
 
-#include <iostream>
-#include <string>
 #include <fstream>
+#include <iostream>
+#include <stdexcept>
+#include <string>
 
 using namespace std;
-
-BenchmarkResult determineWeightedConfiguration(const Configuration& config)
-{
-    auto factory = config.createSchedulerFactory();
-    auto statement = config.createProblemStatement(true);
-    BenchmarkRunner runner(config);
-    runner.runBenchmark(*statement, *factory);
-    return runner.getWeightedResults();
-}
 
 void exportClusterConfiguration(const string& filename, BenchmarkResult& result)
 {
@@ -51,15 +43,6 @@ BenchmarkResult importClusterConfiguration(const string& filename)
     return result;
 }
 
-BenchmarkResult runTimedMeasurement(const Configuration& config, BenchmarkResult& weightedResults)
-{
-    auto factory = config.createSchedulerFactory();
-    auto statement = config.createProblemStatement();
-    BenchmarkRunner runner(config, weightedResults);
-    runner.runBenchmark(*statement, *factory);
-    return runner.getTimedResults();
-}
-
 void silenceOutputStreams(bool keepErrorStreams = false)
 {
     cout.rdbuf(nullptr);
@@ -71,11 +54,52 @@ void silenceOutputStreams(bool keepErrorStreams = false)
     }
 }
 
+void benchmarkWith(const Configuration& config)
+{
+    BenchmarkRunner runner(config);
+    BenchmarkResult nodeWeights;
+
+    ofstream timeFile(config.timeOutputFilename(), ios::app);
+
+    if (!timeFile.is_open())
+        throw runtime_error("Failed to open file \"" + config.timeOutputFilename() + "\"");
+
+    if (config.shouldExportConfiguration() || !config.shouldImportConfiguration())
+    {
+        cout << "Calculating node weights" <<endl;
+        nodeWeights = runner.benchmarkIndividualNodes();
+        cout << "Weighted " << endl << nodeWeights;
+    }
+    if (config.shouldExportConfiguration())
+    {
+        cout << "Exporting node weights" <<endl;
+        exportClusterConfiguration(config.exportConfigurationFilename(), nodeWeights);
+    }
+    if (config.shouldImportConfiguration())
+    {
+        cout << "Importing node weights" <<endl;
+        nodeWeights = importClusterConfiguration(config.importConfigurationFilename());
+    }
+    if (!config.shouldSkipBenchmark())
+    {
+        cout << "Running benchmark" <<endl;
+        auto clusterResults = runner.runBenchmark(nodeWeights);
+        cout << "Measured Times: µs" << endl;
+
+        for (const auto& measurement : clusterResults)
+        {
+            cout << "\t" << measurement.count() << endl;
+
+            if (MpiHelper::isMaster())
+                timeFile << measurement.count() << endl;
+        }
+    }
+}
+
 int main(int argc, char** argv)
 {
     // used to ensure MPI::Finalize is called on exit of the application
     MpiGuard guard(argc, argv);
-
 
     try
     {
@@ -92,29 +116,7 @@ int main(int argc, char** argv)
 
         cout << config << endl;
 
-        BenchmarkResult weightedResults;
-        if (config.shouldExportConfiguration() || !config.shouldImportConfiguration())
-        {
-            cout << "Calculating node weights" <<endl;
-            weightedResults = determineWeightedConfiguration(config);
-            cout << "Weighted " << endl << weightedResults;
-        }
-        if (config.shouldExportConfiguration())
-        {
-            cout << "Exporting node weights" <<endl;
-            exportClusterConfiguration(config.exportConfigurationFilename(), weightedResults);
-        }
-        if (config.shouldImportConfiguration())
-        {
-            cout << "Importing node weights" <<endl;
-            weightedResults = importClusterConfiguration(config.importConfigurationFilename());
-        }
-        if (!config.shouldSkipBenchmark())
-        {
-            cout << "Running benchmark" <<endl;
-            auto clusterResults = runTimedMeasurement(config, weightedResults);
-            cout << "Measured Time: µs" << endl << clusterResults;
-        }
+        benchmarkWith(config);
     }
     catch (const boost::program_options::error& e)
     {
