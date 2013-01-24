@@ -43,7 +43,7 @@ ElfType& SchedulerTemplate<ElfType>::elf() const
 {
     return *_elf;
 }
-
+#include <iostream>
 template<typename ElfType>
 void SchedulerTemplate<ElfType>::dispatch()
 {

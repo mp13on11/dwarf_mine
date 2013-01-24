@@ -30,7 +30,8 @@ private:
     void orchestrateCalculation();
     void calculateOnSlave();
     void calculate();
-    void distribute();
+    void distributeInput();
+    void collectInput();
     void collectResults();
 	std::vector<OthelloResult> gatherResults();
 };

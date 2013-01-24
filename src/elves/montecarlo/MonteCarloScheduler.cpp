@@ -9,6 +9,7 @@
 #include <memory>
 #include <sstream>
 #include <mpi.h>
+#include <cmath>
 
 using namespace std;
 
@@ -42,18 +43,43 @@ void MonteCarloScheduler::doDispatch()
 {
     if (MpiHelper::isMaster(rank))
     {
-        orchestrateCalculation();
+        distributeInput();
+        if (_repetitions != 0)
+        {
+            calculate();
+        }
+        collectResults();
     }
     else
     {
-        calculateOnSlave();
+        collectInput();
+        calculate();
+        gatherResults();
     }
+}
 
+pair<vector<NodeRating>, Rating> weightRatings(const BenchmarkResult& ratings)
+{
+    vector<NodeRating> positiveRatings;
+    Rating ratingSum = 0;
+    Rating ratingMax = 0;
+    Rating ratingMin = numeric_limits<Rating>::max();
+    for (const auto& rating : ratings)
+    {
+        ratingMax = max(ratingMax, rating.second);
+        ratingMin = min(ratingMin, rating.second);
+    }
+    for (const auto& rating : ratings)
+    {
+        Rating positiveRating = ratingMin / rating.second;
+        ratingSum += positiveRating;
+        positiveRatings.emplace_back(rating.first, positiveRating);
+    }
+    return make_pair<vector<NodeRating>, Rating>(move(positiveRatings), move(ratingSum));
 }
 
 void MonteCarloScheduler::calculate()
 {
-    cout << rank << "Calculate "<<endl;
     _result = elf().getBestMoveFor(_state, _repetitions);
 }
 
@@ -96,12 +122,16 @@ vector<OthelloResult> MonteCarloScheduler::gatherResults()
             }
             else
             {
-                MPI::COMM_WORLD.Recv(results.data(), 1, MPI_OthelloResult, slaveRank, MpiHelper::MASTER);
+                cout <<"\t"<< rank  << " receiving from "<<slaveRank<<endl;
+                MPI::COMM_WORLD.Recv(results.data(), 1, MPI_OthelloResult, slaveRank, 0);
+                cout <<"\t"<< rank  << " received from "<<slaveRank<<endl;
             }
         }
         else
         {
-            MPI::COMM_WORLD.Send(&_result, 1, MPI_OthelloResult, slaveRank, MpiHelper::MASTER);
+            cout <<"\t"<< rank  << " sending"<<endl;
+            MPI::COMM_WORLD.Send(&_result, 1, MPI_OthelloResult, MpiHelper::MASTER, 0);
+            cout <<"\t"<< rank  << " send"<<endl;
         }
     }
     else
@@ -110,62 +140,26 @@ vector<OthelloResult> MonteCarloScheduler::gatherResults()
             &_result, 1, MPI_OthelloResult, 
             results.data(), 1, MPI_OthelloResult, MpiHelper::MASTER);
     }
+    
     return results;
 }
 
-void MonteCarloScheduler::calculateOnSlave()
+void MonteCarloScheduler::collectInput()
 {
-    size_t paramters[2];
-    MPI::COMM_WORLD.Recv(paramters, 2, MPI::UNSIGNED, rank, 0);
-
-    size_t bufferSize = paramters[0];
-    _repetitions = paramters[1];
+    size_t parameters[] = {0, 0};
+    MPI::COMM_WORLD.Recv(parameters, 2, MPI::UNSIGNED, MpiHelper::MASTER, 0);
+    cout << "Received on "<<rank << " " << parameters[0] << " with " << parameters[1] <<" repetitions"<< endl;
+    size_t bufferSize = parameters[0];
+    _repetitions = parameters[1];
 
     Playfield playfield(bufferSize);
-    if (MpiHelper::isMaster())
-    {
-        playfield.assign(_state.playfieldBuffer(), _state.playfieldBuffer() + bufferSize);
-    }
-    
+
     auto MPI_FIELD = MPI::INT;
     MPI::COMM_WORLD.Bcast(playfield.data(), bufferSize, MPI_FIELD, MpiHelper::MASTER);
     _state = OthelloState(playfield, Player::White);
-
-    calculate();
-    gatherResults();
 }
 
-void MonteCarloScheduler::orchestrateCalculation()
-{
-    distribute();
-    if (_repetitions != 0)
-    {
-        calculate();
-    }
-    collectResults();
-}
-
-pair<vector<NodeRating>, Rating> weightRatings(const BenchmarkResult& ratings)
-{
-    vector<NodeRating> positiveRatings;
-    Rating ratingSum = 0;
-    Rating ratingMax = 0;
-    Rating ratingMin = numeric_limits<Rating>::max();
-    for (const auto& rating : ratings)
-    {
-        ratingMax = max(ratingMax, rating.second);
-        ratingMin = min(ratingMin, rating.second);
-    }
-    for (const auto& rating : ratings)
-    {
-        Rating positiveRating = ratingMin / rating.second;
-        ratingSum += positiveRating;
-        positiveRatings.emplace_back(rating.first, positiveRating);
-    }
-    return make_pair<vector<NodeRating>, Rating>(move(positiveRatings), move(ratingSum));
-}
-#include <iostream>
-void MonteCarloScheduler::distribute()
+void MonteCarloScheduler::distributeInput()
 {
     size_t bufferSize = _state.playfieldSideLength() * _state.playfieldSideLength();
     vector<NodeRating> ratings;
@@ -177,8 +171,9 @@ void MonteCarloScheduler::distribute()
     {
         if (rating.first != MpiHelper::MASTER)
         {
-            size_t paramters[] = { bufferSize, (size_t)(_repetitions * rating.second / ratingSum) };
-            MPI::COMM_WORLD.Send(paramters, 2, MPI::UNSIGNED, rating.first, MpiHelper::MASTER);
+            size_t parameters[] = { bufferSize, (size_t)round(_repetitions * rating.second / ratingSum) };
+            MPI::COMM_WORLD.Send(parameters, 2, MPI::UNSIGNED, rating.first, 0);
+            cout << "Send to "<<rating.first << " " << parameters[0] << " with " << parameters[1] <<" repetitions"<< endl;
         }
         else
         {
@@ -194,15 +189,16 @@ void MonteCarloScheduler::distribute()
         _repetitions = 0;
     }
 
-    //MPI::COMM_WORLD.Bcast(&bufferSize, 1, MPI::UNSIGNED, MpiHelper::MASTER);
-
     Playfield playfield(bufferSize);
     playfield.assign(_state.playfieldBuffer(), _state.playfieldBuffer() + bufferSize);
     
+    cout << "Broadcast on " << rank << endl;
     auto MPI_FIELD = MPI::INT;
     MPI::COMM_WORLD.Bcast(playfield.data(), bufferSize, MPI_FIELD, MpiHelper::MASTER);
     _state = OthelloState(playfield, Player::White);
 }
+
+
 
 void MonteCarloScheduler::collectResults()
 {

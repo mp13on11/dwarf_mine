@@ -2,8 +2,6 @@
 #include "common/CommandLineConfiguration.h"
 #include "common/MpiGuard.h"
 #include "common/MpiHelper.h"
-#include "matrix/MatrixHelper.h"
-#include "matrix/Matrix.h"
 
 #include <iostream>
 #include <string>
