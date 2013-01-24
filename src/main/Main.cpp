@@ -53,11 +53,42 @@ void silenceOutputStreams(bool keepErrorStreams = false)
     }
 }
 
+void benchmarkWith(const Configuration& config)
+{
+    BenchmarkRunner runner(config);
+    BenchmarkResult nodeWeights;
+
+    if (config.shouldExportConfiguration() || !config.shouldImportConfiguration())
+    {
+        cout << "Calculating node weights" <<endl;
+        nodeWeights = runner.benchmarkIndividualNodes();
+        cout << "Weighted " << endl << nodeWeights;
+    }
+    if (config.shouldExportConfiguration())
+    {
+        cout << "Exporting node weights" <<endl;
+        exportClusterConfiguration(config.exportConfigurationFilename(), nodeWeights);
+    }
+    if (config.shouldImportConfiguration())
+    {
+        cout << "Importing node weights" <<endl;
+        nodeWeights = importClusterConfiguration(config.importConfigurationFilename());
+    }
+    if (!config.shouldSkipBenchmark())
+    {
+        cout << "Running benchmark" <<endl;
+        auto clusterResults = runner.runBenchmark(nodeWeights);
+        cout << "Measured Times: µs" << endl;
+
+        for (const auto& measurement : clusterResults)
+            cout << "\t" << measurement.count() << endl;
+    }
+}
+
 int main(int argc, char** argv)
 {
     // used to ensure MPI::Finalize is called on exit of the application
     MpiGuard guard(argc, argv);
-
 
     try
     {
@@ -74,33 +105,7 @@ int main(int argc, char** argv)
 
         cout << config << endl;
 
-        BenchmarkRunner runner(config);
-        BenchmarkResult nodeWeights;
-        if (config.shouldExportConfiguration() || !config.shouldImportConfiguration())
-        {
-            cout << "Calculating node weights" <<endl;
-            nodeWeights = runner.benchmarkIndividualNodes();
-            cout << "Weighted " << endl << nodeWeights;
-        }
-        if (config.shouldExportConfiguration())
-        {
-            cout << "Exporting node weights" <<endl;
-            exportClusterConfiguration(config.exportConfigurationFilename(), nodeWeights);
-        }
-        if (config.shouldImportConfiguration())
-        {
-            cout << "Importing node weights" <<endl;
-            nodeWeights = importClusterConfiguration(config.importConfigurationFilename());
-        }
-        if (!config.shouldSkipBenchmark())
-        {
-            cout << "Running benchmark" <<endl;
-            auto clusterResults = runner.runBenchmark(nodeWeights);
-            cout << "Measured Times: µs" << endl;
-
-            for (const auto& measurement : clusterResults)
-                cout << "\t" << measurement.count() << endl;
-        }
+        benchmarkWith(config);
     }
     catch (const boost::program_options::error& e)
     {
