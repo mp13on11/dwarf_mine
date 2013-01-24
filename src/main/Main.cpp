@@ -59,10 +59,15 @@ void benchmarkWith(const Configuration& config)
     BenchmarkRunner runner(config);
     BenchmarkResult nodeWeights;
 
-    ofstream timeFile(config.timeOutputFilename(), ios::app);
+    ofstream timeFile;
 
-    if (!timeFile.is_open())
-        throw runtime_error("Failed to open file \"" + config.timeOutputFilename() + "\"");
+    if (MpiHelper::isMaster())
+    {
+        timeFile.open(config.timeOutputFilename(), ios::app);
+
+        if (!timeFile.is_open())
+            throw runtime_error("Failed to open file \"" + config.timeOutputFilename() + "\"");
+    }
 
     if (config.shouldExportConfiguration() || !config.shouldImportConfiguration())
     {
