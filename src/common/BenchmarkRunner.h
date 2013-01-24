@@ -17,8 +17,8 @@ public:
 
     explicit BenchmarkRunner(const Configuration& config);
 
-    BenchmarkResult benchmarkIndividualNodes();
-    std::vector<Measurement> runBenchmark(const BenchmarkResult& nodeWeights);
+    BenchmarkResult benchmarkIndividualNodes() const;
+    std::vector<Measurement> runBenchmark(const BenchmarkResult& nodeWeights) const;
 
 private:
     static Measurement averageOf(const std::vector<Measurement>& runTimes);
@@ -30,8 +30,8 @@ private:
     std::unique_ptr<ProblemStatement> clusterProblem;
     std::unique_ptr<Scheduler> scheduler;
 
-    std::vector<Measurement> runBenchmark(const BenchmarkResult& nodeWeights, ProblemStatement& problem);
-    std::vector<Measurement> benchmarkNodeset(ProblemStatement& problem);
-    void getBenchmarked();
-    Measurement measureCall();
+    std::vector<Measurement> runBenchmark(const BenchmarkResult& nodeWeights, ProblemStatement& problem) const;
+    std::vector<Measurement> benchmarkNodeset(ProblemStatement& problem) const;
+    void getBenchmarked() const;
+    Measurement measureCall() const;
 };

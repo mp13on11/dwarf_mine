@@ -19,7 +19,7 @@ BenchmarkRunner::BenchmarkRunner(const Configuration& config) :
 {
 }
 
-BenchmarkResult BenchmarkRunner::benchmarkIndividualNodes()
+BenchmarkResult BenchmarkRunner::benchmarkIndividualNodes() const
 {
     vector<Measurement> averageRunTimes;
 
@@ -34,12 +34,12 @@ BenchmarkResult BenchmarkRunner::benchmarkIndividualNodes()
     return calculateNodeWeights(averageRunTimes);
 }
 
-vector<Measurement> BenchmarkRunner::runBenchmark(const BenchmarkResult& nodeWeights)
+vector<Measurement> BenchmarkRunner::runBenchmark(const BenchmarkResult& nodeWeights) const
 {
     return runBenchmark(nodeWeights, *clusterProblem);
 }
 
-vector<Measurement> BenchmarkRunner::runBenchmark(const BenchmarkResult& nodeWeights, ProblemStatement& problem)
+vector<Measurement> BenchmarkRunner::runBenchmark(const BenchmarkResult& nodeWeights, ProblemStatement& problem) const
 {
     if (MpiHelper::isMaster())
     {
@@ -53,7 +53,7 @@ vector<Measurement> BenchmarkRunner::runBenchmark(const BenchmarkResult& nodeWei
     }
 }
 
-vector<Measurement> BenchmarkRunner::benchmarkNodeset(ProblemStatement& problem)
+vector<Measurement> BenchmarkRunner::benchmarkNodeset(ProblemStatement& problem) const
 {
     vector<Measurement> result;
 
@@ -73,13 +73,13 @@ vector<Measurement> BenchmarkRunner::benchmarkNodeset(ProblemStatement& problem)
     return result;
 }
 
-void BenchmarkRunner::getBenchmarked()
+void BenchmarkRunner::getBenchmarked() const
 {
     for (size_t i = 0; i < iterations + warmUps; ++i)
         scheduler->dispatch(); // slave side
 }
 
-Measurement BenchmarkRunner::measureCall()
+Measurement BenchmarkRunner::measureCall() const
 {
     high_resolution_clock::time_point before = high_resolution_clock::now();
     scheduler->dispatch();
