@@ -4,6 +4,7 @@
 #include <random>
 #include <memory>
 #include <functional>
+#include <atomic>
 #include "OthelloState.h"
 #include "OthelloMove.h"
 #include "OthelloUtil.h"
@@ -45,8 +46,10 @@ private:
     NodeList _children;
     std::shared_ptr<OthelloMove> _triggerMove;
     std::shared_ptr<OthelloState> _state;
-    size_t _visits;
-    size_t _wins;
+    //size_t _visits;
+    //size_t _wins;
+    std::atomic_uint _visits;
+    std::atomic_uint _wins;
     void setParent(OthelloNode& parent);
     void setTriggerMove(OthelloMove& move);
 };

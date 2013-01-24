@@ -12,8 +12,10 @@ OthelloNode::OthelloNode(const OthelloNode& node)
 	_state = node._state;
 	_parent = node._parent;
 	_children = node._children;
-	_visits = node._visits;
-	_wins = node._wins;
+	//_visits = node._visits;
+	//_wins = node._wins;
+	_visits = node._visits.load();
+	_wins = node._wins.load();
 	_triggerMove = node._triggerMove;
 }
 
@@ -34,8 +36,10 @@ OthelloNode& OthelloNode::operator=(const OthelloNode& node)
 	_state = node._state;
 	_parent = node._parent;
 	_children = node._children;
-	_visits = node._visits;
-	_wins = node._wins;
+	// _visits = node._visits;
+	// _wins = node._wins;
+	_visits = node._visits.load();
+	_wins = node._wins.load();
 	_triggerMove = node._triggerMove;
 	return *this;
 }
