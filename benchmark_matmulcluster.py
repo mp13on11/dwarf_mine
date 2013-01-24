@@ -4,6 +4,7 @@ import sys
 from math import sqrt
 from matplotlib import pyplot
 from matplotlib.ticker import MultipleLocator, FormatStrFormatter
+from datetime import datetime
 
 
 def timesFromFile(fileName):
@@ -116,7 +117,7 @@ def timeFile(smpHosts, cudaHosts, ext = ".txt"):
     return os.path.join(file_dir, "matmul_cluster_{0}_{1}{2}".format(hostsString, matrixSize, ext))
 
 def commandLine(smpHosts, cudaHosts):
-    hostLine =  "-host {0} -np 1 ./build/src/main/dwarf_mine -m {1} -c matrix -w {3} -n {4} --time_output {5}"\
+    hostLine =  "-host {0} -np 1 ./build/src/main/dwarf_mine -m {1} -c matrix -w {3} -n {4} --time_output {5} "\
                 "--left_rows {2} --common_rows_columns {2} --right_columns {2}"
 
     timeFileName = timeFile(smpHosts, cudaHosts)
@@ -125,24 +126,27 @@ def commandLine(smpHosts, cudaHosts):
 
     mpirunArgs = " : ".join(smpLines + cudaLines)
 
-    return "mpirun %s" % mpirunArgs
+    return "mpirun --tag-output %s" % mpirunArgs
 
 
 def main():
     q1, q2, q3 = ("quadcore1", "quadcore2", "quadcore3")
-    scenarios = [((q1,), ()), ((q1,q2), ()), ((q1,q2,q3), ())]
+    scenarios = [((q3,), ()), ((q3,q2), ()), ((q3,q2,q1), ())]
 
     numberOfScenarios = range(1, len(scenarios)+2)
 
     for smpHosts, cudaHosts in scenarios:
         print "Executing on smpHosts:", smpHosts, "and cudaHosts:", cudaHosts
+        print "commandLine:", commandLine(smpHosts, cudaHosts)
+        startTime = datetime.now();
         os.system(commandLine(smpHosts, cudaHosts))
+        print "elapsed:", (datetime.now() - startTime).total_seconds(), "s"
 
     alltimes = dict((len(smpHosts)+len(cudaHosts), timesFromFile(timeFile(smpHosts, cudaHosts))) for smpHosts, cudaHosts in scenarios)
 
     print "Plotting..."
-    plotSpeedUp(alltimes, timeFile("all", "_speedup.png"))
-    plotBurnDown(alltimes, timeFile("all", "_burndown.png"))
+    plotSpeedUp(alltimes, timeFile("", "", "_speedup.png"))
+    plotBurnDown(alltimes, timeFile("", "", "_burndown.png"))
 
 
 main()
