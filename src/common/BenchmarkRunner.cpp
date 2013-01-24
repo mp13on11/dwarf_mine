@@ -3,7 +3,6 @@
 #include "MpiHelper.h"
 #include "SchedulerFactory.h"
 
-
 using namespace std;
 
 /**
@@ -11,13 +10,11 @@ using namespace std;
  */
 BenchmarkRunner::BenchmarkRunner(const Configuration& config) :
         _iterations(config.iterations()), _warmUps(config.warmUps()),
-        problemStatement(config.createProblemStatement(true))
+        problemStatement(config.createProblemStatement(true)),
+        scheduler(config.createScheduler())
 {
     for (size_t i = 0; i < MpiHelper::numberOfNodes(); ++i)
         _nodesets.push_back({{static_cast<NodeId>(i), 1}});
-
-    auto factory = config.createSchedulerFactory();
-    scheduler = factory->createScheduler();
 }
 
 /**
@@ -25,12 +22,10 @@ BenchmarkRunner::BenchmarkRunner(const Configuration& config) :
  */
 BenchmarkRunner::BenchmarkRunner(const Configuration& config, const BenchmarkResult& result) :
         _iterations(config.iterations()), _warmUps(config.warmUps()),
-        problemStatement(config.createProblemStatement(false))
+        problemStatement(config.createProblemStatement(false)),
+        scheduler(config.createScheduler())
 {
     _nodesets.push_back(result);
-
-    auto factory = config.createSchedulerFactory();
-    scheduler = factory->createScheduler();
 }
 
 std::chrono::microseconds BenchmarkRunner::measureCall(Scheduler& scheduler) {
