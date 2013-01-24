@@ -5,9 +5,10 @@
 #include "matrix/MatrixHelper.h"
 #include "matrix/Matrix.h"
 
-#include <iostream>
-#include <string>
 #include <fstream>
+#include <iostream>
+#include <stdexcept>
+#include <string>
 
 using namespace std;
 
@@ -58,6 +59,11 @@ void benchmarkWith(const Configuration& config)
     BenchmarkRunner runner(config);
     BenchmarkResult nodeWeights;
 
+    ofstream timeFile(config.timeOutputFilename(), ios::app);
+
+    if (!timeFile.is_open())
+        throw runtime_error("Failed to open file \"" + config.timeOutputFilename() + "\"");
+
     if (config.shouldExportConfiguration() || !config.shouldImportConfiguration())
     {
         cout << "Calculating node weights" <<endl;
@@ -81,7 +87,10 @@ void benchmarkWith(const Configuration& config)
         cout << "Measured Times: µs" << endl;
 
         for (const auto& measurement : clusterResults)
+        {
             cout << "\t" << measurement.count() << endl;
+            timeFile << measurement.count() << endl;
+        }
     }
 }
 

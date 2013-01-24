@@ -26,6 +26,7 @@ public:
     virtual std::string exportConfigurationFilename() const = 0;
     virtual bool shouldBeQuiet() const = 0;
     virtual bool shouldBeVerbose() const = 0;
+    virtual std::string timeOutputFilename() const = 0;
 };
 
 inline Configuration::~Configuration()
