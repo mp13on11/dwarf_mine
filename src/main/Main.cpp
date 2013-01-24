@@ -14,8 +14,7 @@ using namespace std;
 BenchmarkResult determineWeightedConfiguration(const Configuration& config)
 {
     BenchmarkRunner runner(config);
-    runner.runBenchmark();
-    return runner.getWeightedResults();
+    return runner.benchmarkIndividualNodes();
 }
 
 void exportClusterConfiguration(const string& filename, BenchmarkResult& result)
@@ -49,11 +48,10 @@ BenchmarkResult importClusterConfiguration(const string& filename)
     return result;
 }
 
-BenchmarkResult runTimedMeasurement(const Configuration& config, BenchmarkResult& weightedResults)
+vector<BenchmarkRunner::Measurement> runTimedMeasurement(const Configuration& config, const BenchmarkResult& nodeWeights)
 {
-    BenchmarkRunner runner(config, weightedResults);
-    runner.runBenchmark();
-    return runner.getTimedResults();
+    BenchmarkRunner runner(config);
+    return runner.runBenchmark(nodeWeights);
 }
 
 void silenceOutputStreams(bool keepErrorStreams = false)
@@ -109,7 +107,10 @@ int main(int argc, char** argv)
         {
             cout << "Running benchmark" <<endl;
             auto clusterResults = runTimedMeasurement(config, weightedResults);
-            cout << "Measured Time: µs" << endl << clusterResults;
+            cout << "Measured Times: µs" << endl;
+
+            for (const auto& measurement : clusterResults)
+                cout << "\t" << measurement.count() << endl;
         }
     }
     catch (const boost::program_options::error& e)

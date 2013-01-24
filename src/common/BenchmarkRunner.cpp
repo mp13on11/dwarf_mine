@@ -6,60 +6,71 @@
 using namespace std;
 using namespace std::chrono;
 
+typedef BenchmarkRunner::Measurement Measurement;
+
 /**
  * BenchmarkRunner determines the available devices and benchmarks them idenpendently
  */
 BenchmarkRunner::BenchmarkRunner(const Configuration& config) :
         _iterations(config.iterations()), _warmUps(config.warmUps()),
-        problemStatement(config.createProblemStatement(true)),
+        individualProblem(config.createProblemStatement(true)),
+        clusterProblem(config.createProblemStatement(false)),
         scheduler(config.createScheduler())
 {
-    for (size_t i = 0; i < MpiHelper::numberOfNodes(); ++i)
-        _nodesets.push_back({{static_cast<NodeId>(i), 1}});
 }
 
-/**
- * BenchmarkRunner uses the given (weighted) result to benchmark the nodeset as cluster
- */
-BenchmarkRunner::BenchmarkRunner(const Configuration& config, const BenchmarkResult& result) :
-        _iterations(config.iterations()), _warmUps(config.warmUps()),
-        problemStatement(config.createProblemStatement(false)),
-        scheduler(config.createScheduler())
+BenchmarkResult BenchmarkRunner::benchmarkIndividualNodes()
 {
-    _nodesets.push_back(result);
+    vector<Measurement> averageRunTimes;
+
+    for (size_t i=0; i<MpiHelper::numberOfNodes(); ++i)
+    {
+        vector<Measurement> runTimes = runBenchmark(
+                {{static_cast<NodeId>(i), 1}}, *individualProblem
+            );
+        averageRunTimes.push_back(averageOf(runTimes));
+    }
+
+    return calculateNodeWeights(averageRunTimes);
 }
 
-void BenchmarkRunner::runBenchmark()
+vector<Measurement> BenchmarkRunner::runBenchmark(const BenchmarkResult& nodeWeights)
+{
+    return runBenchmark(nodeWeights, *clusterProblem);
+}
+
+vector<Measurement> BenchmarkRunner::runBenchmark(const BenchmarkResult& nodeWeights, ProblemStatement& problem)
 {
     if (MpiHelper::isMaster())
     {
-        for (size_t nodeset = 0; nodeset < _nodesets.size(); ++nodeset)
-        {
-            scheduler->setNodeset(_nodesets[nodeset]);
-            _timedResults[nodeset] = benchmarkNodeset();
-        }
-        weightTimedResults();
+        scheduler->setNodeset(nodeWeights);
+        return benchmarkNodeset(problem);
     }
     else
     {
         getBenchmarked();
+        return vector<Measurement>(_iterations, Measurement(0));
     }
 }
 
-unsigned int BenchmarkRunner::benchmarkNodeset()
+vector<Measurement> BenchmarkRunner::benchmarkNodeset(ProblemStatement& problem)
 {
-    scheduler->provideData(*problemStatement);
+    vector<Measurement> result;
+
+    scheduler->provideData(problem);
+
     for (size_t i = 0; i < _warmUps; ++i)
     {
         measureCall();
     }
-    chrono::microseconds sum(0);
     for (size_t i = 0; i < _iterations; ++i)
     {
-        sum += measureCall();
+        result.push_back(measureCall());
     }
-    scheduler->outputData(*problemStatement);
-    return (sum / _iterations).count();
+
+    scheduler->outputData(problem);
+
+    return result;
 }
 
 void BenchmarkRunner::getBenchmarked()
@@ -68,22 +79,39 @@ void BenchmarkRunner::getBenchmarked()
         scheduler->dispatch(); // slave side
 }
 
-microseconds BenchmarkRunner::measureCall()
+Measurement BenchmarkRunner::measureCall()
 {
     high_resolution_clock::time_point before = high_resolution_clock::now();
     scheduler->dispatch();
     return high_resolution_clock::now() - before;
 }
 
-void BenchmarkRunner::weightTimedResults()
+BenchmarkResult BenchmarkRunner::calculateNodeWeights(const vector<Measurement>& averageRunTimes)
 {
-    int runtimeSum = 0;
-    for (const auto& nodeResult : _timedResults)
+    BenchmarkResult result;
+    Measurement totalAverageRunTime(0);
+
+    for (const Measurement& averageRunTime : averageRunTimes)
+        totalAverageRunTime += averageRunTime;
+
+    for (size_t i=0; i<averageRunTimes.size(); ++i)
     {
-        runtimeSum += nodeResult.second;
+        double average = (double)averageRunTimes[i].count();
+        result[i] = 100.0 * average / totalAverageRunTime.count();
     }
-    for (const auto& nodeResult : _timedResults)
-    {
-        _weightedResults[nodeResult.first] = (nodeResult.second * 1.0 / runtimeSum) * 100;
-    }
+
+    return result;
+}
+
+Measurement BenchmarkRunner::averageOf(const vector<Measurement>& runTimes)
+{
+    if (runTimes.empty())
+        return Measurement(0);
+
+    Measurement sum(0);
+
+    for (const Measurement& runTime : runTimes)
+        sum += runTime;
+
+    return sum / runTimes.size();
 }

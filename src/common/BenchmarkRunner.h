@@ -13,33 +13,25 @@ class Configuration;
 class BenchmarkRunner
 {
 public:
+    typedef std::chrono::microseconds Measurement;
+
     explicit BenchmarkRunner(const Configuration& config);
-    BenchmarkRunner(const Configuration& config, const BenchmarkResult& result);
-    void runBenchmark();
-    BenchmarkResult getWeightedResults() const;
-    BenchmarkResult getTimedResults() const;
+
+    BenchmarkResult benchmarkIndividualNodes();
+    std::vector<Measurement> runBenchmark(const BenchmarkResult& nodeWeights);
 
 private:
+    static Measurement averageOf(const std::vector<Measurement>& runTimes);
+    static BenchmarkResult calculateNodeWeights(const std::vector<Measurement>& averageRunTimes);
+
     size_t _iterations;
     size_t _warmUps;
-    std::unique_ptr<ProblemStatement> problemStatement;
+    std::unique_ptr<ProblemStatement> individualProblem;
+    std::unique_ptr<ProblemStatement> clusterProblem;
     std::unique_ptr<Scheduler> scheduler;
-    std::vector<BenchmarkResult> _nodesets;
-    BenchmarkResult _weightedResults;
-    BenchmarkResult _timedResults;
 
-    unsigned int benchmarkNodeset();
+    std::vector<Measurement> runBenchmark(const BenchmarkResult& nodeWeights, ProblemStatement& problem);
+    std::vector<Measurement> benchmarkNodeset(ProblemStatement& problem);
     void getBenchmarked();
-    std::chrono::microseconds measureCall();
-    void weightTimedResults();
+    Measurement measureCall();
 };
-
-inline BenchmarkResult BenchmarkRunner::getWeightedResults() const
-{
-    return _weightedResults;
-}
-
-inline BenchmarkResult BenchmarkRunner::getTimedResults() const
-{
-    return _timedResults;
-}
