@@ -30,7 +30,7 @@ private:
 
     unsigned int benchmarkNodeset();
     void getBenchmarked();
-    std::chrono::microseconds measureCall(Scheduler& scheduler);
+    std::chrono::microseconds measureCall();
     void weightTimedResults();
 };
 

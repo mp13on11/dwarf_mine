@@ -51,12 +51,12 @@ unsigned int BenchmarkRunner::benchmarkNodeset()
     scheduler->provideData(*problemStatement);
     for (size_t i = 0; i < _warmUps; ++i)
     {
-        measureCall(*scheduler);
+        measureCall();
     }
     chrono::microseconds sum(0);
     for (size_t i = 0; i < _iterations; ++i)
     {
-        sum += measureCall(*scheduler);
+        sum += measureCall();
     }
     scheduler->outputData(*problemStatement);
     return (sum / _iterations).count();
@@ -68,10 +68,10 @@ void BenchmarkRunner::getBenchmarked()
         scheduler->dispatch(); // slave side
 }
 
-microseconds BenchmarkRunner::measureCall(Scheduler& scheduler)
+microseconds BenchmarkRunner::measureCall()
 {
     high_resolution_clock::time_point before = high_resolution_clock::now();
-    scheduler.dispatch();
+    scheduler->dispatch();
     return high_resolution_clock::now() - before;
 }
 
