@@ -40,7 +40,7 @@ unique_ptr<ProblemStatement> generateMatrixProblemStatement(string category, siz
     return statement;
 }
 
-unique_ptr<ProblemStatement> generateMonteCarloProblemStatement(string category)
+unique_ptr<ProblemStatement> generateMonteCarloProblemStatement(string category, size_t trials)
 {
     auto statement = unique_ptr<ProblemStatement>(new ProblemStatement(category));
     vector<Field> playfield = {
@@ -63,6 +63,7 @@ unique_ptr<ProblemStatement> generateMonteCarloProblemStatement(string category)
     //     B, B, B, B, W, W, W, W,
     //     W, B, B, F, B, B, B, W
     // };
+    *(statement->input)<<trials;
     OthelloHelper::writePlayfieldToStream(*(statement->input), playfield);
     return statement;
 }
@@ -81,7 +82,7 @@ unique_ptr<ProblemStatement> CommandLineConfiguration::createProblemStatement(bo
                 );
         } else if (category() == "montecarlo")
         {
-            return generateMonteCarloProblemStatement(category());
+            return generateMonteCarloProblemStatement(category(), variables["montecarlo_trials"].as<size_t>());
         }
         throw error("Generated problem statement for "+category()+" not supported");
     }
@@ -179,7 +180,8 @@ options_description CommandLineConfiguration::createDescription()
         ("left_rows",            value<size_t>()->default_value(500), "Number of left rows to be generated (overridden for benchmark by input file)")
         ("common_rows_columns",  value<size_t>()->default_value(500), "Number of left columns / right rows to be generated (overridden for benchmark by input file)")
         ("right_columns",        value<size_t>()->default_value(500), "Number of right columns to be generated (overridden for benchmark by input file)")
-        ("time_output",          value<string>()->default_value("/dev/null"), "Output file for time measurements");
+        ("time_output",          value<string>()->default_value("/dev/null"), "Output file for time measurements")
+        ("montecarlo_trials",    value<size_t>()->default_value(10000), "Number of trials for monte carlo tree search");
 
     return description;
 }

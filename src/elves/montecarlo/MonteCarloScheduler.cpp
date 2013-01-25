@@ -24,6 +24,7 @@ void MonteCarloScheduler::provideData(ProblemStatement& statement)
 {
     statement.input->clear();
     statement.input->seekg(0);
+    *(statement.input)>>_repetitions;
     vector<Field> playfield;
     OthelloHelper::readPlayfieldFromStream(*(statement.input), playfield);
     _state = OthelloState(playfield, DEFAULTPLAYER);
