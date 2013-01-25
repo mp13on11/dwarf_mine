@@ -48,20 +48,7 @@ void SMPMonteCarloElf::backPropagate(OthelloNode* node, OthelloState& state, Pla
     while(node->hasParent());
 }
 
-
-inline void SMPMonteCarloElf::startTimer(size_t runtime_in_seconds)
-{
-	typedef chrono::high_resolution_clock clock;
-	chrono::duration<int,std::ratio<1>> runtime(runtime_in_seconds);
-    _end = clock::now() + runtime;
-}
-
-inline bool SMPMonteCarloElf::allowedToRun()
-{
-	return std::chrono::high_resolution_clock::now() < _end;
-}
-
-OthelloResult SMPMonteCarloElf::getBestMoveFor(OthelloState& rootState, size_t runtime_in_seconds)
+OthelloResult SMPMonteCarloElf::getBestMoveFor(OthelloState& rootState, size_t reiterations)
 {
 
     mt19937 engine(time(nullptr));
@@ -78,26 +65,19 @@ OthelloResult SMPMonteCarloElf::getBestMoveFor(OthelloState& rootState, size_t r
         expand(&rootNode, childState);
     }
 
-    size_t numberOfIterations = 0;
+ 	#pragma omp parallel for shared(rootState, rootNode) 
+	for (size_t i = 0; i < reiterations; ++i)
+	{
+        OthelloNode* currentNode = &rootNode;
+        OthelloState currentState = rootState;
 
-	startTimer(runtime_in_seconds);
- 	
- 	#pragma omp parallel shared(rootState, rootNode) reduction(+ : numberOfIterations)
-    {
-    	while(allowedToRun())
-    	{
-	        OthelloNode* currentNode = &rootNode;
-	        OthelloState currentState = rootState;
-
-	        currentNode = select(currentNode, currentState);
-	        //expand() moved before parallelization
-	        rollout(currentState);
-	        backPropagate(currentNode, currentState, rootNode.currentPlayer());
-
-	        numberOfIterations++;
-    	}
+        currentNode = select(currentNode, currentState);
+        //expand() moved before parallelization
+        rollout(currentState);
+        backPropagate(currentNode, currentState, rootNode.currentPlayer());
     }
+    
     auto result = rootNode.getFavoriteChild().collectedResult();
-    result.iterations = numberOfIterations;
+    result.iterations = reiterations;
     return result;
 }

@@ -16,7 +16,7 @@ using namespace std;
 const Player DEFAULTPLAYER = Player::White;
 
 MonteCarloScheduler::MonteCarloScheduler(const function<ElfPointer()>& factory) :
-    SchedulerTemplate(factory), _repetitions(10U)
+    SchedulerTemplate(factory), _repetitions(1000U), _localRepetitions(0U)
 {
 }
 
@@ -29,7 +29,7 @@ void MonteCarloScheduler::provideData(ProblemStatement& statement)
     _state = OthelloState(playfield, DEFAULTPLAYER);
 }
 
-bool MonteCarloScheduler::hasData()
+bool MonteCarloScheduler::hasData() const
 {
     return true;
 }
@@ -41,10 +41,10 @@ void MonteCarloScheduler::outputData(ProblemStatement& statement)
 
 void MonteCarloScheduler::doDispatch()
 {
-    if (MpiHelper::isMaster(rank))
+    if (MpiHelper::isMaster())
     {
         distributeInput();
-        if (_repetitions != 0)
+        if (_localRepetitions != 0)
         {
             calculate();
         }
@@ -80,7 +80,7 @@ pair<vector<NodeRating>, Rating> weightRatings(const BenchmarkResult& ratings)
 
 void MonteCarloScheduler::calculate()
 {
-    _result = elf().getBestMoveFor(_state, _repetitions);
+    _result = elf().getBestMoveFor(_state, _localRepetitions);
 }
 
 vector<OthelloResult> MonteCarloScheduler::gatherResults()
@@ -111,39 +111,37 @@ vector<OthelloResult> MonteCarloScheduler::gatherResults()
     MPI_Type_create_struct(4, elementLengths, elementDisplacements, elementTypes, &MPI_OthelloResult);
     MPI_Type_commit(&MPI_OthelloResult);
     
-    if (MpiHelper::isMaster(rank))
+    if (MpiHelper::isMaster())
     {
+        int i = 0;
         for (const auto& node : nodeSet)
         {
-            //cout <<"\t"<< rank  << " receiving from "<<node.first<<endl;
             if (MpiHelper::isMaster(node.first))
             {
                 results[0] = _result;
             }
             else
             {
-                MPI::COMM_WORLD.Recv(results.data() + node.first * sizeof(OthelloResult), 1, MPI_OthelloResult, node.first, 0);
+                
+                MPI::COMM_WORLD.Recv(results.data() + i , 1, MPI_OthelloResult, node.first, 0);
             }
-            //cout <<"\t"<< rank  << " received from "<<node.first<<endl;
+            i++;
         }
     }
     else
     {
-        //cout <<"\t"<< rank  << " sending"<<endl;
         MPI::COMM_WORLD.Send(&_result, 1, MPI_OthelloResult, MpiHelper::MASTER, 0);
-        //cout <<"\t"<< rank  << " send"<<endl;
     }
-    
     return results;
 }
 
 void MonteCarloScheduler::collectInput()
 {
-    size_t parameters[] = {0, 0};
-    MPI::COMM_WORLD.Recv(parameters, 2, MPI::UNSIGNED, MpiHelper::MASTER, 0);
-    //cout << "Received on "<<rank << " " << parameters[0] << " with " << parameters[1] <<" repetitions"<< endl;
-    size_t bufferSize = parameters[0];
-    _repetitions = parameters[1];
+    unsigned long parameters[] = {0, 0};
+    MPI::COMM_WORLD.Recv(parameters, 2, MPI::UNSIGNED_LONG, MpiHelper::MASTER, 0);
+
+    size_t bufferSize = (size_t)parameters[0];
+    _localRepetitions = (size_t)parameters[1];
 
     Playfield playfield(bufferSize);
 
@@ -164,11 +162,10 @@ void MonteCarloScheduler::distributeInput()
     const NodeRating* masterRating = nullptr;
     for (const auto& rating : ratings)
     {
-        if (rating.first != MpiHelper::MASTER)
+        if (!MpiHelper::isMaster(rating.first))
         {
-            size_t parameters[] = { bufferSize, (size_t)round(_repetitions * rating.second / ratingSum) };
-            MPI::COMM_WORLD.Send(parameters, 2, MPI::UNSIGNED, rating.first, 0);
-            //cout << "Send to "<<rating.first << " " << parameters[0] << " with " << parameters[1] <<" repetitions"<< endl;
+            unsigned long parameters[] = { bufferSize, (size_t)round(_repetitions * rating.second / ratingSum) };
+            MPI::COMM_WORLD.Send(parameters, 2, MPI::UNSIGNED_LONG, rating.first, 0);
             MPI::COMM_WORLD.Send(_state.playfieldBuffer(), bufferSize, MPI_FIELD, rating.first, 0);
         }
         else
@@ -178,11 +175,11 @@ void MonteCarloScheduler::distributeInput()
     }
     if (masterRating != nullptr)
     {
-        _repetitions = (size_t)(_repetitions * masterRating->second / ratingSum);
+        _localRepetitions = (size_t)(_repetitions * masterRating->second / ratingSum);
     }
     else
     {
-        _repetitions = 0;
+        _localRepetitions = 0;
     }
 }
 

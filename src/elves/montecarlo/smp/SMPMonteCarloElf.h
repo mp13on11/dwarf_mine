@@ -17,8 +17,5 @@ private:
     OthelloNode* select(OthelloNode* node, OthelloState& state);
     void rollout(OthelloState& state);
     void backPropagate(OthelloNode* node, OthelloState& state, Player player);
-
-    void startTimer(size_t runtime_in_seconds);
-    bool allowedToRun();
 };
 

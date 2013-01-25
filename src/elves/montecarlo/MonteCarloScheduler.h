@@ -19,12 +19,13 @@ public:
     virtual void outputData(ProblemStatement& statement);
 
 protected:
-    virtual bool hasData();
+    virtual bool hasData() const;
     virtual void doDispatch();
 
     OthelloState _state;
     OthelloResult _result;
     size_t _repetitions;
+    size_t _localRepetitions;
 
 private:
     void orchestrateCalculation();

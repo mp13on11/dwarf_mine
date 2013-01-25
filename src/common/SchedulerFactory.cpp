@@ -79,8 +79,10 @@ function<Scheduler*()> SchedulerFactory::createSmpFactory(const ElfCategory& cat
         return createFactory<MatrixScheduler, SMPMatrixElf>();
     else if (category == "factorize")
         return createFactory<FactorizationScheduler, SmpFactorizationElf>();
-    else
+    else if (category == "montecarlo")
         return createFactory<MonteCarloScheduler, SMPMonteCarloElf>();
+    
+    throw runtime_error("Unknown elf category");
 }
 
 #ifdef HAVE_CUDA
