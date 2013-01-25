@@ -58,8 +58,8 @@ pair<BigInt, BigInt> QuadraticSieve::sieve()
     uint64_t intervalSize = (uint64_t)exp(sqrt(log(n)*log(log(n))));
     BigInt intervalStart = sqrt(n) + 1;
     BigInt intervalEnd = sqrt(n)+ 1 + intervalSize;
-    return sieveIntervalFast(intervalStart, intervalEnd, factorBase.size() + 2);
-    //return sieveIntervalCuda(intervalStart, intervalEnd, factorBase.size() + 2);
+    //return sieveIntervalFast(intervalStart, intervalEnd, factorBase.size() + 2);
+    return sieveIntervalCuda(intervalStart, intervalEnd, factorBase.size() + 2);
 }
 
 
