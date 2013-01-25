@@ -33,7 +33,7 @@ void MatrixScheduler::provideData(ProblemStatement& statement)
     right = matrices.second;
 }
 
-bool MatrixScheduler::hasData()
+bool MatrixScheduler::hasData() const
 {
     return !left.empty() || !right.empty();
 }
@@ -45,7 +45,7 @@ void MatrixScheduler::outputData(ProblemStatement& statement)
 
 void MatrixScheduler::doDispatch()
 {
-    if (MpiHelper::isMaster(rank))
+    if (MpiHelper::isMaster())
     {
         orchestrateCalculation();
     }

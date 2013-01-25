@@ -3,8 +3,7 @@
 
 #include <stdexcept>
 
-Scheduler::Scheduler() :
-    rank(MpiHelper::rank())
+Scheduler::Scheduler()
 {
 }
 

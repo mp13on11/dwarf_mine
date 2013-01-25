@@ -1,7 +1,6 @@
 #pragma once
 
 #include "BenchmarkResults.h"
-#include "MpiHelper.h"
 
 struct ProblemStatement;
 
@@ -21,5 +20,4 @@ public:
 
 protected:
     BenchmarkResult nodeSet;
-    NodeId rank;
 };

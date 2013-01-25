@@ -9,13 +9,17 @@ const pair<BigInt,BigInt> QuadraticSieve::TRIVIAL_FACTORS(0,0);
 
 pair<BigInt, BigInt> QuadraticSieve::factorize()
 {
-    createFactorBase(150);
+    int factorBaseSize = (int)exp(0.5*sqrt(log(n)*log(log(n))));
+    cout << "factorBaseSize" << factorBaseSize << endl;
+    createFactorBase(factorBaseSize);
 
     // sieve
     cout << "sieving relations ..." << endl;
     pair<BigInt, BigInt> factors = sieve();
     if(isNonTrivial(factors))
         return factors;
+
+    cout << "found " << relations.size() << " realtions" << endl;
 
     // bring relations into lower diagonal form
     cout << "performing gaussian elimination ..." << endl;
@@ -47,11 +51,124 @@ bool QuadraticSieve::isNonTrivial(const pair<BigInt,BigInt>& factors) const
 
 pair<BigInt, BigInt> QuadraticSieve::sieve()
 {
-    BigInt intervalStart = sqrt(n)+1;
-    BigInt intervalEnd = sqrt(n)+1 + BigInt("10000000");
-    return sieveInterval(intervalStart, intervalEnd, factorBase.size() + 2);
+    uint64_t intervalSize = (uint64_t)exp(sqrt(log(n)*log(log(n))));
+    BigInt intervalStart = sqrt(n) + 1;
+    BigInt intervalEnd = sqrt(n)+ 1 + intervalSize;
+    return sieveIntervalFast(intervalStart, intervalEnd, factorBase.size() + 2);
 }
 
+
+pair<BigInt, BigInt> QuadraticSieve::sieveIntervalFast(const BigInt& start, const BigInt& end, size_t maxRelations)
+{
+    BigInt intervalLength = (end-start);
+    size_t blockSize = intervalLength.get_ui();
+    cout << "sieving interval: " << blockSize << endl;
+
+    vector<uint32_t> logs(blockSize+1);
+
+    BigInt x, remainder;
+    // init field with logarithm
+    x = start;
+    for(uint32_t i=0; i<=blockSize; i++, x++)
+    {
+        remainder = (x*x) % n;
+        logs[i] = log_2_22(remainder);
+    }
+
+    // no prime powers
+    for(const smallPrime_t& prime : factorBase)
+    {
+        BigInt root = rootModPrime(n, prime);
+        if(root == 0)
+            continue;
+
+        for(int z = 0; z<2; z++)
+        {
+
+            BigInt offset = (prime + root - (start % prime)) % prime;
+
+            //cout << root << "^2-" << n << " is dividable by " << prime << endl; 
+            //cout << (start+offset) << "^2-" << n << " [offset=" << offset << "] should be dividable by " << prime << endl; 
+            //cout << "start:" << start << endl;
+            //cout << "offset: " << offset << endl;
+            BigInt bigPrime(prime);
+            uint32_t primeLog = log_2_22(bigPrime);
+            for(uint32_t i=offset.get_ui(); i<=blockSize; i+=prime)
+            {
+                logs[i] -= primeLog;
+
+                x = start + i;
+                if(((x*x)%n)%bigPrime != 0)
+                {
+                    cout << "(x*x)%n=" << ((x*x)%n) << " is not dividiable by " << prime << endl;
+                }
+                //if(i == 5690)
+                //    cout << "(x*x)%n=" << ((x*x)%n) << " is dividiable by " << prime << endl;
+                
+            }
+
+            if(prime-root == root)
+                break;
+            else
+                root = prime - root;
+        }
+    }
+
+    //second scan for smooth numbers
+    BigInt biggestPrime(factorBase.back());
+    //uint32_t logTreshold = (int)(log_2_22(biggestPrime) + lb(n));
+    uint32_t logTreshold = (int)(lb(n));
+    for(uint32_t i=0; i<=blockSize; i++)
+    {
+        //cout << logs[i] << " < " << logTreshold << endl;
+        if(logs[i] < logTreshold) // probable smooth
+        {
+            x = start + i;
+            remainder = (x*x) % n;
+
+            PrimeFactorization factorization = factorizeOverBase(remainder);
+            if(factorization.empty())
+            {
+                cerr << "false alarm !!! (should not happend)" << endl;
+                continue;
+            }
+
+
+            Relation relation(x, factorization);
+            //cout << "NEW: ", print(relation);
+            //cout << "R#=" << relations.size() << endl;
+
+            uint32_t logSum = 0;
+            for(auto pp : factorization.oddPrimePowers().indices)
+            {
+                BigInt bigpp(pp);
+                logSum += log_2_22(bigpp);
+            }
+            //factorization.print();
+            /*cout << "ln(x)=" << log_2_22(remainder) 
+                << ", sum(ln)=" << logSum 
+                << ", log[i]=" << logs[i] << endl;*/
+
+            if(relation.isPerfectCongruence())
+            {
+                auto factors = factorsFromCongruence(x, sqrt(factorization).multiply());
+                if(isNonTrivial(factors))
+                {
+                    continue;
+                    return factors;
+                }
+            }
+
+            relations.push_back(relation);
+
+            if(relations.size() >= maxRelations)
+                break;
+
+        }
+    }
+
+    return TRIVIAL_FACTORS;
+}
 
 pair<BigInt, BigInt> QuadraticSieve::sieveInterval(const BigInt& start, const BigInt& end, size_t maxRelations)
 {
@@ -68,7 +185,7 @@ pair<BigInt, BigInt> QuadraticSieve::sieveInterval(const BigInt& start, const Bi
 
         Relation relation(x, factorization);
         //cout << "NEW: ", print(relation);
-        //cout << "R#=" << relations.size() << endl;
+        cout << "R#=" << relations.size() << endl;
 
         if(relation.isPerfectCongruence())
         {
@@ -291,6 +408,104 @@ PrimeFactorization QuadraticSieve::factorizeOverBase(const BigInt& number) const
     return PrimeFactorization();
 }
 
+
+BigInt QuadraticSieve::rootModPrime(const BigInt& a, const BigInt& p)
+{
+    if(a > p)
+        return rootModPrime(a % p, p);
+
+    int jacobi = mpz_jacobi(a.get_mpz_t(), p.get_mpz_t());
+
+    if(jacobi != 1) // a is not a quadratic residue
+        return 0;
+
+    
+    if(p == 2)
+    {
+        return a;
+    }
+
+    // check simplest cases: p = 3, 5, 7 mod 8
+    BigInt pRemEight = p % 8;
+    if(pRemEight == 3 || pRemEight == 7)
+    {
+        BigInt power = (p+1)/4;
+        BigInt x;
+        mpz_powm(x.get_mpz_t(), a.get_mpz_t(), power.get_mpz_t(), p.get_mpz_t());
+        return x;
+    }    
+    if(pRemEight == 5)
+    {
+        BigInt power = (p+3)/8;
+        BigInt x;
+        mpz_powm(x.get_mpz_t(), a.get_mpz_t(), power.get_mpz_t(), p.get_mpz_t());
+        BigInt c;
+        mpz_powm_ui(c.get_mpz_t(), x.get_mpz_t(), 2, p.get_mpz_t());
+        if(c != a)
+        {
+            BigInt scale(2);
+            power = (p-1)/4;
+            mpz_powm(scale.get_mpz_t(), scale.get_mpz_t(), power.get_mpz_t(), p.get_mpz_t());
+            x = (x * scale) % p;
+
+        }
+        return x;
+    }
+
+    gmp_randstate_t rstate;
+    gmp_randinit_mt(rstate);
+    BigInt d;
+    do{
+        mpz_urandomm(d.get_mpz_t(), rstate, p.get_mpz_t());
+        jacobi = mpz_jacobi(d.get_mpz_t(), p.get_mpz_t());
+    }while(!(d>1 && jacobi == -1));
+
+    BigInt t;
+    BigInt pMinusOne(p-1);
+    BigInt two(2);
+    BigInt one(1);
+    mp_bitcnt_t s = mpz_remove(t.get_mpz_t(), pMinusOne.get_mpz_t(), two.get_mpz_t());
+
+    BigInt A, D, m, x, Dm, ADm, tmp, power;
+    mpz_powm(A.get_mpz_t(), a.get_mpz_t(), t.get_mpz_t(), p.get_mpz_t());
+    mpz_powm(D.get_mpz_t(), d.get_mpz_t(), t.get_mpz_t(), p.get_mpz_t());
+    m = 0;
+
+    for(uint i=1; i<s; i++)
+    {
+        mpz_ui_pow_ui(power.get_mpz_t(), 2, s - 1 - i);
+        mpz_powm(Dm.get_mpz_t(), D.get_mpz_t(), m.get_mpz_t(), p.get_mpz_t());
+        ADm = A * Dm;
+        mpz_powm(tmp.get_mpz_t(), ADm.get_mpz_t(), power.get_mpz_t(), p.get_mpz_t());
+        if(tmp+1==p)
+        {
+            m += one << i;
+        }
+    }
+    power = (t+1) / 2;
+    mpz_powm(A.get_mpz_t(), a.get_mpz_t(), power.get_mpz_t(), p.get_mpz_t());
+    power = m / 2;
+    mpz_powm(D.get_mpz_t(), D.get_mpz_t(), power.get_mpz_t(), p.get_mpz_t());
+    x = (A*D) % p;
+    return x;
+
+
+
+
+
+    /*
+    BigInt rem;
+    for(BigInt i=1; i<primeMod; i++)
+    {
+        mpz_powm_ui(rem.get_mpz_t(), i.get_mpz_t(), 2, primeMod.get_mpz_t());
+        if(rem == n)
+        {
+            return i;
+        }
+    }
+    return 0;
+    */
+}
 
 double binarySolve(function<double(double)> f, double y)
 {

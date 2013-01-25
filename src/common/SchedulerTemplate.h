@@ -1,5 +1,6 @@
 #pragma once
 
+#include "MpiHelper.h"
 #include "Scheduler.h"
 
 #include <functional>
@@ -19,12 +20,14 @@ public:
 
 protected:
     virtual void doDispatch() = 0;
-    virtual bool hasData() = 0;
+    virtual bool hasData() const = 0;
     ElfType& elf() const;
 
 private:
     std::unique_ptr<ElfType> _elf;
     std::function<ElfPointer()> _factory;
+
+    void validate() const;
 };
 
 template<typename ElfType>
@@ -48,7 +51,15 @@ template<typename ElfType>
 void SchedulerTemplate<ElfType>::dispatch()
 {
     _elf.reset(_factory());
-    if (MpiHelper::isMaster(rank))
+    validate();
+    doDispatch();
+    _elf.release();
+}
+
+template<typename ElfType>
+void SchedulerTemplate<ElfType>::validate() const
+{
+    if (MpiHelper::isMaster())
     {
         if (!hasData())
         {
@@ -60,6 +71,4 @@ void SchedulerTemplate<ElfType>::dispatch()
             throw std::runtime_error("SchedulerTemplate::dispatch(): Nodeset is empty!");
         }
     }
-    doDispatch();
-    _elf.release();
 }

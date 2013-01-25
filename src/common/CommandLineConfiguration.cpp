@@ -129,7 +129,7 @@ bool CommandLineConfiguration::shouldBeVerbose() const
     return variables.count("verbose") > 0;
 }
 
-std::string CommandLineConfiguration::exportConfigurationFilename() const
+string CommandLineConfiguration::exportConfigurationFilename() const
 {
     if (variables.count("export_configuration") == 0)
         return "";
@@ -137,7 +137,7 @@ std::string CommandLineConfiguration::exportConfigurationFilename() const
     return variables["export_configuration"].as<string>();
 }
 
-std::string CommandLineConfiguration::importConfigurationFilename() const
+string CommandLineConfiguration::importConfigurationFilename() const
 {
     if (variables.count("import_configuration") == 0)
         return "";
@@ -148,6 +148,11 @@ std::string CommandLineConfiguration::importConfigurationFilename() const
 bool CommandLineConfiguration::shouldPrintHelp() const
 {
     return variables.count("help") > 0;
+}
+
+string CommandLineConfiguration::timeOutputFilename() const
+{
+    return variables["time_output"].as<string>();
 }
 
 void CommandLineConfiguration::printHelp()
@@ -173,7 +178,8 @@ options_description CommandLineConfiguration::createDescription()
         ("verbose,v",            "Show output from all MPI processes")
         ("left_rows",            value<size_t>()->default_value(500), "Number of left rows to be generated (overridden for benchmark by input file)")
         ("common_rows_columns",  value<size_t>()->default_value(500), "Number of left columns / right rows to be generated (overridden for benchmark by input file)")
-        ("right_columns",        value<size_t>()->default_value(500), "Number of right columns to be generated (overridden for benchmark by input file)");
+        ("right_columns",        value<size_t>()->default_value(500), "Number of right columns to be generated (overridden for benchmark by input file)")
+        ("time_output",          value<string>()->default_value("/dev/null"), "Output file for time measurements");
 
     return description;
 }

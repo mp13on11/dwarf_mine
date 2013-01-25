@@ -1,11 +1,23 @@
+#include "SimpleBenchmarkRunner.h"
 #include "SimpleConfiguration.h"
-#include "common/BenchmarkRunner.h"
 #include "common/MpiGuard.h"
 
 #include <exception>
+#include <fstream>
 #include <iostream>
 
 using namespace std;
+using namespace std::chrono;
+
+ostream& operator<<(ostream& out, const vector<microseconds>& measurements)
+{
+    for (const auto& time : measurements)
+    {
+        out << time.count() << endl;
+    }
+
+    return out;
+}
 
 int main(int argc, char** argv)
 {
@@ -14,12 +26,22 @@ int main(int argc, char** argv)
         MpiGuard guard(argc, argv);
         SimpleConfiguration config(argc, argv);
 
-        BenchmarkResult rating;
-        rating.insert({0, 1});
-        BenchmarkRunner runner(config, rating);
-        auto statement = config.createProblemStatement(false);
-        auto factory = config.createSchedulerFactory();
-        runner.runBenchmark(*statement, *factory);
+        if (config.shouldPrintHelp())
+        {
+            SimpleConfiguration::printHelp();
+            return 0;
+        }
+
+        ofstream file(config.timeOutputFilename(), ios::app);
+
+        if (!file.is_open())
+        {
+            cerr << "Failed to open file " << config.timeOutputFilename() << endl;
+            return 1;
+        }
+
+        SimpleBenchmarkRunner runner(config);
+        file << runner.run();
     }
     catch (const boost::program_options::error& e)
     {
