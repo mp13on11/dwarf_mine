@@ -1,5 +1,5 @@
 #pragma once
 
-#include "Number.h"
+#include "Number.cuh"
 
 __global__ void factorizeKernel(PNumData input, PNumData output);

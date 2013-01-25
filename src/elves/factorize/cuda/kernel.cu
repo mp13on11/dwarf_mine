@@ -1,4 +1,5 @@
 #include "kernel.cuh"
+#include "Number.cuh"
 
 __global__ void factorizeKernel(PNumData input, PNumData output)
 {

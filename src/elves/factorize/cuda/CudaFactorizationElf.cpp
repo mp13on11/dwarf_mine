@@ -1,14 +1,25 @@
 #include "CudaFactorizationElf.h"
 #include "Factorize.h"
 #include <cuda-utils/Memory.h>
+#include "NumberHelper.h" 
 
 #include <array>
 #include <algorithm>
 
 using namespace std;
 
+
+//extern void sieveIntervalWrapper(PNumData pn, uint32_t* logs, uint32_t* rootsModPrime, uint32_t* factorBase, int factorBaseSize, PNumData pStart, PNumData pEnd);
+
 pair<BigInt, BigInt> CudaFactorizationElf::factorize(const BigInt& )
 {
+    
+    // only for testing
+    BigInt n("2");
+    CudaUtils::Memory<uint32_t> n_d = NumberHelper::BigIntToNumber(n);
+    //sieveIntervalWrapper(n_d.get(), nullptr, nullptr, 1, nullptr, 1, nullptr, nullptr);
+
+
     //uint64_t value64 = value.getUint64Value();
     NumData result;
     CudaUtils::Memory<uint32_t> results_d(NUM_FIELDS);

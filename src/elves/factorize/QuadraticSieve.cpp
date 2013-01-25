@@ -1,11 +1,15 @@
 #include "QuadraticSieve.h"
 #include <algorithm>
 #include <future>
-
+#include "elves/factorize/cuda/Factorize.h"
+#include "elves/factorize/cuda/NumberHelper.h"
+#include <cuda-utils/Memory.h>
 
 using namespace std;
 
 const pair<BigInt,BigInt> QuadraticSieve::TRIVIAL_FACTORS(0,0);
+
+extern void sieveIntervalWrapper(PNumData pn, uint32_t* logs, uint32_t* rootsModPrime, uint32_t* factorBase, int factorBaseSize, PNumData pStart, PNumData pEnd);
 
 pair<BigInt, BigInt> QuadraticSieve::factorize()
 {
@@ -55,8 +59,105 @@ pair<BigInt, BigInt> QuadraticSieve::sieve()
     BigInt intervalStart = sqrt(n) + 1;
     BigInt intervalEnd = sqrt(n)+ 1 + intervalSize;
     return sieveIntervalFast(intervalStart, intervalEnd, factorBase.size() + 2);
+    //return sieveIntervalCuda(intervalStart, intervalEnd, factorBase.size() + 2);
 }
 
+
+pair<BigInt, BigInt> QuadraticSieve::sieveIntervalCuda(const BigInt& start, const BigInt& end, size_t maxRelations)
+{
+    BigInt intervalLength = (end-start);
+    size_t blockSize = intervalLength.get_ui();
+    cout << "sieving interval: " << blockSize << endl;
+
+    vector<uint32_t> logs(blockSize+1);
+
+    BigInt x, remainder;
+    // init field with logarithm
+    x = start;
+    for(uint32_t i=0; i<=blockSize; i++, x++)
+    {
+        remainder = (x*x) % n;
+        logs[i] = log_2_22(remainder);
+    }
+
+    vector<BigInt> rootsModPrime(factorBase.size());
+    for (auto primeIter = factorBase.begin(); primeIter != factorBase.end(); ++primeIter)
+    {
+        BigInt root = rootModPrime(n, *primeIter);
+        rootsModPrime.push_back(root);
+    }
+    
+    CudaUtils::Memory<uint32_t> logs_d(blockSize+1);
+    CudaUtils::Memory<uint32_t> rootsModPrime_d = NumberHelper::BigIntsToNumbers(rootsModPrime); 
+    CudaUtils::Memory<uint32_t> factorBase_d(factorBase.size());
+    CudaUtils::Memory<uint32_t> start_d = NumberHelper::BigIntToNumber(start);
+    CudaUtils::Memory<uint32_t> end_d = NumberHelper::BigIntToNumber(end);
+    CudaUtils::Memory<uint32_t> n_d = NumberHelper::BigIntToNumber(n);
+    
+    factorBase_d.transferFrom(&factorBase[0]);
+    logs_d.transferFrom(&logs[0]);
+
+    sieveIntervalWrapper(n_d.get(), logs_d.get(), rootsModPrime_d.get(), factorBase_d.get(), factorBase.size(), start_d.get(), end_d.get());
+
+    vector<uint32_t> gpulogs = (NumberHelper::NumbersToUis(logs_d));
+    
+    swap(gpulogs, logs);
+
+    //second scan for smooth numbers
+    BigInt biggestPrime(factorBase.back());
+    //uint32_t logTreshold = (int)(log_2_22(biggestPrime) + lb(n));
+    uint32_t logTreshold = (int)(lb(n));
+    for(uint32_t i=0; i<=blockSize; i++)
+    {
+        //cout << logs[i] << " < " << logTreshold << endl;
+        if(logs[i] < logTreshold) // probable smooth
+        {
+            x = start + i;
+            remainder = (x*x) % n;
+
+            PrimeFactorization factorization = factorizeOverBase(remainder);
+            if(factorization.empty())
+            {
+                cerr << "false alarm !!! (should not happend)" << endl;
+                continue;
+            }
+
+
+            Relation relation(x, factorization);
+            //cout << "NEW: ", print(relation);
+            //cout << "R#=" << relations.size() << endl;
+
+            uint32_t logSum = 0;
+            for(auto pp : factorization.oddPrimePowers().indices)
+            {
+                BigInt bigpp(pp);
+                logSum += log_2_22(bigpp);
+            }
+            //factorization.print();
+            /*cout << "ln(x)=" << log_2_22(remainder) 
+                << ", sum(ln)=" << logSum 
+                << ", log[i]=" << logs[i] << endl;*/
+
+            if(relation.isPerfectCongruence())
+            {
+                auto factors = factorsFromCongruence(x, sqrt(factorization).multiply());
+                if(isNonTrivial(factors))
+                {
+                    continue;
+                    return factors;
+                }
+            }
+
+            relations.push_back(relation);
+
+            if(relations.size() >= maxRelations)
+                break;
+
+        }
+    }
+
+    return TRIVIAL_FACTORS;
+}
 
 pair<BigInt, BigInt> QuadraticSieve::sieveIntervalFast(const BigInt& start, const BigInt& end, size_t maxRelations)
 {

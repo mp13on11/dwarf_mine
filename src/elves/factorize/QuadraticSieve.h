@@ -27,6 +27,7 @@ private:
     void createFactorBase(size_t numberOfPrimes);
     std::pair<BigInt, BigInt> sieve();
     std::pair<BigInt, BigInt> sieveInterval(const BigInt& start, const BigInt& end, size_t maxRelations);
+    std::pair<BigInt, BigInt> sieveIntervalCuda(const BigInt& start, const BigInt& end, size_t maxRelations);
     std::pair<BigInt, BigInt> sieveIntervalFast(const BigInt& start, const BigInt& end, size_t maxRelations);
     bool isNonTrivial(const std::pair<BigInt, BigInt>& pair) const;
     std::pair<BigInt,BigInt> factorsFromCongruence(const BigInt& a, const BigInt& b) const;

@@ -79,6 +79,11 @@ namespace CudaUtils
         {
             return gpuPtr;
         }
+        
+        std::size_t numberOfElements() const
+        {
+            return size;
+        }
 
     private:
         std::size_t sizeInBytes() const
