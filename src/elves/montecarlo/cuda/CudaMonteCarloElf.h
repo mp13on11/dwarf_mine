@@ -8,4 +8,5 @@ class CudaMonteCarloElf : public MonteCarloElf
 {
 public:
 	virtual OthelloResult getBestMoveFor(OthelloState& state, size_t reiterations);
+	
 };

@@ -1,5 +1,5 @@
 #pragma once
 
-enum class Field { Free, Black, White };
+enum Field { Free, Black, White };
 
 typedef Field Player;

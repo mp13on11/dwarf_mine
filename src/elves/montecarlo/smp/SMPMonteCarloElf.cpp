@@ -62,6 +62,7 @@ OthelloResult SMPMonteCarloElf::getBestMoveFor(OthelloState& rootState, size_t r
     while (rootNode.hasUntriedMoves())
     {
         auto childState = rootState;
+        //TODO remove "random" expand since we expand all nodes
         expand(&rootNode, childState);
     }
 
