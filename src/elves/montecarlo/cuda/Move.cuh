@@ -2,8 +2,20 @@
 
 typedef struct _Move
 {
-	size_t x;
-	size_t y;
+	int x;
+	int y;
+	bool valid; 
+	
+	__device__ _Move()
+	{
+		valid = true;
+	}
+
+	__device__ _Move(int _x, int _y)
+	{
+		x = _x;
+		y = _y;
+	}
 } Move;
 
 typedef struct _MoveVector
@@ -21,4 +33,6 @@ typedef struct _MoveVector
 	{
 		delete[] this->data;
 	}
+
+
 } MoveVector;
