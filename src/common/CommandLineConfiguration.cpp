@@ -142,7 +142,7 @@ options_description CommandLineConfiguration::createDescription()
         ("left_rows",            value<size_t>()->default_value(500), "Number of left rows to be generated (overridden for benchmark by input file)")
         ("common_rows_columns",  value<size_t>()->default_value(500), "Number of left columns / right rows to be generated (overridden for benchmark by input file)")
         ("right_columns",        value<size_t>()->default_value(500), "Number of right columns to be generated (overridden for benchmark by input file)")
-        ("time_output",          value<string>()->default_value("/dev/null"), "Output file for time measurements (elf_runner only)");
+        ("time_output",          value<string>()->default_value("/dev/null"), "Output file for time measurements");
 
     return description;
 }

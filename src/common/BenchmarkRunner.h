@@ -1,33 +1,38 @@
 #pragma once
 
-#include <vector>
+#include "BenchmarkResults.h"
+#include "ProblemStatement.h"
+#include "Scheduler.h"
+
 #include <chrono>
 #include <memory>
-#include "BenchmarkResults.h"
-#include "Configuration.h"
-#include "ProblemStatement.h"
-#include "SchedulerFactory.h"
+#include <vector>
 
-class Scheduler;
+class Configuration;
 
 class BenchmarkRunner
 {
-private:
-    size_t _iterations;
-    size_t _warmUps;
-    std::vector<BenchmarkResult> _nodesets;
-    BenchmarkResult _weightedResults;
-    BenchmarkResult _timedResults;
-
-    std::chrono::microseconds measureCall(Scheduler& scheduler);
-    unsigned int benchmarkNodeset(ProblemStatement& statement, Scheduler& scheduler);
-    void getBenchmarked(Scheduler& scheduler);
-    void weightTimedResults();
-
 public:
+    typedef std::chrono::microseconds Measurement;
+
     explicit BenchmarkRunner(const Configuration& config);
-    BenchmarkRunner(const Configuration& config, const BenchmarkResult& result);
-    void runBenchmark(ProblemStatement& statement, const SchedulerFactory& factory);
-    BenchmarkResult getWeightedResults();
-    BenchmarkResult getTimedResults();
+
+    BenchmarkResult benchmarkIndividualNodes() const;
+    std::vector<Measurement> runBenchmark(const BenchmarkResult& nodeWeights) const;
+
+private:
+    static Measurement averageOf(const std::vector<Measurement>& runTimes);
+    static BenchmarkResult calculateNodeWeights(const std::vector<Measurement>& averageRunTimes);
+    static bool slaveShouldRunWith(const BenchmarkResult& nodeWeights);
+
+    size_t iterations;
+    size_t warmUps;
+    std::unique_ptr<ProblemStatement> individualProblem;
+    std::unique_ptr<ProblemStatement> clusterProblem;
+    std::unique_ptr<Scheduler> scheduler;
+
+    std::vector<Measurement> runBenchmark(const BenchmarkResult& nodeWeights, ProblemStatement& problem) const;
+    std::vector<Measurement> benchmarkNodeset(ProblemStatement& problem) const;
+    void benchmarkSlave() const;
+    Measurement measureCall() const;
 };

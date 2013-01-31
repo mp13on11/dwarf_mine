@@ -1,100 +1,124 @@
-#include <cmath>
-#include <limits>
-#include <memory>
-#include <vector>
 #include "BenchmarkRunner.h"
-#include "Elf.h"
+#include "Configuration.h"
 #include "MpiHelper.h"
-#include "Scheduler.h"
+#include "SchedulerFactory.h"
 
 using namespace std;
+using namespace std::chrono;
+
+typedef BenchmarkRunner::Measurement Measurement;
 
 /**
  * BenchmarkRunner determines the available devices and benchmarks them idenpendently
  */
-BenchmarkRunner::BenchmarkRunner(const Configuration& config)
-    : _iterations(config.iterations()), _warmUps(config.warmUps())
+BenchmarkRunner::BenchmarkRunner(const Configuration& config) :
+        iterations(config.iterations()), warmUps(config.warmUps()),
+        individualProblem(config.createProblemStatement(true)),
+        clusterProblem(config.createProblemStatement(false)),
+        scheduler(config.createScheduler())
 {
-    for (size_t i = 0; i < MpiHelper::numberOfNodes(); ++i)
-        _nodesets.push_back({{static_cast<NodeId>(i), 1}});
 }
 
-/**
- * BenchmarkRunner uses the given (weighted) result to benchmark the nodeset as cluster
- */
-BenchmarkRunner::BenchmarkRunner(const Configuration& config, const BenchmarkResult& result)
-    : _iterations(config.iterations()), _warmUps(config.warmUps())
+BenchmarkResult BenchmarkRunner::benchmarkIndividualNodes() const
 {
-    _nodesets.push_back(result);
-}
+    vector<Measurement> averageRunTimes;
 
-std::chrono::microseconds BenchmarkRunner::measureCall(Scheduler& scheduler) {
-    typedef chrono::high_resolution_clock clock;
-    clock::time_point before = clock::now();
-    scheduler.dispatch();
-    return clock::now() - before;
-}
-
-unsigned int BenchmarkRunner::benchmarkNodeset(ProblemStatement& statement, Scheduler& scheduler)
-{
-    scheduler.provideData(statement);
-    for (size_t i = 0; i < _warmUps; ++i)
+    for (size_t i=0; i<MpiHelper::numberOfNodes(); ++i)
     {
-        measureCall(scheduler);
+        vector<Measurement> runTimes = runBenchmark(
+                {{static_cast<NodeId>(i), 1}}, *individualProblem
+            );
+        averageRunTimes.push_back(averageOf(runTimes));
     }
-    chrono::microseconds sum(0);
-    for (size_t i = 0; i < _iterations; ++i)
-    {
-        sum += measureCall(scheduler);
-    }
-    scheduler.outputData(statement);
-    return (sum / _iterations).count();
+
+    return calculateNodeWeights(averageRunTimes);
 }
 
-void BenchmarkRunner::getBenchmarked(Scheduler& scheduler)
+vector<Measurement> BenchmarkRunner::runBenchmark(const BenchmarkResult& nodeWeights) const
 {
-    for (size_t i = 0; i < _iterations + _warmUps; ++i)
-        scheduler.dispatch(); // slave side
+    return runBenchmark(nodeWeights, *clusterProblem);
 }
 
-void BenchmarkRunner::runBenchmark(ProblemStatement& statement, const SchedulerFactory& factory)
+vector<Measurement> BenchmarkRunner::runBenchmark(const BenchmarkResult& nodeWeights, ProblemStatement& problem) const
 {
-    unique_ptr<Scheduler> scheduler = factory.createScheduler();
-
     if (MpiHelper::isMaster())
     {
-        for (size_t nodeset = 0; nodeset < _nodesets.size(); ++nodeset)
-        {
-            scheduler->setNodeset(_nodesets[nodeset]);
-            _timedResults[nodeset] = benchmarkNodeset(statement, *scheduler);
-        }
-        weightTimedResults();
+        scheduler->setNodeset(nodeWeights);
+        return benchmarkNodeset(problem);
     }
-    else
+    else if (slaveShouldRunWith(nodeWeights))
     {
-        getBenchmarked(*scheduler);
+        benchmarkSlave();
     }
+
+    return vector<Measurement>(iterations, Measurement(0));
 }
 
-void BenchmarkRunner::weightTimedResults()
+vector<Measurement> BenchmarkRunner::benchmarkNodeset(ProblemStatement& problem) const
 {
-    int runtimeSum = 0;
-    for (const auto& nodeResult : _timedResults)
+    vector<Measurement> result;
+
+    scheduler->provideData(problem);
+
+    for (size_t i = 0; i < warmUps; ++i)
     {
-        runtimeSum += nodeResult.second;
+        measureCall();
     }
-    for (const auto& nodeResult :  _timedResults)
+    for (size_t i = 0; i < iterations; ++i)
     {
-        _weightedResults[nodeResult.first] = (nodeResult.second * 1.0 / runtimeSum) * 100;
+        result.push_back(measureCall());
     }
+
+    scheduler->outputData(problem);
+
+    return result;
 }
 
-BenchmarkResult BenchmarkRunner::getWeightedResults()
+void BenchmarkRunner::benchmarkSlave() const
 {
-    return _weightedResults;
+    for (size_t i = 0; i < iterations + warmUps; ++i)
+        scheduler->dispatch(); // slave side
 }
 
-BenchmarkResult BenchmarkRunner::getTimedResults()
+Measurement BenchmarkRunner::measureCall() const
 {
-    return _timedResults;
+    high_resolution_clock::time_point before = high_resolution_clock::now();
+    scheduler->dispatch();
+    return high_resolution_clock::now() - before;
+}
+
+BenchmarkResult BenchmarkRunner::calculateNodeWeights(const vector<Measurement>& averageRunTimes)
+{
+    BenchmarkResult result;
+    Measurement totalAverageRunTime(0);
+
+    for (const Measurement& averageRunTime : averageRunTimes)
+        totalAverageRunTime += averageRunTime;
+
+    for (size_t i=0; i<averageRunTimes.size(); ++i)
+    {
+        double average = (double)averageRunTimes[i].count();
+        result[i] = 100.0 * average / totalAverageRunTime.count();
+    }
+
+    return result;
+}
+
+Measurement BenchmarkRunner::averageOf(const vector<Measurement>& runTimes)
+{
+    if (runTimes.empty())
+        return Measurement(0);
+
+    Measurement sum(0);
+
+    for (const Measurement& runTime : runTimes)
+        sum += runTime;
+
+    return sum / runTimes.size();
+}
+
+bool BenchmarkRunner::slaveShouldRunWith(const BenchmarkResult& nodeWeights)
+{
+    // returns true if the slave's rank is included in the nodeWeights
+    return nodeWeights.find(MpiHelper::rank()) != nodeWeights.end();
 }

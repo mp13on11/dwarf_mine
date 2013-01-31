@@ -4,6 +4,7 @@ import sys
 from math import sqrt
 from matplotlib import pyplot
 from matplotlib.ticker import MultipleLocator, FormatStrFormatter
+from datetime import datetime
 
 
 def timesFromFile(fileName):
@@ -108,29 +109,44 @@ def plotBurnDown(threadTimes, fileName):
 file_dir = sys.argv[1]
 iterations = int(sys.argv[2]) if (len(sys.argv)>2) else 100
 warmups = iterations / 10
+matrixSize = 1000
 
 
-def timeFile(threads, ext = ".txt"):
-    return os.path.join(file_dir, "matmul_smp_{0}_1000{1}".format(threads, ext))
+def timeFile(smpHosts, cudaHosts, ext = ".txt"):
+    hostsString = ",".join(smpHosts) + "-" + ",".join(cudaHosts)
+    return os.path.join(file_dir, "matmul_cluster_{0}_{1}{2}".format(hostsString, matrixSize, ext))
 
-def commandLine(threads):
-    return  "OMP_NUM_THREADS={0} ./build/src/runner/elf_runner "\
-            "-m smp --left_rows 1000 --common_rows_columns 1000 --right_columns 1000 "\
-            "-w {1} -n {2} --time_output {3}".format(threads, warmups, iterations, timeFile(threads))
+def commandLine(smpHosts, cudaHosts):
+    hostLine =  "-host {0} -np 1 ./build/src/main/dwarf_mine -m {1} -c matrix -w {3} -n {4} --time_output {5} "\
+                "--left_rows {2} --common_rows_columns {2} --right_columns {2}"
+
+    timeFileName = timeFile(smpHosts, cudaHosts)
+    smpLines = [hostLine.format(host, "smp", matrixSize, warmups, iterations, timeFileName) for host in smpHosts]
+    cudaLines = [hostLine.format(host, "cuda", matrixSize, warmups, iterations, timeFileName) for host in cudaHosts]
+
+    mpirunArgs = " : ".join(smpLines + cudaLines)
+
+    return "mpirun --tag-output %s" % mpirunArgs
 
 
 def main():
-    numberOfThreads = range(1, 65, 1)
+    q1, q2, q3 = ("quadcore1", "quadcore2", "quadcore3")
+    scenarios = [((q3,), ()), ((q3,q2), ()), ((q3,q2,q1), ())]
 
-    for threads in numberOfThreads:
-        print "Executing with", threads, "thread(s)"
-        os.system(commandLine(threads))
+    numberOfScenarios = range(1, len(scenarios)+2)
 
-    alltimes = dict((threads, timesFromFile(timeFile(threads))) for threads in numberOfThreads)
+    for smpHosts, cudaHosts in scenarios:
+        print "Executing on smpHosts:", smpHosts, "and cudaHosts:", cudaHosts
+        print "commandLine:", commandLine(smpHosts, cudaHosts)
+        startTime = datetime.now();
+        os.system(commandLine(smpHosts, cudaHosts))
+        print "elapsed:", (datetime.now() - startTime).total_seconds(), "s"
+
+    alltimes = dict((len(smpHosts)+len(cudaHosts), timesFromFile(timeFile(smpHosts, cudaHosts))) for smpHosts, cudaHosts in scenarios)
 
     print "Plotting..."
-    plotSpeedUp(alltimes, timeFile("all", "_speedup.png"))
-    plotBurnDown(alltimes, timeFile("all", "_burndown.png"))
+    plotSpeedUp(alltimes, timeFile("", "", "_speedup.png"))
+    plotBurnDown(alltimes, timeFile("", "", "_burndown.png"))
 
 
 main()
