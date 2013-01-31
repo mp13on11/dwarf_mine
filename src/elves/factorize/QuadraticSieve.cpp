@@ -1,7 +1,7 @@
 #include "QuadraticSieve.h"
 #include <algorithm>
 #include <future>
-
+#include <cassert>
 
 using namespace std;
 
@@ -103,7 +103,7 @@ vector<BigInt> QuadraticSieve::sieveSmoothSquares(const BigInt& start, const Big
 
     //second scan for smooth numbers
     BigInt biggestPrime(factorBase.back());
-    
+
 
     vector<BigInt> result;
 
@@ -297,14 +297,18 @@ void QuadraticSieve::performGaussianElimination()
             }
 
             //assert that no other has 1 at front
-            for(k=k+1; k<relations.size(); k++)
-            {
-                auto start = relations[k].oddPrimePowers.indices.begin();
-                auto last = relations[k].oddPrimePowers.indices.end();
-                if(find(start, last, currentPrime) != last)
-                    throw logic_error("asd");
-            }
-
+            assert([&]()
+               {
+                    for(k=k+1; k<relations.size(); k++)
+                    {
+                        auto start = relations[k].oddPrimePowers.indices.begin();
+                        auto last = relations[k].oddPrimePowers.indices.end();
+                        if (find(start, last, currentPrime) != last)
+                            return false;
+                    }
+                    return true;
+               }()
+            );
         }
 
         relations[i].oddPrimePowers.indices.erase(nextPrimeIterator+1, relations[i].oddPrimePowers.indices.end());
@@ -344,23 +348,30 @@ PrimeFactorization QuadraticSieve::factorizeOverBase(const BigInt& number) const
     return PrimeFactorization();
 }
 
+// a is not a quadratic residue
+bool hasRootModPrime(const BigInt& a, const BigInt& prime)
+{
+    BigInt remainder = a % prime;
+    int jacobi = mpz_jacobi(remainder.get_mpz_t(), prime.get_mpz_t());
+    return jacobi != -1;
+}
 
 vector<BigInt> QuadraticSieve::squareRootsModPrimePower(const BigInt& a, const BigInt& prime, uint32_t power)
 {
     vector<BigInt> roots;
 
-    try{
-        BigInt basicRoot = rootModPrime(a, prime);
-        roots.push_back(basicRoot);
-        if((prime - basicRoot) % prime != basicRoot)
-            roots.push_back(prime - basicRoot);
+    if (!hasRootModPrime(a, prime))
+        return roots;
 
-        for(uint32_t i=2; i<=power; i++)
-        {
-            roots = liftRoots(roots, a, prime, i);
-        }
+    BigInt basicRoot = rootModPrime(a, prime);
+    roots.push_back(basicRoot);
+    if((prime - basicRoot) % prime != basicRoot)
+        roots.push_back(prime - basicRoot);
+
+    for(uint32_t i=2; i<=power; i++)
+    {
+        roots = liftRoots(roots, a, prime, i);
     }
-    catch(logic_error& e){}
 
     return roots;
 }
@@ -412,17 +423,14 @@ BigInt QuadraticSieve::liftRoot(const BigInt& root, const BigInt& a, const BigIn
     return x;
 }
 
-
 BigInt QuadraticSieve::rootModPrime(const BigInt& a, const BigInt& p)
 {
     if(a >= p)
         return rootModPrime(a % p, p);
 
-    int jacobi = mpz_jacobi(a.get_mpz_t(), p.get_mpz_t());
-
-    if(jacobi == -1) // a is not a quadratic residue
+    if(!hasRootModPrime(a, p))
         throw logic_error("Unable to take root of quadratic non-residue.");
-    
+
     if(p == 2)
     {
         return a;
@@ -436,7 +444,7 @@ BigInt QuadraticSieve::rootModPrime(const BigInt& a, const BigInt& p)
         BigInt x;
         mpz_powm(x.get_mpz_t(), a.get_mpz_t(), power.get_mpz_t(), p.get_mpz_t());
         return x;
-    }    
+    }
     if(pRemEight == 5)
     {
         BigInt power = (p+3)/8;
@@ -458,6 +466,7 @@ BigInt QuadraticSieve::rootModPrime(const BigInt& a, const BigInt& p)
     gmp_randstate_t rstate;
     gmp_randinit_mt(rstate);
     BigInt d;
+    int jacobi;
     do{
         mpz_urandomm(d.get_mpz_t(), rstate, p.get_mpz_t());
         jacobi = mpz_jacobi(d.get_mpz_t(), p.get_mpz_t());
@@ -491,23 +500,6 @@ BigInt QuadraticSieve::rootModPrime(const BigInt& a, const BigInt& p)
     mpz_powm(D.get_mpz_t(), D.get_mpz_t(), power.get_mpz_t(), p.get_mpz_t());
     x = (A*D) % p;
     return x;
-
-
-
-
-
-    /*
-    BigInt rem;
-    for(BigInt i=1; i<primeMod; i++)
-    {
-        mpz_powm_ui(rem.get_mpz_t(), i.get_mpz_t(), 2, primeMod.get_mpz_t());
-        if(rem == n)
-        {
-            return i;
-        }
-    }
-    return 0;
-    */
 }
 
 double binarySolve(function<double(double)> f, double y)
@@ -525,8 +517,7 @@ double binarySolve(function<double(double)> f, double y)
             xHi = avg;
         else
             xLo = avg;
-        //cout << "(" << xLo << ", " << xHi << ") " <<  f((xHi+xLo)/2) <<endl;
-    }while((xHi-xLo) / ((xHi + xLo) / 2) > 1e-10);
+    } while((xHi-xLo) / ((xHi + xLo) / 2) > 1e-10);
 
     return (xHi + xLo) / 2;
 }
@@ -640,4 +631,20 @@ void PrimeFactorization::add(const smallPrime_t& prime, uint32_t power)
 bool Relation::isPerfectCongruence() const
 {
     return oddPrimePowers.empty();
+}
+
+
+void PrimeFactorization::print(ostream& stream) const
+{
+    bool first = true;
+    for(const auto& pairy : primePowers)
+    {
+        if(first)
+            first = false;
+        else
+            stream << " * ";
+        stream << pairy.first;
+        if(pairy.second > 1)
+            stream << "^" << pairy.second;
+    }
 }

@@ -72,30 +72,23 @@ public:
     BigInt multiply() const;
     SparseVector<smallPrime_t> oddPrimePowers() const;
     void add(const smallPrime_t& prime, uint32_t power);
-    void print() const
-    {
-        bool first = true;
-        for(const auto& pairy : primePowers)
-        {
-            if(first)
-                first = false;
-            else
-                std::cout << " * ";
-            std::cout << pairy.first;
-            if(pairy.second > 1)
-                std::cout << "^" << pairy.second;
-        }
-        std::cout << std::endl;
-    }
+
+    void print(std::ostream& stream) const;
 
 private:
     std::list<std::pair<smallPrime_t, uint32_t>> primePowers;
 };
 
+inline std::ostream& operator<<(std::ostream& stream, const PrimeFactorization& factorization)
+{
+    factorization.print(stream);
+    return stream;
+}
+
 class Relation
 {
 public:
-    Relation(const BigInt& a, const PrimeFactorization& factorization) : 
+    Relation(const BigInt& a, const PrimeFactorization& factorization) :
         a(a), dependsOnPrime(0), primeFactorization(factorization), oddPrimePowers(factorization.oddPrimePowers())
     {}
     bool isPerfectCongruence() const;
