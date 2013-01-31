@@ -66,15 +66,6 @@ vector<BigInt> QuadraticSieve::sieveSmoothSquares(const BigInt& start, const Big
     BigInt x, remainder;
     uint32_t logTreshold = (int)(lb(n));
 
-
-    auto markPrimes = [&logs,&blockSize,&start](const BigInt& prime, uint32_t primelog, const BigInt& root){
-            BigInt offset = (prime + root - (start % prime)) % prime;
-            for(BigInt i=offset; i<=blockSize; i+=prime)
-            {
-                logs[i.get_ui()] -= primelog;
-            }
-        };
-
     // init field with logarithm
     x = start;
     for(uint32_t i=0; i<=blockSize; i++, x++)
@@ -89,14 +80,18 @@ vector<BigInt> QuadraticSieve::sieveSmoothSquares(const BigInt& start, const Big
     {
         BigInt prime(smallPrime);
         uint32_t primeLog = log_2_22(prime);
-        uint32_t i;
-        BigInt primePower;
-        for(i=1, primePower=prime; primePower < n; i++, primePower*=prime)
+        uint32_t i = 1;
+        BigInt primePower = prime;
+        for(; primePower < n; i++, primePower*=prime)
         {
             vector<BigInt> roots = squareRootsModPrimePower(n%primePower, prime, i);
             for(const BigInt& root : roots)
             {
-                markPrimes(primePower, primeLog, root);
+                BigInt offset = (primePower + root - (start % primePower)) % primePower;
+                for(BigInt j=offset; j<=blockSize; j+=primePower)
+                {
+                    logs[j.get_ui()] -= primeLog;
+                }
             }
         }
     }
@@ -220,7 +215,7 @@ pair<BigInt,BigInt> QuadraticSieve::pickRandomCongruence() const
 
 
 
-typedef struct {
+struct RelationComparator {
     bool operator() (const Relation& a, const Relation& b)
     {
         auto aStart = upper_bound(a.oddPrimePowers.indices.begin(), a.oddPrimePowers.indices.end(), minPrime);
@@ -241,7 +236,7 @@ typedef struct {
             return false;
     }
     uint32_t minPrime;
-} RelationComparator;
+};
 
 
 void QuadraticSieve::performGaussianElimination()
