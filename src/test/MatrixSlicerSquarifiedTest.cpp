@@ -27,7 +27,7 @@ TEST_F(MatrixSlicerSquarifiedTest, SimpleDifferentWeightSlicingTest)
     size_t rows = 100;
     size_t columns = 100;
     size_t area = rows * columns;
-    auto slices = slicer.layout({{0, 1.0 / 6}, {1, 1.0 / 2}, {2, 1.0}, {3, 1.0}}, rows, columns);
+    auto slices = slicer.layout({{0, 6}, {1, 2}, {2, 1}, {3, 1}}, rows, columns);
     
     verifySlices(slices, vector<size_t>{ 6 * area / 10, 2 * area / 10, area / 10, area / 10});
 }
@@ -47,7 +47,7 @@ TEST_F(MatrixSlicerSquarifiedTest, DifferentWeightSlicingTest)
     size_t rows = 33;
     size_t columns = 67;
     
-    auto slices = slicer.layout({{0, 1.0 / 6}, {1, 1.0 / 2}, {2, 1.0}, {3, 1.0}}, rows, columns);
+    auto slices = slicer.layout({{0, 6}, {1, 2}, {2, 1.0}, {3, 1.0}}, rows, columns);
 
     verifySlices(slices, vector<size_t>{ 1353 , 200, 208, 450});
 }
