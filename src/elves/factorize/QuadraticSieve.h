@@ -22,11 +22,14 @@ public:
     {}
     std::pair<BigInt, BigInt> factorize();
     static BigInt rootModPrime(const BigInt& n, const BigInt& primeMod);
+    static BigInt liftRoot(const BigInt& root, const BigInt& a, const BigInt& p, uint32_t power);
+    static std::vector<BigInt> liftRoots(const std::vector<BigInt>& roots, const BigInt& a, const BigInt& prime, uint32_t nextPower);
+
+    static std::vector<BigInt> squareRootsModPrimePower(const BigInt& a, const BigInt& prime, uint32_t power = 1);
 
 private:
     void createFactorBase(size_t numberOfPrimes);
     std::pair<BigInt, BigInt> sieve();
-    std::pair<BigInt, BigInt> sieveInterval(const BigInt& start, const BigInt& end, size_t maxRelations);
     std::pair<BigInt, BigInt> sieveIntervalFast(const BigInt& start, const BigInt& end, size_t maxRelations);
     bool isNonTrivial(const std::pair<BigInt, BigInt>& pair) const;
     std::pair<BigInt,BigInt> factorsFromCongruence(const BigInt& a, const BigInt& b) const;
@@ -34,6 +37,8 @@ private:
     std::pair<BigInt,BigInt> searchForRandomCongruence(size_t times) const;
     std::pair<BigInt,BigInt> pickRandomCongruence() const;
     PrimeFactorization factorizeOverBase(const BigInt& x) const;
+    std::vector<BigInt> sieveSmoothSquares(const BigInt& start, const BigInt& end) const;
+
 
     void print(const Relation& r) const;
 
