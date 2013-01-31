@@ -2,24 +2,24 @@
 #include <cuda.h>
 #include <stdio.h>
 
-__device__ float log(const Number& n)  
+__device__ float log(const Number& n)
 {
     uint32_t low = 0;
     uint32_t high = 0;
     uint32_t o;
 
-    for (int i = NUM_FIELDS-1; i >= 0; --i)    
+    for (int i = NUM_FIELDS-1; i >= 0; --i)
     {
         if (n.fields[i] & 0xFFFFFFFF)
         {
-            if (i == 0) 
+            if (i == 0)
             {
                 return log((float)n.fields[i]);
             }
 
             int l = 1;
-            uint32_t copy = n.fields[i]; 
-            while (copy >>= 1) 
+            uint32_t copy = n.fields[i];
+            while (copy >>= 1)
             {
                 l++;
             }
@@ -105,6 +105,8 @@ __device__ uint32_t log_2_22(Number x)
 
 __global__ void sieveIntervalKernel(PNumData pn, uint32_t* logs, uint32_t* rootsModPrime, uint32_t* factorBase, int factorBaseSize, PNumData pStart, PNumData pEnd)
 {
+
+
     //printf("log_2_22Log: %d\n", log_2_22(Number(pn)));
     //printf("binaryLog: %f\n", lb(Number(pn)));
     Number start(pStart);
@@ -118,7 +120,7 @@ __global__ void sieveIntervalKernel(PNumData pn, uint32_t* logs, uint32_t* roots
     Number bigPrime(factorBase[idx]);
     uint32_t prime = bigPrime.get_ui();
     Number root = rootsModPrime[idx*NUM_FIELDS];
-    
+
     if (root.isZero()) return;
 
     for (int z = 0; z < 2; ++z)
@@ -130,7 +132,7 @@ __global__ void sieveIntervalKernel(PNumData pn, uint32_t* logs, uint32_t* roots
             if (idx == 0)
                 printf("iter: %d\n", i);
             logs[i] -= primeLog;
-        } 
+        }
 
         if (bigPrime-root == root)
             break;
@@ -139,7 +141,7 @@ __global__ void sieveIntervalKernel(PNumData pn, uint32_t* logs, uint32_t* roots
     }
 
     //uint32_t logThreshold = lb(n);
-    //for (int i = 0; i <= intervalLength; ++i) 
+    //for (int i = 0; i <= intervalLength; ++i)
     //{
     //    if (logs[i] < logThreshold)
     //    {

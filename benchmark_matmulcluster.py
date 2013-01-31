@@ -53,7 +53,7 @@ def plotSpeedUp(threadTimes, fileName):
     pyplot.ylim(0)
 
     pyplot.title('MatMul (SMP, 1000x1000)')
-    pyplot.xlabel('OMP_NUM_THREADS')
+    pyplot.xlabel('MPI processes')
     pyplot.ylabel('SpeedUp')
     pyplot.show()
     pyplot.savefig(fileName, dpi=80)
@@ -99,7 +99,7 @@ def plotBurnDown(threadTimes, fileName):
     pyplot.ylim(0)
 
     pyplot.title('MatMul (SMP, 1000x1000)')
-    pyplot.xlabel('OMP_NUM_THREADS')
+    pyplot.xlabel('MPI processes')
     pyplot.ylabel('Burndown (SpeedUp / Thread)')
     pyplot.show()
     pyplot.savefig(fileName, dpi=80)

@@ -90,15 +90,15 @@ Measurement BenchmarkRunner::measureCall() const
 BenchmarkResult BenchmarkRunner::calculateNodeWeights(const vector<Measurement>& averageRunTimes)
 {
     BenchmarkResult result;
-    Measurement totalAverageRunTime(0);
+    double totalPerformance = 0;
 
     for (const Measurement& averageRunTime : averageRunTimes)
-        totalAverageRunTime += averageRunTime;
+        totalPerformance += 1.0 / averageRunTime.count();
 
     for (size_t i=0; i<averageRunTimes.size(); ++i)
     {
-        double average = (double)averageRunTimes[i].count();
-        result[i] = 100.0 * average / totalAverageRunTime.count();
+        double performance = 1.0 / averageRunTimes[i].count();
+        result[i] = performance / totalPerformance;
     }
 
     return result;
