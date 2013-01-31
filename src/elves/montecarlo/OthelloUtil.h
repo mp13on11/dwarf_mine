@@ -4,18 +4,17 @@
 #include <vector>
 #include <functional>
 #include "OthelloMove.h"
+#include <OthelloField.h>
 #include <iostream>
 
 typedef std::function<size_t(size_t)> RandomGenerator;
 
-enum class Field { Free, Black, White };
 
 // shortcuts
 const Field F = Field::Free;
 const Field W = Field::White;
 const Field B = Field::Black;
 
-typedef Field Player;
 typedef std::vector<Field> Playfield;
 
 struct OthelloResult
