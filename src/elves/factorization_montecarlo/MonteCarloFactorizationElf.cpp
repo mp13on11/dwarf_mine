@@ -12,7 +12,7 @@ MonteCarloFactorizationElf::MonteCarloFactorizationElf() :
 {
 }
 
-pair<BigInt, BigInt> MonteCarloFactorizationElf::factorize(const BigInt& m)
+pair<BigInt, BigInt> MonteCarloFactorizationElf::factor(const BigInt& m)
 {
     BigInt p, q;
 

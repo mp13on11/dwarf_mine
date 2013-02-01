@@ -10,7 +10,7 @@ SimpleFactorizationScheduler::SimpleFactorizationScheduler(const function<ElfPoi
 
 void SimpleFactorizationScheduler::doDispatch()
 {
-    BigIntPair factors = elf().factorize(number);
+    BigIntPair factors = elf().factor(number);
     p = factors.first;
     q = factors.second;
 }

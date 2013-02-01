@@ -1,11 +1,10 @@
 #pragma once
 
-#include <elves/factorize/FactorizationElf.h>
+#include <elves/common-factorization/FactorizationElf.h>
 #include <vector>
 
 class CudaFactorizationElf : public FactorizationElf
 {
 public:
-    virtual std::pair<BigInt, BigInt> factorize(const BigInt& number);
-    virtual void stop();
+    virtual std::pair<BigInt, BigInt> factor(const BigInt& number);
 };

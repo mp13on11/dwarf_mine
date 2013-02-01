@@ -34,7 +34,7 @@ void FactorizationScheduler::doDispatch()
     distributeNumber();
 
     future<BigIntPair> f = async(launch::async, [&]{
-            return elf().factorize(number);
+            return elf().factor(number);
         });
 
     int rank = distributeFinishedStateRegularly(f);

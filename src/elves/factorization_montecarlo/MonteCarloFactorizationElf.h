@@ -9,8 +9,8 @@ public:
 
     MonteCarloFactorizationElf();
 
-    virtual std::pair<BigInt, BigInt> factorize(const BigInt& number);
-    virtual void stop();
+    virtual std::pair<BigInt, BigInt> factor(const BigInt& number);
+    void stop();
 
     size_t randomSeed() const;
 };

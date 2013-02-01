@@ -11,5 +11,5 @@ public:
     virtual void run(std::istream& input, std::ostream& output);
 
     virtual void stop() = 0;
-    virtual std::pair<BigInt, BigInt> factorize(const BigInt& number) = 0;
+    virtual std::pair<BigInt, BigInt> factor(const BigInt& number) = 0;
 };
