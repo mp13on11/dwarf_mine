@@ -7,50 +7,39 @@
 #include <functional>
 #include <vector>
 #include <list>
-#include <random>
 
 class Relation;
 class PrimeFactorization;
 
 typedef uint32_t smallPrime_t;
+typedef std::vector<BigInt> SmoothSquares;
+typedef std::vector<smallPrime_t> FactorBase;
+typedef std::vector<Relation> Relations;
 
-class QuadraticSieve
+namespace QuadraticSieveHelper
 {
-public:
-    QuadraticSieve(const BigInt& n) :
-        n(n), binaryDistribution(0,1)
-    {}
-    std::pair<BigInt, BigInt> factorize();
-    static BigInt rootModPrime(const BigInt& n, const BigInt& primeMod);
-    static BigInt liftRoot(const BigInt& root, const BigInt& a, const BigInt& p, uint32_t power);
-    static std::vector<BigInt> liftRoots(const std::vector<BigInt>& roots, const BigInt& a, const BigInt& prime, uint32_t nextPower);
+    extern const std::pair<BigInt,BigInt> TRIVIAL_FACTORS;
 
-    static std::vector<BigInt> squareRootsModPrimePower(const BigInt& a, const BigInt& prime, uint32_t power = 1);
+    BigInt rootModPrime(const BigInt& n, const BigInt& primeMod);
+    BigInt liftRoot(const BigInt& root, const BigInt& a, const BigInt& p, uint32_t power);
+    std::vector<BigInt> liftRoots(const std::vector<BigInt>& roots, const BigInt& a, const BigInt& prime, uint32_t nextPower);
+    std::vector<BigInt> squareRootsModPrimePower(const BigInt& a, const BigInt& prime, uint32_t power = 1);
 
-private:
-    void createFactorBase(size_t numberOfPrimes);
+    FactorBase createFactorBase(size_t numberOfPrimes);
+    bool isNonTrivial(const std::pair<BigInt, BigInt>& pair, const BigInt& number);
+    std::pair<BigInt,BigInt> factorsFromCongruence(const BigInt& a, const BigInt& b);
+
+    std::pair<BigInt,BigInt> searchForRandomCongruence(const FactorBase& factorBase, const BigInt& number, size_t times);
+    PrimeFactorization factorizeOverBase(const BigInt& number, const FactorBase& factorBase);
+    void performGaussianElimination(Relations& relations);
+}
+/*
     std::pair<BigInt, BigInt> sieve();
     std::pair<BigInt, BigInt> sieveIntervalFast(const BigInt& start, const BigInt& end, size_t maxRelations);
-    bool isNonTrivial(const std::pair<BigInt, BigInt>& pair) const;
-    std::pair<BigInt,BigInt> factorsFromCongruence(const BigInt& a, const BigInt& b) const;
-    void performGaussianElimination();
-    std::pair<BigInt,BigInt> searchForRandomCongruence(size_t times) const;
-    std::pair<BigInt,BigInt> pickRandomCongruence() const;
-    PrimeFactorization factorizeOverBase(const BigInt& x) const;
+
     std::vector<BigInt> sieveSmoothSquares(const BigInt& start, const BigInt& end) const;
+    */
 
-
-    void print(const Relation& r) const;
-
-    BigInt n;
-    std::vector<smallPrime_t> factorBase;
-    std::vector<Relation> relations;
-
-    mutable std::uniform_int_distribution<int> binaryDistribution;
-    mutable std::mt19937 randomEngine;
-
-    static const std::pair<BigInt,BigInt> TRIVIAL_FACTORS;
-};
 
 template<typename T>
 class SparseVector

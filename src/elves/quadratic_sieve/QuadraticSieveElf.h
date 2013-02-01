@@ -6,5 +6,6 @@
 class QuadraticSieveElf : public Elf
 {
 public:
+    //QuadraticSieveElf();
 
 };

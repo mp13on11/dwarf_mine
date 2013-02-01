@@ -1,4 +1,5 @@
 #include "QuadraticSieve.h"
+#include "common/Utils.h"
 #include <algorithm>
 #include <future>
 #include <cassert>
@@ -6,211 +7,27 @@
 
 using namespace std;
 
-const pair<BigInt,BigInt> QuadraticSieve::TRIVIAL_FACTORS(0,0);
-
-pair<BigInt, BigInt> QuadraticSieve::factorize()
+namespace QuadraticSieveHelper
 {
-    int factorBaseSize = (int)exp(0.5*sqrt(log(n)*log(log(n))));
-    cout << "factorBaseSize" << factorBaseSize << endl;
-    createFactorBase(factorBaseSize);
 
-    // sieve
-    cout << "sieving relations ..." << endl;
-    pair<BigInt, BigInt> factors = sieve();
-    if(isNonTrivial(factors))
-        return factors;
+const pair<BigInt,BigInt> TRIVIAL_FACTORS(0,0);
 
-    cout << "found " << relations.size() << " relations" << endl;
-
-    // bring relations into lower diagonal form
-    cout << "performing gaussian elimination ..." << endl;
-    performGaussianElimination();
-
-    cout << "combining random congruences ..." << endl;
-
-    return searchForRandomCongruence(100);
-}
-
-pair<BigInt,BigInt> QuadraticSieve::factorsFromCongruence(const BigInt& a, const BigInt& b) const
+pair<BigInt,BigInt> factorsFromCongruence(const BigInt& a, const BigInt& b, const BigInt& number)
 {
-    BigInt p = gcd(a+b, n);
-    BigInt q = gcd(absdiff(a,b), n);
+    BigInt p = gcd(a+b, number);
+    BigInt q = gcd(absdiff(a,b), number);
     return make_pair(p, q);
 }
 
-bool QuadraticSieve::isNonTrivial(const pair<BigInt,BigInt>& factors) const
+bool isNonTrivial(const pair<BigInt,BigInt>& factors, const BigInt& number)
 {
     const BigInt& p = factors.first;
     const BigInt& q = factors.second;
 
-    return p>1 && p<n && q>1 && q<n;
+    return p>1 && p<number && q>1 && q<number;
 }
 
-
-pair<BigInt, BigInt> QuadraticSieve::sieve()
-{
-    BigInt intervalSize = exp(sqrt(log(n)*log(log(n))));
-    BigInt intervalStart = sqrt(n) + 1;
-    BigInt intervalEnd = sqrt(n)+ 1 + intervalSize;
-    intervalEnd = (sqrt(2*n) < intervalEnd) ? sqrt(2*n) : intervalEnd;
-
-    cout << "sieving interval: " << (intervalEnd - intervalStart) << endl;
-    return sieveIntervalFast(intervalStart, intervalEnd, factorBase.size() + 2);
-}
-
-// returns a list of numbers, which quadratic residues are (probable) smooth over the factor base
-vector<BigInt> QuadraticSieve::sieveSmoothSquares(const BigInt& start, const BigInt& end) const
-{
-    BigInt intervalLength = (end-start);
-    size_t blockSize = intervalLength.get_ui();
-    vector<uint32_t> logs(blockSize+1);
-    BigInt x, remainder;
-    uint32_t logTreshold = (int)(lb(n));
-
-    // init field with logarithm
-    x = start;
-    for(uint32_t i=0; i<=blockSize; i++, x++)
-    {
-        remainder = (x*x) % n;
-        logs[i] = log_2_22(remainder);
-    }
-
-    // now with prime powers
-    cout << "starting with logarithmic sieving ..." << endl;
-    for(const smallPrime_t& smallPrime : factorBase)
-    {
-        BigInt prime(smallPrime);
-        uint32_t primeLog = log_2_22(prime);
-        uint32_t i = 1;
-        BigInt primePower = prime;
-        for(; primePower < n; i++, primePower*=prime)
-        {
-            vector<BigInt> roots = squareRootsModPrimePower(n%primePower, prime, i);
-            for(const BigInt& root : roots)
-            {
-                BigInt offset = (primePower + root - (start % primePower)) % primePower;
-                for(BigInt j=offset; j<=blockSize; j+=primePower)
-                {
-                    logs[j.get_ui()] -= primeLog;
-                }
-            }
-        }
-    }
-
-    //second scan for smooth numbers
-    BigInt biggestPrime(factorBase.back());
-
-
-    vector<BigInt> result;
-
-    for(uint32_t i=0; i<=blockSize; i++)
-    {
-        if(logs[i] < logTreshold) // probable smooth
-        {
-            result.emplace_back(start+i);
-        }
-    }
-
-    return result;
-}
-
-typedef vector<BigInt> SmoothSquares;
-
-template<typename NumberType>
-NumberType divCeil(const NumberType& a, const NumberType& b)
-{
-    return 1 + ((a - 1) / b);
-}
-
-pair<BigInt, BigInt> QuadraticSieve::sieveIntervalFast(const BigInt& start, const BigInt& end, size_t maxRelations)
-{
-    const int NUM_THREADS = 4;
-
-    SmoothSquares smooths;
-    vector<future<SmoothSquares>> partialResults;
-    BigInt totalLength = end - start;
-    //BigInt chunkSize = //totalLength / NUM_THREADS;
-    BigInt chunkSize = divCeil(totalLength, BigInt(NUM_THREADS));
-
-    for (int i=0; i<NUM_THREADS; ++i)
-    {
-        BigInt partialStart = start + chunkSize*i;
-        BigInt partialEnd = min(partialStart + chunkSize, end);
-
-        partialResults.emplace_back(std::async(
-            std::launch::async,
-            &QuadraticSieve::sieveSmoothSquares, this, partialStart, partialEnd
-        ));
-    }
-
-    for (auto& result : partialResults)
-    {
-        auto partialResult = result.get();
-        smooths.insert(smooths.end(), partialResult.begin(), partialResult.end());
-    }
-
-    for(const BigInt& x : smooths)
-    {
-        BigInt remainder = (x*x) % n;
-
-        PrimeFactorization factorization = factorizeOverBase(remainder);
-        if(factorization.empty())
-        {
-            cerr << "false alarm !!! (should not happend)" << endl;
-            continue;
-        }
-
-        Relation relation(x, factorization);
-
-        if(relation.isPerfectCongruence())
-        {
-            auto factors = factorsFromCongruence(x, sqrt(factorization).multiply());
-            if(isNonTrivial(factors))
-            {
-                return factors;
-            }
-        }
-
-        relations.push_back(relation);
-
-        if(relations.size() >= maxRelations)
-            break;
-    }
-
-    return TRIVIAL_FACTORS;
-}
-
-
-
-void QuadraticSieve::print(const Relation& r) const
-{
-    cout << r.a << "^2%%N=\t";
-    for(const smallPrime_t& prime : factorBase)
-    {
-       cout << ((find(r.oddPrimePowers.indices.begin(), r.oddPrimePowers.indices.end(), prime) == r.oddPrimePowers.indices.end()) ? 0 : 1);
-    }
-    cout << " (";
-    for(uint32_t p : r.oddPrimePowers.indices)
-    {
-        cout << p << " ";
-    }
-    cout << ")";
-    cout << endl;
-}
-
-
-pair<BigInt,BigInt> QuadraticSieve::searchForRandomCongruence(size_t times) const
-{
-    for(size_t i=0; i<times; i++)
-    {
-        pair<BigInt, BigInt> result = pickRandomCongruence();
-        if(isNonTrivial(result))
-            return result;
-    }
-    return TRIVIAL_FACTORS;
-}
-
-pair<BigInt,BigInt> QuadraticSieve::pickRandomCongruence() const
+static pair<BigInt,BigInt> pickRandomCongruence(const FactorBase& factorBase, const BigInt& number, int randomValue, const Relations& relations)
 {
     vector<bool> primeMask(factorBase.back()+1);
 
@@ -219,7 +36,7 @@ pair<BigInt,BigInt> QuadraticSieve::pickRandomCongruence() const
     {
         const Relation& relation = *relIter;
 
-        if((relation.dependsOnPrime == 0 &&  binaryDistribution(randomEngine) == 1) || (relation.dependsOnPrime > 0 && primeMask[relation.dependsOnPrime]))
+        if((relation.dependsOnPrime == 0 &&  randomValue == 1) || (relation.dependsOnPrime > 0 && primeMask[relation.dependsOnPrime]))
         {
             selectedRelations.push_back(relation);
             for(uint32_t p : relation.oddPrimePowers.indices)
@@ -230,22 +47,32 @@ pair<BigInt,BigInt> QuadraticSieve::pickRandomCongruence() const
     if(selectedRelations.empty())
         return TRIVIAL_FACTORS;
 
-
-
     BigInt a = 1;
     PrimeFactorization factorization;
     for(const Relation& relation : selectedRelations)
     {
-        a = (a * relation.a) % n;
+        a = (a * relation.a) % number;
         factorization = factorization.combine(relation.primeFactorization);
     }
 
     BigInt b = factorization.sqrt().multiply();
 
-    return factorsFromCongruence(a,b);
+    return factorsFromCongruence(a,b, number);
 }
 
+pair<BigInt,BigInt> searchForRandomCongruence(const FactorBase& factorBase, const BigInt& number, size_t times, const Relations& relations)
+{
+    uniform_int_distribution<int> binaryDistribution;
+    mt19937 randomEngine;
 
+    for(size_t i=0; i<times; i++)
+    {
+        pair<BigInt, BigInt> result = pickRandomCongruence(factorBase, number, binaryDistribution(randomEngine), relations);
+        if(isNonTrivial(result, number))
+            return result;
+    }
+    return TRIVIAL_FACTORS;
+}
 
 struct RelationComparator {
     bool operator() (const Relation& a, const Relation& b)
@@ -271,7 +98,7 @@ struct RelationComparator {
 };
 
 
-void QuadraticSieve::performGaussianElimination()
+void performGaussianElimination(Relations& relations)
 {
     RelationComparator comparator;
     uint32_t currentPrime = 0;
@@ -307,9 +134,6 @@ void QuadraticSieve::performGaussianElimination()
                 if(find(start, last, currentPrime) == last)
                     continue;
 
-
-                //cout << "\t eliminating " << primeToRemove << " at: ", relations[k].print();
-
                 auto lowerBoundIt = lower_bound(start, last, primeToRemove);
                 if(lowerBoundIt == last || *lowerBoundIt > primeToRemove)
                 {
@@ -319,8 +143,6 @@ void QuadraticSieve::performGaussianElimination()
                 {
                     relations[k].oddPrimePowers.indices.erase(lowerBoundIt);
                 }
-
-                //cout << "\t afterwards: ", relations[k].print();
             }
 
             //assert that no other has 1 at front
@@ -344,7 +166,7 @@ void QuadraticSieve::performGaussianElimination()
 }
 
 
-PrimeFactorization QuadraticSieve::factorizeOverBase(const BigInt& number) const
+PrimeFactorization factorizeOverBase(const BigInt& number, const FactorBase& factorBase)
 {
     PrimeFactorization result;
     BigInt x = number;
@@ -383,7 +205,7 @@ bool hasRootModPrime(const BigInt& a, const BigInt& prime)
     return jacobi != -1;
 }
 
-vector<BigInt> QuadraticSieve::squareRootsModPrimePower(const BigInt& a, const BigInt& prime, uint32_t power)
+vector<BigInt> squareRootsModPrimePower(const BigInt& a, const BigInt& prime, uint32_t power)
 {
     vector<BigInt> roots;
 
@@ -403,7 +225,7 @@ vector<BigInt> QuadraticSieve::squareRootsModPrimePower(const BigInt& a, const B
     return roots;
 }
 
-vector<BigInt> QuadraticSieve::liftRoots(const vector<BigInt>& roots, const BigInt& a, const BigInt& prime, uint32_t nextPower)
+vector<BigInt> liftRoots(const vector<BigInt>& roots, const BigInt& a, const BigInt& prime, uint32_t nextPower)
 {
     vector<BigInt> newRoots;
     BigInt currentPrimePower, nextPrimePower;
@@ -435,7 +257,7 @@ vector<BigInt> QuadraticSieve::liftRoots(const vector<BigInt>& roots, const BigI
 }
 
 
-BigInt QuadraticSieve::liftRoot(const BigInt& root, const BigInt& a, const BigInt& p, uint32_t power)
+BigInt liftRoot(const BigInt& root, const BigInt& a, const BigInt& p, uint32_t power)
 {
     BigInt pi = p;
     BigInt x = root;
@@ -450,7 +272,7 @@ BigInt QuadraticSieve::liftRoot(const BigInt& root, const BigInt& a, const BigIn
     return x;
 }
 
-BigInt QuadraticSieve::rootModPrime(const BigInt& a, const BigInt& p)
+BigInt rootModPrime(const BigInt& a, const BigInt& p)
 {
     if(a >= p)
         return rootModPrime(a % p, p);
@@ -551,7 +373,7 @@ double binarySolve(function<double(double)> f, double y)
 }
 
 
-void QuadraticSieve::createFactorBase(size_t numberOfPrimes)
+std::vector<smallPrime_t> createFactorBase(size_t numberOfPrimes)
 {
     uint32_t numbersToCheck = (uint32_t) binarySolve(
                                             [](double x){return x / log(x);},
@@ -573,7 +395,9 @@ void QuadraticSieve::createFactorBase(size_t numberOfPrimes)
             isPrime[k] = false;
     }
 
-    factorBase = move(primes);
+    return primes;
+}
+
 }
 
 bool PrimeFactorization::empty() const

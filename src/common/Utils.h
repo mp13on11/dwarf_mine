@@ -1,6 +1,8 @@
 #pragma once
 
-inline size_t div_ceil(size_t x, size_t y)
+
+template<typename NumberType>
+inline NumberType div_ceil(const NumberType& a, const NumberType& b)
 {
-    return (x % y) ? (x / y + 1) : (x / y);
+    return 1 + ((a - 1) / b);
 }
