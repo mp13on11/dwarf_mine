@@ -1,5 +1,4 @@
 #include "FactorizationElf.h"
-#include "QuadraticSieve.h"
 
 #include <iostream>
 #include <stdexcept>

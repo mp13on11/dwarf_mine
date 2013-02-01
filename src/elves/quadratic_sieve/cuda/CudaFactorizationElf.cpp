@@ -1,16 +1,16 @@
 #include "CudaFactorizationElf.h"
 #include "Factorize.h"
 #include <cuda-utils/Memory.h>
-#include "NumberHelper.h" 
+#include "NumberHelper.h"
 
 #include <array>
 #include <algorithm>
 
 using namespace std;
 
-pair<BigInt, BigInt> CudaFactorizationElf::factorize(const BigInt& )
+pair<BigInt, BigInt> CudaFactorizationElf::factor(const BigInt& )
 {
-    
+
     // only for testing
     BigInt n("2");
     CudaUtils::Memory<uint32_t> n_d = NumberHelper::BigIntToNumber(n);
