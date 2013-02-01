@@ -12,6 +12,8 @@
 #endif
 
 #include <stdexcept>
+#include <boost/range/algorithm/copy.hpp>
+#include <boost/range/adaptor/map.hpp>
 
 using namespace std;
 
@@ -80,6 +82,13 @@ static FactoryFunction createFactory(const string& type, const ElfCategory& cate
         throw runtime_error("Unknown elf category: " + category + " in " __FILE__);
 
     return factoryCreatorIt->second(type == "cuda");
+}
+
+vector<string> SchedulerFactory::getValidCategories()
+{
+    vector<string> categories;
+    boost::copy(sFactoryFunctionsMap | boost::adaptors::map_keys, std::back_inserter(categories));
+    return categories;
 }
 
 unique_ptr<SchedulerFactory> SchedulerFactory::createFor(const string& type, const ElfCategory& category)

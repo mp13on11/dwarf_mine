@@ -8,6 +8,7 @@
 #include <cstdlib>
 #include <iostream>
 #include <fstream>
+#include <boost/algorithm/string.hpp>
 
 using namespace std;
 using namespace boost::program_options;
@@ -125,11 +126,14 @@ void Configuration::printHelp()
 
 options_description Configuration::createDescription()
 {
+    string categories = boost::algorithm::join(SchedulerFactory::getValidCategories(), "\n\t    ");
+    string categoriesDescription = "Elf to be run, valid categories:\n\t    " + categories;
+
     options_description description("Options");
     description.add_options()
         ("help,h",               "Print help message")
         ("mode,m",               value<string>()->required(), "Mode (smp|cuda)")
-        ("category,c",           value<string>()->default_value("matrix"), "Elf to be run (matrix|factorize)")
+        ("category,c",           value<string>()->default_value("matrix"), categoriesDescription.c_str())
         ("numwarmups,w",         value<size_t>()->default_value(50), "Number of warmup rounds")
         ("numiter,n",            value<size_t>()->default_value(100), "Number of benchmark iterations")
         ("input,i",              value<string>(), "Input file")
