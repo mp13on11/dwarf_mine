@@ -1,13 +1,13 @@
 #pragma once
 
-#include "FactorizationElf.h"
+#include "common-factorization/FactorizationElf.h"
 
-class SmpFactorizationElf : public FactorizationElf
+class MonteCarloFactorizationElf : public FactorizationElf
 {
 public:
     bool finished;
 
-    SmpFactorizationElf();
+    MonteCarloFactorizationElf();
 
     virtual std::pair<BigInt, BigInt> factorize(const BigInt& number);
     virtual void stop();

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "BigInt.h"
+#include "common-factorization/BigInt.h"
 #include "Elf.h"
 
 #include <utility>

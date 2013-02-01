@@ -4,7 +4,7 @@
 
 using namespace std;
 
-SequentialFactorizer::SequentialFactorizer(const BigInt& number, const SmpFactorizationElf& e) :
+SequentialFactorizer::SequentialFactorizer(const BigInt& number, const MonteCarloFactorizationElf& e) :
         elf(e), m(number), p(0), q(0), generator(gmp_randinit_mt)
 {
     generator.seed(elf.randomSeed());

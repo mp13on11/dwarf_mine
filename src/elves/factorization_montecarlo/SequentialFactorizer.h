@@ -1,7 +1,7 @@
 #pragma once
 
-#include "elves/BigInt.h"
-#include "SmpFactorizationElf.h"
+#include "elves/common-factorization/BigInt.h"
+#include "MonteCarloFactorizationElf.h"
 
 #include <functional>
 #include <map>
@@ -9,13 +9,13 @@
 class SequentialFactorizer
 {
 public:
-    SequentialFactorizer(const BigInt& m, const SmpFactorizationElf& elf);
+    SequentialFactorizer(const BigInt& m, const MonteCarloFactorizationElf& elf);
 
     void run();
     std::pair<BigInt, BigInt> result() const;
 
 private:
-    const SmpFactorizationElf& elf;
+    const MonteCarloFactorizationElf& elf;
     BigInt m, p, q;
     std::multimap<BigInt, BigInt> remainders;
     gmp_randclass generator;

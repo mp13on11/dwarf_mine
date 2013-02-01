@@ -1,6 +1,6 @@
 #include "SchedulerFactory.h"
 #include "factorization_montecarlo/FactorizationScheduler.h"
-#include "factorization_montecarlo/SmpFactorizationElf.h"
+#include "factorization_montecarlo/MonteCarloFactorizationElf.h"
 #include "matrix/MatrixScheduler.h"
 #include "matrix/smp/SMPMatrixElf.h"
 
@@ -73,7 +73,7 @@ function<Scheduler*()> SchedulerFactory::createSmpFactory(const ElfCategory& cat
     if (category == "matrix")
         return createFactory<MatrixScheduler, SMPMatrixElf>();
     else
-        return createFactory<FactorizationScheduler, SmpFactorizationElf>();
+        return createFactory<FactorizationScheduler, MonteCarloFactorizationElf>();
 }
 
 #ifdef HAVE_CUDA

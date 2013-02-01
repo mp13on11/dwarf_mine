@@ -1,5 +1,5 @@
 #include "SimpleFactorizationScheduler.h"
-#include "factorization_montecarlo/FactorizationElf.h"
+#include "factorization_montecarlo/MonteCarloFactorizationElf.h"
 
 using namespace std;
 
