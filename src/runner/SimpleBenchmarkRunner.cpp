@@ -37,7 +37,7 @@ void SimpleBenchmarkRunner::provideData() const
 void SimpleBenchmarkRunner::warmUp() const
 {
     for (size_t i=0; i<warmUps; ++i)
-        scheduler->dispatch();
+        scheduler->dispatchSimple();
 }
 
 vector<Measurement> SimpleBenchmarkRunner::iterate() const
@@ -47,7 +47,7 @@ vector<Measurement> SimpleBenchmarkRunner::iterate() const
     for (size_t i=0; i<iterations; ++i)
     {
         startMeasurement();
-        scheduler->dispatch();
+        scheduler->dispatchSimple();
         result.push_back(endMeasurement());
     }
 

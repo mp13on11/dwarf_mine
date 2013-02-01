@@ -8,9 +8,6 @@
 
 using namespace std;
 
-
-//extern void sieveIntervalWrapper(PNumData pn, uint32_t* logs, uint32_t* rootsModPrime, uint32_t* factorBase, int factorBaseSize, PNumData pStart, PNumData pEnd);
-
 pair<BigInt, BigInt> CudaFactorizationElf::factorize(const BigInt& )
 {
     
@@ -34,7 +31,3 @@ pair<BigInt, BigInt> CudaFactorizationElf::factorize(const BigInt& )
     return make_pair(0, mpzResult);
 }
 
-void CudaFactorizationElf::stop()
-{
-
-}

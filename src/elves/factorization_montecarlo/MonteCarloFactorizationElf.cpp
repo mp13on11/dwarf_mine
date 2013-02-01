@@ -1,5 +1,5 @@
 #include "SequentialFactorizer.h"
-#include "SmpFactorizationElf.h"
+#include "MonteCarloFactorizationElf.h"
 #include "common/MpiHelper.h"
 
 #include <ctime>
@@ -7,12 +7,12 @@
 
 using namespace std;
 
-SmpFactorizationElf::SmpFactorizationElf() :
+MonteCarloFactorizationElf::MonteCarloFactorizationElf() :
         finished(false)
 {
 }
 
-pair<BigInt, BigInt> SmpFactorizationElf::factorize(const BigInt& m)
+pair<BigInt, BigInt> MonteCarloFactorizationElf::factor(const BigInt& m)
 {
     BigInt p, q;
 
@@ -36,12 +36,12 @@ pair<BigInt, BigInt> SmpFactorizationElf::factorize(const BigInt& m)
     return pair<BigInt, BigInt>(p, q);
 }
 
-void SmpFactorizationElf::stop()
+void MonteCarloFactorizationElf::stop()
 {
     finished = true;
 }
 
-size_t SmpFactorizationElf::randomSeed() const
+size_t MonteCarloFactorizationElf::randomSeed() const
 {
     return time(NULL) * (omp_get_thread_num() + 1) + MpiHelper::rank();
 }

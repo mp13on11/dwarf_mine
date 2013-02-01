@@ -1,4 +1,4 @@
-#include "FactorizationElf.h"
+#include "MonteCarloFactorizationElf.h"
 #include "FactorizationScheduler.h"
 #include "common/ProblemStatement.h"
 
@@ -13,6 +13,13 @@ using namespace std::chrono;
 FactorizationScheduler::FactorizationScheduler(const function<ElfPointer()>& factory) :
     SchedulerTemplate(factory)
 {
+}
+
+void FactorizationScheduler::doSimpleDispatch()
+{
+    BigIntPair factors = elf().factor(number);
+    p = factors.first;
+    q = factors.second;
 }
 
 void FactorizationScheduler::provideData(ProblemStatement& statement)
@@ -33,9 +40,9 @@ void FactorizationScheduler::doDispatch()
 {
     distributeNumber();
 
-    future<BigIntPair> f = async(launch::async, [&]{
-            return elf().factorize(number);
-        });
+    future<BigIntPair> f = async(launch::async,
+        &MonteCarloFactorizationElf::factor, &elf(), number
+    );
 
     int rank = distributeFinishedStateRegularly(f);
     elf().stop();

@@ -17,9 +17,11 @@ public:
     virtual ~SchedulerTemplate() = 0;
 
     virtual void dispatch();
+    virtual void dispatchSimple();
 
 protected:
     virtual void doDispatch() = 0;
+    virtual void doSimpleDispatch() = 0;
     virtual bool hasData() const = 0;
     ElfType& elf() const;
 
@@ -53,6 +55,15 @@ void SchedulerTemplate<ElfType>::dispatch()
     _elf.reset(_factory());
     validate();
     doDispatch();
+    _elf.release();
+}
+
+template<typename ElfType>
+void SchedulerTemplate<ElfType>::dispatchSimple()
+{
+    _elf.reset(_factory());
+    validate();
+    doSimpleDispatch();
     _elf.release();
 }
 

@@ -20,10 +20,3 @@ void Scheduler::setNodeset(NodeId singleNode)
 {
     nodeSet = {{singleNode, 0}};
 }
-
-void Scheduler::dispatch(ProblemStatement& statement)
-{
-    provideData(statement);
-    dispatch();
-    outputData(statement);
-}

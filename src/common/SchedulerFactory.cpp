@@ -1,11 +1,10 @@
 #include "SchedulerFactory.h"
-#include "factorize/FactorizationScheduler.h"
-#include "factorize/smp/SmpFactorizationElf.h"
+#include "factorization_montecarlo/FactorizationScheduler.h"
+#include "factorization_montecarlo/MonteCarloFactorizationElf.h"
 #include "matrix/MatrixScheduler.h"
 #include "matrix/smp/SMPMatrixElf.h"
 
 #ifdef HAVE_CUDA
-#include "factorize/cuda/CudaFactorizationElf.h"
 #include "matrix/cuda/CudaMatrixElf.h"
 #endif
 
@@ -50,7 +49,7 @@ void SchedulerFactory::validateType(const string& type)
 
 void SchedulerFactory::validateCategory(const ElfCategory& category)
 {
-    if (category != "factorize" && category != "matrix")
+    if (category != "factorization_montecarlo" && category != "matrix")
         throw runtime_error("Unknown elf category: " + category + " in " __FILE__);
 }
 
@@ -74,7 +73,7 @@ function<Scheduler*()> SchedulerFactory::createSmpFactory(const ElfCategory& cat
     if (category == "matrix")
         return createFactory<MatrixScheduler, SMPMatrixElf>();
     else
-        return createFactory<FactorizationScheduler, SmpFactorizationElf>();
+        return createFactory<FactorizationScheduler, MonteCarloFactorizationElf>();
 }
 
 #ifdef HAVE_CUDA
@@ -83,6 +82,9 @@ function<Scheduler*()> SchedulerFactory::createCudaFactory(const ElfCategory& ca
     if (category == "matrix")
         return createFactory<MatrixScheduler, CudaMatrixElf>();
     else
-        return createFactory<FactorizationScheduler, CudaFactorizationElf>();
+        throw runtime_error(
+            "No CUDA elf implemented for Monte Carlo Factorization"
+        );
+
 }
 #endif

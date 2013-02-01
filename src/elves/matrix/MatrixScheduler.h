@@ -25,6 +25,7 @@ protected:
 
     virtual bool hasData() const;
     virtual void doDispatch();
+    virtual void doSimpleDispatch();
 
 private:
     void calculateOnSlave();
