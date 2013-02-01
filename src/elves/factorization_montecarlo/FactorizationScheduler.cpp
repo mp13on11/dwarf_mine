@@ -15,6 +15,13 @@ FactorizationScheduler::FactorizationScheduler(const function<ElfPointer()>& fac
 {
 }
 
+void FactorizationScheduler::doSimpleDispatch()
+{
+    BigIntPair factors = elf().factor(number);
+    p = factors.first;
+    q = factors.second;
+}
+
 void FactorizationScheduler::provideData(ProblemStatement& statement)
 {
     *(statement.input) >> number;

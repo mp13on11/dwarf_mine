@@ -23,6 +23,7 @@ protected:
     BigInt p, q;
 
     virtual void doDispatch();
+    virtual void doSimpleDispatch();
     virtual bool hasData() const;
 
 private:

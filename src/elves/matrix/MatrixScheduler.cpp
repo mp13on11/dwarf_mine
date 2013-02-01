@@ -24,6 +24,11 @@ MatrixScheduler::~MatrixScheduler()
 {
 }
 
+void MatrixScheduler::doSimpleDispatch()
+{
+    result = elf().multiply(left, right);
+}
+
 void MatrixScheduler::provideData(ProblemStatement& statement)
 {
     statement.input->clear();

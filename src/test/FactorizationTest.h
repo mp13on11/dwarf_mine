@@ -1,7 +1,7 @@
 #pragma once
 
 #include <elves/quadratic_sieve/QuadraticSieveElf.h>
-#include <BigInt.h>
+#include <elves/common-factorization/BigInt.h>
 
 #include <memory>
 #include <utility>

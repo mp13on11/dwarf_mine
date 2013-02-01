@@ -1,9 +1,9 @@
 #include "FactorizationTest.h"
 #include "Utilities.h"
 #include "common/SchedulerFactory.h"
-#include "BigInt.h"
-#include "quadratic_sieve/QuadraticSieve.h"
-#include "quadratic_sieve/cuda/CudaFactorizationElf.h"
+#include "elves/common-factorization/BigInt.h"
+#include "elves/quadratic_sieve/smp/QuadraticSieve.h"
+#include "elves/quadratic_sieve/cuda/CudaFactorizationElf.h"
 
 #include <memory>
 #include <vector>
