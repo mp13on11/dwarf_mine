@@ -2,6 +2,7 @@
 #include <algorithm>
 #include <future>
 #include <cassert>
+#include <thread>
 
 using namespace std;
 
@@ -9,7 +10,7 @@ const pair<BigInt,BigInt> QuadraticSieve::TRIVIAL_FACTORS(0,0);
 
 pair<BigInt, BigInt> QuadraticSieve::factorize()
 {
-    int factorBaseSize = (int)exp(0.5*sqrt(log(n)*log(log(n))));
+    int factorBaseSize = 500000;//(int)exp(0.5*sqrt(log(n)*log(log(n))));
     cout << "factorBaseSize" << factorBaseSize << endl;
     createFactorBase(factorBaseSize);
 
@@ -48,7 +49,7 @@ bool QuadraticSieve::isNonTrivial(const pair<BigInt,BigInt>& factors) const
 
 pair<BigInt, BigInt> QuadraticSieve::sieve()
 {
-    BigInt intervalSize = exp(sqrt(log(n)*log(log(n))));
+    BigInt intervalSize = 100000000;//exp(sqrt(log(n)*log(log(n))));
     BigInt intervalStart = sqrt(n) + 1;
     BigInt intervalEnd = sqrt(n)+ 1 + intervalSize;
     intervalEnd = (sqrt(2*n) < intervalEnd) ? sqrt(2*n) : intervalEnd;
@@ -113,9 +114,40 @@ vector<BigInt> QuadraticSieve::sieveSmoothSquares(const BigInt& start, const Big
     return result;
 }
 
+typedef vector<BigInt> SmoothSquares;
+
+template<typename NumberType>
+NumberType divCeil(const NumberType& a, const NumberType& b)
+{
+    return 1 + ((a - 1) / b);
+}
+
 pair<BigInt, BigInt> QuadraticSieve::sieveIntervalFast(const BigInt& start, const BigInt& end, size_t maxRelations)
 {
-    vector<BigInt> smooths = sieveSmoothSquares(start, end);
+    const int NUM_THREADS = 4;
+
+    SmoothSquares smooths;
+    vector<future<SmoothSquares>> partialResults;
+    BigInt totalLength = end - start;
+    //BigInt chunkSize = //totalLength / NUM_THREADS;
+    BigInt chunkSize = divCeil(totalLength, BigInt(NUM_THREADS));
+
+    for (int i=0; i<NUM_THREADS; ++i)
+    {
+        BigInt partialStart = start + chunkSize*i;
+        BigInt partialEnd = min(partialStart + chunkSize, end);
+
+        partialResults.emplace_back(std::async(
+            std::launch::async,
+            &QuadraticSieve::sieveSmoothSquares, this, partialStart, partialEnd
+        ));
+    }
+
+    for (auto& result : partialResults)
+    {
+        auto partialResult = result.get();
+        smooths.insert(smooths.end(), partialResult.begin(), partialResult.end());
+    }
 
     for(const BigInt& x : smooths)
     {
@@ -468,6 +500,8 @@ BigInt QuadraticSieve::rootModPrime(const BigInt& a, const BigInt& p)
     }while(!(d>1 && jacobi == -1));
     gmp_randclear(rstate);
 
+    gmp_randclear(rstate);
+
     BigInt t;
     BigInt pMinusOne(p-1);
     BigInt two(2);
@@ -537,7 +571,7 @@ void QuadraticSieve::createFactorBase(size_t numberOfPrimes)
 
         primes.push_back(i);
 
-        for(uint32_t k=i; k<numbersToCheck; k+=i)
+        for(uint32_t k=i*i; k<numbersToCheck; k+=i)
             isPrime[k] = false;
     }
 

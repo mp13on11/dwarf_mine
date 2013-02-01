@@ -3,8 +3,17 @@
 #include <gmpxx.h>
 #include <gmp.h>
 #include <cmath>
+#include <algorithm>
 
 typedef mpz_class BigInt;
+
+namespace std
+{
+    inline BigInt min(const BigInt& a, const BigInt& b)
+    {
+        return (a > b) ? b : a;
+    }
+}
 
 // Computes the binary logarithm with 32bit precision
 inline double lb(const BigInt& x)
@@ -51,7 +60,7 @@ inline uint32_t lb_scaled(const BigInt& x, uint32_t maxBits)
 
 // Computes the logarithm of base 2^(1/22)
 // Thus the binary logarithm scaled by 2^22,
-// so that all BigInts < 2^1024 will be mapped 
+// so that all BigInts < 2^1024 will be mapped
 // to the entire uint32_t range
 // yielding the maximum precision after rounding
 inline uint32_t log_2_22(const BigInt& x)
