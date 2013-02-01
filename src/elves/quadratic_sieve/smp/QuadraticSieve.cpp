@@ -10,7 +10,7 @@ const pair<BigInt,BigInt> QuadraticSieve::TRIVIAL_FACTORS(0,0);
 
 pair<BigInt, BigInt> QuadraticSieve::factorize()
 {
-    int factorBaseSize = 500000;//(int)exp(0.5*sqrt(log(n)*log(log(n))));
+    int factorBaseSize = (int)exp(0.5*sqrt(log(n)*log(log(n))));
     cout << "factorBaseSize" << factorBaseSize << endl;
     createFactorBase(factorBaseSize);
 
@@ -49,7 +49,7 @@ bool QuadraticSieve::isNonTrivial(const pair<BigInt,BigInt>& factors) const
 
 pair<BigInt, BigInt> QuadraticSieve::sieve()
 {
-    BigInt intervalSize = 100000000;//exp(sqrt(log(n)*log(log(n))));
+    BigInt intervalSize = exp(sqrt(log(n)*log(log(n))));
     BigInt intervalStart = sqrt(n) + 1;
     BigInt intervalEnd = sqrt(n)+ 1 + intervalSize;
     intervalEnd = (sqrt(2*n) < intervalEnd) ? sqrt(2*n) : intervalEnd;
@@ -498,8 +498,6 @@ BigInt QuadraticSieve::rootModPrime(const BigInt& a, const BigInt& p)
         mpz_urandomm(d.get_mpz_t(), rstate, p.get_mpz_t());
         jacobi = mpz_jacobi(d.get_mpz_t(), p.get_mpz_t());
     }while(!(d>1 && jacobi == -1));
-    gmp_randclear(rstate);
-
     gmp_randclear(rstate);
 
     BigInt t;
