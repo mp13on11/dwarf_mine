@@ -82,9 +82,10 @@ void BenchmarkRunner::benchmarkSlave() const
 
 Measurement BenchmarkRunner::measureCall() const
 {
-    high_resolution_clock::time_point before = high_resolution_clock::now();
+    auto before = high_resolution_clock::now();
     scheduler->dispatch();
-    return high_resolution_clock::now() - before;
+
+    return duration_cast<Measurement>(high_resolution_clock::now() - before);
 }
 
 BenchmarkResult BenchmarkRunner::calculateNodeWeights(const vector<Measurement>& averageRunTimes)
