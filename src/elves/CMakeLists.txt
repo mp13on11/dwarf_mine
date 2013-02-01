@@ -3,4 +3,5 @@ IF(BUILD_WITH_CUDA)
 ENDIF()
 
 ADD_SUBDIRECTORY(matrix)
-ADD_SUBDIRECTORY(factorize)
+ADD_SUBDIRECTORY(factorization_montecarlo)
+#ADD_SUBDIRECTORY(quadratic_sieve)

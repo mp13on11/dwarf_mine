@@ -1,4 +1,4 @@
-#include "factorize/BigInt.h"
+#include "BigInt.h"
 
 #include <gtest/gtest.h>
 #include <sstream>

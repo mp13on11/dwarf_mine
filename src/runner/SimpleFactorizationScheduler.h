@@ -1,6 +1,6 @@
 #pragma once
 
-#include "factorize/FactorizationScheduler.h"
+#include "factorization_montecarlo/FactorizationScheduler.h"
 
 #include <functional>
 

@@ -1,12 +1,11 @@
 #include "SimpleFactorizationScheduler.h"
 #include "SimpleMatrixScheduler.h"
 #include "SimpleSchedulerFactory.h"
-#include "factorize/smp/SmpFactorizationElf.h"
+#include "factorization_montecarlo/SmpFactorizationElf.h"
 #include "matrix/smp/SMPMatrixElf.h"
 
 #ifdef HAVE_CUDA
 #include "matrix/cuda/CudaMatrixElf.h"
-#include "factorize/cuda/CudaFactorizationElf.h"
 #endif
 
 using namespace std;
@@ -55,6 +54,8 @@ function<Scheduler*()> SimpleSchedulerFactory::createCudaFactory(const ElfCatego
     if (category == "matrix")
         return SchedulerFactory::createFactory<SimpleMatrixScheduler, CudaMatrixElf>();
     else
-        return SchedulerFactory::createFactory<SimpleFactorizationScheduler, CudaFactorizationElf>();
+        throw runtime_error(
+            "No CUDA elf implemented for Monte Carlo Factorization"
+        );
 }
 #endif

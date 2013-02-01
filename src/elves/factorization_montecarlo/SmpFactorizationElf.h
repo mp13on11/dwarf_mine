@@ -1,6 +1,6 @@
 #pragma once
 
-#include "elves/factorize/FactorizationElf.h"
+#include "FactorizationElf.h"
 
 class SmpFactorizationElf : public FactorizationElf
 {

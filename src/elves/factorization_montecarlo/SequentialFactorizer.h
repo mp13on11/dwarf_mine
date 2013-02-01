@@ -1,7 +1,7 @@
 #pragma once
 
-#include "elves/factorize/BigInt.h"
-#include "elves/factorize/smp/SmpFactorizationElf.h"
+#include "elves/BigInt.h"
+#include "SmpFactorizationElf.h"
 
 #include <functional>
 #include <map>
