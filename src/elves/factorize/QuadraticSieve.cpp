@@ -466,6 +466,7 @@ BigInt QuadraticSieve::rootModPrime(const BigInt& a, const BigInt& p)
         mpz_urandomm(d.get_mpz_t(), rstate, p.get_mpz_t());
         jacobi = mpz_jacobi(d.get_mpz_t(), p.get_mpz_t());
     }while(!(d>1 && jacobi == -1));
+    gmp_randclear(rstate);
 
     BigInt t;
     BigInt pMinusOne(p-1);
