@@ -1,4 +1,4 @@
-#include "CudaFactorizationElf.h"
+#include "CudaQuadraticSieveElf.h"
 #include "Factorize.h"
 #include <cuda-utils/Memory.h>
 #include "NumberHelper.h"
@@ -7,8 +7,9 @@
 #include <algorithm>
 
 using namespace std;
+/*
 
-pair<BigInt, BigInt> CudaFactorizationElf::factor(const BigInt& )
+pair<BigInt, BigInt> CudaQuadraticSieveElf::factor(const BigInt& )
 {
 
     // only for testing
@@ -30,4 +31,4 @@ pair<BigInt, BigInt> CudaFactorizationElf::factor(const BigInt& )
 
     return make_pair(0, mpzResult);
 }
-
+*/

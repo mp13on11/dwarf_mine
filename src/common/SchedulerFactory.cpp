@@ -1,4 +1,6 @@
 #include "SchedulerFactory.h"
+#include "quadratic_sieve/QuadraticSieveScheduler.h"
+#include "quadratic_sieve/smp/SmpQuadraticSieveElf.h"
 #include "factorization_montecarlo/FactorizationScheduler.h"
 #include "factorization_montecarlo/MonteCarloFactorizationElf.h"
 #include "matrix/MatrixScheduler.h"
@@ -6,37 +8,58 @@
 
 #ifdef HAVE_CUDA
 #include "matrix/cuda/CudaMatrixElf.h"
+#include "quadratic_sieve/cuda/CudaQuadraticSieveElf.h"
 #endif
 
 #include <stdexcept>
 
 using namespace std;
 
-unique_ptr<SchedulerFactory> SchedulerFactory::createFor(const string& type, const ElfCategory& category)
-{
-    validateType(type);
-    validateCategory(category);
+typedef SchedulerFactory::FactoryFunction FactoryFunction;
 
-    return unique_ptr<SchedulerFactory>(
-            new SchedulerFactory(createFactory(type, category))
+template<typename SchedulerType, typename ElfType>
+static FactoryFunction createFactory()
+{
+    return []()
+        {
+            return new SchedulerType([]() { return new ElfType(); });
+        };
+}
+
+static FactoryFunction createMatrixFactory(bool useCuda)
+{
+    if (useCuda)
+        return createFactory<MatrixScheduler, CudaMatrixElf>();
+    else
+        return createFactory<MatrixScheduler, SMPMatrixElf>();
+}
+
+static FactoryFunction createMonteCarloFactorizationFactory(bool useCuda)
+{
+    if (useCuda)
+        throw runtime_error(
+            "No CUDA elf implemented for Monte Carlo Factorization"
         );
+    else
+        return createFactory<FactorizationScheduler, MonteCarloFactorizationElf>();
 }
 
-SchedulerFactory::SchedulerFactory(const function<Scheduler*()>& factory) :
-        factory(factory)
+static FactoryFunction createQuadraticSieveFactory(bool useCuda)
 {
+    if (useCuda)
+        return createFactory<QuadraticSieveScheduler, SmpQuadraticSieveElf>();
+    else
+        return createFactory<QuadraticSieveScheduler, CudaQuadraticSieveElf>();
 }
 
-SchedulerFactory::~SchedulerFactory()
+static map<string, function<FactoryFunction(bool)>> sFactoryFunctionsMap =
 {
-}
+    { "matrix", createMatrixFactory },
+    { "factorization_montecarlo", createMonteCarloFactorizationFactory },
+    { "quadratic_sieve", createQuadraticSieveFactory }
+};
 
-unique_ptr<Scheduler> SchedulerFactory::createScheduler() const
-{
-    return unique_ptr<Scheduler>(factory());
-}
-
-void SchedulerFactory::validateType(const string& type)
+static void validateType(const string& type)
 {
     if (type != "cuda" && type != "smp")
         throw runtime_error("Unknown scheduler type " + type + " in " __FILE__);
@@ -47,44 +70,31 @@ void SchedulerFactory::validateType(const string& type)
 #endif
 }
 
-void SchedulerFactory::validateCategory(const ElfCategory& category)
+static FactoryFunction createFactory(const string& type, const ElfCategory& category)
 {
-    if (category != "factorization_montecarlo" && category != "matrix")
+    validateType(type);
+
+    auto factoryCreatorIt = sFactoryFunctionsMap.find(category);
+
+    if (factoryCreatorIt == sFactoryFunctionsMap.end())
         throw runtime_error("Unknown elf category: " + category + " in " __FILE__);
+
+    return factoryCreatorIt->second(type == "cuda");
 }
 
-function<Scheduler*()> SchedulerFactory::createFactory(const string& type, const ElfCategory& category)
+unique_ptr<SchedulerFactory> SchedulerFactory::createFor(const string& type, const ElfCategory& category)
 {
-    if (type == "smp")
-        return createSmpFactory(category);
-#ifdef HAVE_CUDA
-    else if (type == "cuda")
-        return createCudaFactory(category);
-#endif
-    else
-        throw runtime_error(
-                "This is here to make the compiler happy in the case"
-                " when HAVE_CUDA is not defined..."
-            );
+    return unique_ptr<SchedulerFactory>(
+        new SchedulerFactory(createFactory(type, category))
+    );
 }
 
-function<Scheduler*()> SchedulerFactory::createSmpFactory(const ElfCategory& category)
+SchedulerFactory::SchedulerFactory(const FactoryFunction& factory) :
+    factory(factory)
 {
-    if (category == "matrix")
-        return createFactory<MatrixScheduler, SMPMatrixElf>();
-    else
-        return createFactory<FactorizationScheduler, MonteCarloFactorizationElf>();
 }
 
-#ifdef HAVE_CUDA
-function<Scheduler*()> SchedulerFactory::createCudaFactory(const ElfCategory& category)
+unique_ptr<Scheduler> SchedulerFactory::createScheduler() const
 {
-    if (category == "matrix")
-        return createFactory<MatrixScheduler, CudaMatrixElf>();
-    else
-        throw runtime_error(
-            "No CUDA elf implemented for Monte Carlo Factorization"
-        );
-
+    return unique_ptr<Scheduler>(factory());
 }
-#endif

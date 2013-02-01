@@ -3,7 +3,7 @@
 #include "common/SchedulerFactory.h"
 #include "elves/common-factorization/BigInt.h"
 #include "elves/quadratic_sieve/smp/QuadraticSieve.h"
-#include "elves/quadratic_sieve/cuda/CudaFactorizationElf.h"
+#include "elves/quadratic_sieve/cuda/CudaQuadraticSieveElf.h"
 
 #include <memory>
 #include <vector>

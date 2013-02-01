@@ -1,12 +1,10 @@
 #pragma once
 
-#include "elves/common-factorization/BigInt.h"
-#include "Elf.h"
-#include "common-factorization/FactorizationElf.h"
+#include "common-factorization/BigInt.h"
+#include <Elf.h>
 
-#include <utility>
-
-class QuadraticSieveElf : public FactorizationElf
+class QuadraticSieveElf : public Elf
 {
 public:
+
 };
