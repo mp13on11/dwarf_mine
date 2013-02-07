@@ -49,9 +49,9 @@ static FactoryFunction createMonteCarloFactorizationFactory(bool useCuda)
 static FactoryFunction createQuadraticSieveFactory(bool useCuda)
 {
     if (useCuda)
-        return createFactory<QuadraticSieveScheduler, SmpQuadraticSieveElf>();
-    else
         return createFactory<QuadraticSieveScheduler, CudaQuadraticSieveElf>();
+    else
+        return createFactory<QuadraticSieveScheduler, SmpQuadraticSieveElf>();
 }
 
 static map<string, function<FactoryFunction(bool)>> sFactoryFunctionsMap =

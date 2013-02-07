@@ -75,7 +75,8 @@ vector<Measurement> BenchmarkRunner::benchmarkNodeset(bool useProblemStatement) 
         result.push_back(measureCall());
     }
 
-    scheduler->outputData(clusterProblem->getOutput());
+    if (useProblemStatement)
+        scheduler->outputData(clusterProblem->getOutput());
 
     return result;
 }
