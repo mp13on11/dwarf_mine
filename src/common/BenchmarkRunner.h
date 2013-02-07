@@ -27,12 +27,11 @@ private:
 
     size_t iterations;
     size_t warmUps;
-    std::unique_ptr<ProblemStatement> individualProblem;
     std::unique_ptr<ProblemStatement> clusterProblem;
     std::unique_ptr<Scheduler> scheduler;
 
-    std::vector<Measurement> runBenchmark(const BenchmarkResult& nodeWeights, ProblemStatement& problem) const;
-    std::vector<Measurement> benchmarkNodeset(ProblemStatement& problem) const;
+    std::vector<Measurement> runBenchmark(const BenchmarkResult& nodeWeights, bool useProblemStatement) const;
+    std::vector<Measurement> benchmarkNodeset(bool useProblemStatement) const;
     void benchmarkSlave() const;
     Measurement measureCall() const;
 };

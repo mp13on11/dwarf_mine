@@ -10,18 +10,23 @@ QuadraticSieveScheduler::QuadraticSieveScheduler(const std::function<ElfPointer(
 
 }
 
-void QuadraticSieveScheduler::provideData(ProblemStatement& statement)
+void QuadraticSieveScheduler::provideData(istream& input)
 {
-    *(statement.input) >> number;
+    input >> number;
 
-    if (statement.input->fail())
-        throw runtime_error("Failed to read BigInt from ProblemStatement in " __FILE__);
+    if (input.fail())
+        throw runtime_error("Failed to read BigInt from input stream in " __FILE__);
 }
 
-void QuadraticSieveScheduler::outputData(ProblemStatement& statement)
+void QuadraticSieveScheduler::outputData(ostream& output)
 {
-    *(statement.output) << p << endl;
-    *(statement.output) << q << endl;
+    output << p << endl;
+    output << q << endl;
+}
+
+void QuadraticSieveScheduler::generateData(const DataGenerationParameters&)
+{
+
 }
 
 bool QuadraticSieveScheduler::hasData() const

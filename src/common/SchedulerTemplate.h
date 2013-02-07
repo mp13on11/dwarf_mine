@@ -74,7 +74,7 @@ void SchedulerTemplate<ElfType>::validate() const
     {
         if (!hasData())
         {
-            throw std::runtime_error("SchedulerTemplate::dispatch(): No ProblemStatement configured!");
+            throw std::runtime_error("SchedulerTemplate::dispatch(): No input data provided or generated!");
         }
 
         if (nodeSet.empty())

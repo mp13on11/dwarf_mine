@@ -1,6 +1,7 @@
 #include "Configuration.h"
 #include "ProblemStatement.h"
 #include "SchedulerFactory.h"
+#include "DataGenerationParameters.h"
 #include "matrix/Matrix.h"
 #include "matrix/MatrixHelper.h"
 
@@ -21,37 +22,22 @@ Configuration::Configuration(int argc, char** argv) :
 
     if (mode() != "smp" && mode() != "cuda")
         throw error("Mode must be smp or cuda");
-    if (variables.count("input") ^ variables.count("output"))
+    if ((variables.count("input") > 0) ^ (variables.count("output") > 0))
         throw error("Both input and output are needed, if one is given");
 }
 
-unique_ptr<ProblemStatement> generateProblemStatement(string elfCategory, size_t leftRows, size_t commonRowsColumns, size_t rightColumns)
+unique_ptr<ProblemStatement> Configuration::createProblemStatement() const
 {
-    auto statement = unique_ptr<ProblemStatement>(new ProblemStatement(elfCategory));
-    Matrix<float> left(leftRows, commonRowsColumns);
-    Matrix<float> right(commonRowsColumns, rightColumns);
-    auto distribution = uniform_real_distribution<float> (-100, +100);
-    auto engine = mt19937(time(nullptr));
-    auto generator = bind(distribution, engine);
-    MatrixHelper::fill(left, generator);
-    MatrixHelper::fill(right, generator);
-    MatrixHelper::writeMatrixTo(*(statement->input), left);
-    MatrixHelper::writeMatrixTo(*(statement->input), right);
-    return statement;
-}
-
-unique_ptr<ProblemStatement> Configuration::createProblemStatement(bool forceGenerated) const
-{
-    if(!useFiles() || forceGenerated)
+    if(!useFiles())
     {
-        return generateProblemStatement(
-                category(), leftMatrixRows(),
-                commonMatrixRowsColumns(), rightMatrixColumns()
-            );
-    }
-    return unique_ptr<ProblemStatement>(
-            new ProblemStatement(category(), inputFilename(), outputFilename())
+        return unique_ptr<ProblemStatement>(
+            new ProblemStatement(category(), makeDataGenerationParameters())
         );
+    }
+
+    return unique_ptr<ProblemStatement>(
+        new ProblemStatement(category(), inputFilename(), outputFilename())
+    );
 }
 
 unique_ptr<SchedulerFactory> Configuration::createSchedulerFactory() const
@@ -59,9 +45,31 @@ unique_ptr<SchedulerFactory> Configuration::createSchedulerFactory() const
     return SchedulerFactory::createFor(mode(), category());
 }
 
+DataGenerationParameters Configuration::makeDataGenerationParameters() const
+{
+    return
+        {
+            leftMatrixRows(),
+            commonMatrixRowsColumns(),
+            rightMatrixColumns(),
+            leftDigits(),
+            rightDigits()
+        };
+}
+
 size_t Configuration::iterations() const
 {
     return variables["numiter"].as<size_t>();
+}
+
+size_t Configuration::leftDigits() const
+{
+    return variables["left_digits"].as<size_t>();
+}
+
+size_t Configuration::rightDigits() const
+{
+    return variables["right_digits"].as<size_t>();
 }
 
 size_t Configuration::warmUps() const
@@ -143,9 +151,11 @@ options_description Configuration::createDescription()
         ("skip_benchmark",       "Skip the benchmark run")
         ("quiet,q",              "Do not output anything")
         ("verbose,v",            "Show output from all MPI processes")
-        ("left_rows",            value<size_t>()->default_value(500), "Number of left rows to be generated (overridden for benchmark by input file)")
-        ("common_rows_columns",  value<size_t>()->default_value(500), "Number of left columns / right rows to be generated (overridden for benchmark by input file)")
-        ("right_columns",        value<size_t>()->default_value(500), "Number of right columns to be generated (overridden for benchmark by input file)")
+        ("left_rows",            value<size_t>()->default_value(500), "Matrix: Number of left rows to be generated (overridden for benchmark by input file)")
+        ("common_rows_columns",  value<size_t>()->default_value(500), "Matrix: Number of left columns / right rows to be generated (overridden for benchmark by input file)")
+        ("right_columns",        value<size_t>()->default_value(500), "Matrix: Number of right columns to be generated (overridden for benchmark by input file)")
+        ("left_digits",          value<size_t>()->default_value(8), "QuadraticSieve: Digits for product's left operand")
+        ("right_digits",         value<size_t>()->default_value(8), "QuadraticSieve: Digits for product's right operand")
         ("time_output",          value<string>()->default_value("/dev/null"), "Output file for time measurements");
 
     return description;
@@ -200,22 +210,24 @@ size_t Configuration::rightMatrixColumns() const
 std::ostream& operator<<(std::ostream& s, const Configuration& c)
 {
     s << "Configuation: "
-            << "\n\tMode: "<< c.mode()
-            << "\n\tWarmUps: " << c.warmUps()
-            << "\n\tIterations: " << c.iterations();
+        << "\n\tMode: " << c.mode()
+        << "\n\tCategory: " << c.category()
+        << "\n\tWarmUps: " << c.warmUps()
+        << "\n\tIterations: " << c.iterations();
 
     if (c.useFiles())
     {
         s << "\n\tInput: " << c.inputFilename()
-                << "\n\tOutput: " << c.outputFilename();
+            << "\n\tOutput: " << c.outputFilename();
     }
     else
     {
+        // TODO: This depends on the actual category...
         s << "\n\tMatrices: ("
-                << c.leftMatrixRows() << " x " <<c.commonMatrixRowsColumns()
-                << ") x ("
-                << c.commonMatrixRowsColumns() << " x " << c.rightMatrixColumns()
-                << ")";
+            << c.leftMatrixRows() << " x " <<c.commonMatrixRowsColumns()
+            << ") x ("
+            << c.commonMatrixRowsColumns() << " x " << c.rightMatrixColumns()
+            << ")";
     }
     return s;
 }

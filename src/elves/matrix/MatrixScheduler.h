@@ -15,8 +15,9 @@ public:
     MatrixScheduler(const std::function<ElfPointer()>& factory);
     virtual ~MatrixScheduler();
 
-    virtual void provideData(ProblemStatement& statement);
-    virtual void outputData(ProblemStatement& statement);
+    virtual void provideData(std::istream& input);
+    virtual void outputData(std::ostream& output);
+    virtual void generateData(const DataGenerationParameters& params);
 
 protected:
     Matrix<float> left;

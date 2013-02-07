@@ -10,8 +10,9 @@ class QuadraticSieveScheduler : public SchedulerTemplate<QuadraticSieveElf>
 public:
     QuadraticSieveScheduler(const std::function<ElfPointer()>& factory);
 
-    virtual void provideData(ProblemStatement& statement);
-    virtual void outputData(ProblemStatement& statement);
+    virtual void provideData(std::istream& input);
+    virtual void outputData(std::ostream& output);
+    virtual void generateData(const DataGenerationParameters& params);
 
 private:
     virtual void doDispatch();

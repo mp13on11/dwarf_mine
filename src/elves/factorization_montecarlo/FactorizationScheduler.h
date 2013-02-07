@@ -13,8 +13,9 @@ class FactorizationScheduler : public SchedulerTemplate<MonteCarloFactorizationE
 public:
     FactorizationScheduler(const std::function<ElfPointer()>& factory);
 
-    virtual void provideData(ProblemStatement& statement);
-    virtual void outputData(ProblemStatement& statement);
+    virtual void provideData(std::istream& input);
+    virtual void outputData(std::ostream& output);
+    virtual void generateData(const DataGenerationParameters& params);
 
 protected:
     typedef std::pair<BigInt, BigInt> BigIntPair;

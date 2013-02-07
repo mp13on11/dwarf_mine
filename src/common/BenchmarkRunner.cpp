@@ -13,8 +13,7 @@ typedef BenchmarkRunner::Measurement Measurement;
  */
 BenchmarkRunner::BenchmarkRunner(const Configuration& config) :
         iterations(config.iterations()), warmUps(config.warmUps()),
-        individualProblem(config.createProblemStatement(true)),
-        clusterProblem(config.createProblemStatement(false)),
+        clusterProblem(config.createProblemStatement()),
         scheduler(config.createScheduler())
 {
 }
@@ -26,8 +25,8 @@ BenchmarkResult BenchmarkRunner::benchmarkIndividualNodes() const
     for (size_t i=0; i<MpiHelper::numberOfNodes(); ++i)
     {
         vector<Measurement> runTimes = runBenchmark(
-                {{static_cast<NodeId>(i), 1}}, *individualProblem
-            );
+            {{static_cast<NodeId>(i), 1}}, false
+        );
         averageRunTimes.push_back(averageOf(runTimes));
     }
 
@@ -36,15 +35,15 @@ BenchmarkResult BenchmarkRunner::benchmarkIndividualNodes() const
 
 vector<Measurement> BenchmarkRunner::runBenchmark(const BenchmarkResult& nodeWeights) const
 {
-    return runBenchmark(nodeWeights, *clusterProblem);
+    return runBenchmark(nodeWeights, true);
 }
 
-vector<Measurement> BenchmarkRunner::runBenchmark(const BenchmarkResult& nodeWeights, ProblemStatement& problem) const
+vector<Measurement> BenchmarkRunner::runBenchmark(const BenchmarkResult& nodeWeights, bool useProblemStatement) const
 {
     if (MpiHelper::isMaster())
     {
         scheduler->setNodeset(nodeWeights);
-        return benchmarkNodeset(problem);
+        return benchmarkNodeset(useProblemStatement);
     }
     else if (slaveShouldRunWith(nodeWeights))
     {
@@ -54,11 +53,18 @@ vector<Measurement> BenchmarkRunner::runBenchmark(const BenchmarkResult& nodeWei
     return vector<Measurement>(iterations, Measurement(0));
 }
 
-vector<Measurement> BenchmarkRunner::benchmarkNodeset(ProblemStatement& problem) const
+vector<Measurement> BenchmarkRunner::benchmarkNodeset(bool useProblemStatement) const
 {
     vector<Measurement> result;
 
-    scheduler->provideData(problem);
+    if (useProblemStatement && clusterProblem->hasInput())
+    {
+        scheduler->provideData(clusterProblem->getInput());
+    }
+    else
+    {
+        scheduler->generateData(clusterProblem->getDataGenerationParameters());
+    }
 
     for (size_t i = 0; i < warmUps; ++i)
     {
@@ -69,7 +75,7 @@ vector<Measurement> BenchmarkRunner::benchmarkNodeset(ProblemStatement& problem)
         result.push_back(measureCall());
     }
 
-    scheduler->outputData(problem);
+    scheduler->outputData(clusterProblem->getOutput());
 
     return result;
 }

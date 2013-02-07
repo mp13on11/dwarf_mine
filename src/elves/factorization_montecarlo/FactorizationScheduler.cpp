@@ -10,6 +10,8 @@
 using namespace std;
 using namespace std::chrono;
 
+const BigInt DEFAULT_PRODUCT(1649);
+
 FactorizationScheduler::FactorizationScheduler(const function<ElfPointer()>& factory) :
     SchedulerTemplate(factory)
 {
@@ -22,18 +24,23 @@ void FactorizationScheduler::doSimpleDispatch()
     q = factors.second;
 }
 
-void FactorizationScheduler::provideData(ProblemStatement& statement)
+void FactorizationScheduler::provideData(istream& input)
 {
-    *(statement.input) >> number;
+    input >> number;
 
-    if (statement.input->fail())
-        throw runtime_error("Failed to read BigInt from ProblemStatement in " __FILE__);
+    if (input.fail())
+        throw runtime_error("Failed to read BigInt from input stream in " __FILE__);
 }
 
-void FactorizationScheduler::outputData(ProblemStatement& statement)
+void FactorizationScheduler::outputData(ostream& output)
 {
-    *(statement.output) << p << endl;
-    *(statement.output) << q << endl;
+    output << p << endl;
+    output << q << endl;
+}
+
+void FactorizationScheduler::generateData(const DataGenerationParameters&)
+{
+    number = DEFAULT_PRODUCT;
 }
 
 void FactorizationScheduler::doDispatch()

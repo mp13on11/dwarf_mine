@@ -31,7 +31,7 @@ vector<Measurement> SimpleBenchmarkRunner::run() const
 
 void SimpleBenchmarkRunner::provideData() const
 {
-    scheduler->provideData(*problemStatement);
+    scheduler->provideData(problemStatement->getInput());
 }
 
 void SimpleBenchmarkRunner::warmUp() const
@@ -56,7 +56,7 @@ vector<Measurement> SimpleBenchmarkRunner::iterate() const
 
 void SimpleBenchmarkRunner::outputData() const
 {
-    scheduler->outputData(*problemStatement);
+    scheduler->outputData(problemStatement->getOutput());
 }
 
 void SimpleBenchmarkRunner::startMeasurement() const

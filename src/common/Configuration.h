@@ -8,6 +8,7 @@
 class ProblemStatement;
 class Scheduler;
 class SchedulerFactory;
+struct DataGenerationParameters;
 
 class Configuration
 {
@@ -18,7 +19,7 @@ public:
 
     std::unique_ptr<Scheduler> createScheduler() const;
 
-    std::unique_ptr<ProblemStatement> createProblemStatement(bool forceGenerated = false) const;
+    std::unique_ptr<ProblemStatement> createProblemStatement() const;
     std::unique_ptr<SchedulerFactory> createSchedulerFactory() const;
 
     size_t warmUps() const;
@@ -37,11 +38,12 @@ public:
 
     friend std::ostream& operator<<(std::ostream& s, const Configuration& c);
 
-protected:
+private:
     std::string mode() const;
     std::string category() const;
 
-private:
+    DataGenerationParameters makeDataGenerationParameters() const;
+
     static boost::program_options::options_description createDescription();
 
     boost::program_options::options_description description;
@@ -52,5 +54,7 @@ private:
     size_t leftMatrixRows() const;
     size_t commonMatrixRowsColumns() const;
     size_t rightMatrixColumns() const;
+    size_t leftDigits() const;
+    size_t rightDigits() const;
     bool useFiles() const;
 };
