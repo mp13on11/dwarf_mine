@@ -103,14 +103,18 @@ const int FIELD_DIMENSION = 8;
 // return true;
 // }
 
-__device__ void findPossibleMoves(bool* possibleMoves, Field* playfield, size_t playfieldX, size_t playfieldY, size_t playfieldIndex, int directionX, int directionY, Player currentPlayer)
+__device__ void findPossibleMoves(bool* possibleMoves, Field* playfield, size_t playfieldIndex, int directionX, int directionY, Player currentPlayer)
 {
     bool look = true;
+    bool foundEnemy = false;
+    Player enemyPlayer = (currentPlayer == Black ? White : Black);
+    int playfieldX = playfieldIndex % FIELD_DIMENSION;
+    int playfieldY = playfieldIndex / FIELD_DIMENSION;
+    int neighbourX = playfieldX + directionX;
+    int neighbourY = playfieldY + directionY;
     while (look)
     {
-        int neighbourX = playfieldX + directionX;
-        int neighbourY = playfieldY + directionY;
-        int neighbourIndex = neighbourY * FIELD_DIMENSION + playfieldX;
+        int neighbourIndex = neighbourY * FIELD_DIMENSION + neighbourX;
         if (neighbourX < FIELD_DIMENSION && neighbourX >= 0 && neighbourY < FIELD_DIMENSION && neighbourY >= 0)
         {
             if (playfield[neighbourIndex] == Free)
@@ -118,9 +122,12 @@ __device__ void findPossibleMoves(bool* possibleMoves, Field* playfield, size_t 
                 possibleMoves[playfieldIndex] |= false;
                 look = false;
             }
+            else if(playfield[neighbourIndex] == enemyPlayer){
+            	foundEnemy = true;
+            }
             else if (playfield[neighbourIndex] == currentPlayer)
             {
-                possibleMoves[playfieldIndex] |= true;
+                possibleMoves[playfieldIndex] |= foundEnemy;
                 look = false;
             }
         }
@@ -129,50 +136,144 @@ __device__ void findPossibleMoves(bool* possibleMoves, Field* playfield, size_t 
             possibleMoves[playfieldIndex] |= false;
             look = false;
         }
-        directionX++;
-        directionY++;
-}
+        neighbourX += directionX;
+        neighbourY += directionY;
+	}
 }
 
-__global__ void computeSingleMove(Field* playfield, size_t moveX, size_t moveY, int directionX, int directionY, Player currentPlayer)
+__device__  void calculatePossibleMoves(bool* possibleMoves, Field* sharedPlayfield, size_t playfieldIndex, Player currentPlayer)
 {
-    int playfieldIndex = threadIdx.x;
-    int playfieldX = threadIdx.x % FIELD_DIMENSION;
-    int playfieldY = threadIdx.x / FIELD_DIMENSION;
-
-    Player enemyPlayer = (currentPlayer == Black ? White : Black);
-    //Field sharedPlayfield[FIELD_DIMENSION * FIELD_DIMENSION];
-    Field* sharedPlayfield = playfield;
-    bool possibleMoves[FIELD_DIMENSION*FIELD_DIMENSION];
-    // printf("Block %2d %2d, Thread %2d %2d\n", 
-    //  blockIdx.x, blockIdx.y, playfieldX, playfieldY);
-    //sharedPlayfield[playfieldIndex] = playfield[playfieldIndex];
     possibleMoves[playfieldIndex] = false;
 
     __syncthreads();
 
     if (sharedPlayfield[playfieldIndex] == Free)
     {
-        findPossibleMoves(possibleMoves, sharedPlayfield, playfieldX, playfieldY, playfieldIndex,  1,  1, currentPlayer);
-        findPossibleMoves(possibleMoves, sharedPlayfield, playfieldX, playfieldY, playfieldIndex,  1,  0, currentPlayer);
-        findPossibleMoves(possibleMoves, sharedPlayfield, playfieldX, playfieldY, playfieldIndex,  1, -1, currentPlayer);
-        findPossibleMoves(possibleMoves, sharedPlayfield, playfieldX, playfieldY, playfieldIndex,  0,  1, currentPlayer);
+        findPossibleMoves(possibleMoves, sharedPlayfield, playfieldIndex,  1,  1, currentPlayer);
+        findPossibleMoves(possibleMoves, sharedPlayfield, playfieldIndex,  1,  0, currentPlayer);
+        findPossibleMoves(possibleMoves, sharedPlayfield, playfieldIndex,  1, -1, currentPlayer);
+        findPossibleMoves(possibleMoves, sharedPlayfield, playfieldIndex,  0,  1, currentPlayer);
         
-        findPossibleMoves(possibleMoves, sharedPlayfield, playfieldX, playfieldY, playfieldIndex,  0, -1, currentPlayer);
-        findPossibleMoves(possibleMoves, sharedPlayfield, playfieldX, playfieldY, playfieldIndex, -1,  1, currentPlayer);
-        findPossibleMoves(possibleMoves, sharedPlayfield, playfieldX, playfieldY, playfieldIndex, -1,  0, currentPlayer);
-        findPossibleMoves(possibleMoves, sharedPlayfield, playfieldX, playfieldY, playfieldIndex, -1, -1, currentPlayer);
+        findPossibleMoves(possibleMoves, sharedPlayfield, playfieldIndex,  0, -1, currentPlayer);
+        findPossibleMoves(possibleMoves, sharedPlayfield, playfieldIndex, -1,  1, currentPlayer);
+        findPossibleMoves(possibleMoves, sharedPlayfield, playfieldIndex, -1,  0, currentPlayer);
+        findPossibleMoves(possibleMoves, sharedPlayfield, playfieldIndex, -1, -1, currentPlayer);
     }
+
+    __syncthreads();
+}
+
+
+
+__device__ size_t getRandomMoveIndex(curandState* state, bool* possibleMoves, size_t moveCount)
+{
+	size_t randomMoveIndex = 0;
+	if (moveCount > 1)
+	{
+		randomMoveIndex = randomNumber(state, moveCount);
+	}
+	size_t possibleMoveIndex = 0;
+	for (size_t i = 0; i < FIELD_DIMENSION * FIELD_DIMENSION; ++i)
+	{
+		if (possibleMoves[i])
+		{
+			if (possibleMoveIndex == randomMoveIndex)
+			{
+				return i;
+			}
+			possibleMoveIndex++;;
+		}
+	}
+	return 0;
+}
+
+__device__ size_t getRandomMoveIndex(curandState* state, bool* possibleMoves, size_t moveCount, size_t playfieldIndex)
+{
+	__shared__ size_t randomIndex;
+	if (playfieldIndex == 0)
+	{
+		randomIndex = getRandomMoveIndex(state, possibleMoves, moveCount);
+	}
+	__syncthreads();
+	return randomIndex;
+}
+
+__device__ size_t sum(size_t* counts, size_t playfieldIndex, size_t arraySize)
+{
+	__syncthreads();
+	if (arraySize > 1)
+	{
+		arraySize = arraySize / 2;
+		if (playfieldIndex < arraySize)
+		{
+			counts[playfieldIndex] += counts[playfieldIndex + arraySize];
+		}
+		return sum(counts, playfieldIndex, arraySize);
+	}
+	return counts[0];
+}
+
+__device__ size_t countPossibleMoves(bool* possibleMoves, size_t playfieldIndex, Field* playfield)
+{
+	// Serialize via CUDA. Possible optimization PARALLEL REDUCTION
+	 __shared__ size_t moves[FIELD_DIMENSION * FIELD_DIMENSION];
+	// __syncthreads();
+	if(possibleMoves[playfieldIndex])
+	{
+		moves[playfieldIndex] = 1;
+		if (moves[playfieldIndex] == 1){
+
+			playfield[playfieldIndex] = Illegal;
+		}
+		//__syncthreads();
+		printf("%d T__EST %d\n", playfieldIndex, 1);
+	}
+	__syncthreads();
+	size_t s = sum(moves, playfieldIndex, FIELD_DIMENSION * FIELD_DIMENSION);
+	// return moves[0];
+	playfield[s % 8] = Illegal;
+	size_t sum = 0;
+	// __syncthreads();
+	for (size_t i = 0; i < FIELD_DIMENSION * FIELD_DIMENSION; ++i)
+	{
+		if (possibleMoves[i])
+		{
+			++sum;
+		}
+	}
+	return sum;
+}
+
+__global__ void computeSingleMove(curandState* deviceState, Field* playfield, size_t moveX, size_t moveY, int directionX, int directionY, Player currentPlayer)
+{
+    int playfieldIndex = threadIdx.x;
+    //printf("Hello world from: %u\n", (size_t) playfieldIndex);
+    //Field sharedPlayfield[FIELD_DIMENSION * FIELD_DIMENSION];
+    Field* sharedPlayfield = playfield;
+    __shared__ bool possibleMoves[FIELD_DIMENSION*FIELD_DIMENSION];
+    // printf("Block %2d %2d, Thread %2d %2d\n", 
+    //  blockIdx.x, blockIdx.y, playfieldX, playfieldY);
+    //sharedPlayfield[playfieldIndex] = playfield[playfieldIndex];
 
     // printf("Block %2d %2d, Thread %2d %2d, %3d, Field: %d\n", 
     //     blockIdx.x, blockIdx.y, playfieldX, playfieldY, playfieldIndex, (int)sharedPlayfield[playfieldX][playfieldY] );
     
-	__syncthreads();
+    calculatePossibleMoves(possibleMoves, playfield, playfieldIndex, currentPlayer);
+    
+    size_t moveCount = countPossibleMoves(possibleMoves, playfieldIndex, playfield);
+    size_t index = FIELD_DIMENSION * FIELD_DIMENSION;
+    if (moveCount > 0)
+    {
+    	index = getRandomMoveIndex(deviceState, possibleMoves, moveCount, playfieldIndex);
+    }
 
 	if (possibleMoves[playfieldIndex])
 	{
-		printf("Block %2d %2d, Thread %2d %2d %2d, Field: %d [%2u,%2u]\n", 
+		//sharedPlayfield[playfieldIndex] = Illegal;
+		int playfieldX = playfieldIndex % FIELD_DIMENSION;
+    	int playfieldY = playfieldIndex / FIELD_DIMENSION;
+		printf("Block %2d %2d, Thread %2d %2d %2d, Field: %d [%2u,%2u] - Move %d\n", 
 		  blockIdx.x, blockIdx.y, threadIdx.x, threadIdx.y, threadIdx.z, 
-		  sharedPlayfield[playfieldIndex] , playfieldX, playfieldY);
+		  sharedPlayfield[playfieldIndex] , playfieldX, playfieldY, index);
 	}
 }

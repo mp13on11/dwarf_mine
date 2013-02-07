@@ -56,6 +56,10 @@ std::ostream& operator<<(std::ostream& stream, const Field field)
     {
         stream << "W";
     }
+    else if (field == Field::Illegal)
+    {
+        stream << "?";
+    }
     else 
     {
         stream << "F";
