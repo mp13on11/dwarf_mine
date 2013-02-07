@@ -103,11 +103,16 @@ const int FIELD_DIMENSION = 8;
 // return true;
 // }
 
+__device__ Player getEnemyPlayer(Player currentPlayer)
+{
+	return (currentPlayer == Black ? White : Black);
+}
+
 __device__ void findPossibleMoves(bool* possibleMoves, Field* playfield, size_t playfieldIndex, int directionX, int directionY, Player currentPlayer)
 {
     bool look = true;
     bool foundEnemy = false;
-    Player enemyPlayer = (currentPlayer == Black ? White : Black);
+    Player enemyPlayer = getEnemyPlayer(currentPlayer);
     int playfieldX = playfieldIndex % FIELD_DIMENSION;
     int playfieldY = playfieldIndex / FIELD_DIMENSION;
     int neighbourX = playfieldX + directionX;
@@ -144,7 +149,6 @@ __device__ void findPossibleMoves(bool* possibleMoves, Field* playfield, size_t 
 __device__  void calculatePossibleMoves(bool* possibleMoves, Field* sharedPlayfield, size_t playfieldIndex, Player currentPlayer)
 {
     possibleMoves[playfieldIndex] = false;
-
     __syncthreads();
 
     if (sharedPlayfield[playfieldIndex] == Free)
@@ -215,65 +219,115 @@ __device__ size_t sum(size_t* counts, size_t playfieldIndex, size_t arraySize)
 
 __device__ size_t countPossibleMoves(bool* possibleMoves, size_t playfieldIndex, Field* playfield)
 {
+	
 	// Serialize via CUDA. Possible optimization PARALLEL REDUCTION
 	 __shared__ size_t moves[FIELD_DIMENSION * FIELD_DIMENSION];
-	// __syncthreads();
 	if(possibleMoves[playfieldIndex])
 	{
 		moves[playfieldIndex] = 1;
-		if (moves[playfieldIndex] == 1){
-
-			playfield[playfieldIndex] = Illegal;
-		}
-		//__syncthreads();
-		printf("%d T__EST %d\n", playfieldIndex, 1);
+	}
+	else
+	{
+		moves[playfieldIndex] = 0;
 	}
 	__syncthreads();
-	size_t s = sum(moves, playfieldIndex, FIELD_DIMENSION * FIELD_DIMENSION);
-	// return moves[0];
-	playfield[s % 8] = Illegal;
-	size_t sum = 0;
-	// __syncthreads();
-	for (size_t i = 0; i < FIELD_DIMENSION * FIELD_DIMENSION; ++i)
-	{
-		if (possibleMoves[i])
-		{
-			++sum;
-		}
+	return sum(moves, playfieldIndex, FIELD_DIMENSION * FIELD_DIMENSION);
+}
+
+__device__ void flipDirection(Field* playfield, size_t playfieldIndex, size_t moveIndex, int directionX, int directionY, Player currentPlayer)
+{
+    int currentIndex = playfieldIndex;
+    Player enemyPlayer = getEnemyPlayer(currentPlayer);
+    bool flip = false;
+
+    for (currentIndex = playfieldIndex; currentIndex < FIELD_DIMENSION*FIELD_DIMENSION && currentIndex >= 0; currentIndex += directionY * FIELD_DIMENSION + directionX)
+    {
+    	if(playfield[currentIndex] != enemyPlayer)
+    	{
+    		flip = (playfield[currentIndex] == currentPlayer && currentIndex != playfieldIndex);
+   			break;
+    	}
+    }
+    __syncthreads();
+    if (flip)
+    {
+	    for (; currentIndex - moveIndex != 0 ; currentIndex -= directionY * FIELD_DIMENSION + directionX)
+	    {
+	    	playfield[currentIndex] = currentPlayer;
+	    }
 	}
-	return sum;
+
+}
+
+__device__ void flipEnemyCounter(Field* playfield, size_t playfieldIndex, size_t moveIndex, Player currentPlayer)
+{
+	int playfieldX =  playfieldIndex % FIELD_DIMENSION;
+	int playfieldY =  playfieldIndex / FIELD_DIMENSION;
+	int directionX = playfieldIndex % FIELD_DIMENSION - moveIndex % FIELD_DIMENSION;
+    int directionY = playfieldIndex / FIELD_DIMENSION - moveIndex / FIELD_DIMENSION;
+    //if ((abs(directionY) == 1 || abs(directionX) == 1) && directionX + directionY <= 2)
+    if (abs(directionX) <= 1 && abs(directionY) <= 1 && moveIndex != playfieldIndex)
+    {
+    	flipDirection(playfield, playfieldIndex, moveIndex, directionX, directionY, currentPlayer);
+    }
 }
 
 __global__ void computeSingleMove(curandState* deviceState, Field* playfield, size_t moveX, size_t moveY, int directionX, int directionY, Player currentPlayer)
 {
     int playfieldIndex = threadIdx.x;
+    int debug = 0;
+
     //printf("Hello world from: %u\n", (size_t) playfieldIndex);
-    //Field sharedPlayfield[FIELD_DIMENSION * FIELD_DIMENSION];
-    Field* sharedPlayfield = playfield;
+    __shared__ Field sharedPlayfield[FIELD_DIMENSION * FIELD_DIMENSION];
+    sharedPlayfield[playfieldIndex] = playfield[playfieldIndex];
     __shared__ bool possibleMoves[FIELD_DIMENSION*FIELD_DIMENSION];
-    // printf("Block %2d %2d, Thread %2d %2d\n", 
-    //  blockIdx.x, blockIdx.y, playfieldX, playfieldY);
-    //sharedPlayfield[playfieldIndex] = playfield[playfieldIndex];
 
-    // printf("Block %2d %2d, Thread %2d %2d, %3d, Field: %d\n", 
-    //     blockIdx.x, blockIdx.y, playfieldX, playfieldY, playfieldIndex, (int)sharedPlayfield[playfieldX][playfieldY] );
-    
-    calculatePossibleMoves(possibleMoves, playfield, playfieldIndex, currentPlayer);
-    
-    size_t moveCount = countPossibleMoves(possibleMoves, playfieldIndex, playfield);
-    size_t index = FIELD_DIMENSION * FIELD_DIMENSION;
-    if (moveCount > 0)
+    __syncthreads();
+
+    calculatePossibleMoves(possibleMoves, sharedPlayfield, playfieldIndex, currentPlayer);
+    size_t moveCount = countPossibleMoves(possibleMoves, playfieldIndex, sharedPlayfield);
+    __shared__ bool counts[FIELD_DIMENSION*FIELD_DIMENSION];
+    counts[playfieldIndex] = 0;
+    __syncthreads();
+    do
     {
-    	index = getRandomMoveIndex(deviceState, possibleMoves, moveCount, playfieldIndex);
-    }
+	    size_t index = FIELD_DIMENSION * FIELD_DIMENSION;
 
+        index = getRandomMoveIndex(deviceState, possibleMoves, moveCount, playfieldIndex);
+        if (playfieldIndex == 0)
+        {
+            printf("%d Moves possible ", moveCount);
+            printf("for %s ", currentPlayer == White ? "White" : "Black");
+            printf("moving to %d\n", index);
+        }
+        flipEnemyCounter(sharedPlayfield, playfieldIndex, index, currentPlayer);
+
+        __syncthreads();
+
+        sharedPlayfield[index] = currentPlayer;
+        currentPlayer = getEnemyPlayer(currentPlayer);
+
+        calculatePossibleMoves(possibleMoves, sharedPlayfield, playfieldIndex, currentPlayer);
+        moveCount = countPossibleMoves(possibleMoves, playfieldIndex, sharedPlayfield);
+        debug++;
+        counts[playfieldIndex]++;
+        __syncthreads();
+	} while (moveCount > 0 && debug < 10000);
+
+    __syncthreads();
+    printf("%d Debug\n", debug);
+    printf("%d Died at ", playfieldIndex);
+    printf("%d Depth\n", counts[playfieldIndex]);
+
+	playfield[playfieldIndex] = sharedPlayfield[playfieldIndex];
+	__syncthreads();
 	if (possibleMoves[playfieldIndex])
 	{
 		//sharedPlayfield[playfieldIndex] = Illegal;
 		int playfieldX = playfieldIndex % FIELD_DIMENSION;
     	int playfieldY = playfieldIndex / FIELD_DIMENSION;
-		printf("Block %2d %2d, Thread %2d %2d %2d, Field: %d [%2u,%2u] - Move %d\n", 
-		  blockIdx.x, blockIdx.y, threadIdx.x, threadIdx.y, threadIdx.z, 
-		  sharedPlayfield[playfieldIndex] , playfieldX, playfieldY, index);
+		// printf("Block %2d %2d, Thread %2d %2d %2d, Field: %d [%2u,%2u] \n", 
+		//   blockIdx.x, blockIdx.y, threadIdx.x, threadIdx.y, threadIdx.z, 
+		//   sharedPlayfield[playfieldIndex] , playfieldX, playfieldY);
 	}
 }

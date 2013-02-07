@@ -12,8 +12,8 @@ OthelloResult CudaMonteCarloElf::getBestMoveFor(OthelloState& state, size_t reit
         F, F, F, F, F, F, F, F,
         F, F, F, F, F, F, F, F,
         F, F, F, F, F, F, F, F,
-        F, F, F, W, B, B, F, F,      
-        F, F, F, B, W, W, F, F,      
+        F, F, F, W, B, F, F, F,      
+        F, F, F, B, W, F, F, F,      
         F, F, F, F, F, F, F, F,
         F, F, F, F, F, F, F, F,
         F, F, F, F, F, F, F, F
