@@ -1,3 +1,4 @@
+#include "smp/QuadraticSieve.h"
 #include "QuadraticSieveScheduler.h"
 #include "QuadraticSieveElf.h"
 #include "common/ProblemStatement.h"
@@ -26,7 +27,7 @@ void QuadraticSieveScheduler::outputData(ostream& output)
 
 void QuadraticSieveScheduler::generateData(const DataGenerationParameters&)
 {
-
+    number = 1089911;
 }
 
 bool QuadraticSieveScheduler::hasData() const
@@ -41,29 +42,29 @@ void QuadraticSieveScheduler::doSimpleDispatch()
 
 void QuadraticSieveScheduler::doDispatch()
 {
-
+    tie(p, q) = factor();
 }
 
-/*
-pair<BigInt, BigInt> factorize()
+pair<BigInt, BigInt> QuadraticSieveScheduler::factor()
 {
-    int factorBaseSize = (int)exp(0.5*sqrt(log(n)*log(log(n))));
+    int factorBaseSize = (int)exp(0.5*sqrt(log(number)*log(log(number))));
     cout << "factorBaseSize" << factorBaseSize << endl;
-    createFactorBase(factorBaseSize);
+    auto factorBase = QuadraticSieveHelper::createFactorBase(factorBaseSize);
 
     // sieve
     cout << "sieving relations ..." << endl;
-    pair<BigInt, BigInt> factors = sieve();
-    if(isNonTrivial(factors))
+    vector<Relation> relations;
+    pair<BigInt, BigInt> factors = elf().sieve(relations, factorBase, number);
+    if(QuadraticSieveHelper::isNonTrivial(factors, number))
         return factors;
 
     cout << "found " << relations.size() << " relations" << endl;
 
     // bring relations into lower diagonal form
     cout << "performing gaussian elimination ..." << endl;
-    performGaussianElimination();
+    QuadraticSieveHelper::performGaussianElimination(relations);
 
     cout << "combining random congruences ..." << endl;
 
-    return searchForRandomCongruence(100);
-}*/
+    return QuadraticSieveHelper::searchForRandomCongruence(factorBase, number, 100, relations);
+}

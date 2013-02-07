@@ -46,9 +46,6 @@ public:
 
     const DataGenerationParameters& getDataGenerationParameters() const
     {
-        if (_hasInput)
-            throw std::logic_error("Only input-less ProblemStatements have DataGenerationParameters");
-
         return params;
     }
 

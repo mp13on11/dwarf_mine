@@ -129,7 +129,7 @@ TEST_P(FactorizationTest, testFactorizationPollardRho)
     std::cout << elapsed.count() / 1000.0 << '\n';
 
 }
-
+/*
 TEST_P(FactorizationTest, testFactorizationQuadraticSieve)
 {
     QuadraticSieve qs(product);
@@ -152,7 +152,6 @@ TEST_P(FactorizationTest, testFactorizationQuadraticSieve)
     ASSERT_EQ(p, actualP);
     ASSERT_EQ(q, actualQ);
 }
-
 
 TEST(QuadraticSieveTest, testModularSquareRoot)
 {
@@ -230,3 +229,4 @@ TEST(QuadraticSieveTest, testExtensiveSquareRooting)
         }
     }
 }
+*/

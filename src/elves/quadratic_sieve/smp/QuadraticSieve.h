@@ -1,3 +1,5 @@
+#pragma once
+
 #include <elves/common-factorization/BigInt.h>
 
 #include <sstream>
@@ -27,9 +29,9 @@ namespace QuadraticSieveHelper
 
     FactorBase createFactorBase(size_t numberOfPrimes);
     bool isNonTrivial(const std::pair<BigInt, BigInt>& pair, const BigInt& number);
-    std::pair<BigInt,BigInt> factorsFromCongruence(const BigInt& a, const BigInt& b);
+    std::pair<BigInt,BigInt> factorsFromCongruence(const BigInt& a, const BigInt& b, const BigInt& number);
 
-    std::pair<BigInt,BigInt> searchForRandomCongruence(const FactorBase& factorBase, const BigInt& number, size_t times);
+    std::pair<BigInt,BigInt> searchForRandomCongruence(const FactorBase& factorBase, const BigInt& number, size_t times, const Relations& relations);
     PrimeFactorization factorizeOverBase(const BigInt& number, const FactorBase& factorBase);
     void performGaussianElimination(Relations& relations);
 }

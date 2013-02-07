@@ -1,9 +1,7 @@
 #include "QuadraticSieve.h"
 #include "common/Utils.h"
 #include <algorithm>
-#include <future>
 #include <cassert>
-#include <thread>
 
 using namespace std;
 

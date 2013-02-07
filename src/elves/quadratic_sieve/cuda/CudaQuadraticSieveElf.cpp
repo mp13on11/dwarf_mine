@@ -7,6 +7,12 @@
 #include <algorithm>
 
 using namespace std;
+
+pair<BigInt, BigInt> CudaQuadraticSieveElf::sieve(vector<Relation>& , const FactorBase& , const BigInt& )
+{
+    return make_pair(0, 0);
+}
+
 /*
 
 pair<BigInt, BigInt> CudaQuadraticSieveElf::factor(const BigInt& )
