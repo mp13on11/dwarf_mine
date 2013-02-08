@@ -13,8 +13,8 @@ using namespace std;
 
 #define ASSERT_EQ_VECTOR(ACTUAL, EXPECTED) \
     ASSERT_EQ(ACTUAL.size(), EXPECTED.size()); \
-    for (size_t i = 0; i < ACTUAL.size(); i++) \
-        ASSERT_EQ(ACTUAL[i], EXPECTED[i]);
+    for (size_t i = 0; i < ACTUAL.size(); ++i) \
+        ASSERT_EQ(ACTUAL[i], EXPECTED[i])<<"\t  at index: "<<i;
 
 void testSingleStep(Playfield& playfield, vector<pair<size_t, Field>> expectedChanges, Player currentPlayer, float randomFake)
 {
@@ -32,11 +32,11 @@ void testSingleStep(Playfield& playfield, vector<pair<size_t, Field>> expectedCh
     {
         expectedPlayfield[change.first] = change.second;
     }
-    OthelloState temp(outputPlayfield, Player::White);
-    cout << temp << endl;
+    // OthelloState temp(outputPlayfield, Player::White);
+    // cout << "Actual: \n"<<temp << endl;
 
-    OthelloState temp2(expectedPlayfield, Player::White);
-    cout << temp2 << endl;
+    // OthelloState temp2(expectedPlayfield, Player::White);
+    // cout << "Expected: \n"<<temp2 << endl;
 
     ASSERT_EQ_VECTOR(outputPlayfield, expectedPlayfield);
 
@@ -76,6 +76,6 @@ TEST_F(OthelloCudaLeafSimulationTest, SingleMoveMultipleFlipTest)
         F, F, B, F, F, F, F, F
     };
 
-    testSingleStep(playfield, {{48, B}, {32, B}, {40, B}, {41, B}}, B,  8 * 1.0 / 13);   
-    testSingleStep(playfield, {{53, B}, {51, B}, {52, B}, {44, B}, {45, B}}, B, 10 * 1.0 / 13);   
+    testSingleStep(playfield, {{48, B}, {32, B}, {40, B}, {41, B}}, B,  10 * 1.0 / 17);   
+    testSingleStep(playfield, {{53, B}, {51, B}, {52, B}, {44, B}, {45, B}}, B, 12 * 1.0 / 17);   
 }

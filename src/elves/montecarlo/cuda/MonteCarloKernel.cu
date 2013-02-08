@@ -235,7 +235,6 @@ __device__ bool doStep(CudaGameState& state, CudaSimulator& simulator, float fak
         simulator.flipEnemyCounter(index);
 
         __syncthreads();
-
         state.field[index] = state.currentPlayer;
     }
     state.currentPlayer = state.getEnemyPlayer();
@@ -297,9 +296,6 @@ __global__ void simulateGameLeaf(curandState* deviceState, Field* playfield, Pla
         -- limit;
     }
 
-    if (playfieldIndex == 0)
-        printf("Runs: %d\n", limit);
-    
     __syncthreads();
     
 	playfield[playfieldIndex] = sharedPlayfield[playfieldIndex];

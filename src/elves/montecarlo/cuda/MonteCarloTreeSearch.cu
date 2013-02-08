@@ -6,6 +6,7 @@
 #include <cuda.h>
 #include <curand.h>
 #include <curand_kernel.h>
+#include <iostream>
 
 const int NUMBER_OF_BLOCKS = 1;
 const int THREADS_PER_BLOCK = 64;
@@ -16,12 +17,11 @@ __global__ void simulateGameLeaf(curandState* deviceState, Field* playfield, Pla
 
 void testBySimulateSingeStep(Field* playfield, Player currentPlayer, float fakedRandom)
 {
-	curandState* deviceStates;
-    // cudaMalloc(&deviceStates, sizeof(curandState));
-//    setupStateForRandom <<< NUMBER_OF_BLOCKS, THREADS_PER_BLOCK >>>(deviceStates, 0ULL);
-    //computeKernel <<< dimGrid, dimBlock >>>(deviceStates, reiterations, dimension, playfield, moveX, moveY, wins, visits);
+    curandState* deviceStates;
+    cudaMalloc(&deviceStates, sizeof(curandState));
+    setupStateForRandom <<< NUMBER_OF_BLOCKS, THREADS_PER_BLOCK >>>(deviceStates, 0ULL);
     simulateSingleStep <<< NUMBER_OF_BLOCKS, THREADS_PER_BLOCK >>>(deviceStates, playfield, currentPlayer, fakedRandom);
-    CudaUtils::checkState();	
+    CudaUtils::checkState();    
 }
 
 
@@ -30,7 +30,6 @@ void compute(size_t reiterations, size_t dimension, Field* playfield, size_t* mo
     curandState* deviceStates;
     cudaMalloc(&deviceStates, sizeof(curandState));
     setupStateForRandom <<< NUMBER_OF_BLOCKS, THREADS_PER_BLOCK >>>(deviceStates, 0ULL);
-    //computeKernel <<< dimGrid, dimBlock >>>(deviceStates, reiterations, dimension, playfield, moveX, moveY, wins, visits);
     simulateGameLeaf <<< NUMBER_OF_BLOCKS, THREADS_PER_BLOCK >>>(deviceStates, playfield, White);
     CudaUtils::checkState();
 }
