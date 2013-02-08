@@ -1,16 +1,12 @@
 #include "MonteCarloTreeSearch.h"
 #include <curand.h>
 #include <curand_kernel.h>
-#include "State.cuh"
-#include "Move.cuh"
 #include "OthelloField.h"
 #include <stdio.h>
 
 const int FIELD_DIMENSION = 8;
 
-const bool FAKE_RANDOM = true;
-
-__global__ void setupKernel(curandState* state, unsigned long seed)
+__global__ void setupStateForRandom(curandState* state, unsigned long seed)
 {
 	int id = 0; // threadIdx.x;
 	curand_init(seed, id, 0, &state[id]);
@@ -21,244 +17,288 @@ __device__ size_t randomNumber(curandState* deviceStates, size_t maximum)
 	curandState deviceState = deviceStates[0];
 	size_t value = curand_uniform(&deviceState) * maximum;
 	deviceStates[0] = deviceState;
-	
-    if(FAKE_RANDOM)
-    {
-        value = maximum / 2;
-        printf("FAKE RANDOM TO %d \n", value);
-    }
     return value;
 }   
 
-__device__ void startGame(curandState* deviceStates, State& rootState, size_t reiterations, size_t* moveX, size_t* moveY, size_t* wins, size_t* visits)
+typedef struct _CudaMove
 {
-	// expand
-	MoveVector untriedMoves = rootState.getPossibleMoves();
-	
-}
+    int x;
+    int y;
+} CudaMove;
 
-__global__ void computeKernel(curandState* deviceStates, size_t reiterations, size_t dimension, Field* playfield, size_t* moveX, size_t* moveY, size_t* wins, size_t* visits)
+typedef struct _CudaGameState
 {
-	printf("Thread %d\n", threadIdx.x);
-	State rootState(playfield, dimension, White);
-	startGame(deviceStates, rootState, reiterations, moveX, moveY, wins, visits);
-}
+    Field* field;
+    bool* possible;
+    size_t size;
+    size_t sideLength;
+    Player currentPlayer;
 
-
-
-
-__device__ Player getEnemyPlayer(Player currentPlayer)
-{
-	return (currentPlayer == Black ? White : Black);
-}
-
-__device__ void findPossibleMoves(bool* possibleMoves, Field* playfield, size_t playfieldIndex, int directionX, int directionY, Player currentPlayer)
-{
-    bool look = true;
-    bool foundEnemy = false;
-    Player enemyPlayer = getEnemyPlayer(currentPlayer);
-    int playfieldX = playfieldIndex % FIELD_DIMENSION;
-    int playfieldY = playfieldIndex / FIELD_DIMENSION;
-    int neighbourX = playfieldX + directionX;
-    int neighbourY = playfieldY + directionY;
-    while (look)
+    __device__ bool inBounds(int x, int y)
     {
-        int neighbourIndex = neighbourY * FIELD_DIMENSION + neighbourX;
-        if (neighbourX < FIELD_DIMENSION && neighbourX >= 0 && neighbourY < FIELD_DIMENSION && neighbourY >= 0)
-        {
-            if (playfield[neighbourIndex] == Free)
-            {
-                possibleMoves[playfieldIndex] |= false;
-                look = false;
-            }
-            else if(playfield[neighbourIndex] == enemyPlayer){
-            	foundEnemy = true;
-            }
-            else if (playfield[neighbourIndex] == currentPlayer)
-            {
-                possibleMoves[playfieldIndex] |= foundEnemy;
-                look = false;
-            }
-        }
-        else
-        {
-            possibleMoves[playfieldIndex] |= false;
-            look = false;
-        }
-        neighbourX += directionX;
-        neighbourY += directionY;
-	}
-}
+        return (x >= 0 && x < sideLength && y >= 0 && y < sideLength);
+    }
 
-__device__  void calculatePossibleMoves(bool* possibleMoves, Field* sharedPlayfield, size_t playfieldIndex, Player currentPlayer)
+    __device__ bool inBounds(int i)
+    {
+        return (i >= 0 && i < size);
+    }
+
+    __device__ Player getEnemyPlayer()
+    {
+        return (currentPlayer == Black ? White : Black);
+    }
+} CudaGameState;
+
+
+class CudaSimulator
 {
-    possibleMoves[playfieldIndex] = false;
+private:
+    size_t _playfieldIndex;
+    size_t _playfieldX;
+    size_t _playfieldY;
+    CudaGameState* _state;
+    curandState* _deviceState;
+
+    __device__ bool isMaster()
+    {
+        return _playfieldIndex == 0;
+    }
+public:
+    __device__ CudaSimulator(CudaGameState* state, curandState* deviceState)
+        : _playfieldIndex(threadIdx.x), _playfieldX(_playfieldIndex % FIELD_DIMENSION), _playfieldY(_playfieldIndex / FIELD_DIMENSION),
+            _state(state), _deviceState(deviceState)
+        {
+        }
+
+    __device__ void calculatePossibleMoves()
+    {
+        _state->possible[_playfieldIndex] = false;
     
-    __syncthreads();
+        __syncthreads();
 
-    if (sharedPlayfield[playfieldIndex] == Free)
+        if (_state->field[_playfieldIndex] == Free)
+        {
+            findPossibleMoves( 1,  1);
+            findPossibleMoves( 1,  0);
+            findPossibleMoves( 1, -1);
+            findPossibleMoves( 0,  1);
+            
+            findPossibleMoves( 0, -1);
+            findPossibleMoves(-1,  1);
+            findPossibleMoves(-1,  0);
+            findPossibleMoves(-1, -1);
+        }
+
+        __syncthreads();
+    }
+
+    __device__ void findPossibleMoves(int directionX, int directionY)
     {
-        findPossibleMoves(possibleMoves, sharedPlayfield, playfieldIndex,  1,  1, currentPlayer);
-        findPossibleMoves(possibleMoves, sharedPlayfield, playfieldIndex,  1,  0, currentPlayer);
-        findPossibleMoves(possibleMoves, sharedPlayfield, playfieldIndex,  1, -1, currentPlayer);
-        findPossibleMoves(possibleMoves, sharedPlayfield, playfieldIndex,  0,  1, currentPlayer);
+        bool look = true;
+        bool foundEnemy = false;
+        Player enemyPlayer = _state->getEnemyPlayer();
+        int neighbourX = _playfieldX + directionX;
+        int neighbourY = _playfieldY + directionY;
+        while (look)
+        {
+            int neighbourIndex = neighbourY * FIELD_DIMENSION + neighbourX;
+            if (_state->inBounds(neighbourX, neighbourY))
+            {
+                if (_state->field[neighbourIndex] == Free)
+                {
+                    _state->possible[_playfieldIndex] |= false;
+                    look = false;
+                }
+                else if(_state->field[neighbourIndex] == enemyPlayer)
+                {
+                    foundEnemy = true;
+                }
+                else if (_state->field[neighbourIndex] == _state->currentPlayer)
+                {
+                    _state->possible[_playfieldIndex] |= foundEnemy;
+                    look = false;
+                }
+            }
+            else
+            {
+                _state->possible[_playfieldIndex] |= false;
+                look = false;
+            }
+            neighbourX += directionX;
+            neighbourY += directionY;
+        }
+    }
+
+    __device__ size_t countPossibleMoves()
+    {
+        // __syncthreads();
+     //    __shared__ size_t moves[FIELD_DIMENSION * FIELD_DIMENSION];
+     //    moves[playfieldIndex] = possibleMoves[playfieldIndex] ? 1 : 0;
+        // return sum(moves, playfieldIndex, FIELD_DIMENSION * FIELD_DIMENSION);
         
-        findPossibleMoves(possibleMoves, sharedPlayfield, playfieldIndex,  0, -1, currentPlayer);
-        findPossibleMoves(possibleMoves, sharedPlayfield, playfieldIndex, -1,  1, currentPlayer);
-        findPossibleMoves(possibleMoves, sharedPlayfield, playfieldIndex, -1,  0, currentPlayer);
-        findPossibleMoves(possibleMoves, sharedPlayfield, playfieldIndex, -1, -1, currentPlayer);
-    }
-
-    __syncthreads();
-}
-
-
-
-__device__ size_t getRandomMoveIndex(curandState* state, bool* possibleMoves, size_t moveCount)
-{
-	size_t randomMoveIndex = 0;
-	if (moveCount > 1)
-	{
-		randomMoveIndex = randomNumber(state, moveCount);
-	}
-	size_t possibleMoveIndex = 0;
-	for (size_t i = 0; i < FIELD_DIMENSION * FIELD_DIMENSION; ++i)
-	{
-		if (possibleMoves[i])
-		{
-			if (possibleMoveIndex == randomMoveIndex)
-			{
-				return i;
-			}
-			possibleMoveIndex++;;
-		}
-	}
-	return 0;
-}
-
-__device__ size_t getRandomMoveIndex(curandState* state, bool* possibleMoves, size_t moveCount, size_t playfieldIndex)
-{
-	__shared__ size_t randomIndex;
-	if (playfieldIndex == 0)
-	{
-        // printf("Random: ");
-        // for (int i = 0; i < 64; i++)
-        //     printf(" %d; ", possibleMoves[i]);
-        // printf("\n");
-	   randomIndex = getRandomMoveIndex(state, possibleMoves, moveCount);
-    }
-	__syncthreads();
-	return randomIndex;
-}
-
-__device__ size_t sum(size_t* counts, size_t playfieldIndex, size_t arraySize)
-{
-	if (arraySize > 1)
-	{
-		arraySize = arraySize / 2;
-		if (playfieldIndex < arraySize)
-		{
-			counts[playfieldIndex] += counts[playfieldIndex + arraySize];
-		}
-		return sum(counts, playfieldIndex, arraySize);
-	}
-	return counts[0];
-}
-
-__device__ size_t countPossibleMoves(bool* possibleMoves, size_t playfieldIndex, Field* playfield)
-{
-	// __syncthreads();
- //    __shared__ size_t moves[FIELD_DIMENSION * FIELD_DIMENSION];
- //    moves[playfieldIndex] = possibleMoves[playfieldIndex] ? 1 : 0;
-	// return sum(moves, playfieldIndex, FIELD_DIMENSION * FIELD_DIMENSION);
-    
-    __syncthreads();
-    size_t sum = 0;
-    for (int i = 0; i < FIELD_DIMENSION * FIELD_DIMENSION; i++)
-    {
-        if (possibleMoves[i])
+        __syncthreads();
+        size_t sum = 0;
+        for (int i = 0; i < _state->size; i++)
         {
-            sum++;
-            __syncthreads();
+            if (_state->possible[i])
+            {
+                sum++;
+                __syncthreads();
+            }
+        }
+        return sum;
+    }
+
+    __device__ size_t getRandomMoveIndex(size_t moveCount, float fakedRandom = -1)
+    {
+        size_t randomMoveIndex = 0;
+        if (moveCount > 1)
+        {
+            if (fakedRandom >= 0)
+            {
+                randomMoveIndex = fakedRandom * moveCount;
+            }
+            else
+            {
+                randomMoveIndex = randomNumber(_deviceState, moveCount);    
+            }
+        }
+        size_t possibleMoveIndex = 0;
+        for (size_t i = 0; i < _state->size; ++i)
+        {
+            if (_state->possible[i])
+            {
+                if (possibleMoveIndex == randomMoveIndex)
+                {
+                    return i;
+                }
+                possibleMoveIndex++;;
+            }
+        }
+        return 0;
+    }
+
+    __device__ void flipDirection(size_t moveIndex, int directionX, int directionY)
+    {
+        int currentIndex = _playfieldIndex;
+        Player enemyPlayer = _state->getEnemyPlayer();
+        bool flip = false;
+
+        for (currentIndex = _playfieldIndex; _state->inBounds(currentIndex); currentIndex += directionY * _state->sideLength + directionX)
+        {
+            if(_state->field[currentIndex] != enemyPlayer)
+            {
+                flip = (_state->field[currentIndex] == _state->currentPlayer && currentIndex != _playfieldIndex);
+                break;
+            }
+        }
+        __syncthreads();
+        if (flip)
+        {
+            for (; currentIndex - moveIndex != 0 ; currentIndex -= directionY * _state->sideLength + directionX)
+            {
+                _state->field[currentIndex] = _state->currentPlayer;
+            }
         }
     }
-    return sum;
-}
 
-__device__ void flipDirection(Field* playfield, size_t playfieldIndex, size_t moveIndex, int directionX, int directionY, Player currentPlayer)
-{
-    int currentIndex = playfieldIndex;
-    Player enemyPlayer = getEnemyPlayer(currentPlayer);
-    bool flip = false;
-
-    for (currentIndex = playfieldIndex; currentIndex < FIELD_DIMENSION*FIELD_DIMENSION && currentIndex >= 0; currentIndex += directionY * FIELD_DIMENSION + directionX)
+    __device__ void flipEnemyCounter(size_t moveIndex)
     {
-    	if(playfield[currentIndex] != enemyPlayer)
-    	{
-    		flip = (playfield[currentIndex] == currentPlayer && currentIndex != playfieldIndex);
-   			break;
-    	}
+        int directionX = _playfieldX - moveIndex % _state->sideLength;
+        int directionY = _playfieldY - moveIndex / _state->sideLength;
+
+        if (abs(directionX) <= 1 && abs(directionY) <= 1 && moveIndex != _playfieldIndex)
+        {
+            flipDirection(moveIndex, directionX, directionY);
+        }
     }
+};
+
+
+
+__device__ bool doStep(CudaGameState& state, CudaSimulator& simulator, float fakedRandom = -1)
+{
     __syncthreads();
-    if (flip)
+
+    simulator.calculatePossibleMoves();
+    size_t moveCount = simulator.countPossibleMoves();
+
+    if (moveCount > 0)
     {
-	    for (; currentIndex - moveIndex != 0 ; currentIndex -= directionY * FIELD_DIMENSION + directionX)
-	    {
-	    	playfield[currentIndex] = currentPlayer;
-	    }
-	}
+        __shared__ size_t index;
+        if (threadIdx.x == 0)
+            index = simulator.getRandomMoveIndex(moveCount, fakedRandom);
+        
+        __syncthreads();
 
-}
+        simulator.flipEnemyCounter(index);
 
-__device__ void flipEnemyCounter(Field* playfield, size_t playfieldIndex, size_t moveIndex, Player currentPlayer)
-{
-	int directionX = playfieldIndex % FIELD_DIMENSION - moveIndex % FIELD_DIMENSION;
-    int directionY = playfieldIndex / FIELD_DIMENSION - moveIndex / FIELD_DIMENSION;
+        __syncthreads();
 
-    if (abs(directionX) <= 1 && abs(directionY) <= 1 && moveIndex != playfieldIndex)
-    {
-    	flipDirection(playfield, playfieldIndex, moveIndex, directionX, directionY, currentPlayer);
+        state.field[index] = state.currentPlayer;
     }
+    state.currentPlayer = state.getEnemyPlayer();
+    return moveCount > 0;
 }
 
-__global__ void computeSingleMove(curandState* deviceState, Field* playfield, size_t moveX, size_t moveY, int directionX, int directionY, Player currentPlayer)
+__global__ void simulateSingleStep(curandState* deviceState, Field* playfield, Player currentPlayer, float fakedRandom)
 {
     int playfieldIndex = threadIdx.x;
-    int debug = 0;
+    __shared__ Field sharedPlayfield[FIELD_DIMENSION * FIELD_DIMENSION];
+    __shared__ bool possibleMoves[FIELD_DIMENSION*FIELD_DIMENSION];
+    sharedPlayfield[playfieldIndex] = playfield[playfieldIndex];
+
+    CudaGameState state =  { 
+        sharedPlayfield, 
+        possibleMoves, 
+        FIELD_DIMENSION * FIELD_DIMENSION, 
+        FIELD_DIMENSION, 
+        currentPlayer 
+    };
+    CudaSimulator simulator(&state, deviceState);
+
+    doStep(state, simulator, fakedRandom);
+
+    playfield[playfieldIndex] = sharedPlayfield[playfieldIndex];
+}
+
+
+__global__ void simulateGameLeaf(curandState* deviceState, Field* playfield, Player currentPlayer)
+{
+    int playfieldIndex = threadIdx.x;
 
     __shared__ Field sharedPlayfield[FIELD_DIMENSION * FIELD_DIMENSION];
     __shared__ bool possibleMoves[FIELD_DIMENSION*FIELD_DIMENSION];
-
     sharedPlayfield[playfieldIndex] = playfield[playfieldIndex];
 
-    __syncthreads();
-
-    calculatePossibleMoves(possibleMoves, sharedPlayfield, playfieldIndex, currentPlayer);
-    size_t moveCount = countPossibleMoves(possibleMoves, playfieldIndex, sharedPlayfield);
-    size_t limit = 100;
-
-    while (moveCount > 0 && debug < limit + 1)
+    CudaGameState state =  { 
+        sharedPlayfield, 
+        possibleMoves, 
+        FIELD_DIMENSION * FIELD_DIMENSION, 
+        FIELD_DIMENSION, 
+        currentPlayer 
+    };
+    CudaSimulator simulator(&state, deviceState);
+    size_t passCounter = 0;
+    size_t limit = 64;
+    while (limit > 0)
     {
-        __syncthreads();
+        if (!doStep(state, simulator))
+        {
+            passCounter++;
+            if (passCounter > 1)
+                break;
+        }
+        else
+        {
+            passCounter = 0;
+        }
+        -- limit;
+    }
 
-        size_t index = getRandomMoveIndex(deviceState, possibleMoves, moveCount, playfieldIndex);
-
-        __syncthreads();        
-        
-        flipEnemyCounter(sharedPlayfield, playfieldIndex, index, currentPlayer);
-
-        __syncthreads();
-
-        sharedPlayfield[index] = currentPlayer;
-        currentPlayer = getEnemyPlayer(currentPlayer);
-
-        calculatePossibleMoves(possibleMoves, sharedPlayfield, playfieldIndex, currentPlayer);
-        moveCount = countPossibleMoves(possibleMoves, playfieldIndex, sharedPlayfield);
-        debug++;
-	};
-
-    if (playfieldIndex == 0 && moveCount== 0)
-        printf("Runs: %d\n", debug);
+    if (playfieldIndex == 0)
+        printf("Runs: %d\n", limit);
     
     __syncthreads();
     
