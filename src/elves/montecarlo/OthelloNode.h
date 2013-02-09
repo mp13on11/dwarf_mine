@@ -26,7 +26,7 @@ public:
     bool hasChildren() const;
     OthelloNode& getFavoriteChild();
     OthelloNode& getRandomChildNode(RandomGenerator generator);
-    OthelloNode& addChild(OthelloMove& move, const OthelloState& state);
+    OthelloNode& addChild(const OthelloMove& move, const OthelloState& state);
     const NodeList& getChildren() const;
     OthelloMove getTriggerMove() const;
     OthelloMove getRandomMove(RandomGenerator generator) const;
@@ -51,7 +51,7 @@ private:
     std::atomic_uint _visits;
     std::atomic_uint _wins;
     void setParent(OthelloNode& parent);
-    void setTriggerMove(OthelloMove& move);
+    void setTriggerMove(const OthelloMove& move);
 };
 
 inline const NodeList& OthelloNode::getChildren() const

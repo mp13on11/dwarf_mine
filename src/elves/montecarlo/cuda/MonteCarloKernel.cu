@@ -14,7 +14,7 @@ __global__ void setupStateForRandom(curandState* state, unsigned long seed)
 
 __device__ size_t randomNumber(curandState* deviceStates, size_t maximum)
 {
-	curandState deviceState = deviceStates[0];
+	curandState deviceState = deviceStates[blockIdx.x];
 	size_t value = curand_uniform(&deviceState) * maximum;
 	deviceStates[0] = deviceState;
     return value;
@@ -34,19 +34,37 @@ typedef struct _CudaGameState
     size_t sideLength;
     Player currentPlayer;
 
-    __device__ bool inBounds(int x, int y)
+    __device__ inline bool inBounds(int x, int y)
     {
         return (x >= 0 && x < sideLength && y >= 0 && y < sideLength);
     }
 
-    __device__ bool inBounds(int i)
+    __device__ inline bool inBounds(int i)
     {
         return (i >= 0 && i < size);
     }
 
-    __device__ Player getEnemyPlayer()
+    __device__ inline Player getEnemyPlayer(Player currentPlayer)
     {
         return (currentPlayer == Black ? White : Black);
+    }
+
+    __device__ inline Player getEnemyPlayer()
+    {
+        return getEnemyPlayer(currentPlayer);
+    }
+
+    __device__ bool isWinner(Player requestedPlayer)
+    {
+        Player enemyPlayer = getEnemyPlayer(requestedPlayer);
+        size_t requestedCounters = 0;
+        size_t enemyCounters = 0;
+        for (size_t i = 0; i < size; ++i)
+        {
+            if (field[i] == enemyPlayer) ++enemyCounters;
+            if (field[i] == requestedPlayer) ++requestedCounters;
+        }
+        return requestedPlayer >= enemyPlayer;
     }
 } CudaGameState;
 
@@ -60,17 +78,18 @@ private:
     CudaGameState* _state;
     curandState* _deviceState;
 
-    __device__ bool isMaster()
-    {
-        return _playfieldIndex == 0;
-    }
 public:
     __device__ CudaSimulator(CudaGameState* state, curandState* deviceState)
         : _playfieldIndex(threadIdx.x), _playfieldX(_playfieldIndex % FIELD_DIMENSION), _playfieldY(_playfieldIndex / FIELD_DIMENSION),
             _state(state), _deviceState(deviceState)
-        {
-        }
+    {
+    }
 
+    __device__ bool isMaster()
+    {
+        return _playfieldIndex == 0;
+    }
+    
     __device__ void calculatePossibleMoves()
     {
         _state->possible[_playfieldIndex] = false;
@@ -215,8 +234,6 @@ public:
     }
 };
 
-
-
 __device__ bool doStep(CudaGameState& state, CudaSimulator& simulator, float fakedRandom = -1)
 {
     __syncthreads();
@@ -241,7 +258,83 @@ __device__ bool doStep(CudaGameState& state, CudaSimulator& simulator, float fak
     return moveCount > 0;
 }
 
-__global__ void simulateSingleStep(curandState* deviceState, Field* playfield, Player currentPlayer, float fakedRandom)
+__device__ void simulateGameLeaf(curandState* deviceState, CudaSimulator& simulator, CudaGameState& state, size_t* wins, size_t* visits)
+{
+    Player startingPlayer = state.currentPlayer;
+    size_t passCounter = 0;
+    while (true)
+    {
+        if (!doStep(state, simulator))
+        {
+            passCounter++;
+            if (passCounter > 1)
+                break;
+        }
+        else
+        {
+            passCounter = 0;
+        }
+    }
+    __syncthreads();
+
+
+    if (simulator.isMaster())
+    {
+        ++(*visits);
+        if (state.isWinner(startingPlayer))
+        {
+            ++(*wins);
+        }
+    }
+}
+
+__global__ void simulateGameLeaf(curandState* deviceState, Field* playfield, Player currentPlayer, size_t* wins, size_t* visits)
+{
+    int playfieldIndex = threadIdx.x;
+
+    __shared__ Field sharedPlayfield[FIELD_DIMENSION * FIELD_DIMENSION];
+    __shared__ bool possibleMoves[FIELD_DIMENSION*FIELD_DIMENSION];
+    sharedPlayfield[playfieldIndex] = playfield[playfieldIndex];
+
+    CudaGameState state =  { 
+        sharedPlayfield, 
+        possibleMoves, 
+        FIELD_DIMENSION * FIELD_DIMENSION, 
+        FIELD_DIMENSION, 
+        currentPlayer 
+    };
+    CudaSimulator simulator(&state, deviceState);
+    simulateGameLeaf(deviceState, simulator, state, wins, visits);
+}
+
+__global__ void simulateGame(curandState* deviceStates, size_t numberOfPlayfields, Field* playfields, Player currentPlayer, size_t* wins, size_t* visits)
+{
+    __shared__ size_t node;
+    int threadGroup = blockIdx.x;
+    int playfieldIndex = threadIdx.x;
+    if (threadIdx.x == 0) 
+    {
+        node = randomNumber(deviceStates, numberOfPlayfields);
+    }
+
+    __shared__ Field sharedPlayfield[FIELD_DIMENSION * FIELD_DIMENSION];
+    __shared__ bool possibleMoves[FIELD_DIMENSION*FIELD_DIMENSION];
+    
+    size_t playfieldOffset = FIELD_DIMENSION * FIELD_DIMENSION * threadGroup;
+    sharedPlayfield[playfieldIndex] = playfields[playfieldOffset + playfieldIndex];
+
+    CudaGameState state =  { 
+        sharedPlayfield, 
+        possibleMoves, 
+        FIELD_DIMENSION * FIELD_DIMENSION, 
+        FIELD_DIMENSION, 
+        currentPlayer 
+    };
+    CudaSimulator simulator(&state, deviceStates);
+    simulateGameLeaf(deviceStates, simulator, state, &(wins[node]), &(visits[node]));
+}
+
+__global__ void testDoStep(curandState* deviceState, Field* playfield, Player currentPlayer, float fakedRandom)
 {
     int playfieldIndex = threadIdx.x;
     __shared__ Field sharedPlayfield[FIELD_DIMENSION * FIELD_DIMENSION];
@@ -262,8 +355,7 @@ __global__ void simulateSingleStep(curandState* deviceState, Field* playfield, P
     playfield[playfieldIndex] = sharedPlayfield[playfieldIndex];
 }
 
-
-__global__ void simulateGameLeaf(curandState* deviceState, Field* playfield, Player currentPlayer)
+__global__ void testSimulateGameLeaf(curandState* deviceState, Field* playfield, Player currentPlayer, size_t* wins, size_t* visits)
 {
     int playfieldIndex = threadIdx.x;
 
@@ -279,24 +371,7 @@ __global__ void simulateGameLeaf(curandState* deviceState, Field* playfield, Pla
         currentPlayer 
     };
     CudaSimulator simulator(&state, deviceState);
-    size_t passCounter = 0;
-    size_t limit = 64;
-    while (limit > 0)
-    {
-        if (!doStep(state, simulator))
-        {
-            passCounter++;
-            if (passCounter > 1)
-                break;
-        }
-        else
-        {
-            passCounter = 0;
-        }
-        -- limit;
-    }
-
-    __syncthreads();
+    simulateGameLeaf(deviceState, simulator, state, wins, visits);
     
 	playfield[playfieldIndex] = sharedPlayfield[playfieldIndex];
 }

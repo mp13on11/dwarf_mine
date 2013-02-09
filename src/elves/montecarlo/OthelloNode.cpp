@@ -71,9 +71,15 @@ OthelloMove OthelloNode::getTriggerMove() const
     return *(_triggerMove.get());
 }
 
+<<<<<<< HEAD
 void OthelloNode::setTriggerMove(OthelloMove& move)
 {   
     _triggerMove = make_shared<OthelloMove>(move);
+=======
+void OthelloNode::setTriggerMove(const OthelloMove& move)
+{	
+	_triggerMove = make_shared<OthelloMove>(move);
+>>>>>>> Finished tests, added function for complete leaf parallelization (untestet) and startet to adapt elf (WIP)
 }
 
 OthelloMove OthelloNode::getRandomMove(RandomGenerator generator) const
@@ -113,7 +119,7 @@ OthelloMove OthelloNode::getRandomUntriedMove(RandomGenerator generator) const
     return _untriedMoves[generator(_untriedMoves.size())];
 }
 
-OthelloNode& OthelloNode::addChild(OthelloMove& move, const OthelloState& state)
+OthelloNode& OthelloNode::addChild(const OthelloMove& move, const OthelloState& state)
 {
     _children.push_back(state);
     _children.back()._parent = this;

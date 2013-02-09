@@ -8,6 +8,21 @@ using namespace std;
 
 OthelloResult CudaMonteCarloElf::getBestMoveFor(OthelloState& state, size_t reiterations)
 {
+    MoveList untriedMoves = state.getPossibleMoves();
+    vector<Playfield> childStatePlayfields;
+    for (const auto& move : untriedMoves)
+    {
+        auto childState = state;
+        childState.doMove(move);
+        Playfield childPlayfield;
+        childPlayfield.assign(childState.playfieldBuffer(), childState.playfieldBuffer() + childState.playfieldSideLength() childState.playfieldSideLength());
+        childStatePlayfields.push_back(move(childPlayfield));
+    }
+
+
+
+
+
     vector<Field> playfield = {
         F, F, F, F, F, F, F, F,
         F, F, F, F, F, F, F, F,
@@ -27,7 +42,7 @@ OthelloResult CudaMonteCarloElf::getBestMoveFor(OthelloState& state, size_t reit
 
     cudaPlayfield.transferFrom(playfield.data());
 
-    compute(reiterations, state.playfieldSideLength(), cudaPlayfield.get(), cudaMoveX.get(), cudaMoveY.get(), cudaWins.get(), cudaVisits.get());
+    leafSimulation(reiterations, state.playfieldSideLength(), cudaPlayfield.get(), state.getCurrentPlayer(), cudaMoveX.get(), cudaMoveY.get(), cudaWins.get(), cudaVisits.get());
 
     OthelloResult result;
     Playfield buffer(size);

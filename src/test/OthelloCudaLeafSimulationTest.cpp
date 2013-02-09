@@ -16,6 +16,17 @@ using namespace std;
     for (size_t i = 0; i < ACTUAL.size(); ++i) \
         ASSERT_EQ(ACTUAL[i], EXPECTED[i])<<"\t  at index: "<<i;
 
+Playfield getExpectedPlayfield(Playfield& playfield, vector<pair<size_t, Field>> expectedChanges)
+{
+    Playfield expectedPlayfield;
+    expectedPlayfield.assign(playfield.begin(), playfield.end());
+    for (const auto change : expectedChanges)
+    {
+        expectedPlayfield[change.first] = change.second;
+    }
+    return expectedPlayfield;
+}
+
 void testSingleStep(Playfield& playfield, vector<pair<size_t, Field>> expectedChanges, Player currentPlayer, float randomFake)
 {
     CudaUtils::Memory<Field> cudaPlayfield(playfield.size());
@@ -26,12 +37,8 @@ void testSingleStep(Playfield& playfield, vector<pair<size_t, Field>> expectedCh
     Playfield outputPlayfield(playfield.size());
     cudaPlayfield.transferTo(outputPlayfield.data());
 
-    Playfield expectedPlayfield;
-    expectedPlayfield.assign(playfield.begin(), playfield.end());
-    for (const auto change : expectedChanges)
-    {
-        expectedPlayfield[change.first] = change.second;
-    }
+    Playfield expectedPlayfield = getExpectedPlayfield(playfield, expectedChanges);
+
     // OthelloState temp(outputPlayfield, Player::White);
     // cout << "Actual: \n"<<temp << endl;
 
@@ -39,7 +46,40 @@ void testSingleStep(Playfield& playfield, vector<pair<size_t, Field>> expectedCh
     // cout << "Expected: \n"<<temp2 << endl;
 
     ASSERT_EQ_VECTOR(outputPlayfield, expectedPlayfield);
+}
 
+void testMultipleSteps(Playfield& playfield, vector<pair<size_t, Field>> expectedChanges, Player currentPlayer, size_t expectedWins, size_t expectedVisits )
+{
+    CudaUtils::Memory<Field> cudaPlayfield(playfield.size());
+    cudaPlayfield.transferFrom(playfield.data());
+    
+    CudaUtils::Memory<size_t> cudaWins(1);
+    CudaUtils::Memory<size_t> cudaVisits(1);
+    size_t wins = 0;
+    size_t visits = 0;
+    cudaWins.transferFrom(&wins);
+    cudaVisits.transferFrom(&visits);
+
+    size_t dimension = 8;
+
+    testByLeafSimulation(dimension, cudaPlayfield.get(), currentPlayer, cudaWins.get(), cudaVisits.get());
+    
+    cudaWins.transferTo(&wins);
+    cudaVisits.transferTo(&visits);
+
+    Playfield outputPlayfield(playfield.size());
+    cudaPlayfield.transferTo(outputPlayfield.data());
+
+    Playfield expectedPlayfield = getExpectedPlayfield(playfield, expectedChanges);
+
+    // OthelloState temp(outputPlayfield, Player::White);
+    // cout << "Actual: \n"<<temp << endl;
+
+    // OthelloState temp2(expectedPlayfield, Player::White);
+    // cout << "Expected: \n"<<temp2 << endl;
+    ASSERT_EQ(expectedVisits, visits);
+    ASSERT_EQ(expectedWins, wins);
+    ASSERT_EQ_VECTOR(outputPlayfield, expectedPlayfield);
 }
 
 TEST_F(OthelloCudaLeafSimulationTest, SingleMoveSingleFlipTest)
@@ -78,4 +118,58 @@ TEST_F(OthelloCudaLeafSimulationTest, SingleMoveMultipleFlipTest)
 
     testSingleStep(playfield, {{48, B}, {32, B}, {40, B}, {41, B}}, B,  10 * 1.0 / 17);   
     testSingleStep(playfield, {{53, B}, {51, B}, {52, B}, {44, B}, {45, B}}, B, 12 * 1.0 / 17);   
+}
+
+
+TEST_F(OthelloCudaLeafSimulationTest, NoPossibleSingleMoveTest)
+{
+    Playfield playfield {
+        W, W, W, W, W, W, W, W, 
+        W, W, F, F, F, F, F, F, 
+        W, W, F, B, B, B, B, B, 
+        W, W, F, B, B, B, B, B, 
+        W, W, F, B, B, B, B, B, 
+        W, W, F, B, B, B, B, B, 
+        W, W, F, F, F, F, F, F, 
+        F, F, F, F, F, F, F, F
+    };
+
+    testSingleStep(playfield, {}, W,  0 * 1.0 / 1);   
+    testSingleStep(playfield, {}, B,  0 * 1.0 / 1);   
+}
+
+
+TEST_F(OthelloCudaLeafSimulationTest, NoPossibleMovesTest)
+{
+    Playfield playfield {
+        W, W, W, W, W, W, W, W, 
+        W, W, F, F, F, F, F, F, 
+        W, W, F, B, B, B, B, B, 
+        W, W, F, B, B, B, B, B, 
+        W, W, F, B, B, B, B, B, 
+        W, W, F, B, B, B, B, B, 
+        W, W, F, F, F, F, F, F, 
+        W, W, F, F, F, F, F, F
+    };
+    // 22 W
+    // 20 B
+
+    testMultipleSteps(playfield, {}, W, 1, 1);
+    testMultipleSteps(playfield, {}, B, 0, 1);  
+}
+
+TEST_F(OthelloCudaLeafSimulationTest, PredictableGameTest)
+{
+    Playfield playfield {
+        F, F, F, F, W, F, F, F, 
+        W, F, F, F, W, F, F, F, 
+        F, W, F, F, W, F, F, W, 
+        F, F, W, F, W, F, W, F, 
+        F, F, F, W, W, W, F, F, 
+        W, W, W, W, B, W, W, W, 
+        F, F, F, W, W, W, F, F, 
+        F, F, W, W, F, F, W, F
+    };
+
+    testMultipleSteps(playfield, {{60, W}, {61, W}}, B, 0, 1);
 }
