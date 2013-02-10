@@ -3,6 +3,7 @@
 #include "common/SchedulerFactory.h"
 #include "elves/common-factorization/BigInt.h"
 #include "elves/quadratic_sieve/smp/QuadraticSieve.h"
+#include "elves/quadratic_sieve/smp/SmpQuadraticSieveElf.h"
 #include "elves/quadratic_sieve/cuda/CudaQuadraticSieveElf.h"
 
 #include <memory>
@@ -129,22 +130,20 @@ TEST_P(FactorizationTest, testFactorizationPollardRho)
     std::cout << elapsed.count() / 1000.0 << '\n';
 
 }
-/*
+
 TEST_P(FactorizationTest, testFactorizationQuadraticSieve)
 {
-    QuadraticSieve qs(product);
-
+    using namespace std::placeholders;
     auto start = high_resolution_clock::now();
 
-    auto pq = qs.factorize();
+    unique_ptr<QuadraticSieveElf> elf(new SmpQuadraticSieveElf());
+    BigInt actualP, actualQ;
+    tie(actualP, actualQ) = QuadraticSieveHelper::factor(product, bind(&QuadraticSieveElf::sieve, elf.get(), _1, _2, _3));
+
 
     auto end = high_resolution_clock::now();
     milliseconds elapsed = duration_cast<milliseconds>(end - start);
     std::cout << "total time: " << elapsed.count() / 1000.0 << " seconds" << endl;
-
-
-    BigInt actualP = pq.first;
-    BigInt actualQ = pq.second;
 
     if(actualP > actualQ)
         swap(actualP, actualQ);
@@ -163,7 +162,7 @@ TEST(QuadraticSieveTest, testModularSquareRoot)
     {
         BigInt expectedRoot(rootstring);
         BigInt n = (expectedRoot*expectedRoot) % primeMod;
-        BigInt root = QuadraticSieve::rootModPrime(n, primeMod);
+        BigInt root = QuadraticSieveHelper::rootModPrime(n, primeMod);
         ASSERT_NE(0, root);
         ASSERT_EQ(n, (root*root)%primeMod);
     }
@@ -179,7 +178,7 @@ TEST(QuadraticSieveTest, testModularSquareRoot2)
     {
         BigInt expectedRoot(rootstring);
         BigInt n = (expectedRoot*expectedRoot) % primeMod;
-        BigInt root = QuadraticSieve::rootModPrime(n, primeMod);
+        BigInt root = QuadraticSieveHelper::rootModPrime(n, primeMod);
         ASSERT_NE(0, root);
         ASSERT_EQ(n, (root*root)%primeMod);
     }
@@ -191,7 +190,7 @@ TEST(QuadraticSieveTest, testModularSquareRootInvalid)
     BigInt primeMod("7");
     BigInt n("3");
 
-    ASSERT_THROW(QuadraticSieve::rootModPrime(n, primeMod), logic_error);
+    ASSERT_THROW(QuadraticSieveHelper::rootModPrime(n, primeMod), logic_error);
 }
 
 TEST(QuadraticSieveTest, testExtensiveSquareRooting)
@@ -217,7 +216,7 @@ TEST(QuadraticSieveTest, testExtensiveSquareRooting)
                 const BigInt& residue = rpr.first;
                 const vector<BigInt>& expectedRoots = rpr.second;
 
-                auto actualRoots = QuadraticSieve::squareRootsModPrimePower(
+                auto actualRoots = QuadraticSieveHelper::squareRootsModPrimePower(
                                     residue, prime, power);
                 sort(actualRoots.begin(), actualRoots.end());
 
@@ -229,4 +228,3 @@ TEST(QuadraticSieveTest, testExtensiveSquareRooting)
         }
     }
 }
-*/

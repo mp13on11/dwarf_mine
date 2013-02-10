@@ -10,6 +10,30 @@ namespace QuadraticSieveHelper
 
 const pair<BigInt,BigInt> TRIVIAL_FACTORS(0,0);
 
+pair<BigInt, BigInt> factor(const BigInt& number, function<pair<BigInt, BigInt>(vector<Relation>&,const FactorBase&,const BigInt&)> sieveCallback) 
+{
+    int factorBaseSize = (int)exp(0.5*sqrt(log(number)*log(log(number))));
+    cout << "factorBaseSize" << factorBaseSize << endl;
+    auto factorBase = createFactorBase(factorBaseSize);
+
+    // sieve
+    cout << "sieving relations ..." << endl;
+    vector<Relation> relations;
+    pair<BigInt, BigInt> factors = sieveCallback(relations, factorBase, number);
+    if(isNonTrivial(factors, number))
+        return factors;
+
+    cout << "found " << relations.size() << " relations" << endl;
+
+    // bring relations into lower diagonal form
+    cout << "performing gaussian elimination ..." << endl;
+    performGaussianElimination(relations);
+
+    cout << "combining random congruences ..." << endl;
+
+    return searchForRandomCongruence(factorBase, number, 100, relations);
+}
+
 pair<BigInt,BigInt> factorsFromCongruence(const BigInt& a, const BigInt& b, const BigInt& number)
 {
     BigInt p = gcd(a+b, number);

@@ -47,24 +47,10 @@ void QuadraticSieveScheduler::doDispatch()
 
 pair<BigInt, BigInt> QuadraticSieveScheduler::factor()
 {
-    int factorBaseSize = (int)exp(0.5*sqrt(log(number)*log(log(number))));
-    cout << "factorBaseSize" << factorBaseSize << endl;
-    auto factorBase = QuadraticSieveHelper::createFactorBase(factorBaseSize);
-
-    // sieve
-    cout << "sieving relations ..." << endl;
-    vector<Relation> relations;
-    pair<BigInt, BigInt> factors = elf().sieve(relations, factorBase, number);
-    if(QuadraticSieveHelper::isNonTrivial(factors, number))
-        return factors;
-
-    cout << "found " << relations.size() << " relations" << endl;
-
-    // bring relations into lower diagonal form
-    cout << "performing gaussian elimination ..." << endl;
-    QuadraticSieveHelper::performGaussianElimination(relations);
-
-    cout << "combining random congruences ..." << endl;
-
-    return QuadraticSieveHelper::searchForRandomCongruence(factorBase, number, 100, relations);
+    using namespace std::placeholders;
+    return QuadraticSieveHelper::factor(number, bind(&QuadraticSieveElf::sieve, &elf(), _1, _2, _3));
+        //{
+            //return elf()->sieve(relations
+        //}
+    //);
 }

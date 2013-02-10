@@ -34,14 +34,8 @@ namespace QuadraticSieveHelper
     std::pair<BigInt,BigInt> searchForRandomCongruence(const FactorBase& factorBase, const BigInt& number, size_t times, const Relations& relations);
     PrimeFactorization factorizeOverBase(const BigInt& number, const FactorBase& factorBase);
     void performGaussianElimination(Relations& relations);
+    std::pair<BigInt, BigInt> factor(const BigInt& number, std::function<std::pair<BigInt, BigInt>(std::vector<Relation>&, const FactorBase&, const BigInt&)> sieveCallback);
 }
-/*
-    std::pair<BigInt, BigInt> sieve();
-    std::pair<BigInt, BigInt> sieveIntervalFast(const BigInt& start, const BigInt& end, size_t maxRelations);
-
-    std::vector<BigInt> sieveSmoothSquares(const BigInt& start, const BigInt& end) const;
-    */
-
 
 template<typename T>
 class SparseVector
