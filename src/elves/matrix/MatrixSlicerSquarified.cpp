@@ -209,34 +209,15 @@ void MatrixSlicerSquarified::setup(const BenchmarkResult& results, size_t area)
 {
     _slices.clear();
     Rating ratingSum = 0;
-    Rating ratingMax = 0;
-    Rating ratingMin = numeric_limits<Rating>::max();
-    // 0.3 0.5 1 1
-    // 3, 2, 1, 1
-    // 7
-    vector<NodeRating> positiveRatings;
+
     for (const auto& rating : results)
     {
-        ratingMax = max(ratingMax, rating.second);
-        ratingMin = min(ratingMin, rating.second);
+        ratingSum += rating.second;
     }
     for (const auto& rating : results)
     {
-        Rating positiveRating = ratingMin / rating.second;
-        ratingSum += positiveRating;
-        positiveRatings.emplace_back(rating.first, positiveRating);
-    }
-    // we shuffle the ratings a bit to make sure that large slices can be placed along small ones
-    // - to optimize this, it would result in binpacking which is np
-    // sortByRatingsAsc(positiveRatings);
-    // size_t n = positiveRatings.size();
-    // for (size_t i = 0; i < n / 2; ++i)
-    // {
-    //  swap(positiveRatings[i], positiveRatings[n / 2 * i]);
-    // }
-    for (const auto& rating : positiveRatings)
-    {
-        _unlayoutedRatings.emplace_back(rating.first, round(rating.second / ratingSum * area));
+        if(rating.second > 0)
+            _unlayoutedRatings.emplace_back(rating.first, round(rating.second / ratingSum * area));
     }
     
 }

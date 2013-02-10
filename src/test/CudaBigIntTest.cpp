@@ -1,8 +1,8 @@
 #ifdef HAVE_CUDA
 
-#include <elves/factorize/BigInt.h>
-#include <elves/factorize/cuda/Factorize.h>
-#include <elves/factorize/cuda/NumberHelper.h>
+#include <elves/common-factorization/BigInt.h>
+#include <elves/quadratic_sieve/cuda/Factorize.h>
+#include <elves/quadratic_sieve/cuda/NumberHelper.h>
 #include <elves/cuda-utils/Memory.h>
 #include <gtest/gtest.h>
 #include <functional>

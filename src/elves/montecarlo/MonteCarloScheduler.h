@@ -21,6 +21,7 @@ public:
 protected:
     virtual bool hasData() const;
     virtual void doDispatch();
+    virtual void doSimpleDispatch();
 
     OthelloState _state;
     OthelloResult _result;

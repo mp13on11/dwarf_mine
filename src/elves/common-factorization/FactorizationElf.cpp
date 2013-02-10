@@ -14,7 +14,7 @@ void FactorizationElf::run(istream& input, ostream& output)
     if (input.fail())
         throw runtime_error("Failed to read BigInt from istream in " __FILE__);
 
-    pair<BigInt, BigInt> result = factorize(number);
+    pair<BigInt, BigInt> result = factor(number);
 
     output << result.first << endl;
     output << result.second << endl;

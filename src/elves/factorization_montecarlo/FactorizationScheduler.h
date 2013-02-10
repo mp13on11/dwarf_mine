@@ -1,14 +1,14 @@
 #pragma once
 
-#include "BigInt.h"
+#include "common-factorization/BigInt.h"
 #include "common/SchedulerTemplate.h"
 
 #include <functional>
 #include <future>
 
-class FactorizationElf;
+class MonteCarloFactorizationElf;
 
-class FactorizationScheduler : public SchedulerTemplate<FactorizationElf>
+class FactorizationScheduler : public SchedulerTemplate<MonteCarloFactorizationElf>
 {
 public:
     FactorizationScheduler(const std::function<ElfPointer()>& factory);
@@ -23,6 +23,7 @@ protected:
     BigInt p, q;
 
     virtual void doDispatch();
+    virtual void doSimpleDispatch();
     virtual bool hasData() const;
 
 private:

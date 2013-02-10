@@ -1,5 +1,5 @@
 #include "common/BenchmarkRunner.h"
-#include "common/CommandLineConfiguration.h"
+#include "common/Configuration.h"
 #include "common/MpiGuard.h"
 #include "common/MpiHelper.h"
 
@@ -106,7 +106,7 @@ int main(int argc, char** argv)
 
     try
     {
-        CommandLineConfiguration config(argc, argv);
+        Configuration config(argc, argv);
 
         if (config.shouldPrintHelp())
         {
@@ -123,7 +123,7 @@ int main(int argc, char** argv)
     }
     catch (const boost::program_options::error& e)
     {
-        CommandLineConfiguration::printHelp();
+        Configuration::printHelp();
         cerr << e.what() << endl;
         return 1;
     }

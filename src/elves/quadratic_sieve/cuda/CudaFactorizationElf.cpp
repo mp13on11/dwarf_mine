@@ -7,7 +7,7 @@
 
 using namespace std;
 
-pair<BigInt, BigInt> CudaFactorizationElf::factorize(const BigInt& )
+pair<BigInt, BigInt> CudaFactorizationElf::factor(const BigInt& )
 {
     //uint64_t value64 = value.getUint64Value();
     NumData result;
@@ -21,9 +21,4 @@ pair<BigInt, BigInt> CudaFactorizationElf::factorize(const BigInt& )
     mpz_import(mpzResult.get_mpz_t(), NUM_FIELDS, -1, sizeof(uint32_t), 0, 0, result);
 
     return make_pair(0, mpzResult);
-}
-
-void CudaFactorizationElf::stop()
-{
-
 }

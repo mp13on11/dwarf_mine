@@ -1,5 +1,5 @@
 #include "SimpleBenchmarkRunner.h"
-#include "SimpleConfiguration.h"
+#include "common/Configuration.h"
 #include "common/MpiGuard.h"
 
 #include <exception>
@@ -24,11 +24,11 @@ int main(int argc, char** argv)
     try
     {
         MpiGuard guard(argc, argv);
-        SimpleConfiguration config(argc, argv);
+        Configuration config(argc, argv);
 
         if (config.shouldPrintHelp())
         {
-            SimpleConfiguration::printHelp();
+            Configuration::printHelp();
             return 0;
         }
 
@@ -45,7 +45,7 @@ int main(int argc, char** argv)
     }
     catch (const boost::program_options::error& e)
     {
-        SimpleConfiguration::printHelp();
+        Configuration::printHelp();
         cerr << e.what() << endl;
         return 1;
     }

@@ -40,6 +40,11 @@ void MonteCarloScheduler::outputData(ProblemStatement& statement)
     OthelloHelper::writeResultToStream(*(statement.output), _result);
 }
 
+void MonteCarloScheduler::doSimpleDispatch()
+{
+    calculate();
+}
+
 void MonteCarloScheduler::doDispatch()
 {
     if (MpiHelper::isMaster())

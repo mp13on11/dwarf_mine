@@ -1,4 +1,4 @@
-#include "BigInt.h"
+#include <elves/common-factorization/BigInt.h>
 
 #include <sstream>
 #include <iostream>
@@ -22,11 +22,14 @@ public:
     {}
     std::pair<BigInt, BigInt> factorize();
     static BigInt rootModPrime(const BigInt& n, const BigInt& primeMod);
+    static BigInt liftRoot(const BigInt& root, const BigInt& a, const BigInt& p, uint32_t power);
+    static std::vector<BigInt> liftRoots(const std::vector<BigInt>& roots, const BigInt& a, const BigInt& prime, uint32_t nextPower);
+
+    static std::vector<BigInt> squareRootsModPrimePower(const BigInt& a, const BigInt& prime, uint32_t power = 1);
 
 private:
     void createFactorBase(size_t numberOfPrimes);
     std::pair<BigInt, BigInt> sieve();
-    std::pair<BigInt, BigInt> sieveInterval(const BigInt& start, const BigInt& end, size_t maxRelations);
     std::pair<BigInt, BigInt> sieveIntervalFast(const BigInt& start, const BigInt& end, size_t maxRelations);
     bool isNonTrivial(const std::pair<BigInt, BigInt>& pair) const;
     std::pair<BigInt,BigInt> factorsFromCongruence(const BigInt& a, const BigInt& b) const;
@@ -34,6 +37,8 @@ private:
     std::pair<BigInt,BigInt> searchForRandomCongruence(size_t times) const;
     std::pair<BigInt,BigInt> pickRandomCongruence() const;
     PrimeFactorization factorizeOverBase(const BigInt& x) const;
+    std::vector<BigInt> sieveSmoothSquares(const BigInt& start, const BigInt& end) const;
+
 
     void print(const Relation& r) const;
 
@@ -67,30 +72,23 @@ public:
     BigInt multiply() const;
     SparseVector<smallPrime_t> oddPrimePowers() const;
     void add(const smallPrime_t& prime, uint32_t power);
-    void print() const
-    {
-        bool first = true;
-        for(const auto& pairy : primePowers)
-        {
-            if(first)
-                first = false;
-            else
-                std::cout << " * ";
-            std::cout << pairy.first;
-            if(pairy.second > 1)
-                std::cout << "^" << pairy.second;
-        }
-        std::cout << std::endl;
-    }
+
+    void print(std::ostream& stream) const;
 
 private:
     std::list<std::pair<smallPrime_t, uint32_t>> primePowers;
 };
 
+inline std::ostream& operator<<(std::ostream& stream, const PrimeFactorization& factorization)
+{
+    factorization.print(stream);
+    return stream;
+}
+
 class Relation
 {
 public:
-    Relation(const BigInt& a, const PrimeFactorization& factorization) : 
+    Relation(const BigInt& a, const PrimeFactorization& factorization) :
         a(a), dependsOnPrime(0), primeFactorization(factorization), oddPrimePowers(factorization.oddPrimePowers())
     {}
     bool isPerfectCongruence() const;

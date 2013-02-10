@@ -8,7 +8,6 @@ template<typename T>
 class Matrix
 {
 public:
-
     explicit Matrix(std::size_t rows=0, std::size_t columns=0);
     Matrix(std::size_t rows, std::size_t columns, std::vector<T>&& data);
 
@@ -22,6 +21,8 @@ public:
 
     const T* buffer() const;
     T* buffer();
+
+    Matrix<T> transposed() const;
 
 private:
     std::size_t _rows;
@@ -39,6 +40,22 @@ template<typename T>
 Matrix<T>::Matrix(std::size_t rows, std::size_t columns)
     : _rows(rows), _columns(columns), values(rows * columns)
 {
+}
+
+template<typename T>
+Matrix<T> Matrix<T>::transposed() const
+{
+    Matrix<T> result(_columns, _rows);
+
+    for (std::size_t i=0; i<_rows; i++)
+    {
+        for (std::size_t j=0; j<_columns; j++)
+        {
+            result(j, i) = (*this)(i, j);
+        }
+    }
+
+    return result;
 }
 
 template<typename T>
