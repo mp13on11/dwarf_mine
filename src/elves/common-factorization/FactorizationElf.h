@@ -8,8 +8,6 @@
 class FactorizationElf : public Elf
 {
 public:
-    virtual void run(std::istream& input, std::ostream& output);
-
     virtual void stop() = 0;
     virtual std::pair<BigInt, BigInt> factor(const BigInt& number) = 0;
 };
