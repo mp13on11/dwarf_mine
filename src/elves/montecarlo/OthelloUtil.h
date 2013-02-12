@@ -11,9 +11,9 @@ typedef std::function<size_t(size_t)> RandomGenerator;
 enum class Field { Free, Black, White };
 
 // shortcuts
-#define F Field::Free
-#define W Field::White
-#define B Field::Black
+const Field F = Field::Free;
+const Field W = Field::White;
+const Field B = Field::Black;
 
 typedef Field Player;
 typedef std::vector<Field> Playfield;

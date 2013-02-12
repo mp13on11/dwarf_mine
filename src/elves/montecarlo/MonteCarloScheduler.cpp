@@ -30,6 +30,22 @@ void MonteCarloScheduler::provideData(std::istream& input)
     _state = OthelloState(playfield, DEFAULTPLAYER);
 }
 
+void MonteCarloScheduler::generateData(const DataGenerationParameters& params)
+{
+    vector<Field> playfield = {
+        F, F, F, F, F, F, F, F,
+        F, F, F, F, F, F, F, F,
+        F, F, F, F, F, F, F, F,
+        F, F, F, W, B, F, F, F,      
+        F, F, F, B, W, F, F, F,      
+        F, F, F, F, F, F, F, F,
+        F, F, F, F, F, F, F, F,
+        F, F, F, F, F, F, F, F
+    };
+    _repetitions = params.monteCarloTrials;
+    _state = OthelloState(playfield, DEFAULTPLAYER);
+}
+
 bool MonteCarloScheduler::hasData() const
 {
     return true;

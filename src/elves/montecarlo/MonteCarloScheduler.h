@@ -17,6 +17,7 @@ public:
 
     virtual void provideData(std::istream& input);
     virtual void outputData(std::ostream& output);
+    virtual void generateData(const DataGenerationParameters& params);
 
 
 protected:

@@ -5,6 +5,8 @@
 #include "factorization_montecarlo/MonteCarloFactorizationElf.h"
 #include "matrix/MatrixScheduler.h"
 #include "matrix/smp/SMPMatrixElf.h"
+#include "montecarlo/MonteCarloScheduler.h"
+#include "montecarlo/smp/SMPMonteCarloElf.h"
 
 #ifdef HAVE_CUDA
 #include "matrix/cuda/CudaMatrixElf.h"
@@ -54,11 +56,22 @@ static FactoryFunction createQuadraticSieveFactory(bool useCuda)
         return createFactory<QuadraticSieveScheduler, SmpQuadraticSieveElf>();
 }
 
+static FactoryFunction createOthelloFactory(bool useCuda)
+{
+    if (useCuda)
+        throw runtime_error(
+            "No CUDA elf implemented for Monte Carlo Tree Search"
+        );
+    else
+        return createFactory<MonteCarloScheduler, SMPMonteCarloElf>();
+}
+
 static map<string, function<FactoryFunction(bool)>> sFactoryFunctionsMap =
 {
     { "matrix", createMatrixFactory },
     { "factorization_montecarlo", createMonteCarloFactorizationFactory },
-    { "quadratic_sieve", createQuadraticSieveFactory }
+    { "quadratic_sieve", createQuadraticSieveFactory },
+    { "montecarlo_tree_search", createOthelloFactory }
 };
 
 static void validateType(const string& type)
