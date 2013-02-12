@@ -9,21 +9,17 @@
 
 using namespace std;
 
-#define _F Field::Free
-#define _W Field::White
-#define _B Field::Black
-
 TEST_F(OthelloNodeTest, SimpleTest)
 {
     OthelloState state(vector<Field>{
-        _F, _F, _F, _F, _F, _F, _F, _F, 
-        _F, _F, _F, _F, _F, _F, _F, _F, 
-        _F, _F, _F, _F, _F, _F, _F, _F, 
-        _F, _F, _F, _W, _B, _F, _F, _F, 
-        _F, _F, _F, _B, _W, _F, _F, _F, 
-        _F, _F, _F, _F, _F, _F, _F, _F, 
-        _F, _F, _F, _F, _F, _F, _F, _F, 
-        _F, _F, _F, _F, _F, _F, _F, _F
+        F, F, F, F, F, F, F, F, 
+        F, F, F, F, F, F, F, F, 
+        F, F, F, F, F, F, F, F, 
+        F, F, F, W, B, F, F, F, 
+        F, F, F, B, W, F, F, F, 
+        F, F, F, F, F, F, F, F, 
+        F, F, F, F, F, F, F, F, 
+        F, F, F, F, F, F, F, F
     }, Player::White);
     OthelloNode stub(state);
     ASSERT_FALSE(stub.hasChildren());
@@ -39,14 +35,14 @@ TEST_F(OthelloNodeTest, SimpleTest)
 TEST_F(OthelloNodeTest, MakeMoveTest)
 {
     OthelloState state(vector<Field>{
-        _F, _F, _F, _F, _F, _F, _F, _F, 
-        _F, _F, _F, _F, _F, _F, _F, _F, 
-        _F, _F, _F, _F, _F, _F, _F, _F, 
-        _F, _F, _F, _W, _B, _F, _F, _F, 
-        _F, _F, _F, _B, _W, _F, _F, _F, 
-        _F, _F, _F, _F, _F, _F, _F, _F, 
-        _F, _F, _F, _F, _F, _F, _F, _F, 
-        _F, _F, _F, _F, _F, _F, _F, _F
+        F, F, F, F, F, F, F, F, 
+        F, F, F, F, F, F, F, F, 
+        F, F, F, F, F, F, F, F, 
+        F, F, F, W, B, F, F, F, 
+        F, F, F, B, W, F, F, F, 
+        F, F, F, F, F, F, F, F, 
+        F, F, F, F, F, F, F, F, 
+        F, F, F, F, F, F, F, F
     }, Player::White);
     OthelloNode stub(state);
     auto generator = [](size_t){ return 0U; };
@@ -72,14 +68,14 @@ TEST_F(OthelloNodeTest, MakeMoveTest)
 TEST_F(OthelloNodeTest, SelectFavoriteChild)
 {
     OthelloState state(vector<Field>{
-        _F, _F, _F, _F, _F, _F, _F, _F, 
-        _F, _F, _F, _F, _F, _F, _F, _F, 
-        _F, _F, _F, _F, _F, _F, _F, _F, 
-        _F, _F, _F, _W, _B, _F, _F, _F, 
-        _F, _F, _F, _B, _W, _F, _F, _F, 
-        _F, _F, _F, _F, _F, _F, _F, _F, 
-        _F, _F, _F, _F, _F, _F, _F, _F, 
-        _F, _F, _F, _F, _F, _F, _F, _F
+        F, F, F, F, F, F, F, F, 
+        F, F, F, F, F, F, F, F, 
+        F, F, F, F, F, F, F, F, 
+        F, F, F, W, B, F, F, F, 
+        F, F, F, B, W, F, F, F, 
+        F, F, F, F, F, F, F, F, 
+        F, F, F, F, F, F, F, F, 
+        F, F, F, F, F, F, F, F
     }, Player::White);
 
     OthelloNode root(state);
