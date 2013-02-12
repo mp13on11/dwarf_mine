@@ -65,9 +65,9 @@ OthelloResult SMPMonteCarloElf::getBestMoveFor(OthelloState& rootState, size_t r
         expand(&rootNode, childState);
     }
 
- 	#pragma omp parallel for shared(rootState, rootNode) 
-	for (size_t i = 0; i < reiterations; ++i)
-	{
+    #pragma omp parallel for shared(rootState, rootNode) 
+    for (size_t i = 0; i < reiterations; ++i)
+    {
         OthelloNode* currentNode = &rootNode;
         OthelloState currentState = rootState;
 

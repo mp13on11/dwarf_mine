@@ -56,5 +56,6 @@ private:
     size_t rightMatrixColumns() const;
     size_t leftDigits() const;
     size_t rightDigits() const;
+    size_t monteCarloTrials() const;
     bool useFiles() const;
 };

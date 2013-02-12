@@ -26,7 +26,7 @@ Configuration::Configuration(int argc, char** argv) :
         throw error("Both input and output are needed, if one is given");
 }
 
-unique_ptr<ProblemStatement> generateProblemStatement(string elfCategory, size_t leftRows, size_t commonRowsColumns, size_t rightColumns)
+unique_ptr<ProblemStatement> Configuration::createProblemStatement() const
 {
     if(!useFiles())
     {
@@ -53,7 +53,8 @@ DataGenerationParameters Configuration::makeDataGenerationParameters() const
             commonMatrixRowsColumns(),
             rightMatrixColumns(),
             leftDigits(),
-            rightDigits()
+            rightDigits(),
+            monteCarloTrials()
         };
 }
 
@@ -134,11 +135,14 @@ void Configuration::printHelp()
 
 options_description Configuration::createDescription()
 {
+    string categories = boost::algorithm::join(SchedulerFactory::getValidCategories(), "\n\t    ");
+    string categoriesDescription = "Elf to be run, valid categories:\n\t    " + categories;
+
     options_description description("Options");
     description.add_options()
         ("help,h",               "Print help message")
         ("mode,m",               value<string>()->required(), "Mode (smp|cuda)")
-        ("category,c",           value<string>()->default_value("matrix"), "Elf to be run (matrix|factorize)")
+        ("category,c",           value<string>()->default_value("matrix"), categoriesDescription.c_str())
         ("numwarmups,w",         value<size_t>()->default_value(50), "Number of warmup rounds")
         ("numiter,n",            value<size_t>()->default_value(100), "Number of benchmark iterations")
         ("input,i",              value<string>(), "Input file")
@@ -148,10 +152,13 @@ options_description Configuration::createDescription()
         ("skip_benchmark",       "Skip the benchmark run")
         ("quiet,q",              "Do not output anything")
         ("verbose,v",            "Show output from all MPI processes")
-        ("left_rows",            value<size_t>()->default_value(500), "Number of left rows to be generated (overridden for benchmark by input file)")
-        ("common_rows_columns",  value<size_t>()->default_value(500), "Number of left columns / right rows to be generated (overridden for benchmark by input file)")
-        ("right_columns",        value<size_t>()->default_value(500), "Number of right columns to be generated (overridden for benchmark by input file)")
-        ("time_output",          value<string>()->default_value("/dev/null"), "Output file for time measurements");
+        ("left_rows",            value<size_t>()->default_value(500), "Matrix: Number of left rows to be generated (overridden for benchmark by input file)")
+        ("common_rows_columns",  value<size_t>()->default_value(500), "Matrix: Number of left columns / right rows to be generated (overridden for benchmark by input file)")
+        ("right_columns",        value<size_t>()->default_value(500), "Matrix: Number of right columns to be generated (overridden for benchmark by input file)")
+        ("left_digits",          value<size_t>()->default_value(8), "QuadraticSieve: Digits for product's left operand")
+        ("right_digits",         value<size_t>()->default_value(8), "QuadraticSieve: Digits for product's right operand")
+        ("time_output",          value<string>()->default_value("/dev/null"), "Output file for time measurements")
+        ("montecarlo_trials",    value<size_t>()->default_value(100), "MonteCarlo: Number of trials for monte carlo tree search");
 
     return description;
 }
@@ -202,25 +209,32 @@ size_t Configuration::rightMatrixColumns() const
     return variables["right_columns"].as<size_t>();
 }
 
+size_t Configuration::monteCarloTrials() const
+{
+    return variables["montecarlo_trials"].as<size_t>();
+}
+
 std::ostream& operator<<(std::ostream& s, const Configuration& c)
 {
     s << "Configuation: "
-            << "\n\tMode: "<< c.mode()
-            << "\n\tWarmUps: " << c.warmUps()
-            << "\n\tIterations: " << c.iterations();
+        << "\n\tMode: " << c.mode()
+        << "\n\tCategory: " << c.category()
+        << "\n\tWarmUps: " << c.warmUps()
+        << "\n\tIterations: " << c.iterations();
 
     if (c.useFiles())
     {
         s << "\n\tInput: " << c.inputFilename()
-                << "\n\tOutput: " << c.outputFilename();
+            << "\n\tOutput: " << c.outputFilename();
     }
     else
     {
+        // TODO: This depends on the actual category...
         s << "\n\tMatrices: ("
-                << c.leftMatrixRows() << " x " <<c.commonMatrixRowsColumns()
-                << ") x ("
-                << c.commonMatrixRowsColumns() << " x " << c.rightMatrixColumns()
-                << ")";
+            << c.leftMatrixRows() << " x " <<c.commonMatrixRowsColumns()
+            << ") x ("
+            << c.commonMatrixRowsColumns() << " x " << c.rightMatrixColumns()
+            << ")";
     }
     return s;
 }

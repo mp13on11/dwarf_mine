@@ -11,4 +11,7 @@ struct DataGenerationParameters {
     // For Quadratic Sieve category
     std::size_t leftOperandDigits;
     std::size_t rightOperandDigits;
+
+    // For Monte Carlo Tree Search (Othello)
+    std::size_t monteCarloTrials; 
 };

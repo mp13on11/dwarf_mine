@@ -20,13 +20,13 @@ MonteCarloScheduler::MonteCarloScheduler(const function<ElfPointer()>& factory) 
 {
 }
 
-void MonteCarloScheduler::provideData(ProblemStatement& statement)
+void MonteCarloScheduler::provideData(std::istream& input)
 {
-    statement.input->clear();
-    statement.input->seekg(0);
-    *(statement.input)>>_repetitions;
+    input.clear();
+    input.seekg(0);
+    input >>_repetitions;
     vector<Field> playfield;
-    OthelloHelper::readPlayfieldFromStream(*(statement.input), playfield);
+    OthelloHelper::readPlayfieldFromStream(input, playfield);
     _state = OthelloState(playfield, DEFAULTPLAYER);
 }
 
@@ -35,9 +35,9 @@ bool MonteCarloScheduler::hasData() const
     return true;
 }
 
-void MonteCarloScheduler::outputData(ProblemStatement& statement)
+void MonteCarloScheduler::outputData(std::ostream& output)
 {
-    OthelloHelper::writeResultToStream(*(statement.output), _result);
+    OthelloHelper::writeResultToStream(output, _result);
 }
 
 void MonteCarloScheduler::doSimpleDispatch()

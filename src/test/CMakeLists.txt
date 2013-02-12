@@ -23,7 +23,7 @@ FILE(GLOB CUDA_SOURCES
 
 IF(BUILD_WITH_CUDA)
     SET(CUDA_PROPAGATE_HOST_FLAGS 0)
-    CUDA_COMPILE(CUDA_OBJECTS ${CUDA_SOURCES} ${LINKING_MODE} OPTIONS "--generate-code code=sm_21,arch=compute_20 --generate-code code=sm_20,arch=compute_20 --ptxas-options=-v")
+    CUDA_COMPILE(CUDA_OBJECTS ${CUDA_SOURCES} ${LINKING_MODE} OPTIONS "--generate-code code=sm_21,arch=compute_20 --generate-code code=sm_20,arch=compute_20")
 ENDIF()
 
 # Build executable out of sources

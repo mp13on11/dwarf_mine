@@ -15,8 +15,9 @@ public:
     MonteCarloScheduler(const std::function<ElfPointer()>& factory);
     virtual ~MonteCarloScheduler() = default;
 
-    virtual void provideData(ProblemStatement& statement);
-    virtual void outputData(ProblemStatement& statement);
+    virtual void provideData(std::istream& input);
+    virtual void outputData(std::ostream& output);
+
 
 protected:
     virtual bool hasData() const;
@@ -35,5 +36,5 @@ private:
     void distributeInput();
     void collectInput();
     void collectResults();
-	std::vector<OthelloResult> gatherResults();
+    std::vector<OthelloResult> gatherResults();
 };
