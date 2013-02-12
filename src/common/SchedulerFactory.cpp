@@ -19,70 +19,77 @@
 
 using namespace std;
 
+#ifndef HAVE_CUDA
+struct HasNoCudaDummy : public Elf {};
+
+typedef HasNoCudaDummy CudaMatrixElf, CudaQuadraticSieveElf;
+#endif
+
 typedef SchedulerFactory::FactoryFunction FactoryFunction;
 
 template<typename SchedulerType, typename ElfType>
-static FactoryFunction createFactory()
+static FactoryFunction innerCreateFactory()
 {
     return []()
-        {
-            return new SchedulerType([]() { return new ElfType(); });
-        };
+    { 
+        return new SchedulerType([]()
+            {
+                return new ElfType();
+            }
+        ); 
+    };
 }
 
-static FactoryFunction createMatrixFactory(bool useCuda)
+template<typename SchedulerType, typename SmpElfType, typename CudaElfType>
+static FactoryFunction createFactory(bool useCuda)
 {
     if (useCuda)
-        return createFactory<MatrixScheduler, CudaMatrixElf>();
+    {
+#ifdef HAVE_CUDA
+        return innerCreateFactory<SchedulerType, CudaElfType>();
+#else
+        throw runtime_error("You have to build with Cuda support in order to create cuda elves in " __FILE__);
+#endif
+    }
     else
-        return createFactory<MatrixScheduler, SMPMatrixElf>();
+    {
+        return innerCreateFactory<SchedulerType, SmpElfType>();
+    }
 }
 
-static FactoryFunction createMonteCarloFactorizationFactory(bool useCuda)
+template<typename SchedulerType, typename SmpElfType>
+static FactoryFunction createFactory(bool useCuda)
 {
     if (useCuda)
-        throw runtime_error(
-            "No CUDA elf implemented for Monte Carlo Factorization"
-        );
-    else
-        return createFactory<FactorizationScheduler, MonteCarloFactorizationElf>();
-}
+        throw runtime_error("This category has no Cuda implementation in " __FILE__);
 
-static FactoryFunction createQuadraticSieveFactory(bool useCuda)
-{
-    if (useCuda)
-        return createFactory<QuadraticSieveScheduler, CudaQuadraticSieveElf>();
-    else
-        return createFactory<QuadraticSieveScheduler, SmpQuadraticSieveElf>();
-}
-
-static FactoryFunction createOthelloFactory(bool useCuda)
-{
-    if (useCuda)
-        throw runtime_error(
-            "No CUDA elf implemented for Monte Carlo Tree Search"
-        );
-    else
-        return createFactory<MonteCarloScheduler, SMPMonteCarloElf>();
+    return innerCreateFactory<SchedulerType, SmpElfType>();
 }
 
 static map<string, function<FactoryFunction(bool)>> sFactoryFunctionsMap =
 {
-    { "matrix", createMatrixFactory },
-    { "factorization_montecarlo", createMonteCarloFactorizationFactory },
-    { "quadratic_sieve", createQuadraticSieveFactory },
-    { "montecarlo_tree_search", createOthelloFactory }
+    {
+        "matrix",
+        &createFactory<MatrixScheduler, SMPMatrixElf, CudaMatrixElf>
+    },
+    {
+        "factorization_montecarlo",
+        &createFactory<FactorizationScheduler, MonteCarloFactorizationElf>
+    },
+    {
+        "quadratic_sieve",
+        &createFactory<QuadraticSieveScheduler, SmpQuadraticSieveElf, CudaQuadraticSieveElf>
+    },
+    {
+        "montecarlo_tree_search",
+        &createFactory<MonteCarloScheduler, SMPMonteCarloElf>
+    }
 };
 
 static void validateType(const string& type)
 {
     if (type != "cuda" && type != "smp")
         throw runtime_error("Unknown scheduler type " + type + " in " __FILE__);
-
-#ifndef HAVE_CUDA
-    if (type == "cuda")
-        throw runtime_error("You have to build with Cuda support in order to create cuda elves in " __FILE__);
-#endif
 }
 
 static FactoryFunction createFactory(const string& type, const ElfCategory& category)
@@ -100,7 +107,10 @@ static FactoryFunction createFactory(const string& type, const ElfCategory& cate
 vector<string> SchedulerFactory::getValidCategories()
 {
     vector<string> categories;
-    boost::copy(sFactoryFunctionsMap | boost::adaptors::map_keys, std::back_inserter(categories));
+    boost::copy(
+            sFactoryFunctionsMap | boost::adaptors::map_keys, 
+            std::back_inserter(categories)
+    );
     return categories;
 }
 
