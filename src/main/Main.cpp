@@ -2,8 +2,6 @@
 #include "common/Configuration.h"
 #include "common/MpiGuard.h"
 #include "common/MpiHelper.h"
-#include "matrix/MatrixHelper.h"
-#include "matrix/Matrix.h"
 
 #include <fstream>
 #include <iostream>
