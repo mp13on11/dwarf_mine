@@ -55,7 +55,10 @@ void QuadraticSieveScheduler::doSimpleDispatch()
 
 void QuadraticSieveScheduler::doDispatch()
 {
-    tie(p, q) = QuadraticSieveHelper::factor(number, sieveDistributed);
+    if (MpiHelper::isMaster())
+    {
+        tie(p, q) = QuadraticSieveHelper::factor(number, sieveDistributed);
+    }
 }
 
 struct serializedBigIntDeleter
