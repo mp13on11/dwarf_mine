@@ -4,6 +4,8 @@
 #include <gmp.h>
 #include <cmath>
 #include <algorithm>
+#include <utility>
+#include <memory>
 
 typedef mpz_class BigInt;
 

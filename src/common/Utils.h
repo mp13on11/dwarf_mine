@@ -1,6 +1,5 @@
 #pragma once
 
-
 template<typename NumberType>
 inline NumberType div_ceil(const NumberType& a, const NumberType& b)
 {

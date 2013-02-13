@@ -3,8 +3,100 @@
 #include "PrimeFactorization.h"
 #include <algorithm>
 #include <cassert>
+#include <future>
+#include <cassert>
+#include <thread>
 
 using namespace std;
+
+pair<BigInt, BigInt> sieveIntervalFast(
+    const BigInt& start,
+    const BigInt& end,
+    vector<Relation>& relations,
+    const FactorBase& factorBase,
+    const BigInt& number,
+    SieveSmoothSquaresCallback sieveSmoothSquaresCallback
+)
+{
+    const size_t maxRelations = factorBase.size() + 2;
+    const int NUM_THREADS = 4;
+
+    SmoothSquares smooths;
+    vector<future<SmoothSquares>> partialResults;
+    BigInt totalLength = end - start;
+    //BigInt chunkSize = //totalLength / NUM_THREADS;
+    BigInt chunkSize = div_ceil(totalLength, BigInt(NUM_THREADS));
+
+    for (int i=0; i<NUM_THREADS; ++i)
+    {
+        BigInt partialStart = start + chunkSize*i;
+        BigInt partialEnd = min(partialStart + chunkSize, end);
+
+        partialResults.emplace_back(std::async(
+            std::launch::async,
+            sieveSmoothSquaresCallback, partialStart, partialEnd, number, factorBase
+        ));
+    }
+
+    for (auto& result : partialResults)
+    {
+        auto partialResult = result.get();
+        smooths.insert(smooths.end(), partialResult.begin(), partialResult.end());
+    }
+
+    for(const BigInt& x : smooths)
+    {
+        BigInt remainder = (x*x) % number;
+
+        PrimeFactorization factorization = QuadraticSieveHelper::factorizeOverBase(remainder, factorBase);
+        if(factorization.empty())
+        {
+            cerr << "false alarm !!! (should not happend)" << endl;
+            continue;
+        }
+
+        Relation relation(x, factorization);
+
+        if(relation.isPerfectCongruence())
+        {
+            auto factors = QuadraticSieveHelper::factorsFromCongruence(x, sqrt(factorization).multiply(), number);
+            if(QuadraticSieveHelper::isNonTrivial(factors, number))
+            {
+                return factors;
+            }
+        }
+
+        relations.push_back(relation);
+
+        if(relations.size() >= maxRelations)
+            break;
+    }
+
+    return QuadraticSieveHelper::TRIVIAL_FACTORS;
+}
+
+pair<BigInt, BigInt> sieve(
+    vector<Relation>& relations,
+    const FactorBase& factorBase,
+    const BigInt& number,
+    SieveSmoothSquaresCallback sieveSmoothSquaresCallback
+)
+{
+    BigInt intervalSize = exp(sqrt(log(number)*log(log(number))));
+    BigInt intervalStart = sqrt(number) + 1;
+    BigInt intervalEnd = sqrt(number)+ 1 + intervalSize;
+    intervalEnd = (sqrt(2*number) < intervalEnd) ? sqrt(2*number) : intervalEnd;
+
+    cout << "sieving interval: " << (intervalEnd - intervalStart) << endl;
+    return sieveIntervalFast(
+        intervalStart,
+        intervalEnd,
+        relations,
+        factorBase,
+        number,
+        sieveSmoothSquaresCallback
+    );
+}
 
 namespace QuadraticSieveHelper
 {
@@ -13,10 +105,10 @@ const pair<BigInt,BigInt> TRIVIAL_FACTORS(0,0);
 
 int guessFactorBaseSize(const BigInt& number)
 {
-	return (int)exp(0.5*sqrt(log(number)*log(log(number))));
+    return (int)exp(0.5*sqrt(log(number)*log(log(number))));
 }
 
-pair<BigInt, BigInt> factor(const BigInt& number, SieveCallback sieveCallback)
+pair<BigInt, BigInt> factor(const BigInt& number, SieveSmoothSquaresCallback sieveCallback)
 {
     int factorBaseSize = guessFactorBaseSize(number);
     cout << "factorBaseSize" << factorBaseSize << endl;
@@ -25,7 +117,7 @@ pair<BigInt, BigInt> factor(const BigInt& number, SieveCallback sieveCallback)
     // sieve
     cout << "sieving relations ..." << endl;
     vector<Relation> relations;
-    pair<BigInt, BigInt> factors = sieveCallback(relations, factorBase, number);
+    pair<BigInt, BigInt> factors = sieve(relations, factorBase, number, sieveCallback);
     if(isNonTrivial(factors, number))
         return factors;
 
@@ -102,7 +194,12 @@ pair<BigInt,BigInt> searchForRandomCongruence(const FactorBase& factorBase, cons
     return TRIVIAL_FACTORS;
 }
 
-struct RelationComparator {
+class RelationComparator {
+public:
+    RelationComparator(smallPrime_t minPrime) :
+        minPrime(minPrime)
+    {}
+
     bool operator() (const Relation& a, const Relation& b)
     {
         auto aStart = upper_bound(a.oddPrimePowers.indices.begin(), a.oddPrimePowers.indices.end(), minPrime);
@@ -122,19 +219,20 @@ struct RelationComparator {
         else
             return false;
     }
-    uint32_t minPrime;
+
+private:
+    smallPrime_t minPrime;
 };
 
 
 void performGaussianElimination(Relations& relations)
 {
-    RelationComparator comparator;
     uint32_t currentPrime = 0;
 
     for(size_t i=0; i<relations.size(); i++)
     {
         // swap next smallest relation to top, according to remaining primes (bigger than currentPrime)
-        comparator.minPrime = currentPrime;
+        RelationComparator comparator(currentPrime);
 
         auto minRelation = min_element(relations.begin()+i, relations.end(), comparator);
         swap(*minRelation, relations[i]);
@@ -425,4 +523,5 @@ std::vector<smallPrime_t> createFactorBase(size_t numberOfPrimes)
 
     return primes;
 }
+
 }

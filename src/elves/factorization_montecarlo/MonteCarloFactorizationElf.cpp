@@ -28,8 +28,7 @@ pair<BigInt, BigInt> MonteCarloFactorizationElf::factor(const BigInt& m)
         #pragma omp critical
         if (result.first != 0 && result.second != 0)
         {
-            p = result.first;
-            q = result.second;
+            tie(p, q) = result;
         }
     }
 

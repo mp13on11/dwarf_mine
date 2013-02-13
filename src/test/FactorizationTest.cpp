@@ -129,7 +129,7 @@ TEST_P(FactorizationTest, testFactorizationQuadraticSieve)
 
     unique_ptr<QuadraticSieveElf> elf(new SmpQuadraticSieveElf());
     BigInt actualP, actualQ;
-    tie(actualP, actualQ) = QuadraticSieveHelper::factor(product, bind(&QuadraticSieveElf::sieve, elf.get(), _1, _2, _3));
+    tie(actualP, actualQ) = QuadraticSieveHelper::factor(product, bind(&QuadraticSieveElf::sieveSmoothSquares, elf.get(), _1, _2, _3, _4));
 
 
     auto end = high_resolution_clock::now();

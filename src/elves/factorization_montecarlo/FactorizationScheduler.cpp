@@ -19,9 +19,7 @@ FactorizationScheduler::FactorizationScheduler(const function<ElfPointer()>& fac
 
 void FactorizationScheduler::doSimpleDispatch()
 {
-    BigIntPair factors = elf().factor(number);
-    p = factors.first;
-    q = factors.second;
+    tie(p, q) = elf().factor(number);
 }
 
 void FactorizationScheduler::provideData(istream& input)
