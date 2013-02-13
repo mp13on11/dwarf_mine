@@ -1,11 +1,11 @@
 #include "OthelloUtil.h"
-
+#include <OthelloResult.h>
 #include <iostream>
 #include <stdexcept>
 
 namespace OthelloHelper
 {
-    void writeResultToStream(std::ostream& stream, OthelloResult& result)
+    void writeResultToStream(std::ostream& stream, const OthelloResult& result)
     {
         stream << result.x << result.y << result.visits << result.wins << result.iterations;
     }

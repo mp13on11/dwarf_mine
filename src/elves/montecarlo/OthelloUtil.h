@@ -3,7 +3,7 @@
 #include <iosfwd>
 #include <vector>
 #include <functional>
-#include "OthelloMove.h"
+#include <OthelloResult.h>
 #include <OthelloField.h>
 #include <iostream>
 
@@ -17,28 +17,13 @@ const Field B = Field::Black;
 
 typedef std::vector<Field> Playfield;
 
-struct OthelloResult
-{
-    size_t x;
-    size_t y;
-    size_t visits;
-    size_t wins;
-    size_t iterations;
+std::ostream& operator<<(std::ostream& stream, const Field field);
 
-    bool equalMove(const OthelloResult& other) const
-    {
-        return (x == other.x && y == other.y);
-    }
-
-    double successRate() const
-    {
-        return 1.0 * wins / visits;
-    }
-};
+std::istream& operator>>(std::istream& stream, Field& field);
 
 namespace OthelloHelper
 {
-    void writeResultToStream(std::ostream& stream, OthelloResult& result);
+    void writeResultToStream(std::ostream& stream, const OthelloResult& result);
 
     void readResultFromStream(std::istream& stream, OthelloResult& result);
     
@@ -47,6 +32,3 @@ namespace OthelloHelper
     void readPlayfieldFromStream(std::istream& stream, Playfield& playfield);
 }
 
-std::ostream& operator<<(std::ostream& stream, const Field field);
-
-std::istream& operator>>(std::istream& stream, Field& field);

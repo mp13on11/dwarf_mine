@@ -240,7 +240,8 @@ __device__ bool doStep(CudaGameState& state, CudaSimulator& simulator, float fak
 
     simulator.calculatePossibleMoves();
     size_t moveCount = simulator.countPossibleMoves();
-
+    if (threadIdx.x == 0)
+        printf("Block %d: Moves %lu \n", blockIdx.x, moveCount);
     if (moveCount > 0)
     {
         __shared__ size_t index;
@@ -255,6 +256,7 @@ __device__ bool doStep(CudaGameState& state, CudaSimulator& simulator, float fak
         state.field[index] = state.currentPlayer;
     }
     state.currentPlayer = state.getEnemyPlayer();
+   
     return moveCount > 0;
 }
 
@@ -262,30 +264,41 @@ __device__ void simulateGameLeaf(curandState* deviceState, CudaSimulator& simula
 {
     Player startingPlayer = state.currentPlayer;
     size_t passCounter = 0;
-    while (true)
+    size_t limit = 0;
+    while (limit < 128)
     {
-        if (!doStep(state, simulator))
+        bool result = !doStep(state, simulator);
+        if (result)
         {
             passCounter++;
+            //__syncthreads();
+            // if (threadIdx.x == 0)
+            //     printf("Block %d: Raise counter to %lu on %lu\n", blockIdx.x, passCounter, limit);
             if (passCounter > 1)
                 break;
         }
         else
         {
             passCounter = 0;
+            // __syncthreads();
+            // if (threadIdx.x == 0)
+            //     printf("Block %d: Reset counter to %lu on %lu\n", blockIdx.x, passCounter, limit);
         }
+        limit++;
     }
+    if (threadIdx.x == 0)
+    if (passCounter < 2)
+        printf("Block %d unexpected exited game\n", blockIdx.x);
+    else
+        printf("Block %d exited game\n", blockIdx.x);
     __syncthreads();
 
-
-    if (simulator.isMaster())
+    ++(*visits);
+    if (state.isWinner(startingPlayer))
     {
-        ++(*visits);
-        if (state.isWinner(startingPlayer))
-        {
-            ++(*wins);
-        }
+        ++(*wins);
     }
+    
 }
 
 __global__ void simulateGameLeaf(curandState* deviceState, Field* playfield, Player currentPlayer, size_t* wins, size_t* visits)
@@ -307,7 +320,7 @@ __global__ void simulateGameLeaf(curandState* deviceState, Field* playfield, Pla
     simulateGameLeaf(deviceState, simulator, state, wins, visits);
 }
 
-__global__ void simulateGame(curandState* deviceStates, size_t numberOfPlayfields, Field* playfields, Player currentPlayer, size_t* wins, size_t* visits)
+__global__ void simulateGame(size_t reiterations, curandState* deviceStates, size_t numberOfPlayfields, Field* playfields, Player currentPlayer, OthelloResult* results)
 {
     __shared__ size_t node;
     int threadGroup = blockIdx.x;
@@ -331,7 +344,24 @@ __global__ void simulateGame(curandState* deviceStates, size_t numberOfPlayfield
         currentPlayer 
     };
     CudaSimulator simulator(&state, deviceStates);
-    simulateGameLeaf(deviceStates, simulator, state, &(wins[node]), &(visits[node]));
+    OthelloResult& result = results[node];
+    //OthelloResult result;
+    size_t wins = 0;
+    size_t visits = 0;
+        if (threadIdx.x == 0)
+        printf("Block %d started game on %lu\n", blockIdx.x, node);
+    __syncthreads();
+    simulateGameLeaf(deviceStates, simulator, state, &wins, &visits);
+    __syncthreads();
+        
+    __syncthreads();
+    if (threadIdx.x == 0)
+    {
+        results[node].wins += wins;
+        results[node].visits += visits;
+        //printf("TEST %d\n", result.wins);
+        printf("Block %d finished game on %lu with %lu wins in %lu visits \n", blockIdx.x, node, results[node].wins, results[node].visits);
+    }
 }
 
 __global__ void testDoStep(curandState* deviceState, Field* playfield, Player currentPlayer, float fakedRandom)

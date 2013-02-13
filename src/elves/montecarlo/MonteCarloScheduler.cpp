@@ -2,6 +2,8 @@
 #include <Elf.h>
 #include <common/ProblemStatement.h>
 #include <common/MpiHelper.h>
+#include <OthelloResult.h>
+#include <OthelloUtil.h>
 #include <limits>
 #include <utility>
 #include <vector>

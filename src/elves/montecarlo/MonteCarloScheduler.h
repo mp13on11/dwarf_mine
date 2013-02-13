@@ -7,7 +7,7 @@
 #include <mpi.h>
 
 class MonteCarloElf;
-class OthelloResult;
+struct OthelloResult;
 
 class MonteCarloScheduler: public SchedulerTemplate<MonteCarloElf>
 {
