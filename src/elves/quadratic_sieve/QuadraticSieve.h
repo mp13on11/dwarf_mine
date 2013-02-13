@@ -1,6 +1,8 @@
 #pragma once
 
-#include <elves/common-factorization/BigInt.h>
+#include "common-factorization/BigInt.h"
+#include "Types.h"
+#include "Relation.h"
 
 #include <sstream>
 #include <iostream>
@@ -10,16 +12,16 @@
 #include <vector>
 #include <list>
 
-class Relation;
 class PrimeFactorization;
 
-typedef uint32_t smallPrime_t;
 typedef std::vector<BigInt> SmoothSquares;
 typedef std::vector<smallPrime_t> FactorBase;
 typedef std::vector<Relation> Relations;
 
 namespace QuadraticSieveHelper
 {
+	typedef std::function<std::pair<BigInt, BigInt>(std::vector<Relation>&, const FactorBase&, const BigInt&)> SieveCallback;
+
     extern const std::pair<BigInt,BigInt> TRIVIAL_FACTORS;
 
     BigInt rootModPrime(const BigInt& n, const BigInt& primeMod);
@@ -34,57 +36,5 @@ namespace QuadraticSieveHelper
     std::pair<BigInt,BigInt> searchForRandomCongruence(const FactorBase& factorBase, const BigInt& number, size_t times, const Relations& relations);
     PrimeFactorization factorizeOverBase(const BigInt& number, const FactorBase& factorBase);
     void performGaussianElimination(Relations& relations);
-    std::pair<BigInt, BigInt> factor(const BigInt& number, std::function<std::pair<BigInt, BigInt>(std::vector<Relation>&, const FactorBase&, const BigInt&)> sieveCallback);
+    std::pair<BigInt, BigInt> factor(const BigInt& number, SieveCallback sieveCallback);
 }
-
-template<typename T>
-class SparseVector
-{
-public:
-    bool empty() const {return indices.empty();}
-    void isSet(T index) const;
-    void set(T index);
-    void flip(T index);
-    std::vector<T> indices;
-};
-
-class PrimeFactorization
-{
-public:
-    bool empty() const;
-    PrimeFactorization combine(const PrimeFactorization& other) const;
-    PrimeFactorization sqrt() const;
-    BigInt multiply() const;
-    SparseVector<smallPrime_t> oddPrimePowers() const;
-    void add(const smallPrime_t& prime, uint32_t power);
-
-    void print(std::ostream& stream) const;
-
-private:
-    std::list<std::pair<smallPrime_t, uint32_t>> primePowers;
-};
-
-inline std::ostream& operator<<(std::ostream& stream, const PrimeFactorization& factorization)
-{
-    factorization.print(stream);
-    return stream;
-}
-
-class Relation
-{
-public:
-    Relation(const BigInt& a, const PrimeFactorization& factorization) :
-        a(a), dependsOnPrime(0), primeFactorization(factorization), oddPrimePowers(factorization.oddPrimePowers())
-    {}
-    bool isPerfectCongruence() const;
-
-public:
-    BigInt a;
-    smallPrime_t dependsOnPrime;
-    PrimeFactorization primeFactorization;
-    SparseVector<smallPrime_t> oddPrimePowers;
-};
-
-PrimeFactorization sqrt(const PrimeFactorization& p);
-
-
