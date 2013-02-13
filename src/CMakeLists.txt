@@ -15,7 +15,8 @@ INCLUDE_DIRECTORIES(
     ${PROJECT_SOURCE_DIR}/src/elves/
     ${PROJECT_SOURCE_DIR}/src/elves/matrix/
     ${PROJECT_SOURCE_DIR}/src/elves/montecarlo/
-    ${PROJECT_SOURCE_DIR}/src/elves/factorization/
+    ${PROJECT_SOURCE_DIR}/src/elves/factorization_montecarlo/
+    ${PROJECT_SOURCE_DIR}/src/elves/quadratic_sieve/
     ${MPI_INCLUDE_PATH}
     # Add dependencies' include dirs here
 )

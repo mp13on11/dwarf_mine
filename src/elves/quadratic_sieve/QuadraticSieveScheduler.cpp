@@ -1,4 +1,4 @@
-#include "smp/QuadraticSieve.h"
+#include "QuadraticSieve.h"
 #include "QuadraticSieveScheduler.h"
 #include "QuadraticSieveElf.h"
 #include "common/ProblemStatement.h"
@@ -49,8 +49,4 @@ pair<BigInt, BigInt> QuadraticSieveScheduler::factor()
 {
     using namespace std::placeholders;
     return QuadraticSieveHelper::factor(number, bind(&QuadraticSieveElf::sieve, &elf(), _1, _2, _3));
-        //{
-            //return elf()->sieve(relations
-        //}
-    //);
 }
