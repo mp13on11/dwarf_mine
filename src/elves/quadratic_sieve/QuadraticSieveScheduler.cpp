@@ -104,7 +104,7 @@ vector<BigInt> sieveDistributed(
     const BigInt& start,
     const BigInt& end,
     const BigInt& number,
-    const FactorBase& factorBase
+    const FactorBase& /*factorBase*/
 )
 {
     vector<BigInt> relations;

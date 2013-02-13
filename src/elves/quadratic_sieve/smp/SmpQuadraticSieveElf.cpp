@@ -2,12 +2,16 @@
 #include <common/Utils.h>
 
 #include <algorithm>
+#include <future>
+#include <cassert>
+#include <thread>
+#include <omp.h>
 
 using namespace std;
 
 // returns a list of numbers, whose quadratic residues are (probable) smooth
 // over the factor base
-vector<BigInt> SmpQuadraticSieveElf::sieveSmoothSquares(const BigInt& start, const BigInt& end, const BigInt& number, const FactorBase& factorBase)
+vector<BigInt> smpSieveKernel(const BigInt& start, const BigInt& end, const BigInt& number, const FactorBase& factorBase)
 {
     BigInt intervalLength = (end-start);
     size_t blockSize = intervalLength.get_ui();
@@ -60,4 +64,34 @@ vector<BigInt> SmpQuadraticSieveElf::sieveSmoothSquares(const BigInt& start, con
     }
 
     return result;
+}
+
+vector<BigInt> SmpQuadraticSieveElf::sieveSmoothSquares(const BigInt& start, const BigInt& end, const BigInt& number, const FactorBase& factorBase)
+{
+    const int NUM_THREADS = omp_get_num_threads();
+    
+    SmoothSquares smooths;
+    vector<future<SmoothSquares>> partialResults;
+    BigInt totalLength = end - start;
+    //BigInt chunkSize = //totalLength / NUM_THREADS;
+    BigInt chunkSize = div_ceil(totalLength, BigInt(NUM_THREADS));
+
+    for (int i=0; i<NUM_THREADS; ++i)
+    {
+        BigInt partialStart = start + chunkSize*i;
+        BigInt partialEnd = min(partialStart + chunkSize, end);
+
+        partialResults.emplace_back(std::async(
+            std::launch::async,
+            smpSieveKernel, partialStart, partialEnd, number, factorBase
+        ));
+    }
+
+    for (auto& result : partialResults)
+    {
+        auto partialResult = result.get();
+        smooths.insert(smooths.end(), partialResult.begin(), partialResult.end());
+    }
+    
+    return smooths;
 }

@@ -3,9 +3,6 @@
 #include "PrimeFactorization.h"
 #include <algorithm>
 #include <cassert>
-#include <future>
-#include <cassert>
-#include <thread>
 
 using namespace std;
 
@@ -19,30 +16,8 @@ pair<BigInt, BigInt> sieveIntervalFast(
 )
 {
     const size_t maxRelations = factorBase.size() + 2;
-    const int NUM_THREADS = 4;
 
-    SmoothSquares smooths;
-    vector<future<SmoothSquares>> partialResults;
-    BigInt totalLength = end - start;
-    //BigInt chunkSize = //totalLength / NUM_THREADS;
-    BigInt chunkSize = div_ceil(totalLength, BigInt(NUM_THREADS));
-
-    for (int i=0; i<NUM_THREADS; ++i)
-    {
-        BigInt partialStart = start + chunkSize*i;
-        BigInt partialEnd = min(partialStart + chunkSize, end);
-
-        partialResults.emplace_back(std::async(
-            std::launch::async,
-            sieveSmoothSquaresCallback, partialStart, partialEnd, number, factorBase
-        ));
-    }
-
-    for (auto& result : partialResults)
-    {
-        auto partialResult = result.get();
-        smooths.insert(smooths.end(), partialResult.begin(), partialResult.end());
-    }
+    SmoothSquares smooths = sieveSmoothSquaresCallback(start, end, number, factorBase);
 
     for(const BigInt& x : smooths)
     {
