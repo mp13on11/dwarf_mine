@@ -171,5 +171,5 @@ TEST_F(OthelloCudaLeafSimulationTest, PredictableGameTest)
         F, F, W, W, F, F, W, F
     };
 
-    testMultipleSteps(playfield, {{60, W}, {61, W}}, B, 0, 1);
+    testMultipleSteps(playfield, {{60, W}, {61, W}}, B, 0, 2);
 }
