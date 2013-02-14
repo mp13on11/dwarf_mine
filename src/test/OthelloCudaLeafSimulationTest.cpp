@@ -211,3 +211,19 @@ TEST_F(OthelloCudaLeafSimulationTest, PredictableWinnerGameTest)
 
     testMultipleSteps(playfield, {{52, W}, {60, W}, {61, W}}, W, 1, 1);
 }
+
+TEST_F(OthelloCudaLeafSimulationTest, BoundarySingleStepSingleFlipTest)
+{
+    Playfield playfield {
+        F, F, F, F, F, F, F, F, 
+        F, F, F, F, B, F, F, F, 
+        F, F, F, F, B, F, F, F, 
+        F, F, F, B, B, F, F, F, 
+        F, W, W, W, B, B, F, F, 
+        F, B, F, F, W, F, B, F, 
+        F, F, F, F, F, W, F, F, 
+        F, F, F, F, F, F, F, F
+    };
+    // possible: 25, 32, 42, 43, 51, 52, 60
+    testSingleStep(playfield, {{53, B}, {60, B}}, B,  6 * 1.0 / 7);   
+}

@@ -12,37 +12,8 @@
 __global__ void setupStateForRandom(curandState* state, unsigned long seed)
 {
 	int id =  threadIdx.x;
-	curand_init(seed, id, 0, &state[id]);
+	curand_init(seed, 0, 0, &state[id]);
 }
-
-// __device__ bool doStep(CudaGameState& state, CudaSimulator& simulator, float fakedRandom = -1)
-// {
-//     __syncthreads();
-
-//     simulator.calculatePossibleMoves();
-//     size_t moveCount = simulator.countPossibleMoves();
-    
-//     if (moveCount > 0)
-//     {
-//         __shared__ size_t index;
-//         if (threadIdx.x == 0)
-//             index = simulator.getRandomMoveIndex(moveCount, fakedRandom);
-
-//         state.oldField[threadIdx.x] = state.field[threadIdx.x];
-        
-//         __syncthreads();
-
-//         simulator.flipEnemyCounter(index);
-
-//         __syncthreads();
-//         state.field[index] = state.currentPlayer;
-        
-//     }
-//     state.currentPlayer = state.getEnemyPlayer();
-   
-//     return moveCount > 0;
-// }
-
 
 __device__ bool doStep(CudaGameState& state, CudaSimulator& simulator, size_t limit, float fakedRandom = -1)
 {
@@ -53,26 +24,11 @@ __device__ bool doStep(CudaGameState& state, CudaSimulator& simulator, size_t li
     size_t moveCount = simulator.countPossibleMoves();
     if (moveCount > 0)
     {
-        printf("%d %lu Looking for Index \n",threadIdx.x,limit);
-        __shared__ size_t index;
-        index = 72;
-        __syncthreads();
-        // if (threadIdx.x == 0)
-        // {
-            index = simulator.getRandomMoveIndex(moveCount, fakedRandom);
-        // }
-            __syncthreads();
-            printf("%d %lu Received Random Index %lu\n",threadIdx.x, limit, index);
-        // else
-        // {
-        //     size_t trash = simulator.getRandomMoveIndex(moveCount, fakedRandom);
-        //     printf("%d Waiting Random Index %lu \n",threadIdx.x, trash);   
-        // }
+        size_t index = simulator.getRandomMoveIndex(moveCount, fakedRandom);
 
         __syncthreads();
-        __threadfence();
-        printf("%d %lu Synched Index %lu\n",threadIdx.x, limit, index);
-       cassert(index < state.size, "Detected unexpected move index %d for maximal index %lu in %d\n", index, state.size - 1, threadIdx.x);
+
+        cassert(index < state.size, "Detected unexpected move index %d for maximal index %lu in %d\n", index, state.size - 1, threadIdx.x);
 
         state.oldField[threadIdx.x] = state.field[threadIdx.x];
         __syncthreads();
@@ -81,28 +37,33 @@ __device__ bool doStep(CudaGameState& state, CudaSimulator& simulator, size_t li
         {
             printf("Block %d [%d]: %lu move %lu (%lu,%lu) of %lu\n", blockIdx.x, threadIdx.x, limit, index, index % FIELD_DIMENSION, index / FIELD_DIMENSION, moveCount);
             
-            for (size_t i = 0; i < state.size; i++)
-            {
-                if (state.field[i] == White)
-                {
-                    printf("Block %d [%d]: %lu currently %d white \n", blockIdx.x,threadIdx.x,  limit, i);
-                }
-                if (state.field[i] == Black)
-                {
-                    printf("Block %d [%d]: %lu currently %d black \n", blockIdx.x,threadIdx.x,  limit, i);
-                }
-            }
-            for (size_t i = 0; i < state.size; i++)
-            {
-                if (state.possible[i])
-                    printf("Block %d [%d]: %lu possible move %lu\n", blockIdx.x,threadIdx.x,  limit, i);
-            }
+            // for (size_t i = 0; i < state.size; i++)
+            // {
+            //     if (state.field[i] == White)
+            //     {
+            //         printf("  Block %d [%d]: %lu currently %d white \n", blockIdx.x,threadIdx.x,  limit, i);
+            //     }
+            //     if (state.field[i] == Black)
+            //     {
+            //         printf("  Block %d [%d]: %lu currently %d black \n", blockIdx.x,threadIdx.x,  limit, i);
+            //     }
+            // }
+            // for (size_t i = 0; i < state.size; i++)
+            // {
+            //     if (state.possible[i])
+            //         printf("Block %d [%d]: %lu possible move %lu\n", blockIdx.x,threadIdx.x,  limit, i);
+            // }
         }
 
         simulator.flipEnemyCounter(index);
 
         __syncthreads();
-        state.field[index] = state.currentPlayer;
+        if (threadIdx.x == index)
+        {
+            state.field[index] = state.currentPlayer;
+        }
+            printf("Block %d [%d]: %lu HELLLLLO\n", blockIdx.x,threadIdx.x,  limit);
+        
         __syncthreads();
         
          if (THREAD_WATCHED)
@@ -111,6 +72,28 @@ __device__ bool doStep(CudaGameState& state, CudaSimulator& simulator, size_t li
             for (int i = 0; i < state.size; i++)
             {
                 same &= state.oldField[i] == state.field[i];
+            }
+            if (same && THREAD_WATCHED)
+            {
+                for (size_t i = 0; i < state.size; i++)
+                {
+                    if (state.oldField[i] == White)
+                    {
+                        printf("  Block %d [%d]: %lu was %d white \n", blockIdx.x,threadIdx.x,  limit, i);
+                    }
+                    if (state.oldField[i] == Black)
+                    {
+                        printf("  Block %d [%d]: %lu was %d black \n", blockIdx.x,threadIdx.x,  limit, i);
+                    }
+                    if (state.field[i] == White)
+                    {
+                        printf("# Block %d [%d]: %lu currently %d white \n", blockIdx.x,threadIdx.x,  limit, i);
+                    }
+                    if (state.field[i] == Black)
+                    {
+                        printf("# Block %d [%d]: %lu currently %d black \n", blockIdx.x,threadIdx.x,  limit, i);
+                    }
+                }
             }
             cassert(!same, "Block %d: %lu detected unchanged state\n", blockIdx.x, limit);
          }
@@ -189,7 +172,7 @@ __global__ void simulateGame(size_t reiterations, curandState* deviceStates, siz
     __shared__ size_t node;
     int threadGroup = blockIdx.x;
     int playfieldIndex = threadIdx.x;
-    if (threadIdx.x == 0) 
+    //if (threadIdx.x == 0) 
     {
         node = randomNumber(deviceStates, numberOfPlayfields);
     }
@@ -247,7 +230,7 @@ __global__ void testDoStep(curandState* deviceState, Field* playfield, Player cu
     };
     CudaSimulator simulator(&state, deviceState);
 
-    doStep(state, simulator, fakedRandom);
+    doStep(state, simulator, 0, fakedRandom);
 
     playfield[playfieldIndex] = sharedPlayfield[playfieldIndex];
 }
