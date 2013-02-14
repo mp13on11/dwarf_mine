@@ -133,7 +133,7 @@ __device__ void simulateGameLeaf(curandState* deviceState, CudaSimulator& simula
     //         printf("Block %d unexpected exited game %lu\n", blockIdx.x, limit);
     //     else
     //         printf("Block %d exited game %lu\n", blockIdx.x, limit);
-    if (threadIdx.x)
+    if (threadIdx.x == 0)
     {
         ++(*visits);
         if (state.isWinner(startingPlayer))
@@ -141,7 +141,6 @@ __device__ void simulateGameLeaf(curandState* deviceState, CudaSimulator& simula
             ++(*wins);
         }
     }
-    __syncthreads();
 }
 
 __global__ void simulateGameLeaf(curandState* deviceState, Field* playfield, Player currentPlayer, size_t* wins, size_t* visits)
@@ -236,8 +235,6 @@ __global__ void testDoStep(curandState* deviceState, Field* playfield, Player cu
 __global__ void testSimulateGameLeaf(curandState* deviceState, Field* playfield, Player currentPlayer, size_t* wins, size_t* visits)
 {
     int playfieldIndex = threadIdx.x;
-    if (threadIdx.x == 0)
-        printf("Before visits: %lu\n", *visits);
 
     __shared__ Field sharedPlayfield[FIELD_DIMENSION * FIELD_DIMENSION];
     __shared__ Field oldPlayfield[FIELD_DIMENSION * FIELD_DIMENSION];
@@ -254,11 +251,6 @@ __global__ void testSimulateGameLeaf(curandState* deviceState, Field* playfield,
     };
     CudaSimulator simulator(&state, deviceState);
     simulateGameLeaf(deviceState, simulator, state, wins, visits);
-    if (threadIdx.x == 0)
-    {
-        printf("After visits: %lu\n", *visits);
-        *visits = 4;
-        printf("Changed visits: %lu\n", *visits);
-    }
+
 	playfield[playfieldIndex] = sharedPlayfield[playfieldIndex];
 }
