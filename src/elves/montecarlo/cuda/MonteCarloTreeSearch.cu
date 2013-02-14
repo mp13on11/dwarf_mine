@@ -20,11 +20,16 @@ __global__ void simulateGame(size_t reiterations, curandState* deviceStates, siz
 __global__ void testDoStep(curandState* deviceState, Field* playfield, Player currentPlayer, float fakedRandom);
 __global__ void testSimulateGameLeaf(curandState* deviceState, Field* playfield, Player currentPlayer, size_t* wins, size_t* visits);
 
+static size_t seed = 70;
+
 void gameSimulation(size_t reiterations, size_t numberOfPlayfields, Field* playfields, Player currentPlayer, OthelloResult* results)
 {
     curandState* deviceStates;
     cudaMalloc(&deviceStates, sizeof(curandState) * NUMBER_OF_BLOCKS);
-    setupStateForRandom <<< NUMBER_OF_BLOCKS, 1 >>> (deviceStates, 0ULL);
+    //size_t seed = time(NULL);
+    std::cout<<"Seed: "<< seed << std::endl;
+    setupStateForRandom <<< NUMBER_OF_BLOCKS, 1 >>> (deviceStates, seed);
+    seed++;
     simulateGame <<< NUMBER_OF_BLOCKS, THREADS_PER_BLOCK >>> (reiterations, deviceStates, numberOfPlayfields, playfields, currentPlayer, results);
     CudaUtils::checkState();
 }
@@ -51,7 +56,7 @@ void testByLeafSimulation(size_t dimension, Field* playfield, Player currentPlay
 {
     curandState* deviceStates;
     cudaMalloc(&deviceStates, sizeof(curandState));
-    setupStateForRandom <<< 1, THREADS_PER_BLOCK >>>(deviceStates, 0ULL);
+    setupStateForRandom <<< 1, THREADS_PER_BLOCK >>>(deviceStates, 0UL);
     testSimulateGameLeaf <<< 1, THREADS_PER_BLOCK >>>(deviceStates, playfield, currentPlayer, wins, visits);
     CudaUtils::checkState();
 }

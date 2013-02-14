@@ -39,11 +39,11 @@ void testSingleStep(Playfield& playfield, vector<pair<size_t, Field>> expectedCh
 
     Playfield expectedPlayfield = getExpectedPlayfield(playfield, expectedChanges);
 
-     // OthelloState temp(outputPlayfield, Player::White);
-     // cout << "Actual: \n"<<temp << endl;
+      OthelloState temp(outputPlayfield, Player::White);
+      cout << "Actual: \n"<<temp << endl;
 
-     // OthelloState temp2(expectedPlayfield, Player::White);
-     // cout << "Expected: \n"<<temp2 << endl;
+      OthelloState temp2(expectedPlayfield, Player::White);
+      cout << "Expected: \n"<<temp2 << endl;
 
     ASSERT_EQ_VECTOR(outputPlayfield, expectedPlayfield);
 }
@@ -85,30 +85,43 @@ void testMultipleSteps(Playfield& playfield, vector<pair<size_t, Field>> expecte
     ASSERT_EQ_VECTOR(outputPlayfield, expectedPlayfield);
 }
 
-TEST_F(OthelloCudaLeafSimulationTest, SingleMoveSingleFlipTest)
+Playfield singleMoveSingleFlipPlayfield { 
+    F, F, F, F, F, F, F, F, 
+    F, F, F, F, F, F, F, F, 
+    F, F, F, F, F, F, F, F, 
+    F, F, F, W, B, F, F, F, 
+    F, F, F, B, W, F, F, F, 
+    F, F, F, F, F, F, F, F, 
+    F, F, F, F, F, F, F, F, 
+    F, F, F, F, F, F, F, F
+};
+
+TEST_F(OthelloCudaLeafSimulationTest, SingleMoveSingleFlipTest1)
 {
-    Playfield playfield {
-        F, F, F, F, F, F, F, F, 
-        F, F, F, F, F, F, F, F, 
-        F, F, F, F, F, F, F, F, 
-        F, F, F, W, B, F, F, F, 
-        F, F, F, B, W, F, F, F, 
-        F, F, F, F, F, F, F, F, 
-        F, F, F, F, F, F, F, F, 
-        F, F, F, F, F, F, F, F
-    };
-
-    testSingleStep(playfield, {{20, W}, {28, W}}, W, 0 * 1.0 / 4);
-    testSingleStep(playfield, {{28, W}, {29, W}}, W, 1 * 1.0 / 4);
-    testSingleStep(playfield, {{34, W}, {35, W}}, W, 2 * 1.0 / 4);
-    testSingleStep(playfield, {{35, W}, {43, W}}, W, 3 * 1.0 / 4);
-
-    testSingleStep(playfield, {{26, B}, {27, B}}, B, 0.25);   
+    testSingleStep(singleMoveSingleFlipPlayfield, {{20, W}, {28, W}}, W, 0 * 1.0 / 4);
 }
 
-TEST_F(OthelloCudaLeafSimulationTest, SingleMoveMultipleFlipTest)
+TEST_F(OthelloCudaLeafSimulationTest, SingleMoveSingleFlipTest2)
 {
-    Playfield playfield {
+    testSingleStep(singleMoveSingleFlipPlayfield, {{28, W}, {29, W}}, W, 1 * 1.0 / 4);
+}
+
+TEST_F(OthelloCudaLeafSimulationTest, SingleMoveSingleFlipTest3)
+{
+    testSingleStep(singleMoveSingleFlipPlayfield, {{34, W}, {35, W}}, W, 2 * 1.0 / 4);
+}
+
+TEST_F(OthelloCudaLeafSimulationTest, SingleMoveSingleFlipTest4)
+{
+    testSingleStep(singleMoveSingleFlipPlayfield, {{35, W}, {43, W}}, W, 3 * 1.0 / 4);
+}
+
+TEST_F(OthelloCudaLeafSimulationTest, SingleMoveSingleFlipTest5)
+{
+    testSingleStep(singleMoveSingleFlipPlayfield, {{26, B}, {27, B}}, B, 0.25);   
+}
+
+Playfield singleMoveMultipleFlipPlayfield {
         F, F, F, F, F, F, F, F, 
         F, F, F, F, F, F, F, F, 
         F, W, W, F, B, F, F, F, 
@@ -119,8 +132,14 @@ TEST_F(OthelloCudaLeafSimulationTest, SingleMoveMultipleFlipTest)
         F, F, B, F, F, F, F, F
     };
 
-    testSingleStep(playfield, {{48, B}, {32, B}, {40, B}, {41, B}}, B,  10 * 1.0 / 17);   
-    testSingleStep(playfield, {{53, B}, {51, B}, {52, B}, {44, B}, {45, B}}, B, 12 * 1.0 / 17);   
+TEST_F(OthelloCudaLeafSimulationTest, SingleMoveMultipleFlipTest1)
+{
+    testSingleStep(singleMoveMultipleFlipPlayfield, {{48, B}, {32, B}, {40, B}, {41, B}}, B,  10 * 1.0 / 17);   
+}
+
+TEST_F(OthelloCudaLeafSimulationTest, SingleMoveMultipleFlipTest2)
+{
+    testSingleStep(singleMoveMultipleFlipPlayfield, {{53, B}, {51, B}, {52, B}, {44, B}, {45, B}}, B, 12 * 1.0 / 17);   
 }
 
 

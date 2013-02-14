@@ -84,27 +84,18 @@ public:
 
     __device__ size_t countPossibleMoves()
     {
-        // __syncthreads();
-     //    __shared__ size_t moves[FIELD_DIMENSION * FIELD_DIMENSION];
-     //    moves[playfieldIndex] = possibleMoves[playfieldIndex] ? 1 : 0;
-        // return sum(moves, playfieldIndex, FIELD_DIMENSION * FIELD_DIMENSION);
-        
         __syncthreads();
         size_t sum = 0;
         for (int i = 0; i < _state->size; i++)
         {
             sum += _state->possible[i];
-            //if (_state->possible[i])
-            //{
-            //    sum++;
-                //__syncthreads();
-            //}
         }
         return sum;
     }
 
     __device__ size_t getRandomMoveIndex(size_t moveCount, float fakedRandom = -1)
     {
+        //printf("getRandomMoveIndex\n");
         size_t randomMoveIndex = 0;
         if (moveCount > 1)
         {
@@ -124,12 +115,14 @@ public:
             {
                 if (possibleMoveIndex == randomMoveIndex)
                 {
+                    //printf("getRandomMoveIndex returns %lu\n",i);
                     return i;
                 }
                 possibleMoveIndex++;;
             }
         }
-        return 0;
+        //cassert(possibleMoveIndex == randomMoveIndex, "Could not find array index for move index %d\n", possibleMoveIndex);
+        return 96;
     }
 
     __device__ void flipDirection(size_t moveIndex, int directionX, int directionY)
