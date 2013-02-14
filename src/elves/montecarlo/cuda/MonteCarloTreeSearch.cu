@@ -7,8 +7,10 @@
 #include <curand.h>
 #include <curand_kernel.h>
 #include <iostream>
+#include <cassert>
+#include <cstdio>
 
-const int NUMBER_OF_BLOCKS = 4;
+const int NUMBER_OF_BLOCKS = 1;
 const int THREADS_PER_BLOCK = 64;
 
 __global__ void setupStateForRandom(curandState* state, unsigned long seed);

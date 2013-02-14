@@ -18,6 +18,7 @@ OthelloResult CudaMonteCarloElf::getBestMoveFor(OthelloState& state, size_t reit
          W, W, W, W, F, F, F, F,
          W, W, W, W, F, F, F, F}, Player::Black);
 //state = debugState;
+    cout << "root:\n"<<state<<endl;
     MoveList untriedMoves = state.getPossibleMoves();
     vector<Field> aggregatedChildStatePlayfields;
     vector<OthelloResult> aggregatedChildResults(untriedMoves.size());
@@ -26,6 +27,7 @@ OthelloResult CudaMonteCarloElf::getBestMoveFor(OthelloState& state, size_t reit
         auto childState = state;
         childState.doMove(untriedMoves[i]);
         Playfield childPlayfield;
+        cout << i << ":\n"<< childState<<endl;
         for (int row = 0; row <  childState.playfieldSideLength(); ++row)
             for (int column = 0; column < childState.playfieldSideLength(); ++column)
                 aggregatedChildStatePlayfields.push_back(childState.playfield(column, row));    

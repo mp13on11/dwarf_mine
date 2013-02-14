@@ -93,11 +93,12 @@ public:
         size_t sum = 0;
         for (int i = 0; i < _state->size; i++)
         {
-            if (_state->possible[i])
-            {
-                sum++;
-                __syncthreads();
-            }
+            sum += _state->possible[i];
+            //if (_state->possible[i])
+            //{
+            //    sum++;
+                //__syncthreads();
+            //}
         }
         return sum;
     }

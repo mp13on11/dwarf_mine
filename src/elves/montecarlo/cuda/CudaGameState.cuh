@@ -5,6 +5,7 @@
 typedef struct _CudaGameState
 {
     Field* field;
+    Field* oldField;
     bool* possible;
     size_t size;
     size_t sideLength;
