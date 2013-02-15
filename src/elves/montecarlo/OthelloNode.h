@@ -24,9 +24,9 @@ public:
 
     bool hasUntriedMoves() const;
     bool hasChildren() const;
-    OthelloNode& getFavoriteChild();
-    OthelloNode& getRandomChildNode(RandomGenerator generator);
-    OthelloNode& addChild(const OthelloMove& move, const OthelloState& state);
+    OthelloNode* getFavoriteChild();
+    OthelloNode* getRandomChildNode(RandomGenerator generator);
+    OthelloNode* addChild(const OthelloMove& move, const OthelloState& state);
     const NodeList& getChildren() const;
     OthelloMove getTriggerMove() const;
     OthelloMove getRandomMove(RandomGenerator generator) const;

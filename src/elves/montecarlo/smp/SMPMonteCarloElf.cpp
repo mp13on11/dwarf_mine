@@ -6,6 +6,7 @@
 #include <iostream>
 #include <omp.h>
 #include <chrono>
+#include <cassert>
 #include <ratio>
 
 using namespace std;
@@ -18,6 +19,7 @@ void SMPMonteCarloElf::expand(OthelloState& state, OthelloNode& node)
         auto childState = state;
         childState.doMove(move);
         node.addChild(move, childState);
+        node.removeFromUntriedMoves(move);
     }   
 }
 
@@ -25,7 +27,7 @@ OthelloNode* SMPMonteCarloElf::select(OthelloNode* node, OthelloState& state, Ra
 {
     while(!node->hasUntriedMoves() && node->hasChildren())
     {
-        node = &(node->getRandomChildNode(generator));
+        node = node->getRandomChildNode(generator);
         OthelloMove move = node->getTriggerMove();
         state.doMove(move);
     }
@@ -43,46 +45,44 @@ void SMPMonteCarloElf::rollout(OthelloState& state, RandomGenerator generator)
 
 void SMPMonteCarloElf::backPropagate(OthelloNode* node, OthelloState& state, Player player)
 {
-    do
-    {
-        node->updateSuccessProbability(state.hasWon(player));
-        node = &(node->parent());
-    }
-    while(node->hasParent());
+    node->updateSuccessProbability(state.hasWon(player));
 }
 
 OthelloResult SMPMonteCarloElf::getBestMoveFor(OthelloState& rootState, size_t reiterations, size_t nodeId, size_t commonSeed)
 {
     size_t threadCount = omp_get_max_threads();
-
+    vector<mt19937> engines;
     for (size_t i = 0; i < threadCount; ++i)
     {
-        mt19937 engine(OthelloHelper::generateUniqueSeed(nodeId, i, commonSeed));
-        _generators.push_back([&engine](size_t limit){ 
-            uniform_int_distribution<size_t> distribution(0, limit - 1);
-            return distribution(engine);
-        });    
+        engines.emplace_back(OthelloHelper::generateUniqueSeed(nodeId, i, commonSeed));
     }
-    
+
+    auto generator = [&engines](size_t limit){ 
+        uniform_int_distribution<size_t> distribution(0, limit - 1);
+        return distribution(engines[omp_get_thread_num()]);
+    };    
+
 
     OthelloNode rootNode(rootState);
 
     expand(rootState, rootNode);
+
+    auto childNodes = rootNode.getChildren();
     
     #pragma omp parallel for shared(rootState, rootNode) 
     for (size_t i = 0; i < reiterations; ++i)
     {
-
-        OthelloNode* currentNode = &rootNode;
         OthelloState currentState = rootState;
 
-        currentNode = select(currentNode, currentState, _generators[omp_get_thread_num()]);
+        OthelloNode* currentNode = select(&rootNode, currentState, generator);
+
         //expand() moved before parallelization
-        rollout(currentState, _generators[omp_get_thread_num()]);
+          
+        rollout(currentState, generator);
         backPropagate(currentNode, currentState, rootNode.currentPlayer());
     }
-    
-    auto result = rootNode.getFavoriteChild().collectedResult();
+
+    auto result = rootNode.getFavoriteChild()->collectedResult();
     result.iterations = reiterations;
     return result;
 }

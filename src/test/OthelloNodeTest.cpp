@@ -55,14 +55,14 @@ TEST_F(OthelloNodeTest, MakeMoveTest)
     ASSERT_TRUE(stub.hasChildren());
 
     auto child = stub.getRandomChildNode(generator);
-    ASSERT_EQ(possibleMoves[0], child.getTriggerMove());
+    ASSERT_EQ(possibleMoves[0], child->getTriggerMove());
     
-    child.updateSuccessProbability(true);
-    child.updateSuccessProbability(false);
-    ASSERT_EQ(0.5, child.successRate());
+    child->updateSuccessProbability(true);
+    child->updateSuccessProbability(false);
+    ASSERT_EQ(0.5, child->successRate());
 
-    ASSERT_NE(stub.currentPlayer(), child.currentPlayer());
-    ASSERT_EQ(&(stub), &(child.parent()));
+    ASSERT_NE(stub.currentPlayer(), child->currentPlayer());
+    ASSERT_EQ(&(stub), &(child->parent()));
 }
 
 TEST_F(OthelloNodeTest, SelectFavoriteChild)
@@ -82,17 +82,17 @@ TEST_F(OthelloNodeTest, SelectFavoriteChild)
    
     auto possibleMoves = state.getPossibleMoves();
     state.doMove(possibleMoves[0]);
-    OthelloNode* looser = &(root.addChild(possibleMoves[0], OthelloState(state)));
+    OthelloNode* looser = root.addChild(possibleMoves[0], OthelloState(state));
 
     looser->updateSuccessProbability(true);
     looser->updateSuccessProbability(false);
     ASSERT_EQ(0.5, looser->successRate());
 
     state.doMove(possibleMoves[1]);
-    OthelloNode* winner = &(root.addChild(possibleMoves[1], OthelloState(state)));
+    OthelloNode* winner = root.addChild(possibleMoves[1], OthelloState(state));
 
     winner->updateSuccessProbability(true);
     ASSERT_EQ(1, winner->successRate());
 
-    ASSERT_EQ(winner, &(root.getFavoriteChild()));
+    ASSERT_EQ(winner, root.getFavoriteChild());
 }

@@ -49,7 +49,7 @@ bool OthelloNode::hasChildren() const
     return !_children.empty();
 }
 
-OthelloNode& OthelloNode::getRandomChildNode(RandomGenerator generator)
+OthelloNode* OthelloNode::getRandomChildNode(RandomGenerator generator)
 {
     if (!hasChildren())
     {
@@ -57,9 +57,9 @@ OthelloNode& OthelloNode::getRandomChildNode(RandomGenerator generator)
     }
     if (_children.size() == 1)
     {
-        return _children[0];
+        return &(_children[0]);
     }
-    return _children[generator(_children.size())];
+    return &(_children[generator(_children.size())]);
 }
 
 OthelloMove OthelloNode::getTriggerMove() const
@@ -113,12 +113,12 @@ OthelloMove OthelloNode::getRandomUntriedMove(RandomGenerator generator) const
     return _untriedMoves[generator(_untriedMoves.size())];
 }
 
-OthelloNode& OthelloNode::addChild(const OthelloMove& move, const OthelloState& state)
+OthelloNode* OthelloNode::addChild(const OthelloMove& move, const OthelloState& state)
 {
     _children.push_back(state);
     _children.back()._parent = this;
     _children.back().setTriggerMove(move);
-    return _children.back();
+    return &(_children.back());
 }
 
 void OthelloNode::updateSuccessProbability(bool hasWon)
@@ -156,7 +156,7 @@ OthelloResult OthelloNode::collectedResult() const
     return OthelloResult{(size_t)move.x, (size_t)move.y, _visits, _wins, 0};
 }
 
-OthelloNode& OthelloNode::getFavoriteChild()
+OthelloNode* OthelloNode::getFavoriteChild()
 {
     assert(_children.size() > 0);
     size_t favorite = 0;
@@ -170,5 +170,5 @@ OthelloNode& OthelloNode::getFavoriteChild()
             }
         }
     }
-    return _children[favorite];
+    return &(_children[favorite]);
 }
