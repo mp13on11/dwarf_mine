@@ -9,9 +9,9 @@
 #include "CudaUtil.cuh"
 #include <assert.h>
 
-__global__ void setupStateForRandom(curandState* state, unsigned long seed)
+__global__ void setupStateForRandom(curandState* state, size_t* seeds)
 {
-	curand_init(seed, 0, 0, &state[threadIdx.x]);
+	curand_init(seeds[blockIdx.x], 0, 0, &state[threadIdx.x]);
 }
 
 __device__ bool unchangedState(CudaGameState& state, size_t limit)

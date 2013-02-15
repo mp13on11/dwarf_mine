@@ -13,7 +13,7 @@
 const int NUMBER_OF_BLOCKS = 1;
 const int THREADS_PER_BLOCK = 64;
 
-__global__ void setupStateForRandom(curandState* state, unsigned long seed);
+__global__ void setupStateForRandom(curandState* state, size_t* seeds);
 __global__ void simulateGameLeaf(curandState* deviceState, Field* playfield, Player currentPlayer, size_t* wins, size_t* visits);
 __global__ void simulateGame(size_t reiterations, curandState* deviceStates, size_t numberOfPlayfields, Field* playfields, Player currentPlayer, OthelloResult* results);
 
@@ -22,15 +22,14 @@ __global__ void testSimulateGameLeaf(curandState* deviceState, Field* playfield,
 
 static size_t seed = 70;
 
-void gameSimulation(size_t reiterations, size_t numberOfPlayfields, Field* playfields, Player currentPlayer, OthelloResult* results)
+void gameSimulation(size_t numberOfBlocks, size_t iterations, std::vector<size_t> seeds, size_t numberOfPlayfields, Field* playfields, Player currentPlayer, OthelloResult* results)
 {
     curandState* deviceStates;
-    cudaMalloc(&deviceStates, sizeof(curandState) * NUMBER_OF_BLOCKS * THREADS_PER_BLOCK);
-    //size_t seed = time(NULL);
-    std::cout<<"Seed: "<< seed << std::endl;
-    setupStateForRandom <<< NUMBER_OF_BLOCKS, THREADS_PER_BLOCK >>> (deviceStates, seed);
+    cudaMalloc(&deviceStates, sizeof(curandState) * numberOfBlocks * THREADS_PER_BLOCK);
+
+    setupStateForRandom <<< numberOfBlocks, THREADS_PER_BLOCK >>> (deviceStates, seeds.data());
     seed++;
-    simulateGame <<< NUMBER_OF_BLOCKS, THREADS_PER_BLOCK >>> (reiterations, deviceStates, numberOfPlayfields, playfields, currentPlayer, results);
+    simulateGame <<< numberOfBlocks, THREADS_PER_BLOCK >>> (iterations / NUMBER_OF_BLOCKS, deviceStates, numberOfPlayfields, playfields, currentPlayer, results);
     CudaUtils::checkState();
 }
 

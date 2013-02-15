@@ -20,7 +20,7 @@ const size_t DEFAULT_SEED = 7337;
 const size_t DEFAULT_REITERATIONS = 1000U;
 
 MonteCarloScheduler::MonteCarloScheduler(const function<ElfPointer()>& factory) :
-    SchedulerTemplate(factory), _repetitions(DEFAULT_REITERATIONS), _localRepetitions(0U)
+    SchedulerTemplate(factory), _repetitions(DEFAULT_REITERATIONS), _localRepetitions(0U), _commonSeed(DEFAULT_SEED)
 {
 }
 
@@ -47,7 +47,6 @@ void MonteCarloScheduler::generateData(const DataGenerationParameters& params)
         F, F, F, F, F, F, F, F,
         F, F, F, F, F, F, F, F
     };
-    _commonSeed = DEFAULT_SEED;
     _repetitions = params.monteCarloTrials;
     _state = OthelloState(playfield, DEFAULT_PLAYER);
 }
@@ -60,8 +59,8 @@ bool MonteCarloScheduler::hasData() const
 void MonteCarloScheduler::outputData(std::ostream& output)
 {
     cout<< "Move: ("<<_result.x<<", "<<_result.y<<")\n"
-    << "Wins: "<<_result.wins<<"/"<<_result.visits<<" = " <<_result.successRate()<<"\n"
-    << "Iterations: "<<_result.iterations<<endl;
+        << "Wins: "<<_result.wins<<"/"<<_result.visits<<" = " <<_result.successRate()<<"\n"
+        << "Iterations: "<<_result.iterations<<endl;
     OthelloHelper::writeResultToStream(output, _result);
 }
 
@@ -112,8 +111,8 @@ pair<vector<NodeRating>, Rating> weightRatings(const BenchmarkResult& ratings)
 
 void MonteCarloScheduler::calculate()
 {
-    cout << _state << endl << "Repetitions "<<_localRepetitions << endl;
-    _result = elf().getBestMoveFor(_state, _localRepetitions);
+    //cout << _state << endl << "Repetitions "<<_localRepetitions << endl;
+    _result = elf().getBestMoveFor(_state, _localRepetitions, MpiHelper::rank(), _commonSeed);
 }
 
 vector<OthelloResult> MonteCarloScheduler::gatherResults()

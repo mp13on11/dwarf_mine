@@ -164,7 +164,7 @@ OthelloNode& OthelloNode::getFavoriteChild()
     {
         for (size_t i = 0; i < _children.size(); ++i)
         {
-            if (_children[favorite].successRate() < _children[i].successRate())
+            if (_children[favorite]._visits == 0 || (_children[favorite].successRate() < _children[i].successRate()))
             {
                 favorite = i;
             }

@@ -2,9 +2,19 @@
 #include <OthelloResult.h>
 #include <iostream>
 #include <stdexcept>
+#include <sstream>
+#include <string>
 
 namespace OthelloHelper
 {
+    size_t generateUniqueSeed(size_t nodeId, size_t threadId, size_t commonSeed)
+    {
+        std::stringstream buffer;
+        buffer << commonSeed << " ~ "<< nodeId << " ~ " << threadId;
+        std::hash<std::string> generateHash;
+        return generateHash(buffer.str());
+    }
+
     void writeResultToStream(std::ostream& stream, const OthelloResult& result)
     {
         stream << result.x << result.y << result.visits << result.wins << result.iterations;

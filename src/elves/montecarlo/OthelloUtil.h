@@ -23,6 +23,8 @@ std::istream& operator>>(std::istream& stream, Field& field);
 
 namespace OthelloHelper
 {
+	size_t generateUniqueSeed(size_t nodeId, size_t threadId, size_t commonSeed);
+
     void writeResultToStream(std::ostream& stream, const OthelloResult& result);
 
     void readResultFromStream(std::istream& stream, OthelloResult& result);
