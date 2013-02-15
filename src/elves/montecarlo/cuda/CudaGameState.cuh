@@ -21,9 +21,9 @@ typedef struct _CudaGameState
         return (i >= 0 && i < size);
     }
 
-    __device__ inline Player getEnemyPlayer(Player currentPlayer)
+    __device__ inline Player getEnemyPlayer(Player player)
     {
-        return (currentPlayer == Black ? White : Black);
+        return (player == Black ? White : Black);
     }
 
     __device__ inline Player getEnemyPlayer()
@@ -34,13 +34,12 @@ typedef struct _CudaGameState
     __device__ bool isWinner(Player requestedPlayer)
     {
         Player enemyPlayer = getEnemyPlayer(requestedPlayer);
-        size_t requestedCounters = 0;
-        size_t enemyCounters = 0;
+        int superiority = 0;
         for (size_t i = 0; i < size; ++i)
         {
-            if (field[i] == enemyPlayer) ++enemyCounters;
-            if (field[i] == requestedPlayer) ++requestedCounters;
+            if (field[i] == enemyPlayer) superiority--;
+            if (field[i] == requestedPlayer) superiority++;
         }
-        return requestedPlayer >= enemyPlayer;
+        return superiority >= 0;
     }
 } CudaGameState;

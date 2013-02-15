@@ -11,8 +11,7 @@
 
 __global__ void setupStateForRandom(curandState* state, unsigned long seed)
 {
-	int id =  threadIdx.x;
-	curand_init(seed, 0, 0, &state[id]);
+	curand_init(seed, 0, 0, &state[threadIdx.x]);
 }
 
 __device__ bool unchangedState(CudaGameState& state, size_t limit)
@@ -113,11 +112,10 @@ __global__ void simulateGame(size_t reiterations, curandState* deviceStates, siz
 {
     int threadGroup = blockIdx.x;
     int playfieldIndex = threadIdx.x;
-    if (THREAD_WATCHED) printf("reiterations %lu \n", reiterations);
+
     for (size_t i = 0; i < reiterations; ++i)
     {
         size_t node = randomNumber(deviceStates, numberOfPlayfields);
-
 
         __shared__ Field sharedPlayfield[FIELD_DIMENSION * FIELD_DIMENSION];
         __shared__ Field oldPlayfield[FIELD_DIMENSION * FIELD_DIMENSION];
@@ -148,8 +146,6 @@ __global__ void simulateGame(size_t reiterations, curandState* deviceStates, siz
         {
             results[node].wins += wins;
             results[node].visits += visits;
-            //printf("TEST %d\n", result.wins);
-            printf("Block %d finished game on %lu with %lu wins in %lu visits \n", blockIdx.x, node, results[node].wins, results[node].visits);
         }
     }
 }
