@@ -29,6 +29,7 @@ protected:
     OthelloResult _result;
     size_t _repetitions;
     size_t _localRepetitions;
+    size_t _commonSeed;
 
 private:
     void orchestrateCalculation();

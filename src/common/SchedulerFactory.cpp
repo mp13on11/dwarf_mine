@@ -11,6 +11,7 @@
 #ifdef HAVE_CUDA
 #include "matrix/cuda/CudaMatrixElf.h"
 #include "quadratic_sieve/cuda/CudaQuadraticSieveElf.h"
+#include "montecarlo/cuda/CudaMonteCarloElf.h"
 #endif
 
 #include <stdexcept>
@@ -22,7 +23,7 @@ using namespace std;
 #ifndef HAVE_CUDA
 struct HasNoCudaDummy : public Elf {};
 
-typedef HasNoCudaDummy CudaMatrixElf, CudaQuadraticSieveElf;
+typedef HasNoCudaDummy CudaMatrixElf, CudaQuadraticSieveElf, CudaMonteCarloElf;
 #endif
 
 typedef SchedulerFactory::FactoryFunction FactoryFunction;
@@ -82,7 +83,7 @@ static map<string, function<FactoryFunction(bool)>> sFactoryFunctionsMap =
     },
     {
         "montecarlo_tree_search",
-        &createFactory<MonteCarloScheduler, SMPMonteCarloElf>
+        &createFactory<MonteCarloScheduler, SMPMonteCarloElf, CudaMonteCarloElf>
     }
 };
 

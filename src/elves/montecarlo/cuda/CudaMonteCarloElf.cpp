@@ -43,7 +43,7 @@ OthelloResult CudaMonteCarloElf::getBestMoveFor(OthelloState& state, size_t reit
 
     OthelloResult worstEnemyResult;
     size_t iterations = 0;
-    size_t i = 0;
+
     for (auto& result : aggregatedChildResults)
     {
         // inverted since we calculated the successrate for the enemy
