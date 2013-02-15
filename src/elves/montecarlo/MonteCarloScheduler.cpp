@@ -60,6 +60,7 @@ void MonteCarloScheduler::outputData(std::ostream& output)
 
 void MonteCarloScheduler::doSimpleDispatch()
 {
+    _localRepetitions = _repetitions;
     calculate();
 }
 
@@ -104,6 +105,7 @@ pair<vector<NodeRating>, Rating> weightRatings(const BenchmarkResult& ratings)
 
 void MonteCarloScheduler::calculate()
 {
+    cout << "reiterations "<<_localRepetitions<<endl;
     _result = elf().getBestMoveFor(_state, _localRepetitions);
 }
 

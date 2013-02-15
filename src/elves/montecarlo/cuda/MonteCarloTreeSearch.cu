@@ -30,6 +30,7 @@ void gameSimulation(size_t reiterations, size_t numberOfPlayfields, Field* playf
     std::cout<<"Seed: "<< seed << std::endl;
     setupStateForRandom <<< NUMBER_OF_BLOCKS, THREADS_PER_BLOCK >>> (deviceStates, seed);
     seed++;
+    std::cout << "reiterations "<<reiterations<<std::endl;
     simulateGame <<< NUMBER_OF_BLOCKS, THREADS_PER_BLOCK >>> (reiterations, deviceStates, numberOfPlayfields, playfields, currentPlayer, results);
     CudaUtils::checkState();
 }

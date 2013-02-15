@@ -8,17 +8,18 @@ using namespace std;
 
 OthelloResult CudaMonteCarloElf::getBestMoveFor(OthelloState& state, size_t reiterations)
 {
-    OthelloState debugState(
-        {W, W, W, W, W, W, W, W,
-         W, W, W, W, W, W, W, W,
-         W, W, W, W, B, B, B, B,
-         W, W, W, W, B, B, B, B,      
-         W, W, W, W, B, B, B, B,      
-         W, W, W, W, W, W, F, F,
-         W, W, W, W, F, F, F, F,
-         W, W, W, W, F, F, F, F}, Player::Black);
-//state = debugState;
-    cout << "root:\n"<<state<<endl;
+    // OthelloState debugState(
+    //     {W, W, W, W, W, W, W, W,
+    //      W, W, W, W, W, W, W, W,
+    //      W, W, W, W, B, B, B, B,
+    //      W, W, W, W, B, B, B, B,      
+    //      W, W, W, W, B, B, B, B,      
+    //      W, W, W, W, W, W, F, F,
+    //      W, W, W, W, F, F, F, F,
+    //      W, W, W, W, F, F, F, F}, Player::Black);
+    // state = debugState;
+    // cout << "root:\n"<<state<<endl;
+    
     MoveList untriedMoves = state.getPossibleMoves();
     vector<Field> aggregatedChildStatePlayfields;
     vector<OthelloResult> aggregatedChildResults(untriedMoves.size());
@@ -35,6 +36,7 @@ OthelloResult CudaMonteCarloElf::getBestMoveFor(OthelloState& state, size_t reit
         aggregatedChildResults[i].y = 0;
         aggregatedChildResults[i].wins = 0;
         aggregatedChildResults[i].visits = 0;
+        aggregatedChildResults[i].iterations = 0;
     }
 
     
@@ -44,30 +46,51 @@ OthelloResult CudaMonteCarloElf::getBestMoveFor(OthelloState& state, size_t reit
 
     cudaPlayfields.transferFrom(aggregatedChildStatePlayfields.data());
     cudaResults.transferFrom(aggregatedChildResults.data());
-
+    cout << "reiterations "<<reiterations<<endl;
     gameSimulation(reiterations, untriedMoves.size(), cudaPlayfields.get(), state.getCurrentEnemy(), cudaResults.get());
 
     cudaResults.transferTo(aggregatedChildResults.data());
 
-    OthelloResult bestResult;
+    // invert results since they are calculated for the enemy player
+
+    OthelloResult worstEnemyResult;
     size_t iterations = 0;
-    int i = 0;
+    size_t i = 0;
     for (auto& result : aggregatedChildResults)
     {
-        cout << i++ << "\n"<<"\twins:\t"<<result.wins<<"\n\tvisits:\t"<<result.visits<<"\n\tmoveX:\t"<<result.x<<"\n\tmoveY:\t"<<result.y<<"\n\titerations:\t"<<result.iterations<<endl;
-        //OthelloHelper::writeResultToStream(cout, result);
-        cout << endl;
+        cout<< i++ << "\n"
+            <<"\twins:\t"<<result.wins
+            <<"\n\tvisits:\t"<<result.visits
+            <<"\n\tmoveX:\t"<<result.x
+            <<"\n\tmoveY:\t"<<result.y
+            <<"\n\titerations:\t"<<result.iterations
+            <<endl<<endl;
+        // cout << endl;
         // inverted since we calculated the successrate for the enemy
-        if (bestResult.iterations == 0 || 
-            bestResult.successRate() > result.successRate())
+        if (worstEnemyResult.visits == 0 || 
+            worstEnemyResult.successRate() >= result.successRate())
         {
-            bestResult = result;
+            worstEnemyResult = result;
         }   
         iterations += result.iterations;
     }
-    bestResult.wins = bestResult.visits - bestResult.wins;
-    bestResult.iterations = iterations;
-    return bestResult;
+    cout<< "WorstEnemy " << "\n"
+            <<"\twins:\t"<<worstEnemyResult.wins
+            <<"\n\tvisits:\t"<<worstEnemyResult.visits
+            <<"\n\tmoveX:\t"<<worstEnemyResult.x
+            <<"\n\tmoveY:\t"<<worstEnemyResult.y
+            <<"\n\titerations:\t"<<worstEnemyResult.iterations
+            <<endl<<endl;
+    OthelloResult result = OthelloResult { 
+        worstEnemyResult.x,
+        worstEnemyResult.y,
+        worstEnemyResult.visits,
+        worstEnemyResult.visits - worstEnemyResult.wins,
+        iterations
+    };
+    cout << "\twins:\t"<<result.wins<<"\n\tvisits:\t"<<result.visits<<"\n\tmoveX:\t"<<result.x<<"\n\tmoveY:\t"<<result.y<<"\n\titerations:\t"<<result.iterations<<endl;
+        cout << endl;
+    return result;
 /*
     vector<Field> playfield = {cudaResults
         F, F, F, F, F, F, F, F,
