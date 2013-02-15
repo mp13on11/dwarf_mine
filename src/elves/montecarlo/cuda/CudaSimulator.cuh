@@ -59,7 +59,6 @@ public:
             {
                 if (_state->field[neighbourIndex] == Free)
                 {
-                    _state->possible[_playfieldIndex] |= false;
                     look = false;
                 }
                 else if(_state->field[neighbourIndex] == enemyPlayer)
@@ -68,13 +67,13 @@ public:
                 }
                 else if (_state->field[neighbourIndex] == _state->currentPlayer)
                 {
-                    _state->possible[_playfieldIndex] |= foundEnemy;
+                    if (foundEnemy)
+                        _state->possible[_playfieldIndex] = true;
                     look = false;
                 }
             }
             else
             {
-                _state->possible[_playfieldIndex] |= false;
                 look = false;
             }
             neighbourX += directionX;
@@ -95,7 +94,6 @@ public:
 
     __device__ size_t getRandomMoveIndex(size_t moveCount, float fakedRandom = -1)
     {
-        //printf("getRandomMoveIndex\n");
         size_t randomMoveIndex = 0;
         if (moveCount > 1)
         {
@@ -115,36 +113,42 @@ public:
             {
                 if (possibleMoveIndex == randomMoveIndex)
                 {
-                    //printf("getRandomMoveIndex returns %lu\n",i);
                     return i;
                 }
                 possibleMoveIndex++;;
             }
         }
-        //cassert(possibleMoveIndex == randomMoveIndex, "Could not find array index for move index %d\n", possibleMoveIndex);
+        cassert(possibleMoveIndex == randomMoveIndex, "Could not find array index for move index %d\n", possibleMoveIndex);
         return 96;
     }
 
-    __device__ void flipDirection(size_t moveIndex, int directionX, int directionY)
+    __device__ bool canFlipInDirection(size_t moveIndex, int directionX, int directionY)
     {
-        int currentIndex = _playfieldIndex;
         Player enemyPlayer = _state->getEnemyPlayer();
-        bool flip = false;
 
-        for (currentIndex = _playfieldIndex; _state->inBounds(currentIndex); currentIndex += directionY * _state->sideLength + directionX)
+        for (size_t currentIndex = _playfieldIndex; _state->inBounds(currentIndex); currentIndex += directionY * _state->sideLength + directionX)
         {
             if(_state->field[currentIndex] != enemyPlayer)
             {
-                flip = (_state->field[currentIndex] == _state->currentPlayer && currentIndex != _playfieldIndex);
-                break;
+                return (_state->field[currentIndex] == _state->currentPlayer && currentIndex != _playfieldIndex);
             }
         }
-        __syncthreads();
-        if (flip)
+        return false;
+    }
+
+    __device__ void flipInDirection(size_t moveIndex, int directionX, int directionY)
+    {
+        Player enemyPlayer = _state->getEnemyPlayer();
+
+        for (size_t currentIndex = _playfieldIndex; _state->inBounds(currentIndex); currentIndex += directionY * _state->sideLength + directionX)
         {
-            for (; currentIndex - moveIndex != 0 ; currentIndex -= directionY * _state->sideLength + directionX)
+            if(_state->field[currentIndex] == enemyPlayer)
             {
                 _state->field[currentIndex] = _state->currentPlayer;
+            }
+            else
+            {
+                break;
             }
         }
     }
@@ -154,9 +158,17 @@ public:
         int directionX = _playfieldX - moveIndex % _state->sideLength;
         int directionY = _playfieldY - moveIndex / _state->sideLength;
 
+        bool flip = false;
         if (abs(directionX) <= 1 && abs(directionY) <= 1 && moveIndex != _playfieldIndex)
         {
-            flipDirection(moveIndex, directionX, directionY);
+            flip = canFlipInDirection(moveIndex, directionX, directionY);
+        }
+
+        __syncthreads();
+
+        if (flip)
+        {
+            flipInDirection(moveIndex, directionX, directionY);
         }
     }
 };

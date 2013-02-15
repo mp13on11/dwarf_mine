@@ -39,11 +39,11 @@ void testSingleStep(Playfield& playfield, vector<pair<size_t, Field>> expectedCh
 
     Playfield expectedPlayfield = getExpectedPlayfield(playfield, expectedChanges);
 
-      OthelloState temp(outputPlayfield, Player::White);
-      cout << "Actual: \n"<<temp << endl;
+    // OthelloState temp(outputPlayfield, Player::White);
+    // cout << "Actual: \n"<<temp << endl;
 
-      OthelloState temp2(expectedPlayfield, Player::White);
-      cout << "Expected: \n"<<temp2 << endl;
+    // OthelloState temp2(expectedPlayfield, Player::White);
+    // cout << "Expected: \n"<<temp2 << endl;
 
     ASSERT_EQ_VECTOR(outputPlayfield, expectedPlayfield);
 }
