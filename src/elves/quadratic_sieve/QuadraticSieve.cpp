@@ -169,7 +169,8 @@ pair<BigInt,BigInt> searchForRandomCongruence(const FactorBase& factorBase, cons
     return TRIVIAL_FACTORS;
 }
 
-class RelationComparator {
+class RelationComparator 
+{
 public:
     RelationComparator(smallPrime_t minPrime) :
         minPrime(minPrime)
