@@ -14,7 +14,7 @@
 
 class PrimeFactorization;
 
-typedef std::vector<BigInt> SmoothSquares;
+typedef std::vector<BigInt> SmoothSquareList;
 typedef std::vector<smallPrime_t> FactorBase;
 typedef std::vector<Relation> Relations;
 typedef std::function<std::vector<BigInt>(

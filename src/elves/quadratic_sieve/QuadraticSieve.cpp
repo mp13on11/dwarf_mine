@@ -17,7 +17,7 @@ pair<BigInt, BigInt> sieveIntervalFast(
 {
     const size_t maxRelations = factorBase.size() + 2;
 
-    SmoothSquares smooths = sieveSmoothSquaresCallback(start, end, number, factorBase);
+    SmoothSquareList smooths = sieveSmoothSquaresCallback(start, end, number, factorBase);
 
     for(const BigInt& x : smooths)
     {

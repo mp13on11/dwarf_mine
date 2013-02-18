@@ -70,8 +70,8 @@ vector<BigInt> SmpQuadraticSieveElf::sieveSmoothSquares(const BigInt& start, con
 {
     const int NUM_THREADS = omp_get_num_threads();
     
-    SmoothSquares smooths;
-    vector<future<SmoothSquares>> partialResults;
+    SmoothSquareList smooths;
+    vector<future<SmoothSquareList>> partialResults;
     BigInt totalLength = end - start;
     //BigInt chunkSize = //totalLength / NUM_THREADS;
     BigInt chunkSize = div_ceil(totalLength, BigInt(NUM_THREADS));
