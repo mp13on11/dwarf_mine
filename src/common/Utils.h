@@ -1,5 +1,8 @@
 #pragma once
 
+#include <vector>
+#include <iostream>
+
 template<typename NumberType>
 inline NumberType div_ceil(const NumberType& a, const NumberType& b)
 {

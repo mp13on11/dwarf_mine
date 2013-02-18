@@ -86,7 +86,7 @@ int guessFactorBaseSize(const BigInt& number)
 pair<BigInt, BigInt> factor(const BigInt& number, SieveSmoothSquaresCallback sieveCallback)
 {
     int factorBaseSize = guessFactorBaseSize(number);
-    cout << "factorBaseSize" << factorBaseSize << endl;
+    cout << "factorBaseSize " << factorBaseSize << endl;
     auto factorBase = createFactorBase(factorBaseSize);
 
     // sieve

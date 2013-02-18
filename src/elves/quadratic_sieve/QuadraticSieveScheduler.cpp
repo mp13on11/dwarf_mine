@@ -4,6 +4,22 @@
 #include "common/ProblemStatement.h"
 #include <mpi.h>
 
+std::ostream& operator<<(std::ostream& stream, const std::vector<size_t>& list)
+{
+    stream << "[";
+    bool first = true;
+    for (const auto& element : list)
+    {
+        if (!first)
+            stream << ", ";
+        stream << element;
+        first = false;
+    }
+    stream << "]";
+
+    return stream;
+}
+
 using namespace std;
 using namespace std::placeholders;
 
@@ -13,6 +29,8 @@ vector<BigInt> sieveDistributed(
     const BigInt& number,
     const FactorBase& factorBase
 );
+
+BigInt receiveBigInt();
 
 QuadraticSieveScheduler::QuadraticSieveScheduler(const std::function<ElfPointer()>& factory) :
     SchedulerTemplate(factory)
@@ -55,9 +73,28 @@ void QuadraticSieveScheduler::doSimpleDispatch()
 
 void QuadraticSieveScheduler::doDispatch()
 {
+    cout << "rank: " << MpiHelper::rank() << endl;
+
     if (MpiHelper::isMaster())
     {
         tie(p, q) = QuadraticSieveHelper::factor(number, sieveDistributed);
+    }
+    else
+    {
+        cout << "Slave" << endl;
+        BigInt start = receiveBigInt();
+        BigInt end = receiveBigInt();
+        BigInt number = receiveBigInt();
+        size_t factorBaseSize;
+        MPI::COMM_WORLD.Bcast(&factorBaseSize, 1, MPI::UNSIGNED_LONG, MpiHelper::MASTER);
+        vector<smallPrime_t> factorBase(factorBaseSize);
+        MPI::COMM_WORLD.Bcast(factorBase.data(), factorBaseSize, MPI::INT, MpiHelper::MASTER);
+        cout << start << ", " << end << ", " << number << ", " << factorBaseSize << endl;
+
+        auto result = elf().sieveSmoothSquares(start, end, number, factorBase);
+        auto resultSize = result.size();
+        cout << resultSize << endl;
+        MPI::COMM_WORLD.Gather(&resultSize, 1, MPI::UNSIGNED_LONG, nullptr, 0, MPI::UNSIGNED_LONG, MpiHelper::MASTER);
     }
 }
 
@@ -107,23 +144,21 @@ vector<BigInt> sieveDistributed(
     const BigInt& start,
     const BigInt& end,
     const BigInt& number,
-    const FactorBase& /*factorBase*/
+    const FactorBase& factorBase
 )
 {
-    vector<BigInt> relations;
-    if (MpiHelper::isMaster())
-    {
-        sendBigInt(start);
-        sendBigInt(end);
-        sendBigInt(number);
+    vector<BigInt> smooths;
+    sendBigInt(start);
+    sendBigInt(end);
+    sendBigInt(number);
+    size_t factorBaseSize = factorBase.size();
+    MPI::COMM_WORLD.Bcast(&factorBaseSize, 1, MPI::UNSIGNED_LONG, MpiHelper::MASTER);
+    MPI::COMM_WORLD.Bcast(const_cast<smallPrime_t*>(factorBase.data()), factorBaseSize, MPI::INT, MpiHelper::MASTER);
 
-    }
-    else
-    {
-        BigInt start = receiveBigInt();
-        BigInt end = receiveBigInt();
-        BigInt number = receiveBigInt();
-        cout << start << ", " << end << ", " << number << endl;
-    }
-    return relations;
+    size_t bla = 42;
+    vector<size_t> resultSizes(MpiHelper::numberOfNodes());
+    MPI::COMM_WORLD.Gather(&bla, 1, MPI::UNSIGNED_LONG, resultSizes.data(), 1, MPI::UNSIGNED_LONG, MpiHelper::MASTER);
+    cout << resultSizes << endl;
+
+    return smooths;
 }
