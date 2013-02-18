@@ -104,6 +104,23 @@ void packBigintVector(vector<size_t>& outSizes, vector<uint32_t>& outData, const
     }
 }
 
+SmoothSquareList unpackBigintVector(const vector<size_t>& sizes, const vector<uint32_t>& data)
+{
+    SmoothSquareList result;
+    auto dataIter = data.begin();
+    for (const auto size : sizes)
+    {
+        SerializedBigInt serialized;
+        serialized.second = size;
+        serialized.first.reset(reinterpret_cast<uint32_t*>(malloc(sizeof(uint32_t)*size)));
+        std::copy(dataIter, dataIter+size, serialized.first.get());
+        dataIter += size;
+        result.push_back(arrayToBigInt(serialized));
+    }
+
+    return result;
+}
+
 void QuadraticSieveScheduler::doDispatch()
 {
     cout << "rank: " << MpiHelper::rank() << endl;
@@ -182,7 +199,6 @@ vector<BigInt> QuadraticSieveScheduler::sieveDistributed(
     const FactorBase& factorBase
 )
 {
-    vector<BigInt> smooths;
     sendBigInt(number);
 
     BigInt intervalLength = end - start;
@@ -249,5 +265,5 @@ vector<BigInt> QuadraticSieveScheduler::sieveDistributed(
     MPI::COMM_WORLD.Gatherv(numberData.data(), numberData.size(), MPI::INT, allNumberData.data(), sizePerNode.data(), dataDispls.data(), MPI::INT, MpiHelper::MASTER);
     cout << allNumberData << endl;
 
-    return smooths;
+    return unpackBigintVector(allNumberSizes, allNumberData);
 }
