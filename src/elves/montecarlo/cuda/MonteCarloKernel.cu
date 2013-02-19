@@ -11,7 +11,9 @@
 
 __global__ void setupStateForRandom(curandState* state, size_t* seeds)
 {
-	curand_init(seeds[blockIdx.x], 0, 0, &state[threadIdx.x]);
+    //printf("Block %d: Seed: %lu\n", blockIdx.x, seeds[blockIdx.x]);
+	//curand_init(seeds[blockIdx.x], 0, 0, &state[threadIdx.x]);
+    curand_init(0, 0, 0, &state[threadIdx.x]);
 }
 
 __device__ bool unchangedState(CudaGameState& state, size_t limit)
@@ -19,7 +21,7 @@ __device__ bool unchangedState(CudaGameState& state, size_t limit)
     bool same = true;
     for (int i = 0; i < state.size; i++)
     {
-        same &= state.oldField[i] == state.field[i];
+        same &= (state.oldField[i] == state.field[i]);
     }
     return same;
 }
