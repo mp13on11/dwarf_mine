@@ -151,3 +151,8 @@ MatrixPair MatrixScheduler::sliceMatrices(const MatrixSlice& definition) const
 
     return { move(slicedLeft), move(slicedRight) };
 }
+
+void MatrixScheduler::doBenchmarkDispatch(NodeId /*node*/)
+{
+}    
+

@@ -145,3 +145,7 @@ int FactorizationScheduler::distributeFinishedStateRegularly(future<BigIntPair>&
         }
     }
 }
+
+void FactorizationScheduler::doBenchmarkDispatch(NodeId /*node*/)
+{
+}    

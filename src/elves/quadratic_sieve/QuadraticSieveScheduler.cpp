@@ -192,6 +192,11 @@ BigInt receiveBigIntFromMaster()
     return arrayToBigInt(result);
 }
 
+void QuadraticSieveScheduler::doBenchmarkDispatch(NodeId /*node*/)
+{
+    
+}
+
 vector<BigInt> QuadraticSieveScheduler::sieveDistributed(
     const BigInt& start,
     const BigInt& end,

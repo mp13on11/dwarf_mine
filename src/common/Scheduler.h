@@ -19,6 +19,7 @@ public:
     virtual void dispatch() = 0;
     virtual void outputData(std::ostream& output) = 0;
     virtual void dispatchSimple() = 0;
+    virtual void dispatchBenchmark(NodeId node) = 0;
 
 protected:
 
