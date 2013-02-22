@@ -66,25 +66,8 @@ vector<BigInt> smpSieveKernel(const BigInt& start, const BigInt& end, const BigI
     return result;
 }
 
-template<typename ElemType>
-std::ostream& operator<<(std::ostream& stream, const std::vector<ElemType>& list)
-{
-    stream << "[";
-    bool first = true;
-    for (const auto& element : list)
-    {
-        if (!first)
-            stream << ", ";
-        stream << element;
-        first = false;
-    }
-    stream << "]";
-
-    return stream;
-}
 vector<BigInt> SmpQuadraticSieveElf::sieveSmoothSquares(const BigInt& start, const BigInt& end, const BigInt& number, const FactorBase& factorBase)
 {
-	cout << start << ", " << end << ", " << number << ", " << factorBase << endl;
     const int NUM_THREADS = omp_get_num_threads();
     
     SmoothSquareList smooths;
