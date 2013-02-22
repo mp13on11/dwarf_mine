@@ -21,6 +21,7 @@ BenchmarkRunner::BenchmarkRunner(const Configuration& config) :
 BenchmarkResult BenchmarkRunner::benchmarkIndividualNodes() const
 {
     vector<Measurement> averageRunTimes;
+    inPreBenchmark = true;
 
     for (size_t i=0; i<MpiHelper::numberOfNodes(); ++i)
     {
@@ -35,25 +36,43 @@ BenchmarkResult BenchmarkRunner::benchmarkIndividualNodes() const
 
 vector<Measurement> BenchmarkRunner::runBenchmark(const BenchmarkResult& nodeWeights) const
 {
+	inPreBenchmark = false;
     return runBenchmark(nodeWeights, true);
 }
 
 vector<Measurement> BenchmarkRunner::runBenchmark(const BenchmarkResult& nodeWeights, bool useProblemStatement) const
 {
+	BenchmarkMethod targetMethod;
+
+	if (inPreBenchmark)
+	{
+		targetMethod = [&]()
+			{
+				scheduler->dispatchBenchmark(nodeWeights.begin()->first);
+			};
+	}
+	else
+	{
+		targetMethod = [&]()
+			{
+				scheduler->dispatch();
+			};
+	}
+
     if (MpiHelper::isMaster())
     {
         scheduler->setNodeset(nodeWeights);
-        return benchmarkNodeset(useProblemStatement);
+        return benchmarkNodeset(useProblemStatement, targetMethod);
     }
     else if (slaveShouldRunWith(nodeWeights))
     {
-        benchmarkSlave();
+        benchmarkSlave(targetMethod);
     }
 
     return vector<Measurement>(iterations, Measurement(0));
 }
 
-vector<Measurement> BenchmarkRunner::benchmarkNodeset(bool useProblemStatement) const
+vector<Measurement> BenchmarkRunner::benchmarkNodeset(bool useProblemStatement, BenchmarkMethod targetMethod) const
 {
     vector<Measurement> result;
 
@@ -68,11 +87,11 @@ vector<Measurement> BenchmarkRunner::benchmarkNodeset(bool useProblemStatement) 
 
     for (size_t i = 0; i < warmUps; ++i)
     {
-        measureCall();
+        measureCall(targetMethod);
     }
     for (size_t i = 0; i < iterations; ++i)
     {
-        result.push_back(measureCall());
+        result.push_back(measureCall(targetMethod));
     }
 
     if (useProblemStatement)
@@ -81,17 +100,18 @@ vector<Measurement> BenchmarkRunner::benchmarkNodeset(bool useProblemStatement) 
     return result;
 }
 
-void BenchmarkRunner::benchmarkSlave() const
+void BenchmarkRunner::benchmarkSlave(BenchmarkMethod targetMethod) const
 {
     for (size_t i = 0; i < iterations + warmUps; ++i)
-        scheduler->dispatch(); // slave side
+    {
+    	targetMethod();
+    }
 }
 
-Measurement BenchmarkRunner::measureCall() const
+Measurement BenchmarkRunner::measureCall(BenchmarkMethod targetMethod) const
 {
     auto before = high_resolution_clock::now();
-    scheduler->dispatch();
-
+    targetMethod();
     return duration_cast<Measurement>(high_resolution_clock::now() - before);
 }
 
