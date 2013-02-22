@@ -1,7 +1,7 @@
 #pragma once
 
 #ifdef __CUDACC__
-typedef unsigned long uint64_t;
+typedef unsigned long long uint64_t;
 typedef unsigned int uint32_t;
 #else
 #include <cstdint>

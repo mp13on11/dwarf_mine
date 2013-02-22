@@ -148,4 +148,6 @@ int FactorizationScheduler::distributeFinishedStateRegularly(future<BigIntPair>&
 
 void FactorizationScheduler::doBenchmarkDispatch(NodeId /*node*/)
 {
+	// Pre-benchmark does not make sense for
+	// this algorithm - left empty
 }    

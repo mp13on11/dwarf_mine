@@ -154,6 +154,9 @@ MatrixPair MatrixScheduler::sliceMatrices(const MatrixSlice& definition) const
 
 void MatrixScheduler::doBenchmarkDispatch(NodeId /*node*/)
 {
+	// This works because MatrixScheduler
+	// handles dispatching to a single Node correctly
+	// (it respects the nodeSet)
 	dispatch();
 }    
 
