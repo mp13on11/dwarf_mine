@@ -45,7 +45,8 @@ namespace OthelloHelper
             {
                 Field field;
                 stream >> field;
-                playfield.push_back(field);
+                if (field != Field::Illegal)
+                    playfield.push_back(field);
             }
             while (stream.good());
         }
@@ -89,6 +90,8 @@ std::istream& operator>>(std::istream& stream, Field& field)
             break;
         case 'F': field = Field::Free;
             break;
+        default:
+            field = Field::Illegal;
     }
     return stream;
 }

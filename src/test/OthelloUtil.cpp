@@ -18,7 +18,7 @@ void verifyPlayfield(vector<Field> expectedField, OthelloState& state)
     {
         for (int j = 0; j < sideLength; ++j)
         {
-            ASSERT_EQ(expectedField[j*sideLength + i], state.atPosition(i, j));
+            ASSERT_EQ(expectedField[j*sideLength + i], state.playfield(i, j));
         }
     }
 }

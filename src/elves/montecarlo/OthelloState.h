@@ -18,15 +18,13 @@ public:
 	void doMove(const OthelloMove& move);
 	void passMove();
 	MoveList getPossibleMoves() const;
-	OthelloMove getRandomMove(RandomGenerator generator) const;
 	Player getCurrentPlayer() const;
 	Player getCurrentEnemy() const;
-	bool hasPossibleMoves() const;
 	bool hasWon(Player player) const;
 
-	Field atPosition(int x, int y) const;
 	int playfieldSideLength() const;
-	Field* playfieldBuffer();
+	const Field* playfieldBuffer() const;
+	Field& playfield(size_t x, size_t y);
 	Field playfield(size_t x, size_t y) const;
 
 private:
@@ -40,8 +38,8 @@ private:
 	MoveList getAdjacentEnemyDirections(const OthelloMove& move) const;
 	MoveList getEnclosedCounters(const OthelloMove& move, const OthelloMove& direction) const;
 	bool existsEnclosedCounters(const OthelloMove& move) const;
-	Field& playfield(const OthelloMove& move);
-	Field playfield(const OthelloMove& move) const;
+    Field& playfield(const OthelloMove& move);
+    Field playfield(const OthelloMove& move) const;
 
 	friend std::ostream& operator<<(std::ostream& stream, const OthelloState& state);
 };
@@ -51,6 +49,11 @@ inline int OthelloState::playfieldSideLength() const
 	return _sideLength;
 }
 
+inline Field& OthelloState::playfield(size_t x, size_t y)
+{
+	return _playfield[y * _sideLength + x];
+}
+
 inline Field OthelloState::playfield(size_t x, size_t y) const
 {
 	return _playfield[y * _sideLength + x];
@@ -58,15 +61,25 @@ inline Field OthelloState::playfield(size_t x, size_t y) const
 
 inline Field& OthelloState::playfield(const OthelloMove& move)
 {
-	return _playfield[move.y * _sideLength + move.x];
+	return playfield(move.x, move.y);
 }
 
 inline Field OthelloState::playfield(const OthelloMove& move) const
 {
-	return _playfield[move.y * _sideLength + move.x];
+	return playfield(move.x, move.y);
 }
 
-inline Field* OthelloState::playfieldBuffer()
+inline const Field* OthelloState::playfieldBuffer() const
 {
 	return _playfield.data();
+}
+
+inline Player OthelloState::getCurrentEnemy() const
+{
+    return _player == Field::Black ? Field::White : Field::Black;
+}
+
+inline Player OthelloState::getCurrentPlayer() const
+{
+    return _player;
 }

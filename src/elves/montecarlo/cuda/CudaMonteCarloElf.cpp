@@ -8,26 +8,31 @@ using namespace std;
 
 const size_t NUMBER_OF_BLOCKS = 2;
 
-OthelloResult CudaMonteCarloElf::getBestMoveFor(OthelloState& state, size_t reiterations, size_t nodeId, size_t commonSeed)
+void initialize(const OthelloState& state, vector<Field>& aggregatedPlayfields, vector<OthelloResult>& aggregatedResults)
 {
     MoveList untriedMoves = state.getPossibleMoves();
-    vector<Field> aggregatedChildStatePlayfields;
-    vector<OthelloResult> aggregatedChildResults(untriedMoves.size());
+    size_t size = state.playfieldSideLength() * state.playfieldSideLength();
     for (size_t i = 0; i < untriedMoves.size(); ++i)
     {
-        auto childState = state;
-        childState.doMove(untriedMoves[i]);
-        Playfield childPlayfield;
+        OthelloState childState(state, untriedMoves[i]);
 
-        for (int row = 0; row <  childState.playfieldSideLength(); ++row)
-            for (int column = 0; column < childState.playfieldSideLength(); ++column)
-                aggregatedChildStatePlayfields.push_back(childState.playfield(column, row));    
-        aggregatedChildResults[i].x = untriedMoves[i].x;
-        aggregatedChildResults[i].y = untriedMoves[i].y;
-        aggregatedChildResults[i].wins = 0;
-        aggregatedChildResults[i].visits = 0;
-        aggregatedChildResults[i].iterations = 0;
+        const Field* buffer = childState.playfieldBuffer();
+        for (size_t j = 0; j < size; ++j)
+        {
+            aggregatedPlayfields.push_back(buffer[j]);
+        }
+
+        aggregatedResults.emplace_back(untriedMoves[i].x, untriedMoves[i].y, 0, 0, 0);
     }
+}
+
+OthelloResult CudaMonteCarloElf::getBestMoveFor(OthelloState& state, size_t reiterations, size_t nodeId, size_t commonSeed)
+{
+    
+    vector<Field> aggregatedChildStatePlayfields;
+    vector<OthelloResult> aggregatedChildResults;
+
+    initialize(state, aggregatedChildStatePlayfields, aggregatedChildResults);
 
     vector<size_t> seeds;
     for (size_t i = 0; i < NUMBER_OF_BLOCKS; ++i)
@@ -43,7 +48,7 @@ OthelloResult CudaMonteCarloElf::getBestMoveFor(OthelloState& state, size_t reit
     cudaPlayfields.transferFrom(aggregatedChildStatePlayfields.data());
     cudaResults.transferFrom(aggregatedChildResults.data());
 
-    gameSimulation(NUMBER_OF_BLOCKS, reiterations, cudaSeeds.get(), untriedMoves.size(), cudaPlayfields.get(), state.getCurrentEnemy(), cudaResults.get());
+    gameSimulation(NUMBER_OF_BLOCKS, reiterations, cudaSeeds.get(), aggregatedChildResults.size(), cudaPlayfields.get(), state.getCurrentEnemy(), cudaResults.get());
 
     cudaResults.transferTo(aggregatedChildResults.data());
 

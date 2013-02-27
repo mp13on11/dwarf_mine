@@ -27,9 +27,10 @@ void rollout(OthelloState& state, RandomGenerator generator)
     size_t passCounter = 0;
     while (passCounter < 2)
     {
-        if (state.hasPossibleMoves())
+        auto possibleMoves = state.getPossibleMoves();
+        if (possibleMoves.size() > 0)
         {
-            OthelloMove move = state.getRandomMove(generator);
+            OthelloMove move = possibleMoves[generator(possibleMoves.size())];
             state.doMove(move);
             passCounter = 0;
         }
