@@ -8,6 +8,7 @@
 #include <cassert>
 #include <ratio>
 #include <vector>
+#include <atomic>
 
 using namespace std;
 
@@ -58,23 +59,30 @@ OthelloResult SMPMonteCarloElf::getBestMoveFor(OthelloState& rootState, size_t r
     vector<OthelloState> childStates;
 
     expand(rootState, childStates, childResults);
-  
-    #pragma omp parallel for shared(rootState, childStates, childResults) 
-    for (size_t i = 0; i < reiterations; ++i)
+
+    atomic<size_t> executedIterations;
+    executedIterations.store(0);
+    // no parallel for to enable a form of workstealing 
+    // threads do not have to execute the same number of cycles but instead 
+    #pragma omp parallel shared(executedIterations, rootState, childStates, childResults) 
     {
-        // select
-        size_t selectedIndex = generator(childStates.size());
-        OthelloState selectedState = childStates[selectedIndex];
-
-        // roleout
-        rollout(selectedState, generator);
-
-        // backpropagate
-        #pragma omp critical(selectedIndex)
+        while (executedIterations.load() < reiterations)
         {
-            childResults[selectedIndex].visits++;
-            if (selectedState.hasWon(rootState.getCurrentPlayer()))
-                childResults[selectedIndex].wins++;
+            executedIterations++;
+            // select
+            size_t selectedIndex = generator(childStates.size());
+            OthelloState selectedState = childStates[selectedIndex];
+
+            // roleout
+            rollout(selectedState, generator);
+
+            // backpropagate
+            #pragma omp critical(selectedIndex)
+            {
+                childResults[selectedIndex].visits++;
+                if (selectedState.hasWon(rootState.getCurrentPlayer()))
+                    childResults[selectedIndex].wins++;
+            }
         }
     }
 
@@ -86,6 +94,6 @@ OthelloResult SMPMonteCarloElf::getBestMoveFor(OthelloState& rootState, size_t r
             bestResult = &result;
         }
     }
-    bestResult->iterations = reiterations;
+    bestResult->iterations = executedIterations.load();
     return *bestResult;
 }
