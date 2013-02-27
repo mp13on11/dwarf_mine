@@ -6,7 +6,7 @@
 
 using namespace std;
 
-const size_t NUMBER_OF_BLOCKS = 4;
+const size_t NUMBER_OF_BLOCKS = 2;
 
 OthelloResult CudaMonteCarloElf::getBestMoveFor(OthelloState& state, size_t reiterations, size_t nodeId, size_t commonSeed)
 {
@@ -35,13 +35,15 @@ OthelloResult CudaMonteCarloElf::getBestMoveFor(OthelloState& state, size_t reit
         seeds.push_back(OthelloHelper::generateUniqueSeed(nodeId, i, commonSeed));
     }
 
+    CudaUtils::Memory<size_t> cudaSeeds(seeds.size());
     CudaUtils::Memory<Field> cudaPlayfields(aggregatedChildStatePlayfields.size());
     CudaUtils::Memory<OthelloResult> cudaResults(aggregatedChildResults.size());
 
+    cudaSeeds.transferFrom(seeds.data());
     cudaPlayfields.transferFrom(aggregatedChildStatePlayfields.data());
     cudaResults.transferFrom(aggregatedChildResults.data());
 
-    gameSimulation(NUMBER_OF_BLOCKS, reiterations, seeds, untriedMoves.size(), cudaPlayfields.get(), state.getCurrentEnemy(), cudaResults.get());
+    gameSimulation(NUMBER_OF_BLOCKS, reiterations, cudaSeeds.get(), untriedMoves.size(), cudaPlayfields.get(), state.getCurrentEnemy(), cudaResults.get());
 
     cudaResults.transferTo(aggregatedChildResults.data());
 
