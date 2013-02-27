@@ -41,18 +41,22 @@ namespace OthelloHelper
     {
         if (stream.good())
         {
-            do 
+            Field field;
+            stream >> field;
+            while (stream.good())
             {
-                Field field;
+                playfield.push_back(field);
                 stream >> field;
-                if (field != Field::Illegal)
-                    playfield.push_back(field);
             }
-            while (stream.good());
         }
         else
         {
             throw std::runtime_error("Unexpected empty stream");
+        }
+        if (playfield.size() != 64)
+        {
+            std::cout << "SIZE "<<playfield.size() << std::endl;
+            throw std::runtime_error("Invalid playfield size");
         }
     }
 }
@@ -67,13 +71,13 @@ std::ostream& operator<<(std::ostream& stream, const Field field)
     {
         stream << "W";
     }
-    else if (field == Field::Illegal)
+    else if (field == Field::Free)
     {
-        stream << "?";
+        stream << "F";
     }
     else 
     {
-        stream << "F";
+        stream << "?";
     }
     return stream;
 }

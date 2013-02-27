@@ -1,5 +1,4 @@
 #include "OthelloState.h"
-#include "OthelloExceptions.h"
 #include <stdexcept>
 #include <cmath>
 #include <iostream>
@@ -7,7 +6,7 @@
 
 using namespace std;
 
-vector<OthelloMove> DIRECTIONS = {
+vector<OthelloMove> ADJACENT_DIRECTIONS = {
     {-1, 1}, { 0, 1}, { 1, 1},
     {-1, 0},          { 1, 0},
     {-1,-1}, { 0,-1}, { 1,-1}
@@ -16,20 +15,20 @@ vector<OthelloMove> DIRECTIONS = {
 OthelloState::OthelloState(const OthelloState& state)
     : _playfield(state._playfield), _sideLength(state._sideLength), _player(state._player)
 {
-    assert(_playfield.size() == size_t(_sideLength * _sideLength));
+    ensureValidPlayfield();
 }
 
 OthelloState::OthelloState(const OthelloState& state, const OthelloMove& move)
     : _playfield(state._playfield), _sideLength(state._sideLength), _player(state._player)
 {
-    assert(_playfield.size() == size_t(_sideLength * _sideLength));
+    ensureValidPlayfield();
     doMove(move);
 }
 
 OthelloState::OthelloState(const vector<Field>& playfield, Player nextPlayer)
     : _playfield(playfield), _sideLength(sqrt(playfield.size())), _player(nextPlayer)
 {
-    assert(_playfield.size() == size_t(_sideLength * _sideLength));
+    ensureValidPlayfield();
 }
 
 OthelloState::OthelloState(size_t sideLength)
@@ -47,7 +46,7 @@ OthelloState::OthelloState(size_t sideLength)
     playfield(center + 1, center    ) = Field::Black; // bottom left
     playfield(center + 1, center + 1) = Field::White; // bottom right
 
-    assert(_playfield.size() == size_t(_sideLength * _sideLength));
+    ensureValidPlayfield();
 }
 
 void OthelloState::doMove(const OthelloMove& move)
@@ -82,15 +81,10 @@ void OthelloState::flipCounters(const vector<OthelloMove>& counterPostions, Play
     }
 }
 
-bool OthelloState::onBoard(const OthelloMove& move) const
-{
-    return move.x < _sideLength && move.x >= 0 && move.y < _sideLength && move.y >= 0;
-}
-
 vector<OthelloMove> OthelloState::getAdjacentEnemyDirections(const OthelloMove& move) const
 {
     vector<OthelloMove> directions;
-    for (const auto& direction : DIRECTIONS)
+    for (const auto& direction : ADJACENT_DIRECTIONS)
     {
         const auto position = move + direction;
         if (onBoard(position) && playfield(position) == getCurrentEnemy())
@@ -167,8 +161,14 @@ bool OthelloState::hasWon(Player player) const
     int superiority = 0;
     for (size_t i = 0; i < _playfield.size(); ++i)
     {
-        if (_playfield[i] == player) ++superiority;
-        else if (_playfield[i] != Field::Free) --superiority;
+        if (_playfield[i] == player) 
+        {
+            ++superiority;
+        }
+        else if (_playfield[i] != Field::Free)
+        { 
+            --superiority;
+        }
     }
     return superiority >= 0;
 }

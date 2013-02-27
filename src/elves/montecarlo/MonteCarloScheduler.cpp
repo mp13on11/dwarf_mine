@@ -33,7 +33,6 @@ void MonteCarloScheduler::provideData(std::istream& input)
     input >>_repetitions;
     vector<Field> playfield;
     OthelloHelper::readPlayfieldFromStream(input, playfield);
-    assert(playfield.size() == 64U);
     _state = OthelloState(playfield, DEFAULT_PLAYER);
 }
 
