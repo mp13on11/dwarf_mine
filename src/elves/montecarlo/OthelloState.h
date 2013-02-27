@@ -12,9 +12,11 @@ class OthelloState
 public:
 	OthelloState(size_t sideLength = 8);
 	OthelloState(const OthelloState& state);
+	OthelloState(const OthelloState& state, const OthelloMove& move);
 	OthelloState(const Playfield& playfield, Player nextPlayer);
 
 	void doMove(const OthelloMove& move);
+	void passMove();
 	MoveList getPossibleMoves() const;
 	OthelloMove getRandomMove(RandomGenerator generator) const;
 	Player getCurrentPlayer() const;

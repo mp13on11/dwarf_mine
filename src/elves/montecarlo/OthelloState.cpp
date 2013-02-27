@@ -18,6 +18,12 @@ OthelloState::OthelloState(const OthelloState& state)
 
 }
 
+OthelloState::OthelloState(const OthelloState& state, const OthelloMove& move)
+    : _playfield(state._playfield), _sideLength(state._sideLength), _player(state._player)
+{
+    doMove(move);
+}
+
 OthelloState::OthelloState(const vector<Field>& playfield, Player nextPlayer)
     : _playfield(playfield), _sideLength(sqrt(playfield.size())), _player(nextPlayer)
 {
@@ -59,6 +65,11 @@ void OthelloState::doMove(const OthelloMove& move)
     playfield(move) = _player;
     flipCounters(enclosedCounterPositions, _player);
 
+    _player = getCurrentEnemy();
+}
+
+void OthelloState::passMove()
+{
     _player = getCurrentEnemy();
 }
 

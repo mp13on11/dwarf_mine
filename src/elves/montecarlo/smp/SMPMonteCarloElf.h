@@ -2,7 +2,6 @@
 
 #include <MonteCarloElf.h>
 #include "OthelloUtil.h"
-#include "OthelloNode.h"
 #include <chrono>
 #include <vector>
 
@@ -13,10 +12,5 @@ public:
 private:
     std::vector<RandomGenerator> _generators;
     std::chrono::high_resolution_clock::time_point _end;
-
-    void expand(OthelloState& state, OthelloNode& node);
-    OthelloNode* select(OthelloNode* node, OthelloState& state, RandomGenerator generator);
-    void rollout(OthelloState& state, RandomGenerator generator);
-    void backPropagate(OthelloNode* node, OthelloState& state, Player player);
 };
 

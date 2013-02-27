@@ -3,7 +3,6 @@
 #include <MonteCarloElf.h>
 #include <OthelloUtil.h>
 #include <OthelloState.h>
-#include <OthelloNode.h>
 
 class CudaMonteCarloElf : public MonteCarloElf
 {
