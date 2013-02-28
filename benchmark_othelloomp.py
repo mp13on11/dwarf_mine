@@ -18,74 +18,28 @@ def chunk(list,size):
 def plotChange(threadTimes, fileName, iterations):
     chunksPerThread = dict((singleThreadTimes, chunk(threadTimes[singleThreadTimes], iterations)) for singleThreadTimes in threadTimes)
     fig = pyplot.figure(figsize=(20, 10))
-    
-    pyplot.title('Othello') 
+
+    pyplot.title('Othello')
     pyplot.xlabel('Run')
     pyplot.ylabel('Runtime')
-    
-    ax = fig.add_subplot(111)
-
-    pyplot.subplots_adjust(hspace = .001)
 
     for key in chunksPerThread:
         threadChunk = chunksPerThread[key]
-        allSpeedUps = [[run / 1000  for run in runTimes] for runTimes in threadChunk]
 
         avgSpeedUps = [[avg(runTimes) / 1000] for runTimes in threadChunk]
-       
-        currentAx = fig.add_subplot(len(chunksPerThread),1, key, sharex=ax, sharey=ax)
+
         xticks = range(1, len(threadChunk)+1)
+        pyplot.xticks(xticks)
 
-        currentAx.plot(xticks, avgSpeedUps, '-', c="grey")
-
-
-        pyplot.boxplot(allSpeedUps)
-
-        pyplot.xticks(xticks, threadTimes.keys())
-
-        currentAx.xaxis.grid(True,'minor',linestyle='-', color='0.95', linewidth=1)
-        currentAx.yaxis.grid(True,'minor',linestyle='-', color='0.95', linewidth=1)
-
-        currentAx.xaxis.grid(True,'major',linestyle='-', color='0.5', linewidth=1)
-        currentAx.xaxis.set_major_locator(MultipleLocator(1))
-        currentAx.xaxis.set_major_formatter(FormatStrFormatter('%d'))
-        currentAx.xaxis.set_minor_locator(MultipleLocator(1))
-
-        currentAx.yaxis.set_major_locator(MultipleLocator(10))
-        currentAx.yaxis.set_minor_locator(MultipleLocator(5))        
-
-    sublist = chunksPerThread
-
-    #print [min(chunksPerThread.values()), max(chunksPerThread.values())]
-    #ylim([min(chunksPerThread.values()), max(chunksPerThread.values())]) 
-    
-    pyplot.show()
-    # t = arange(0.01, len(threadTimes[1]), 0.01)
-    # s1 = threadTimes[1]
-    # s2 = exp(-t)
-    # s3 = sin(4*pi*t)
-    # ax1 = subplot(311)
-    # plot(t,s1)
-    # setp( ax1.get_xticklabels(), fontsize=6)
-
-    # ## share x only
-    # ax2 = subplot(312, sharex=ax1)
-    # plot(t, s2)
-    # # make these tick labels invisible
-    # setp( ax2.get_xticklabels(), visible=False)
-
-    # # share x and y
-    # ax3 = subplot(313,  sharex=ax1, sharey=ax1)
-    # plot(t, s3)
-    # xlim(0.01,5.0)
-    # show()
+        pyplot.plot(xticks, avgSpeedUps, '-')
 
 
-    # pyplot.title('Othello')
-    # pyplot.xlabel('OMP_NUM_THREADS')
-    # pyplot.ylabel('SpeedUp')
-    # #pyplot.show()
-    # pyplot.savefig(fileName, dpi=80)
+    pyplot.legend(["#Thread {0}".format(key) for key in chunksPerThread.keys()])
+    ylim(0)
+    xlim(1)
+    # pyplot.show()
+
+    pyplot.savefig(fileName, dpi=80)
 
 def plotSpeedUp(threadTimes, fileName):
     xticks = range(1, len(threadTimes)+1)
@@ -198,18 +152,15 @@ def commandLine(threads):
 def main():
     numberOfThreads = range(1, 5, 1)
 
-    # for threads in numberOfThreads:
-    #     print "Executing with", threads, "thread(s)"
-    #     os.system(commandLine(threads))
+    for threads in numberOfThreads:
+        print "Executing with", threads, "thread(s)"
+        os.system(commandLine(threads))
 
     alltimes = dict((threads, timesFromFile(timeFile(threads))) for threads in numberOfThreads)
 
-    # print "Plotting..."
-    # for keys in alltimes.keys():
-    #     print alltimes[keys][-1]
-    # plotSpeedUp(alltimes, timeFile("all", "_speedup.png"))
-    # plotBurnDown(alltimes, timeFile("all", "_burndown.png"))
-    # plotChange("alltimes", timeFile("all", "_change.png"), iterations)
+    print "Plotting..."
+    plotSpeedUp(alltimes, timeFile("all", "_speedup.png"))
+    plotBurnDown(alltimes, timeFile("all", "_burndown.png"))
     plotChange(alltimes, timeFile("all", "_change.png"), iterations)
 
 main()
