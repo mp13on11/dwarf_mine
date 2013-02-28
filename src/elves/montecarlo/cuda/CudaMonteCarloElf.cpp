@@ -6,7 +6,7 @@
 
 using namespace std;
 
-const size_t NUMBER_OF_BLOCKS = 2;
+const size_t NUMBER_OF_BLOCKS = 1;
 
 void initialize(const OthelloState& state, vector<Field>& aggregatedPlayfields, vector<OthelloResult>& aggregatedResults)
 {

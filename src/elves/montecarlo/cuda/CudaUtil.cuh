@@ -4,7 +4,7 @@
 
 #define THREAD_WATCHED (threadIdx.x == 0 )
 
-#define cassert(CONDITION, MESSAGE, ...) if (!(CONDITION)) printf(MESSAGE, __VA_ARGS__), assert(CONDITION)
+#define cassert(CONDITION, MESSAGE, ...) //if (!(CONDITION)) printf(MESSAGE, __VA_ARGS__), assert(CONDITION)
 
 const int FIELD_DIMENSION = 8;
 

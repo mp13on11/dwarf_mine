@@ -25,7 +25,7 @@ public:
     
     __device__ void calculatePossibleMoves()
     {
-        _state->possible[_playfieldIndex] = false;
+        _state->possible[threadIdx.x] = false;
     
         __syncthreads();
 

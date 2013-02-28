@@ -116,12 +116,8 @@ void MonteCarloScheduler::calculate()
     _result = elf().getBestMoveFor(_state, _localRepetitions, MpiHelper::rank(), _commonSeed);
 }
 
-vector<OthelloResult> MonteCarloScheduler::gatherResults()
+void registerOthelloResultToMPI(MPI_Datatype& type)
 {
-    size_t numberOfNodes = nodeSet.size();
-    vector<OthelloResult> results(numberOfNodes);
-
-    MPI_Datatype MPI_OthelloResult;
     MPI_Datatype elementTypes[] = { 
         MPI::INT, 
         MPI::INT, 
@@ -141,8 +137,17 @@ vector<OthelloResult> MonteCarloScheduler::gatherResults()
         3 * sizeof(size_t)
     };
 
-    MPI_Type_create_struct(4, elementLengths, elementDisplacements, elementTypes, &MPI_OthelloResult);
-    MPI_Type_commit(&MPI_OthelloResult);
+    MPI_Type_create_struct(4, elementLengths, elementDisplacements, elementTypes, &type);
+    MPI_Type_commit(&type);
+}
+
+vector<OthelloResult> MonteCarloScheduler::gatherResults()
+{
+    size_t numberOfNodes = nodeSet.size();
+    vector<OthelloResult> results(numberOfNodes);
+
+    MPI_Datatype MPI_OthelloResult;
+    registerOthelloResultToMPI(MPI_OthelloResult);
     
     if (MpiHelper::isMaster())
     {
@@ -154,8 +159,7 @@ vector<OthelloResult> MonteCarloScheduler::gatherResults()
                 results[0] = _result;
             }
             else
-            {
-                
+            {                
                 MPI::COMM_WORLD.Recv(results.data() + i , 1, MPI_OthelloResult, node.first, 0);
             }
             i++;

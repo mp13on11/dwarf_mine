@@ -29,7 +29,6 @@ __device__ bool unchangedState(CudaGameState& state, size_t limit)
 __device__ bool doStep(CudaGameState& state, CudaSimulator& simulator, size_t limit, float fakedRandom = -1)
 {
     __syncthreads();
-
     simulator.calculatePossibleMoves();
     __syncthreads();
     size_t moveCount = simulator.countPossibleMoves();
@@ -123,7 +122,7 @@ __global__ void simulateGame(size_t reiterations, curandState* deviceStates, siz
         __shared__ Field oldPlayfield[FIELD_DIMENSION * FIELD_DIMENSION];
         __shared__ bool possibleMoves[FIELD_DIMENSION*FIELD_DIMENSION];
         
-        size_t playfieldOffset = FIELD_DIMENSION * FIELD_DIMENSION * threadGroup;
+        size_t playfieldOffset = FIELD_DIMENSION * FIELD_DIMENSION * node;
         sharedPlayfield[playfieldIndex] = playfields[playfieldOffset + playfieldIndex];
 
         CudaGameState state =  { 

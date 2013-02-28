@@ -6,6 +6,25 @@
 
 using namespace std;
 
+#define TEST_AND_ADD(VECTOR, MOVE, DIRECTION_X, DIRECTION_Y) \
+    position = {MOVE.x + DIRECTION_X, MOVE.y + DIRECTION_Y};                              \
+    if (onBoard(position) && playfield(position) == getCurrentEnemy())  \
+    {                                                                   \
+        VECTOR.push_back(OthelloMove{DIRECTION_X, DIRECTION_Y});        \
+    }
+
+#define ADJACENT_DIRECTIONS(VECTOR, MOVE)   \
+    vector<OthelloMove> VECTOR;             \
+    OthelloMove position;                    \
+    TEST_AND_ADD(VECTOR, MOVE, -1, 1)       \
+    TEST_AND_ADD(VECTOR, MOVE, -1, 0)       \
+    TEST_AND_ADD(VECTOR, MOVE, -1,-1)       \
+    TEST_AND_ADD(VECTOR, MOVE,  0, 1)       \
+    TEST_AND_ADD(VECTOR, MOVE,  0,-1)       \
+    TEST_AND_ADD(VECTOR, MOVE,  1, 1)       \
+    TEST_AND_ADD(VECTOR, MOVE,  1, 0)       \
+    TEST_AND_ADD(VECTOR, MOVE,  1,-1)
+
 vector<OthelloMove> ADJACENT_DIRECTIONS = {
     {-1, 1}, { 0, 1}, { 1, 1},
     {-1, 0},          { 1, 0},
@@ -98,6 +117,7 @@ vector<OthelloMove> OthelloState::getAdjacentEnemyDirections(const OthelloMove& 
 vector<OthelloMove> OthelloState::getAllEnclosedCounters(const OthelloMove& move) const
 {
     vector<OthelloMove> counters;
+    /*_ADJACENT_DIRECTIONS(enemyDirections, move);*/
     vector<OthelloMove> enemyDirections = getAdjacentEnemyDirections(move);
     for (const auto& direction : enemyDirections)
     {
