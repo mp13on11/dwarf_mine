@@ -48,7 +48,7 @@ __device__ uint32_t log_2_22(Number x)
     return lb_scaled(x, 1023);
 }
 
-__global__ void megaKernel(uint32_t* logs, const uint32_t* factorBase, const Number* start, const Number* end, const uint32_t intervalLength)
+__global__ void megaKernel(uint32_t* logs, const uint32_t* factorBase, const int factorBaseSize, const Number* start, const Number* end, const uint32_t intervalLength)
 {
     int index = blockIdx.x * blockDim.x + threadIdx.x;
     Number newStart(*start + index * NUMBERS_PER_THREAD);
@@ -57,7 +57,7 @@ __global__ void megaKernel(uint32_t* logs, const uint32_t* factorBase, const Num
     {
     	Number factor(factorBase[i]);
     	  
-    	while (newStart % factor != 0 || newStart >= end) newStart += 1; 
+    	while (!(newStart % factor).isZero() || newStart >= *end) newStart += 1; 
     	
     	
     	

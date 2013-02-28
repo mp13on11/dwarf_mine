@@ -41,8 +41,10 @@ vector<BigInt> CudaQuadraticSieveElf::sieveSmoothSquares(
 
     array<uint32_t, 10> start_d;
 	mpz_export((void*)start_d.data(), 0, -1, sizeof(uint32_t), 0, 0, start.get_mpz_t());
+    array<uint32_t, 10> end_d;
+	mpz_export((void*)end_d.data(), 0, -1, sizeof(uint32_t), 0, 0, end.get_mpz_t());
 
-    megaWrapper(logs_d.get(), factorBase_d.get(), start_d.data(), blockSize);
+    megaWrapper(logs_d.get(), factorBase_d.get(), factorBase.size(), start_d.data(), end_d.data(), blockSize);
 
 
 //    CudaUtils::Memory<uint32_t> start_d = NumberHelper::BigIntToNumber(start);
