@@ -41,6 +41,8 @@ void rollout(OthelloState& state, RandomGenerator generator)
     }
 }
 
+const int WORKSTEALING_BLOCKSIZE = 10;
+
 OthelloResult SMPMonteCarloElf::getBestMoveFor(OthelloState& rootState, size_t reiterations, size_t nodeId, size_t commonSeed)
 {
     size_t threadCount = omp_get_max_threads();
@@ -61,28 +63,37 @@ OthelloResult SMPMonteCarloElf::getBestMoveFor(OthelloState& rootState, size_t r
 
     expand(rootState, childStates, childResults);
 
-    atomic<size_t> executedIterations;
-    executedIterations.store(0);
+    size_t executedIterations = 0;
     // no parallel for to enable a form of workstealing 
     // threads do not have to execute the same number of cycles but instead 
-    #pragma omp parallel shared(executedIterations, rootState, childStates, childResults) 
+    #pragma omp parallel shared(executedIterations, childStates, childResults) 
     {
-        while (executedIterations.load() < reiterations)
+        while (executedIterations < reiterations)
         {
-            executedIterations++;
-            // select
-            size_t selectedIndex = generator(childStates.size());
-            OthelloState selectedState = childStates[selectedIndex];
-
-            // roleout
-            rollout(selectedState, generator);
-
-            // backpropagate
-            #pragma omp critical(selectedIndex)
+            size_t start = 0;
+            size_t end = 0;
+            #pragma omp critical
             {
-                childResults[selectedIndex].visits++;
-                if (selectedState.hasWon(rootState.getCurrentPlayer()))
-                    childResults[selectedIndex].wins++;
+                start = executedIterations;
+                end = min(start + WORKSTEALING_BLOCKSIZE, reiterations);
+                executedIterations += end - start;
+            }
+            for (size_t i = start; i < end; ++i)
+            {
+                // select
+                size_t selectedIndex = generator(childStates.size());
+                OthelloState selectedState = childStates[selectedIndex];
+
+                // roleout
+                rollout(selectedState, generator);
+
+                // backpropagate
+                #pragma omp critical(selectedIndex)
+                {
+                    childResults[selectedIndex].visits++;
+                    if (selectedState.hasWon(selectedState.getCurrentEnemy()))
+                        childResults[selectedIndex].wins++;
+                }
             }
         }
     }
@@ -95,6 +106,6 @@ OthelloResult SMPMonteCarloElf::getBestMoveFor(OthelloState& rootState, size_t r
             bestResult = &result;
         }
     }
-    bestResult->iterations = executedIterations.load();
+    bestResult->iterations = executedIterations;
     return *bestResult;
 }
