@@ -84,7 +84,6 @@ std::ostream& operator<<(std::ostream& stream, const std::vector<ElemType>& list
 }
 vector<BigInt> SmpQuadraticSieveElf::sieveSmoothSquares(const BigInt& start, const BigInt& end, const BigInt& number, const FactorBase& factorBase)
 {
-	cout << start << ", " << end << ", " << number << ", " << factorBase << endl;
     const int NUM_THREADS = omp_get_num_threads();
     
     SmoothSquareList smooths;

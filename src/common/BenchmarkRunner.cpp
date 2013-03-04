@@ -36,28 +36,28 @@ BenchmarkResult BenchmarkRunner::benchmarkIndividualNodes() const
 
 vector<Measurement> BenchmarkRunner::runBenchmark(const BenchmarkResult& nodeWeights) const
 {
-	inPreBenchmark = false;
+    inPreBenchmark = false;
     return runBenchmark(nodeWeights, true);
 }
 
 vector<Measurement> BenchmarkRunner::runBenchmark(const BenchmarkResult& nodeWeights, bool useProblemStatement) const
 {
-	BenchmarkMethod targetMethod;
+    BenchmarkMethod targetMethod;
 
-	if (inPreBenchmark)
-	{
-		targetMethod = [&]()
-			{
-				scheduler->dispatchBenchmark(nodeWeights.begin()->first);
-			};
-	}
-	else
-	{
-		targetMethod = [&]()
-			{
-				scheduler->dispatch();
-			};
-	}
+    if (inPreBenchmark)
+    {
+        targetMethod = [&]()
+            {
+                scheduler->dispatchBenchmark(nodeWeights.begin()->first);
+            };
+    }
+    else
+    {
+        targetMethod = [&]()
+            {
+                scheduler->dispatch();
+            };
+    }
 
     if (MpiHelper::isMaster())
     {
@@ -104,7 +104,7 @@ void BenchmarkRunner::benchmarkSlave(BenchmarkMethod targetMethod) const
 {
     for (size_t i = 0; i < iterations + warmUps; ++i)
     {
-    	targetMethod();
+        targetMethod();
     }
 }
 

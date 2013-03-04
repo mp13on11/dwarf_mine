@@ -154,6 +154,6 @@ MatrixPair MatrixScheduler::sliceMatrices(const MatrixSlice& definition) const
 
 void MatrixScheduler::doBenchmarkDispatch(NodeId /*node*/)
 {
-	dispatch();
+    dispatch();
 }    
 
