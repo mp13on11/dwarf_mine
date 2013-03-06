@@ -97,8 +97,8 @@ __global__ void simulateGameLeaf(curandState* deviceState, Field* playfield, Pla
 
 __global__ void simulateGame(size_t reiterations, curandState* deviceStates, size_t numberOfPlayfields, Field* playfields, Player currentPlayer, OthelloResult* results)
 {
-    int threadGroup = blockIdx.x;
     int playfieldIndex = threadIdx.x;
+    if (THREAD_WATCHED)
 
     for (size_t i = 0; i < reiterations; ++i)
     {

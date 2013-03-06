@@ -10,7 +10,6 @@
 #include <cassert>
 #include <cstdio>
 
-const int NUMBER_OF_BLOCKS = 1;
 const int THREADS_PER_BLOCK = 64;
 
 __global__ void setupStateForRandom(curandState* state, size_t* seeds);
@@ -28,7 +27,7 @@ void gameSimulation(size_t numberOfBlocks, size_t iterations, size_t* seeds, siz
     setupStateForRandom <<< numberOfBlocks, 1 >>> (deviceStates, seeds);
     CudaUtils::checkState();
     
-    simulateGame <<< numberOfBlocks, THREADS_PER_BLOCK >>> (iterations / numberOfBlocks, deviceStates, numberOfPlayfields, playfields, currentPlayer, results);
+    simulateGame <<< numberOfBlocks, THREADS_PER_BLOCK >>> (size_t(ceil(iterations * 1.0 / numberOfBlocks)), deviceStates, numberOfPlayfields, playfields, currentPlayer, results);
     CudaUtils::checkState();
 }
 
