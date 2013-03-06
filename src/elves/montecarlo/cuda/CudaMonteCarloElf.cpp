@@ -6,7 +6,7 @@
 
 using namespace std;
 
-const size_t NUMBER_OF_BLOCKS = 1;
+size_t NUMBER_OF_BLOCKS = 64;
 
 void initialize(const OthelloState& state, vector<Field>& aggregatedPlayfields, vector<OthelloResult>& aggregatedResults)
 {
@@ -28,7 +28,6 @@ void initialize(const OthelloState& state, vector<Field>& aggregatedPlayfields, 
 
 OthelloResult CudaMonteCarloElf::getBestMoveFor(OthelloState& state, size_t reiterations, size_t nodeId, size_t commonSeed)
 {
-    
     vector<Field> aggregatedChildStatePlayfields;
     vector<OthelloResult> aggregatedChildResults;
 
@@ -65,7 +64,7 @@ OthelloResult CudaMonteCarloElf::getBestMoveFor(OthelloState& state, size_t reit
         {
             worstEnemyResult = result;
         }   
-        iterations += result.iterations;
+        iterations += result.visits;
     }
 
     OthelloResult result = OthelloResult { 

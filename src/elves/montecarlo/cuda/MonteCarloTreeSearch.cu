@@ -23,9 +23,9 @@ __global__ void testSimulateGameLeaf(curandState* deviceState, Field* playfield,
 void gameSimulation(size_t numberOfBlocks, size_t iterations, size_t* seeds, size_t numberOfPlayfields, Field* playfields, Player currentPlayer, OthelloResult* results)
 {
     curandState* deviceStates;
-    cudaMalloc(&deviceStates, sizeof(curandState) * numberOfBlocks * THREADS_PER_BLOCK);
+    cudaMalloc(&deviceStates, sizeof(curandState) * numberOfBlocks);
     
-    setupStateForRandom <<< numberOfBlocks, THREADS_PER_BLOCK >>> (deviceStates, seeds);
+    setupStateForRandom <<< numberOfBlocks, 1 >>> (deviceStates, seeds);
     CudaUtils::checkState();
     
     simulateGame <<< numberOfBlocks, THREADS_PER_BLOCK >>> (iterations / numberOfBlocks, deviceStates, numberOfPlayfields, playfields, currentPlayer, results);

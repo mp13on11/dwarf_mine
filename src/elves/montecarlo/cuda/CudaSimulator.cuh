@@ -92,6 +92,7 @@ public:
         return sum;
     }
 
+    // this function may deliver different results for the threads, so it should be only called once per block
     __device__ size_t getRandomMoveIndex(size_t moveCount, float fakedRandom = -1)
     {
         size_t randomMoveIndex = 0;
@@ -136,13 +137,13 @@ public:
         return false;
     }
 
-    __device__ void flipInDirection(size_t moveIndex, int directionX, int directionY)
+    __device__ void flipInDirection(size_t moveIndex, int directionX, int directionY, size_t limit)
     {
         Player enemyPlayer = _state->getEnemyPlayer();
 
         for (size_t currentIndex = _playfieldIndex; _state->inBounds(currentIndex); currentIndex += directionY * _state->sideLength + directionX)
         {
-            if(_state->field[currentIndex] == enemyPlayer)
+            if(_state->oldField[currentIndex] == enemyPlayer)
             {
                 _state->field[currentIndex] = _state->currentPlayer;
             }
@@ -153,8 +154,12 @@ public:
         }
     }
 
-    __device__ void flipEnemyCounter(size_t moveIndex)
+    __device__ void flipEnemyCounter(size_t moveIndex, size_t limit)
     {
+        _state->oldField[_playfieldIndex] = _state->field[_playfieldIndex];
+
+        __syncthreads();
+
         int directionX = _playfieldX - moveIndex % _state->sideLength;
         int directionY = _playfieldY - moveIndex / _state->sideLength;
 
@@ -168,7 +173,14 @@ public:
 
         if (flip)
         {
-            flipInDirection(moveIndex, directionX, directionY);
+            flipInDirection(moveIndex, directionX, directionY, limit);
+        }
+
+        __syncthreads();
+
+        if (_playfieldIndex == moveIndex && threadIdx.x == moveIndex)
+        {
+            _state->field[_playfieldIndex] = _state->currentPlayer;
         }
     }
 };

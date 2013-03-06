@@ -12,44 +12,30 @@
 __global__ void setupStateForRandom(curandState* state, size_t* seeds)
 {
     //printf("Block %d: Seed: %lu\n", blockIdx.x, seeds[blockIdx.x]);
-	//curand_init(seeds[blockIdx.x], 0, 0, &state[threadIdx.x]);
-    curand_init(0, 0, 0, &state[threadIdx.x]);
+	curand_init(seeds[blockIdx.x], 0, 0, &state[blockIdx.x]);
+    //curand_init(0, 0, 0, &state[threadIdx.x]);
 }
 
-__device__ bool unchangedState(CudaGameState& state, size_t limit)
-{
-    bool same = true;
-    for (int i = 0; i < state.size; i++)
-    {
-        same &= (state.oldField[i] == state.field[i]);
-    }
-    return same;
-}
 
 __device__ bool doStep(CudaGameState& state, CudaSimulator& simulator, size_t limit, float fakedRandom = -1)
 {
+    cassert(state.size == FIELD_DIMENSION * FIELD_DIMENSION, "Block %d, Thread %d detected invalid field size of %li\n", blockIdx.x, threadIdx.x, state.size);
     __syncthreads();
     simulator.calculatePossibleMoves();
     __syncthreads();
     size_t moveCount = simulator.countPossibleMoves();
     if (moveCount > 0)
     {
-        size_t index = simulator.getRandomMoveIndex(moveCount, fakedRandom);
-
-        __syncthreads();
-
-        cassert(index < state.size, "Detected unexpected move index %d for maximal index %lu in %d\n", index, state.size - 1, threadIdx.x);
-
-        state.oldField[threadIdx.x] = state.field[threadIdx.x];
-        __syncthreads();
-        
-        simulator.flipEnemyCounter(index);
-
-        __syncthreads();
-        if (threadIdx.x == index)
+        __shared__ size_t index;
+        if (threadIdx.x == 0)
         {
-            state.field[index] = state.currentPlayer;
+            index = simulator.getRandomMoveIndex(moveCount, fakedRandom);
+            cassert(index < state.size, "Block %d, Thread %d: Round %d detected unexpected move index %d for maximal playfield size %lu\n", blockIdx.x, limit, index, state.size);
         }
+
+        __syncthreads();
+
+        simulator.flipEnemyCounter(index, limit);
 
         __syncthreads();
         
@@ -70,11 +56,11 @@ __device__ void simulateGameLeaf(curandState* deviceState, CudaSimulator& simula
     __syncthreads();
     while (passCounter < 2)
     {
-        
         bool passedMove = !doStep(state, simulator, rounds);
         passCounter = (passedMove ? passCounter + 1 : 0);
 
-        cassert (rounds++ < MAXIMAL_MOVE_COUNT, "Detected rounds overflowing maximal count %d in %d\n", MAXIMAL_MOVE_COUNT, threadIdx.x); 
+        cassert (rounds < MAXIMAL_MOVE_COUNT, "Detected rounds overflowing maximal count %d in %d\n", MAXIMAL_MOVE_COUNT, threadIdx.x); 
+        rounds++;
     }
     __syncthreads();
 
