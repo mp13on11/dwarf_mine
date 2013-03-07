@@ -182,7 +182,7 @@ struct Number
     {
         for (int i = NUM_FIELDS-1; i >= 0; --i)
         {
-            printf("%d fields %u, other %u\n",i,  fields[i], other.fields[i]);
+            //printf("%d fields %u, other %u\n",i,  fields[i], other.fields[i]);
             if (fields[i] == other.fields[i]) continue;
             else if (fields[i] < other.fields[i])
             {
