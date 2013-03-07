@@ -188,7 +188,7 @@ struct Number
 
     __device__ bool operator<(const Number& other) const
     {
-        for (int i = NUM_FIELDS-1; i > 0; --i)
+        for (int i = NUM_FIELDS-1; i >= 0; --i)
         {
             if (fields[i] < other.fields[i])
             {
@@ -210,7 +210,7 @@ struct Number
 
     __device__ bool operator>=(const Number& other) const
     {
-        return !(*this < other) || (*this == other);
+        return (*this > other) || (*this == other);
     }
 
     __device__ bool operator==(const Number& other) const

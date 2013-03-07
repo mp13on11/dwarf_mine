@@ -78,14 +78,9 @@ __global__ void megaKernel(const Number* number, uint32_t* logs, const uint32_t*
     	    //printf("testing primePower %d\n", primePower.get_ui());    
     	    	    
     	    int timesAdvanced = 0;
-        	//while (timesAdvanced <= NUMBERS_PER_THREAD && !(newStart % primePower).isZero() && newStart <= *end)
         	
         	
-        	Number rest = newStart;
-        	rest.divMod(primePower);
-        	printf("div rest %d\n", rest.get_ui());
-        	
-        	while (newStart <= *end) 
+        	while (timesAdvanced <= NUMBERS_PER_THREAD && !(newStart % primePower).isZero() && newStart <= *end) 
         	{
         	   
         	   printf("advanced\n");
