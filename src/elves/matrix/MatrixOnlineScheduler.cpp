@@ -30,23 +30,16 @@ void MatrixOnlineScheduler::doSimpleDispatch()
     result = elf().multiply(left, right);
 }
 
-void MatrixOnlineScheduler::generateData(const DataGenerationParameters& params)
+void MatrixOnlineScheduler::doDispatch()
 {
-    left  = Matrix<float>(params.leftRows, params.common);
-    right = Matrix<float>(params.common, params.rightColumns);
-    auto distribution = uniform_real_distribution<float> (-100, +100);
-    auto engine = mt19937(time(nullptr));
-    auto generator = bind(distribution, engine);
-    MatrixHelper::fill(left, generator);
-    MatrixHelper::fill(right, generator);
-}
-
-void MatrixOnlineScheduler::calculateOnSlave()
-{
-    Matrix<float> left = MatrixHelper::receiveMatrixFrom(MpiHelper::MASTER);
-    Matrix<float> right = MatrixHelper::receiveMatrixFrom(MpiHelper::MASTER);
-    Matrix<float> result = elf().multiply(left, right);
-    MatrixHelper::sendMatrixTo(result, MpiHelper::MASTER);
+    if (MpiHelper::isMaster())
+    {
+        orchestrateCalculation();
+    }
+    else
+    {
+        calculateOnSlave();
+    }
 }
 
 void MatrixOnlineScheduler::orchestrateCalculation()
@@ -57,9 +50,7 @@ void MatrixOnlineScheduler::orchestrateCalculation()
 Matrix<float> MatrixOnlineScheduler::dispatchAndReceive() const
 {
     Matrix<float> result(left.rows(), right.columns());
-    //MatrixSlicer slicer;
     MatrixSlicerSquarified slicer;
-    //vector<MatrixSlice> sliceDefinitions = slicer.sliceAndDice(nodeSet, result.rows(), result.columns());
     vector<MatrixSlice> sliceDefinitions = slicer.layout(nodeSet, result.rows(), result.columns());
     const MatrixSlice* masterSlice = nullptr; //distributeSlices(sliceDefinitions);
     if (masterSlice != nullptr)
@@ -68,6 +59,21 @@ Matrix<float> MatrixOnlineScheduler::dispatchAndReceive() const
     }
     collectResults(sliceDefinitions, result);
     return result;
+}
+
+void MatrixOnlineScheduler::calculateOnSlave()
+{
+    Matrix<float> left = MatrixHelper::receiveMatrixFrom(MpiHelper::MASTER);
+    Matrix<float> right = MatrixHelper::receiveMatrixFrom(MpiHelper::MASTER);
+    Matrix<float> result = elf().multiply(left, right);
+    MatrixHelper::sendMatrixTo(result, MpiHelper::MASTER);
+}
+
+void MatrixOnlineScheduler::calculateOnMaster(const MatrixSlice& sliceDefinition, Matrix<float>& result) const
+{
+    MatrixPair slicedMatrices = sliceMatrices(sliceDefinition);
+    Matrix<float> resultSlice = elf().multiply(slicedMatrices.first, slicedMatrices.second);
+    sliceDefinition.injectSlice(resultSlice, result);
 }
 
 void MatrixOnlineScheduler::collectResults(const vector<MatrixSlice>& sliceDefinitions, Matrix<float>& result) const
@@ -83,9 +89,3 @@ void MatrixOnlineScheduler::collectResults(const vector<MatrixSlice>& sliceDefin
     }
 }
 
-void MatrixOnlineScheduler::calculateOnMaster(const MatrixSlice& sliceDefinition, Matrix<float>& result) const
-{
-    MatrixPair slicedMatrices = sliceMatrices(sliceDefinition);
-    Matrix<float> resultSlice = elf().multiply(slicedMatrices.first, slicedMatrices.second);
-    sliceDefinition.injectSlice(resultSlice, result);
-}
