@@ -11,9 +11,8 @@
 
 __global__ void setupStateForRandom(curandState* state, size_t* seeds)
 {
-    printf("Block %d: Seed: %lu\n", blockIdx.x, seeds[blockIdx.x]);
+    //printf("Block %d: Seed: %lu\n", blockIdx.x, seeds[blockIdx.x]);
 	curand_init(seeds[blockIdx.x], 0, 0, &state[blockIdx.x]);
-    //curand_init(0, 0, 0, &state[threadIdx.x]);
 }
 
 
