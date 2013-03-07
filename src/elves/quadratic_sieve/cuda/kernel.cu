@@ -53,14 +53,13 @@ __global__ void megaKernel(const Number* number, uint32_t* logs, const uint32_t*
 {
     int index = blockIdx.x * blockDim.x + threadIdx.x;
     Number newStart(*start + index * NUMBERS_PER_THREAD);
+    Number newStartP(newStart);
     Number newEnd = newStart + Number(NUMBERS_PER_THREAD);
     
     if (newStart > *end) 
     {
         return;
     }
-    
-    printf("individial newstart %d\n", newStart.get_ui());
     
     for (int i=0; i<factorBaseSize; ++i)
     {
@@ -73,21 +72,23 @@ __global__ void megaKernel(const Number* number, uint32_t* logs, const uint32_t*
     	    	    
     	    int timesAdvanced = 0;
         	bool invalid = false; 	
+        	newStart = newStartP;
         	
         	while (!(newStart % primePower).isZero()) 
         	{        	   
         	   newStart += 1;
         	   ++timesAdvanced;
-        	   if ((timesAdvanced >= NUMBERS_PER_THREAD) || (newStart >= *end)) 
+        	   if ((timesAdvanced >= NUMBERS_PER_THREAD) || (newStart > *end)) 
         	   {
         	       invalid = true;
+        	       break;
         	   }
         	} 
         	
         
         	if (invalid) continue;
         	
-        	Number h = newStart % primePower;
+        	//Number h = newStart % primePower;
             //printf("h: %d\n", h.get_ui());
         	
             //printf("first div number by %d: %d\n", primePower.get_ui(), (newStart).get_ui());

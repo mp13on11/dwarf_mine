@@ -9,7 +9,7 @@ typedef unsigned int uint32_t;
 
 typedef uint32_t FieldType;
 
-const int NUM_FIELDS = 10;
+const int NUM_FIELDS = 5;
 const size_t DATA_SIZE_BYTES = sizeof(FieldType)*NUM_FIELDS;
 
 typedef FieldType NumData[NUM_FIELDS];
