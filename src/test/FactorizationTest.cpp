@@ -2,7 +2,7 @@
 #include "Utilities.h"
 #include "common/SchedulerFactory.h"
 #include "elves/common-factorization/BigInt.h"
-#include "elves/quadratic_sieve/smp/QuadraticSieve.h"
+#include "elves/quadratic_sieve/QuadraticSieve.h"
 #include "elves/quadratic_sieve/smp/SmpQuadraticSieveElf.h"
 #include "elves/quadratic_sieve/cuda/CudaQuadraticSieveElf.h"
 
@@ -40,15 +40,6 @@ void FactorizationTest::SetUp()
     q = inputPair.second;
     product = p*q;
 }
-
-/*
-TEST_P(FactorizationTest, testFactorizationCuda)
-{
-    unique_ptr<CudaFactorizationElf> elf(new CudaFactorizationElf());
-    auto actual = elf->factorize(product);
-    EXPECT_EQ(p, actual.first);
-    EXPECT_EQ(q, actual.second);
-}*/
 
 TEST_P(FactorizationTest, testFactorizationFermat)
 {
@@ -138,7 +129,7 @@ TEST_P(FactorizationTest, testFactorizationQuadraticSieve)
 
     unique_ptr<QuadraticSieveElf> elf(new SmpQuadraticSieveElf());
     BigInt actualP, actualQ;
-    tie(actualP, actualQ) = QuadraticSieveHelper::factor(product, bind(&QuadraticSieveElf::sieve, elf.get(), _1, _2, _3));
+    tie(actualP, actualQ) = QuadraticSieveHelper::factor(product, bind(&QuadraticSieveElf::sieveSmoothSquares, elf.get(), _1, _2, _3, _4));
 
 
     auto end = high_resolution_clock::now();

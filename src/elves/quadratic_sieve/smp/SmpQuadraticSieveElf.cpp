@@ -1,15 +1,17 @@
 #include "SmpQuadraticSieveElf.h"
 #include <common/Utils.h>
 
+#include <algorithm>
 #include <future>
 #include <cassert>
 #include <thread>
-#include <algorithm>
+#include <omp.h>
 
 using namespace std;
 
-// returns a list of numbers, which quadratic residues are (probable) smooth over the factor base
-vector<BigInt> sieveSmoothSquares(const BigInt& start, const BigInt& end, const BigInt& number, const FactorBase& factorBase)
+// returns a list of numbers, whose quadratic residues are (probable) smooth
+// over the factor base
+vector<BigInt> smpSieveKernel(const BigInt& start, const BigInt& end, const BigInt& number, const FactorBase& factorBase)
 {
     BigInt intervalLength = (end-start);
     size_t blockSize = intervalLength.get_ui();
@@ -64,14 +66,28 @@ vector<BigInt> sieveSmoothSquares(const BigInt& start, const BigInt& end, const 
     return result;
 }
 
-pair<BigInt, BigInt> sieveIntervalFast(const BigInt& start, const BigInt& end, vector<Relation>& relations, const FactorBase& factorBase, const BigInt& number)
+template<typename ElemType>
+std::ostream& operator<<(std::ostream& stream, const std::vector<ElemType>& list)
 {
-    const size_t maxRelations = factorBase.size() + 2;
+    stream << "[";
+    bool first = true;
+    for (const auto& element : list)
+    {
+        if (!first)
+            stream << ", ";
+        stream << element;
+        first = false;
+    }
+    stream << "]";
 
-    const int NUM_THREADS = 4;
-
-    SmoothSquares smooths;
-    vector<future<SmoothSquares>> partialResults;
+    return stream;
+}
+vector<BigInt> SmpQuadraticSieveElf::sieveSmoothSquares(const BigInt& start, const BigInt& end, const BigInt& number, const FactorBase& factorBase)
+{
+    const int NUM_THREADS = omp_get_num_threads();
+    
+    SmoothSquareList smooths;
+    vector<future<SmoothSquareList>> partialResults;
     BigInt totalLength = end - start;
     //BigInt chunkSize = //totalLength / NUM_THREADS;
     BigInt chunkSize = div_ceil(totalLength, BigInt(NUM_THREADS));
@@ -83,7 +99,7 @@ pair<BigInt, BigInt> sieveIntervalFast(const BigInt& start, const BigInt& end, v
 
         partialResults.emplace_back(std::async(
             std::launch::async,
-            &sieveSmoothSquares, partialStart, partialEnd, number, factorBase
+            smpSieveKernel, partialStart, partialEnd, number, factorBase
         ));
     }
 
@@ -92,45 +108,6 @@ pair<BigInt, BigInt> sieveIntervalFast(const BigInt& start, const BigInt& end, v
         auto partialResult = result.get();
         smooths.insert(smooths.end(), partialResult.begin(), partialResult.end());
     }
-
-    for(const BigInt& x : smooths)
-    {
-        BigInt remainder = (x*x) % number;
-
-        PrimeFactorization factorization = QuadraticSieveHelper::factorizeOverBase(remainder, factorBase);
-        if(factorization.empty())
-        {
-            cerr << "false alarm !!! (should not happend)" << endl;
-            continue;
-        }
-
-        Relation relation(x, factorization);
-
-        if(relation.isPerfectCongruence())
-        {
-            auto factors = QuadraticSieveHelper::factorsFromCongruence(x, sqrt(factorization).multiply(), number);
-            if(QuadraticSieveHelper::isNonTrivial(factors, number))
-            {
-                return factors;
-            }
-        }
-
-        relations.push_back(relation);
-
-        if(relations.size() >= maxRelations)
-            break;
-    }
-
-    return QuadraticSieveHelper::TRIVIAL_FACTORS;
-}
-
-pair<BigInt, BigInt> SmpQuadraticSieveElf::sieve(vector<Relation>& relations, const FactorBase& factorBase, const BigInt& number)
-{
-    BigInt intervalSize = exp(sqrt(log(number)*log(log(number))));
-    BigInt intervalStart = sqrt(number) + 1;
-    BigInt intervalEnd = sqrt(number)+ 1 + intervalSize;
-    intervalEnd = (sqrt(2*number) < intervalEnd) ? sqrt(2*number) : intervalEnd;
-
-    cout << "sieving interval: " << (intervalEnd - intervalStart) << endl;
-    return sieveIntervalFast(intervalStart, intervalEnd, relations, factorBase, number);
+    
+    return smooths;
 }

@@ -262,3 +262,6 @@ void MonteCarloScheduler::collectResults()
     _result = *bestMove;
 }
 
+void MonteCarloScheduler::doBenchmarkDispatch(NodeId /*node*/)
+{
+}    

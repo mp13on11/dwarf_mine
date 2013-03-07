@@ -18,10 +18,12 @@ public:
 
     virtual void dispatch();
     virtual void dispatchSimple();
+    virtual void dispatchBenchmark(NodeId node);
 
 protected:
     virtual void doDispatch() = 0;
     virtual void doSimpleDispatch() = 0;
+    virtual void doBenchmarkDispatch(NodeId node) = 0;
     virtual bool hasData() const = 0;
     ElfType& elf() const;
 
@@ -48,7 +50,7 @@ ElfType& SchedulerTemplate<ElfType>::elf() const
 {
     return *_elf;
 }
-#include <iostream>
+
 template<typename ElfType>
 void SchedulerTemplate<ElfType>::dispatch()
 {
@@ -64,6 +66,15 @@ void SchedulerTemplate<ElfType>::dispatchSimple()
     _elf.reset(_factory());
     validate();
     doSimpleDispatch();
+    _elf.release();
+}
+
+template<typename ElfType>
+void SchedulerTemplate<ElfType>::dispatchBenchmark(NodeId node)
+{
+    _elf.reset(_factory());
+    validate();
+    doBenchmarkDispatch(node);
     _elf.release();
 }
 

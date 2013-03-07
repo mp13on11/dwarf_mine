@@ -3,6 +3,7 @@
 #include "common/SchedulerTemplate.h"
 #include "common-factorization/BigInt.h"
 #include <utility>
+#include "QuadraticSieve.h"
 
 class QuadraticSieveElf;
 
@@ -18,8 +19,15 @@ public:
     std::pair<BigInt, BigInt> factor();
 
 private:
+    std::vector<BigInt> sieveDistributed(
+        const BigInt& start,
+        const BigInt& end,
+        const BigInt& number,
+        const FactorBase& factorBase
+    );
     virtual void doDispatch();
     virtual void doSimpleDispatch();
+    virtual void doBenchmarkDispatch(NodeId node);
     virtual bool hasData() const;
 
     BigInt number;

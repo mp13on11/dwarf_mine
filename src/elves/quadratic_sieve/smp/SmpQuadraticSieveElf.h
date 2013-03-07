@@ -5,5 +5,10 @@
 class SmpQuadraticSieveElf : public QuadraticSieveElf
 {
 public:
-    virtual std::pair<BigInt, BigInt> sieve(std::vector<Relation>& relations, const FactorBase& factorBase, const BigInt& number);
+    virtual std::vector<BigInt> sieveSmoothSquares(
+        const BigInt& start,
+        const BigInt& end,
+        const BigInt& number,
+        const FactorBase& factorBase
+    );
 };

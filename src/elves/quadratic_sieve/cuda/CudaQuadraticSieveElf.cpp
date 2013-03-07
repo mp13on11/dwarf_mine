@@ -8,9 +8,14 @@
 
 using namespace std;
 
-pair<BigInt, BigInt> CudaQuadraticSieveElf::sieve(vector<Relation>& , const FactorBase& , const BigInt& )
+vector<BigInt> CudaQuadraticSieveElf::sieveSmoothSquares(
+        const BigInt&,
+        const BigInt&,
+        const BigInt&,
+        const FactorBase&
+)
 {
-    return make_pair(0, 0);
+    return vector<BigInt>();
 }
 
 /*
