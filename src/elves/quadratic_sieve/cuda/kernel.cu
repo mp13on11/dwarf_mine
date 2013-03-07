@@ -60,44 +60,37 @@ __global__ void megaKernel(const Number* number, uint32_t* logs, const uint32_t*
         return;
     }
     
-   
-    if (index == 0) {
-    printf("start: %d\n", start->get_ui());
-    printf("newEnd: %d\n", newEnd.get_ui());
-    printf("newStart: %d\n", newStart.get_ui());
-    }
+    printf("individial newstart %d\n", newStart.get_ui());
     
-    //printf("asdfasdlf jasldfkaljsdfka jsdf \n\n\n");
-
     for (int i=0; i<factorBaseSize; ++i)
     {
     	Number prime(factorBase[i]);
     	Number primePower(prime);
     	
-        //printf("primePower %d < number %d\n", primePower.get_ui(), number->get_ui());
-        //printf("primePower < number %d\n", primePower > *number);
-        
     	while (primePower < *number) {
     	   
-    	    printf("testing primePower %d\n", primePower.get_ui());    
+    	    //printf("testing primePower %d\n", primePower.get_ui());    
     	    	    
     	    int timesAdvanced = 0;
+        	bool invalid = false; 	
         	
-        	printf("about to print\n");
-        	Number h = newStart % primePower;
-        	printf("h: %d", h.get_ui());
-        	//while (timesAdvanced <= NUMBERS_PER_THREAD && !(newStart % primePower).isZero() && newStart <= *end) 
-        	while (true)
-        	{
-        	   
-        	   printf("advanced\n");
+        	while (!(newStart % primePower).isZero()) 
+        	{        	   
         	   newStart += 1;
         	   ++timesAdvanced;
-        	   if (timesAdvanced >= NUMBERS_PER_THREAD) break;
-        	   //rest = newStart % primePower;
+        	   if ((timesAdvanced >= NUMBERS_PER_THREAD) || (newStart >= *end)) 
+        	   {
+        	       invalid = true;
+        	   }
         	} 
         	
-        	printf("after while loop\n\n\n");
+        
+        	if (invalid) continue;
+        	
+        	Number h = newStart % primePower;
+            //printf("h: %d\n", h.get_ui());
+        	
+            //printf("first div number by %d: %d\n", primePower.get_ui(), (newStart).get_ui());
         	
         	for (; newStart < newEnd; newStart += primePower) 
         	{
