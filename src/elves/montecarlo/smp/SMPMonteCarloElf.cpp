@@ -20,7 +20,7 @@ void expand(const OthelloState& rootState, vector<OthelloState>& childStates, ve
     for (const auto& move : moves)
     {
         childStates.emplace_back(rootState, move);
-        childResults.emplace_back(OthelloResult{ (size_t)move.x, (size_t)move.y, 0, 0, 0});
+        childResults.emplace_back(OthelloResult{ (size_t)move.x, (size_t)move.y, 0, 0});
     }   
 }
 
@@ -107,6 +107,5 @@ OthelloResult SMPMonteCarloElf::getBestMoveFor(OthelloState& rootState, size_t r
             bestResult = &result;
         }
     }
-    bestResult->iterations = executedIterations;
     return *bestResult;
 }

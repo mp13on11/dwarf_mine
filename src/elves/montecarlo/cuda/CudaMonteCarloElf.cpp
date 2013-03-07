@@ -22,7 +22,7 @@ void initialize(const OthelloState& state, vector<Field>& aggregatedPlayfields, 
             aggregatedPlayfields.push_back(buffer[j]);
         }
 
-        aggregatedResults.emplace_back(untriedMoves[i].x, untriedMoves[i].y, 0, 0, 0);
+        aggregatedResults.emplace_back(untriedMoves[i].x, untriedMoves[i].y, 0, 0);
     }
 }
 
@@ -54,7 +54,6 @@ OthelloResult CudaMonteCarloElf::getBestMoveFor(OthelloState& state, size_t reit
     // invert results since they are calculated for the enemy player
 
     OthelloResult worstEnemyResult;
-    size_t iterations = 0;
 
     for (auto& result : aggregatedChildResults)
     {
@@ -64,15 +63,13 @@ OthelloResult CudaMonteCarloElf::getBestMoveFor(OthelloState& state, size_t reit
         {
             worstEnemyResult = result;
         }   
-        iterations += result.visits;
     }
 
     OthelloResult result = OthelloResult { 
         worstEnemyResult.x,
         worstEnemyResult.y,
         worstEnemyResult.visits,
-        worstEnemyResult.visits - worstEnemyResult.wins,
-        iterations
+        worstEnemyResult.visits - worstEnemyResult.wins
     };
     return result;
 }

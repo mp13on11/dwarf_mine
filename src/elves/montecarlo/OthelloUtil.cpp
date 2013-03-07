@@ -17,16 +17,18 @@ namespace OthelloHelper
 
     void writeResultToStream(std::ostream& stream, const OthelloResult& result)
     {
-        stream << result.x << result.y << result.visits << result.wins << result.iterations;
+        stream << result.x 
+               << result.y 
+               << result.visits 
+               << result.wins; 
     }
 
     void readResultFromStream(std::istream& stream, OthelloResult& result)
     {
-        stream >> result.x;
-        stream >> result.y;
-        stream >> result.visits;
-        stream >> result.wins;
-        stream >> result.iterations;
+        stream >> result.x
+               >> result.y
+               >> result.visits
+               >> result.wins;
     }
 
     void writePlayfieldToStream(std::ostream& stream, const std::vector<Field>& playfield)
