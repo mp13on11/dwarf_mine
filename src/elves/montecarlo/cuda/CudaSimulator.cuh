@@ -100,14 +100,7 @@ public:
         {
             if (moveCount > 1)
             {
-                if (fakedRandom >= 0)
-                {
-                    randomMoveCounter = fakedRandom * moveCount;
-                }
-                else
-                {
-                    randomMoveCounter = randomNumber(_deviceState, moveCount);    
-                }
+                randomMoveCounter = randomNumber(_deviceState, moveCount, fakedRandom);    
             }
             else
             {
@@ -115,19 +108,21 @@ public:
             }
         }
         __syncthreads();
-        size_t possibleMoveIndex = 0;
+        cassert(randomMoveCounter < moveCount, "Detected invalid moveCounter %lu - maximum %lu\n", randomMoveCounter, moveCount);
+
+        size_t possibleMoveCounter = 0;
         for (size_t i = 0; i < _state->size; ++i)
         {
             if (_state->possible[i])
             {
-                if (possibleMoveIndex == randomMoveCounter)
+                if (possibleMoveCounter == randomMoveCounter)
                 {
                     return i;
                 }
-                possibleMoveIndex++;;
+                possibleMoveCounter++;
             }
         }
-        cassert(false, "Could not find array index for move #%d - found only %lu possible moves in field of size %lu\n", randomMoveCounter, possibleMoveIndex, _state->size);
+        cassert(false, "Could not find array index for move #%d - found only %lu possible moves in field of size %lu\n", randomMoveCounter, possibleMoveCounter, _state->size);
         return 96;
     }
 

@@ -32,7 +32,7 @@ void testSingleStep(Playfield& playfield, vector<pair<size_t, Field>> expectedCh
     CudaUtils::Memory<Field> cudaPlayfield(playfield.size());
     cudaPlayfield.transferFrom(playfield.data());
     
-    testBySimulateSingeStep(cudaPlayfield.get(), currentPlayer, randomFake);
+    testDoStepProxy(cudaPlayfield.get(), currentPlayer, randomFake);
 
     Playfield outputPlayfield(playfield.size());
     cudaPlayfield.transferTo(outputPlayfield.data());
@@ -63,7 +63,7 @@ void testMultipleSteps(Playfield& playfield, vector<pair<size_t, Field>> expecte
 
     size_t dimension = 8;
 
-    testByLeafSimulation(dimension, cudaPlayfield.get(), currentPlayer, cudaWins.get(), cudaVisits.get());
+    testSimulateGameLeafProxy(dimension, cudaPlayfield.get(), currentPlayer, cudaWins.get(), cudaVisits.get());
 
     cudaWins.transferTo(&wins);
     cudaVisits.transferTo(&visits);

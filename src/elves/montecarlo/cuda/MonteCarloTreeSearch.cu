@@ -16,6 +16,7 @@ __global__ void setupStateForRandom(curandState* state, size_t* seeds);
 __global__ void simulateGameLeaf(curandState* deviceState, Field* playfield, Player currentPlayer, size_t* wins, size_t* visits);
 __global__ void simulateGame(size_t reiterations, curandState* deviceStates, size_t numberOfPlayfields, Field* playfields, Player currentPlayer, OthelloResult* results);
 
+__global__ void testRandomNumber(float fakedRandom, size_t maximum, size_t* randomNumberResult);
 __global__ void testDoStep(curandState* deviceState, Field* playfield, Player currentPlayer, float fakedRandom);
 __global__ void testSimulateGameLeaf(curandState* deviceState, Field* playfield, Player currentPlayer, size_t* wins, size_t* visits);
 
@@ -53,7 +54,7 @@ void leafSimulation(size_t reiterations, size_t dimension, Field* playfield, Pla
     CudaUtils::checkState();
 }
 
-void testBySimulateSingeStep(Field* playfield, Player currentPlayer, float fakedRandom)
+void testDoStepProxy(Field* playfield, Player currentPlayer, float fakedRandom)
 {
     curandState* deviceStates;
     size_t numberOfBlocks = 1;
@@ -63,7 +64,13 @@ void testBySimulateSingeStep(Field* playfield, Player currentPlayer, float faked
     CudaUtils::checkState();    
 }
 
-void testByLeafSimulation(size_t dimension, Field* playfield, Player currentPlayer, size_t* wins, size_t* visits)
+void testRandomNumberProxy(float fakedRandom, size_t maximum, size_t* randomMoveIndex)
+{
+    testRandomNumber<<< 1, 1 >>> (fakedRandom, maximum, randomMoveIndex);
+    CudaUtils::checkState();
+}
+
+void testSimulateGameLeafProxy(size_t dimension, Field* playfield, Player currentPlayer, size_t* wins, size_t* visits)
 {
     curandState* deviceStates;
     size_t numberOfBlocks = 1;

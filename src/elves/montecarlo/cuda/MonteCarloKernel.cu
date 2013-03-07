@@ -138,6 +138,12 @@ __global__ void simulateGame(size_t reiterations, curandState* deviceStates, siz
     }
 }
 
+__global__ void testRandomNumber(float fakedRandom, size_t maximum, size_t* randomNumberResult)
+{
+    *randomNumberResult = randomNumber(NULL, maximum, fakedRandom);
+}
+
+
 __global__ void testDoStep(curandState* deviceState, Field* playfield, Player currentPlayer, float fakedRandom)
 {
     int playfieldIndex = threadIdx.x;
