@@ -49,15 +49,13 @@ vector<BigInt> CudaQuadraticSieveElf::sieveSmoothSquares(
     array<uint32_t, 10> end_d;
 	mpz_export((void*)end_d.data(), 0, -1, sizeof(uint32_t), 0, 0, end.get_mpz_t());
 
-	cout << "start: " << start << " end: " << end << endl;
+	cout << "start: " << start << " end: " << end << " start_d: " << start_d[9]  << endl;
+
+
 
 	cout << "CUDA sieveSmoothSquares before kernel" << endl;
     megaWrapper(number_d.data(), logs_d.get(), factorBase_d.get(), factorBase.size(), start_d.data(), end_d.data(), blockSize);
     cout << "CUDA sieveSmoothSquares after kernel" << endl;
-
-//    CudaUtils::Memory<uint32_t> start_d = NumberHelper::BigIntToNumber(start);
-//    CudaUtils::Memory<uint32_t> end_d = NumberHelper::BigIntToNumber(end);
-//    CudaUtils::Memory<uint32_t> number_d = NumberHelper::BigIntToNumber(number);
 
     cout << "before transfer" << endl;
     vector<uint32_t> newLogs(blockSize+1);
@@ -68,7 +66,7 @@ vector<BigInt> CudaQuadraticSieveElf::sieveSmoothSquares(
     uint32_t logTreshold = (int)(lb(number));
     for(uint32_t i=0; i<=blockSize; i++)
     {
-    	cout << "log: " << newLogs[i] << endl;
+    	//cout << "log: " << newLogs[i] << endl;
     	if(newLogs[i] < logTreshold) // probable smooth
     	{
     		result.emplace_back(start+i);

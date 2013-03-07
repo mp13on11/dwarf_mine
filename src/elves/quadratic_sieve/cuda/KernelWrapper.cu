@@ -13,15 +13,15 @@ void megaWrapper(const uint32_t* number, uint32_t* logs_d, const uint32_t* facto
     
     Number* number_d; 
     cudaMalloc(&number_d, sizeof(uint32_t)*NUM_FIELDS);
-    cudaMemcpy(number_d, start, 10*sizeof(uint32_t), cudaMemcpyHostToDevice);
+    cudaMemcpy(number_d, start, NUM_FIELDS*sizeof(uint32_t), cudaMemcpyHostToDevice);
        
 	Number* start_d; 
 	cudaMalloc(&start_d, sizeof(uint32_t)*NUM_FIELDS);
-	cudaMemcpy(start_d, start, 10*sizeof(uint32_t), cudaMemcpyHostToDevice);
+	cudaMemcpy(start_d, start, NUM_FIELDS*sizeof(uint32_t), cudaMemcpyHostToDevice);
 	
 	Number* end_d; 
 	cudaMalloc(&end_d, sizeof(uint32_t)*NUM_FIELDS);
-	cudaMemcpy(end_d, end, 10*sizeof(uint32_t), cudaMemcpyHostToDevice);
+	cudaMemcpy(end_d, end, NUM_FIELDS*sizeof(uint32_t), cudaMemcpyHostToDevice);
 	
 	//printf("garbage2? %d", end[9]);
 	

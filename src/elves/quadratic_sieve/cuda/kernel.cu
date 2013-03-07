@@ -55,12 +55,14 @@ __global__ void megaKernel(const Number* number, uint32_t* logs, const uint32_t*
     Number newStart(*start + index * NUMBERS_PER_THREAD);
     Number newStartP(newStart);
     Number newEnd = newStart + Number(NUMBERS_PER_THREAD);
-    
+      
     if (newStart > *end) 
     {
         return;
     }
     
+    printf("asdfasdfasdf\n\n");
+        
     for (int i=0; i<factorBaseSize; ++i)
     {
     	Number prime(factorBase[i]);
@@ -90,12 +92,14 @@ __global__ void megaKernel(const Number* number, uint32_t* logs, const uint32_t*
         	
         	//Number h = newStart % primePower;
             //printf("h: %d\n", h.get_ui());
-        	
             //printf("first div number by %d: %d\n", primePower.get_ui(), (newStart).get_ui());
         	
-        	for (; newStart < newEnd; newStart += primePower) 
+        	Number offset = newStart - *start;
+        	printf("offset: %d\n\n", offset.get_ui());
+        	for (; offset.get_ui() <= intervalLength; offset += primePower) 
         	{
-        	   logs[newStart.get_ui()] -= log_2_22(primePower);
+        	   
+        	   logs[offset.get_ui()] -= log_2_22(primePower);
         	}
         	
         	primePower *= prime;
