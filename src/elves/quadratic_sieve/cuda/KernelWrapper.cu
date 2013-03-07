@@ -13,20 +13,25 @@ void megaWrapper(const uint32_t* number, uint32_t* logs_d, const uint32_t* facto
     
     Number* number_d; 
     cudaMalloc(&number_d, sizeof(uint32_t)*NUM_FIELDS);
-    cudaMemcpy(number_d, start, 10, cudaMemcpyHostToDevice);
-    
+    cudaMemcpy(number_d, start, 10*sizeof(uint32_t), cudaMemcpyHostToDevice);
+       
 	Number* start_d; 
 	cudaMalloc(&start_d, sizeof(uint32_t)*NUM_FIELDS);
-	cudaMemcpy(start_d, start, 10, cudaMemcpyHostToDevice);
+	cudaMemcpy(start_d, start, 10*sizeof(uint32_t), cudaMemcpyHostToDevice);
 	
 	Number* end_d; 
 	cudaMalloc(&end_d, sizeof(uint32_t)*NUM_FIELDS);
-	cudaMemcpy(end_d, end, 10, cudaMemcpyHostToDevice);
+	cudaMemcpy(end_d, end, 10*sizeof(uint32_t), cudaMemcpyHostToDevice);
+	
+	//printf("garbage2? %d", end[9]);
 	
 	printf("before megaKernel in wrapper, numBlocks: %d, numThreads: %d\n", numBlocks, numThreads);
 	megaKernel<<<numBlocks, BLOCK_SIZE>>>(number_d, logs_d, factorBase_d, (int)factorBaseSize, start_d, end_d, intervalLength);
 	printf("after megaKernel\n");
 	
+	cudaDeviceSynchronize();
+	
 	cudaFree(start_d);
 	cudaFree(end_d);
+	cudaFree(number_d);
 }

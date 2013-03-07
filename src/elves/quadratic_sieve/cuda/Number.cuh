@@ -157,9 +157,15 @@ struct Number
 
         Number quotient(static_cast<uint64_t>(0));
 
+        if (*this < other)
+        {
+           *this = other;
+           return Number::ZERO();
+        }
+
         while (*this >= other)
         {
-            *this -= other;
+            *this = *this - other;
             quotient += 1;
         }
         return quotient;
@@ -176,9 +182,15 @@ struct Number
     {
         for (int i = NUM_FIELDS-1; i >= 0; --i)
         {
-            if (fields[i] < other.fields[i])
+            //printf("%d fields %u, other %u\n",i,  fields[i], other.fields[i]);
+            if (fields[i] == other.fields[i]) continue;
+            else if (fields[i] < other.fields[i])
             {
                 return true;
+            }
+            else
+            {
+                return false;
             }
         }
         return false;

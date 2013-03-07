@@ -55,15 +55,19 @@ __global__ void megaKernel(const Number* number, uint32_t* logs, const uint32_t*
     Number newStart(*start + index * NUMBERS_PER_THREAD);
     Number newEnd = newStart + Number(NUMBERS_PER_THREAD);
     
+    if (newStart > *end) 
+    {
+        return;
+    }
+    
    
-    
-    if (newStart > *end) return;
-    
-    if (index == 2) {
+    if (index == 0) {
     printf("start: %d\n", start->get_ui());
     printf("newEnd: %d\n", newEnd.get_ui());
     printf("newStart: %d\n", newStart.get_ui());
-}
+    }
+    
+    //printf("asdfasdlf jasldfkaljsdfka jsdf \n\n\n");
 
     for (int i=0; i<factorBaseSize; ++i)
     {
@@ -73,14 +77,17 @@ __global__ void megaKernel(const Number* number, uint32_t* logs, const uint32_t*
         //printf("primePower %d < number %d\n", primePower.get_ui(), number->get_ui());
         //printf("primePower < number %d\n", primePower > *number);
         
-    	while (primePower.get_ui() < number->get_ui()) {
+    	while (primePower < *number) {
     	   
-    	    //printf("testing primePower %d\n", primePower.get_ui());    
+    	    printf("testing primePower %d\n", primePower.get_ui());    
     	    	    
     	    int timesAdvanced = 0;
         	
-        	
-        	while (timesAdvanced <= NUMBERS_PER_THREAD && !(newStart % primePower).isZero() && newStart <= *end) 
+        	printf("about to print\n");
+        	Number h = newStart % primePower;
+        	printf("h: %d", h.get_ui());
+        	//while (timesAdvanced <= NUMBERS_PER_THREAD && !(newStart % primePower).isZero() && newStart <= *end) 
+        	while (true)
         	{
         	   
         	   printf("advanced\n");
@@ -88,7 +95,6 @@ __global__ void megaKernel(const Number* number, uint32_t* logs, const uint32_t*
         	   ++timesAdvanced;
         	   if (timesAdvanced >= NUMBERS_PER_THREAD) break;
         	   //rest = newStart % primePower;
-        	   
         	} 
         	
         	printf("after while loop\n\n\n");
@@ -136,9 +142,14 @@ __global__ void testDivKernel(PNumData pLeft, PNumData pRight, PNumData output)
     Number right(pRight);
     
     Number result(left.divMod(right));
-    
-    printf("result of modulo: %d\n", left.get_ui());
-    
+    result.writeTo(output);
+}
+
+__global__ void testModKernel(PNumData pLeft, PNumData pRight, PNumData output)
+{
+    Number left(pLeft);
+    Number right(pRight);
+    Number result(left % right);
     result.writeTo(output);
 }
 

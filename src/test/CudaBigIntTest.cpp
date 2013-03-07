@@ -12,6 +12,7 @@ extern void testAdd(PNumData left, PNumData right, PNumData result);
 extern void testSub(PNumData left, PNumData right, PNumData result);
 extern void testMul(PNumData left, PNumData right, PNumData result);
 extern void testDiv(PNumData left, PNumData right, PNumData result);
+extern void testMod(PNumData left, PNumData right, PNumData result);
 extern void testSmallerThan(PNumData left, PNumData right, bool* result);
 extern void testLargerThan(PNumData left, PNumData right, bool* result);
 extern void testLargerEqual(PNumData left, PNumData right, bool* result);
@@ -199,6 +200,28 @@ TEST(CudaBigIntTest, testDivisionEqualOperands)
     EXPECT_EQ(expected, actual);
 }
 
+TEST(CudaBigIntTest, testModulo)
+{
+    BigInt left("100");
+    BigInt right("6");
+    BigInt expected("4");
+
+    auto actual = invokeKernel(left, right,  testMod);
+
+    EXPECT_EQ(expected, actual);
+}
+
+TEST(CudaBigIntTest, testModulo2)
+{
+    BigInt left("100");
+    BigInt right("2");
+    BigInt expected("0");
+
+    auto actual = invokeKernel(left, right,  testMod);
+
+    EXPECT_EQ(expected, actual);
+}
+
 TEST(CudaBigIntTest, testSmallerThan)
 {
     BigInt left("90887891231490623");
@@ -209,6 +232,29 @@ TEST(CudaBigIntTest, testSmallerThan)
 
     EXPECT_EQ(expected, actual);
 }
+
+TEST(CudaBigIntTest, testSmallerThan2)
+{
+	BigInt left ("90887891231490623");
+	BigInt right("779789821317833");
+    bool expected(false);
+
+    auto actual = invokeBoolKernel(left, right, testSmallerThan);
+
+    EXPECT_EQ(expected, actual);
+}
+
+TEST(CudaBigIntTest, testSmallerThan3)
+{
+	BigInt left ("628");
+	BigInt right("886");
+    bool expected(true);
+
+    auto actual = invokeBoolKernel(left, right, testSmallerThan);
+
+    EXPECT_EQ(expected, actual);
+}
+
 
 TEST(CudaBigIntTest, testSmallerThanSmallValues)
 {
@@ -291,9 +337,20 @@ TEST(CudaBigIntTest, testSmallerThanWithEqualOperands)
 
 TEST(CudaBigIntTest, testLargerThan)
 {
-    BigInt left("798798797897897897987");
+    BigInt left ("798798797897897897987");
     BigInt right("4564654654654656");
     bool expected(true);
+
+    auto actual = invokeBoolKernel(left, right, testLargerThan);
+
+    EXPECT_EQ(expected, actual);
+}
+
+TEST(CudaBigIntTest, testLargerThan2)
+{
+	BigInt left ("628");
+	BigInt right("886");
+    bool expected(false);
 
     auto actual = invokeBoolKernel(left, right, testLargerThan);
 
