@@ -66,10 +66,10 @@ __global__ void megaKernel(const Number* number, uint32_t* logs, const uint32_t*
     	Number prime(factorBase[i]);
     	Number primePower(prime);
     	
+        int primeLog = log_2_22(prime);	    
     	while (primePower < *number) {
     	   
     	    //printf("testing primePower %d\n", primePower.get_ui());    
-    	    	    
     	    int timesAdvanced = 0;
         	bool invalid = false; 	
         	newStart = newStartP;
@@ -97,7 +97,7 @@ __global__ void megaKernel(const Number* number, uint32_t* logs, const uint32_t*
         	for (; offset.get_ui() <= intervalLength; offset += primePower) 
         	{
         	   
-        	   logs[offset.get_ui()] -= log_2_22(primePower);
+        	   logs[offset.get_ui()] -= primeLog; 
         	}
         	
         	primePower *= prime;
