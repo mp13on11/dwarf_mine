@@ -134,7 +134,11 @@ __global__ void testDivKernel(PNumData pLeft, PNumData pRight, PNumData output)
 {
     Number left(pLeft);
     Number right(pRight);
-    Number result(left / right);
+    
+    Number result(left.divMod(right));
+    
+    printf("result of modulo: %d\n", left.get_ui());
+    
     result.writeTo(output);
 }
 
@@ -145,6 +149,26 @@ __global__ void testSmallerThanKernel(PNumData pLeft, PNumData pRight, bool* out
     *output = left < right;
 }
 
+__global__ void testLargerThanKernel(PNumData pLeft, PNumData pRight, bool* output)
+{
+    Number left(pLeft);
+    Number right(pRight);
+    *output = left > right;
+}
+
+__global__ void testLargerEqualKernel(PNumData pLeft, PNumData pRight, bool* output)
+{
+    Number left(pLeft);
+    Number right(pRight);
+    *output = left >= right;
+}
+
+__global__ void testEqualKernel(PNumData pLeft, PNumData pRight, bool* output)
+{
+    Number left(pLeft);
+    Number right(pRight);
+    *output = left == right;
+}
 
 __global__ void testShiftLeftKernel(PNumData pLeft, uint32_t offset, PNumData output)
 {

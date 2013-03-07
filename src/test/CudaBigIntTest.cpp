@@ -13,6 +13,9 @@ extern void testSub(PNumData left, PNumData right, PNumData result);
 extern void testMul(PNumData left, PNumData right, PNumData result);
 extern void testDiv(PNumData left, PNumData right, PNumData result);
 extern void testSmallerThan(PNumData left, PNumData right, bool* result);
+extern void testLargerThan(PNumData left, PNumData right, bool* result);
+extern void testLargerEqual(PNumData left, PNumData right, bool* result);
+extern void testEqual(PNumData left, PNumData right, bool* result);
 extern void testShiftLeft(PNumData left, uint32_t offset, PNumData result);
 extern void testShiftRight(PNumData left, uint32_t offset, PNumData result);
 
@@ -141,23 +144,34 @@ TEST(CudaBigIntTest, testMultiplicationSmallNumbers)
     EXPECT_EQ(expected, actual);
 }
 
-TEST(CudaBigIntTest, testDivisionSmallValues)
-{
-    BigInt left("6");
-    BigInt right("2");
-    BigInt expected("3");
-
-    //auto actual = invokeKernel(left, right,  testDiv);
-
-    //EXPECT_EQ(expected, actual);
-}
-
-
 TEST(CudaBigIntTest, testDivision)
 {
     BigInt left("90887891231490623");
     BigInt right("779789821317833");
     BigInt expected("116");
+
+    auto actual = invokeKernel(left, right,  testDiv);
+
+    EXPECT_EQ(expected, actual);
+}
+
+
+TEST(CudaBigIntTest, testDivision2)
+{
+    BigInt left("1");
+    BigInt right("2");
+    BigInt expected("0");
+
+    auto actual = invokeKernel(left, right,  testDiv);
+
+    EXPECT_EQ(expected, actual);
+}
+
+TEST(CudaBigIntTest, testDivisionSmallValues)
+{
+    BigInt left("12");
+    BigInt right("2");
+    BigInt expected("6");
 
     auto actual = invokeKernel(left, right,  testDiv);
 
@@ -207,7 +221,42 @@ TEST(CudaBigIntTest, testSmallerThanSmallValues)
     EXPECT_EQ(expected, actual);
 }
 
-TEST(CudaBigIntTest, testSmallerThanSmallEqualValues)
+TEST(CudaBigIntTest, testSmallerThanSmallValueAndLargeValue)
+{
+    BigInt left("2");
+    BigInt right("2");
+    right <<= 32;
+
+    bool expected(true);
+
+    auto actual = invokeBoolKernel(left, right, testSmallerThan);
+
+    EXPECT_EQ(expected, actual);
+}
+
+TEST(CudaBigIntTest, testNotSmallerThanSmallValues)
+{
+    BigInt left("3");
+    BigInt right("2");
+    bool expected(false);
+
+    auto actual = invokeBoolKernel(left, right, testSmallerThan);
+
+    EXPECT_EQ(expected, actual);
+}
+
+TEST(CudaBigIntTest, testNotSmallerThanWithZeroAsOperand)
+{
+    BigInt left("0");
+    BigInt right("0");
+    bool expected(false);
+
+    auto actual = invokeBoolKernel(left, right, testSmallerThan);
+
+    EXPECT_EQ(expected, actual);
+}
+
+TEST(CudaBigIntTest, testNotSmallerThanSmallEqualValues)
 {
     BigInt left("3");
     BigInt right("3");
@@ -239,6 +288,120 @@ TEST(CudaBigIntTest, testSmallerThanWithEqualOperands)
 
     EXPECT_EQ(expected, actual);
 }
+
+TEST(CudaBigIntTest, testLargerThan)
+{
+    BigInt left("798798797897897897987");
+    BigInt right("4564654654654656");
+    bool expected(true);
+
+    auto actual = invokeBoolKernel(left, right, testLargerThan);
+
+    EXPECT_EQ(expected, actual);
+}
+
+TEST(CudaBigIntTest, testLargerThanSmallValues)
+{
+    BigInt left("2");
+    BigInt right("1");
+    bool expected(true);
+
+    auto actual = invokeBoolKernel(left, right, testLargerThan);
+
+    EXPECT_EQ(expected, actual);
+}
+
+TEST(CudaBigIntTest, testNotLargerThanSmallValues)
+{
+    BigInt left("1");
+    BigInt right("2");
+    bool expected(false);
+
+    auto actual = invokeBoolKernel(left, right, testLargerThan);
+
+    EXPECT_EQ(expected, actual);
+}
+
+TEST(CudaBigIntTest, testLargerWithEqualOperands)
+{
+    BigInt left("2");
+    BigInt right("2");
+    bool expected(false);
+
+    auto actual = invokeBoolKernel(left, right, testLargerThan);
+
+    EXPECT_EQ(expected, actual);
+}
+
+
+TEST(CudaBigIntTest, testLargerEqual)
+{
+    BigInt left("8589934592");
+    BigInt right("8589934592");
+    bool expected(true);
+
+    auto actual = invokeBoolKernel(left, right, testLargerEqual);
+
+    EXPECT_EQ(expected, actual);
+}
+
+TEST(CudaBigIntTest, testLargerEqualWithSmallEqualOperands)
+{
+    BigInt left("2");
+    BigInt right("2");
+    bool expected(true);
+
+    auto actual = invokeBoolKernel(left, right, testLargerEqual);
+
+    EXPECT_EQ(expected, actual);
+}
+
+TEST(CudaBigIntTest, testLargerEqualActuallyLarger)
+{
+    BigInt left("8589934593");
+    BigInt right("8589934592");
+    bool expected(true);
+
+    auto actual = invokeBoolKernel(left, right, testLargerEqual);
+
+    EXPECT_EQ(expected, actual);
+}
+
+TEST(CudaBigIntTest, testLargerEqualSmallAndLargeValue)
+{
+    BigInt left("2");
+    left <<= 32;
+    BigInt right("2");
+
+    bool expected(true);
+
+    auto actual = invokeBoolKernel(left, right, testLargerEqual);
+
+    EXPECT_EQ(expected, actual);
+}
+
+TEST(CudaBigIntTest, testEqual)
+{
+    BigInt left("222222222222222222");
+    BigInt right("222222222222222222");
+    bool expected(true);
+
+    auto actual = invokeBoolKernel(left, right, testEqual);
+
+    EXPECT_EQ(expected, actual);
+}
+
+TEST(CudaBigIntTest, testEqualSmallValues)
+{
+    BigInt left("0");
+    BigInt right("0");
+    bool expected(true);
+
+    auto actual = invokeBoolKernel(left, right, testEqual);
+
+    EXPECT_EQ(expected, actual);
+}
+
 
 TEST(CudaBigIntTest, testShiftLeft)
 {

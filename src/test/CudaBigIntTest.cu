@@ -6,6 +6,9 @@ extern __global__ void testSubKernel(PNumData pLeft, PNumData pRight, PNumData o
 extern __global__ void testMulKernel(PNumData pLeft, PNumData pRight, PNumData output);
 extern __global__ void testDivKernel(PNumData pLeft, PNumData pRight, PNumData output);
 extern __global__ void testSmallerThanKernel(PNumData pLeft, PNumData pRight, bool* output);
+extern __global__ void testLargerThanKernel(PNumData pLeft, PNumData pRight, bool* output);
+extern __global__ void testLargerEqualKernel(PNumData pLeft, PNumData pRight, bool* output);
+extern __global__ void testEqualKernel(PNumData pLeft, PNumData pRight, bool* output);
 extern __global__ void testShiftLeftKernel(PNumData pLeft, uint32_t offset, PNumData output);
 extern __global__ void testShiftRightKernel(PNumData pLeft, uint32_t offset, PNumData output);
 
@@ -36,6 +39,24 @@ void testDiv(PNumData left, PNumData right, PNumData result)
 void testSmallerThan(PNumData left, PNumData right, bool* result)
 {
     testSmallerThanKernel<<<1, 1>>>(left, right, result);
+    CudaUtils::checkState();
+}
+
+void testLargerThan(PNumData left, PNumData right, bool* result)
+{
+    testLargerThanKernel<<<1, 1>>>(left, right, result);
+    CudaUtils::checkState();
+}
+
+void testLargerEqual(PNumData left, PNumData right, bool* result)
+{
+    testLargerEqualKernel<<<1, 1>>>(left, right, result);
+    CudaUtils::checkState();
+}
+
+void testEqual(PNumData left, PNumData right, bool* result)
+{
+    testEqualKernel<<<1, 1>>>(left, right, result);
     CudaUtils::checkState();
 }
 

@@ -155,27 +155,13 @@ struct Number
             return Number(1);
         }
 
-        Number divisor(other);
         Number quotient(static_cast<uint64_t>(0));
 
-        while (*this > divisor)
+        while (*this >= other)
         {
-            divisor <<= 32;
+            *this -= other;
+            quotient += 1;
         }
-
-        while (divisor >= other)
-        {
-            quotient <<= 1;
-
-            if (*this >= divisor)
-            {
-                *this -= divisor;
-                quotient += 1;
-            }
-
-            divisor >>= 1;
-        }
-
         return quotient;
     }
 
@@ -210,12 +196,12 @@ struct Number
 
     __device__ bool operator>=(const Number& other) const
     {
-        return (*this > other) || (*this == other);
+        return (other < *this) || (*this == other);
     }
 
     __device__ bool operator==(const Number& other) const
     {
-       return (!(*this < other) && !(other < *this));
+       return !(*this < other) && !(other < *this);
     }
 
     __device__ bool operator !=(const Number& other) const
