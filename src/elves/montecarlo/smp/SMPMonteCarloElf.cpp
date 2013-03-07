@@ -12,6 +12,8 @@
 
 using namespace std;
 
+const int WORKSTEALING_BLOCKSIZE = 10;
+
 void expand(const OthelloState& rootState, vector<OthelloState>& childStates, vector<OthelloResult>& childResults)
 {
     auto moves = rootState.getPossibleMoves();
@@ -40,8 +42,6 @@ void rollout(OthelloState& state, RandomGenerator generator)
         }
     }
 }
-
-const int WORKSTEALING_BLOCKSIZE = 10;
 
 OthelloResult SMPMonteCarloElf::getBestMoveFor(OthelloState& rootState, size_t reiterations, size_t nodeId, size_t commonSeed)
 {
@@ -72,6 +72,7 @@ OthelloResult SMPMonteCarloElf::getBestMoveFor(OthelloState& rootState, size_t r
         {
             size_t start = 0;
             size_t end = 0;
+            // calculate the next block to iterate over
             #pragma omp critical
             {
                 start = executedIterations;

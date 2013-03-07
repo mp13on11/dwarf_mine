@@ -11,7 +11,7 @@
 
 __global__ void setupStateForRandom(curandState* state, size_t* seeds)
 {
-    //printf("Block %d: Seed: %lu\n", blockIdx.x, seeds[blockIdx.x]);
+    printf("Block %d: Seed: %lu\n", blockIdx.x, seeds[blockIdx.x]);
 	curand_init(seeds[blockIdx.x], 0, 0, &state[blockIdx.x]);
     //curand_init(0, 0, 0, &state[threadIdx.x]);
 }
@@ -20,18 +20,19 @@ __global__ void setupStateForRandom(curandState* state, size_t* seeds)
 __device__ bool doStep(CudaGameState& state, CudaSimulator& simulator, size_t limit, float fakedRandom = -1)
 {
     cassert(state.size == FIELD_DIMENSION * FIELD_DIMENSION, "Block %d, Thread %d detected invalid field size of %li\n", blockIdx.x, threadIdx.x, state.size);
+    
     __syncthreads();
+    
     simulator.calculatePossibleMoves();
+    
     __syncthreads();
+    
     size_t moveCount = simulator.countPossibleMoves();
+    
     if (moveCount > 0)
     {
-        __shared__ size_t index;
-        if (threadIdx.x == 0)
-        {
-            index = simulator.getRandomMoveIndex(moveCount, fakedRandom);
-            cassert(index < state.size, "Block %d, Thread %d: Round %d detected unexpected move index %d for maximal playfield size %lu\n", blockIdx.x, limit, index, state.size);
-        }
+        size_t index = simulator.getRandomMoveIndex(moveCount, fakedRandom);
+        cassert(index < state.size, "Block %d, Thread %d: Round %d detected unexpected move index %d for maximal playfield size %lu\n", blockIdx.x, limit, index, state.size);
 
         __syncthreads();
 
@@ -53,7 +54,9 @@ __device__ void simulateGameLeaf(curandState* deviceState, CudaSimulator& simula
     Player startingPlayer = state.currentPlayer;
     size_t passCounter = 0;
     size_t rounds = 0;
+
     __syncthreads();
+    
     while (passCounter < 2)
     {
         bool passedMove = !doStep(state, simulator, rounds);
@@ -98,7 +101,6 @@ __global__ void simulateGameLeaf(curandState* deviceState, Field* playfield, Pla
 __global__ void simulateGame(size_t reiterations, curandState* deviceStates, size_t numberOfPlayfields, Field* playfields, Player currentPlayer, OthelloResult* results)
 {
     int playfieldIndex = threadIdx.x;
-    if (THREAD_WATCHED)
 
     for (size_t i = 0; i < reiterations; ++i)
     {

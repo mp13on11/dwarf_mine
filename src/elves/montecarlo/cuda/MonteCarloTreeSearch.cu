@@ -31,36 +31,44 @@ void gameSimulation(size_t numberOfBlocks, size_t iterations, size_t* seeds, siz
     CudaUtils::checkState();
 }
 
+void setupSeedForTest(size_t numberOfBlocks, curandState* deviceStates)
+{
+    size_t* seed;
+    
+    cudaMalloc(&seed, sizeof(size_t) * numberOfBlocks);
+    cudaMalloc(&deviceStates, sizeof(curandState) * numberOfBlocks);
+    
+    setupStateForRandom <<< numberOfBlocks, 1 >>>(deviceStates, seed);
+    
+    CudaUtils::checkState();
+}
+
 void leafSimulation(size_t reiterations, size_t dimension, Field* playfield, Player currentPlayer, size_t* moveX, size_t* moveY, size_t* wins, size_t* visits)
 {
     curandState* deviceStates;
-    cudaMalloc(&deviceStates, sizeof(curandState) * 1 * THREADS_PER_BLOCK);
-    
-    setupStateForRandom <<< 1, THREADS_PER_BLOCK >>>(deviceStates, 0ULL);
-    CudaUtils::checkState();
+    size_t numberOfBlocks = 1;
+    setupSeedForTest(numberOfBlocks, deviceStates);
 
-    simulateGameLeaf <<< 1, THREADS_PER_BLOCK >>>(deviceStates, playfield, currentPlayer, wins, visits);
+    simulateGameLeaf <<< numberOfBlocks, THREADS_PER_BLOCK >>>(deviceStates, playfield, currentPlayer, wins, visits);
     CudaUtils::checkState();
 }
 
 void testBySimulateSingeStep(Field* playfield, Player currentPlayer, float fakedRandom)
 {
     curandState* deviceStates;
-    cudaMalloc(&deviceStates, sizeof(curandState) * 1 * THREADS_PER_BLOCK);
-    setupStateForRandom <<< 1, THREADS_PER_BLOCK >>>(deviceStates, 0ULL);
-    CudaUtils::checkState();
+    size_t numberOfBlocks = 1;
+    setupSeedForTest(numberOfBlocks, deviceStates);
 
-    testDoStep <<< 1, THREADS_PER_BLOCK >>>(deviceStates, playfield, currentPlayer, fakedRandom);
+    testDoStep <<< numberOfBlocks, THREADS_PER_BLOCK >>>(deviceStates, playfield, currentPlayer, fakedRandom);
     CudaUtils::checkState();    
 }
 
 void testByLeafSimulation(size_t dimension, Field* playfield, Player currentPlayer, size_t* wins, size_t* visits)
 {
     curandState* deviceStates;
-    cudaMalloc(&deviceStates, sizeof(curandState) * 1 * THREADS_PER_BLOCK);
-    setupStateForRandom <<< 1, THREADS_PER_BLOCK >>>(deviceStates, 0UL);
-    CudaUtils::checkState();
+    size_t numberOfBlocks = 1;
+    setupSeedForTest(numberOfBlocks, deviceStates);
     
-    testSimulateGameLeaf <<< 1, THREADS_PER_BLOCK >>>(deviceStates, playfield, currentPlayer, wins, visits);
+    testSimulateGameLeaf <<< numberOfBlocks, THREADS_PER_BLOCK >>>(deviceStates, playfield, currentPlayer, wins, visits);
     CudaUtils::checkState();
 }

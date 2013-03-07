@@ -85,7 +85,7 @@ public:
     {
         __syncthreads();
         size_t sum = 0;
-        for (int i = 0; i < _state->size; i++)
+        for (size_t i = 0; i < _state->size; ++i)
         {
             sum += _state->possible[i];
         }
@@ -95,31 +95,39 @@ public:
     // this function may deliver different results for the threads, so it should be only called once per block
     __device__ size_t getRandomMoveIndex(size_t moveCount, float fakedRandom = -1)
     {
-        size_t randomMoveIndex = 0;
-        if (moveCount > 1)
+        __shared__ size_t randomMoveCounter;
+        if (_playfieldIndex == 0)
         {
-            if (fakedRandom >= 0)
+            if (moveCount > 1)
             {
-                randomMoveIndex = fakedRandom * moveCount;
+                if (fakedRandom >= 0)
+                {
+                    randomMoveCounter = fakedRandom * moveCount;
+                }
+                else
+                {
+                    randomMoveCounter = randomNumber(_deviceState, moveCount);    
+                }
             }
             else
             {
-                randomMoveIndex = randomNumber(_deviceState, moveCount);    
+                randomMoveCounter = 0;
             }
         }
+        __syncthreads();
         size_t possibleMoveIndex = 0;
         for (size_t i = 0; i < _state->size; ++i)
         {
             if (_state->possible[i])
             {
-                if (possibleMoveIndex == randomMoveIndex)
+                if (possibleMoveIndex == randomMoveCounter)
                 {
                     return i;
                 }
                 possibleMoveIndex++;;
             }
         }
-        cassert(possibleMoveIndex == randomMoveIndex, "Could not find array index for move index %d\n", possibleMoveIndex);
+        cassert(false, "Could not find array index for move #%d - found only %lu possible moves in field of size %lu\n", randomMoveCounter, possibleMoveIndex, _state->size);
         return 96;
     }
 
