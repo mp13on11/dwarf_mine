@@ -242,7 +242,8 @@ struct Number
         {
             fields[i] = fields[i - blockOffset];
         }
-        memset(fields, 0, blockOffset);
+        if (blockOffset > 0)
+            memset(fields, 0, blockOffset);
 
         return *this;
     }

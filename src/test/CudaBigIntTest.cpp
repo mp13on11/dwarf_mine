@@ -108,6 +108,17 @@ TEST(CudaBigIntTest, testMultiplicationSmallNumbers)
     EXPECT_EQ(expected, actual);
 }
 
+TEST(CudaBigIntTest, testDivisionSmallValues)
+{
+    BigInt left("6");
+    BigInt right("2");
+    BigInt expected("3");
+
+    //auto actual = invokeKernel(left, right,  testDiv);
+
+    //EXPECT_EQ(expected, actual);
+}
+
 
 TEST(CudaBigIntTest, testDivision)
 {
@@ -185,6 +196,28 @@ TEST(CudaBigIntTest, testShiftLeft)
     EXPECT_EQ(expected, actual);
 }
 
+TEST(CudaBigIntTest, testShiftLeftSmallValues)
+{
+    BigInt left("1");
+    uint32_t offset(1);
+    BigInt expected("2");
+
+    auto actual = invokeShiftKernel(left, offset, testShiftLeft);
+
+    EXPECT_EQ(expected, actual);
+}
+
+TEST(CudaBigIntTest, testShiftLeftSmallValues2)
+{
+    BigInt left("2");
+    uint32_t offset(1);
+    BigInt expected("4");
+
+    auto actual = invokeShiftKernel(left, offset, testShiftLeft);
+
+    EXPECT_EQ(expected, actual);
+}
+
 TEST(CudaBigIntTest, testShiftLeftBiggerNumber)
 {
     BigInt left("1282943598234");
@@ -212,6 +245,28 @@ TEST(CudaBigIntTest, testShiftRight)
     BigInt left("4294967296");
     uint32_t offset(32);
     BigInt expected("1");
+
+    auto actual = invokeShiftKernel(left, offset, testShiftRight);
+
+    EXPECT_EQ(expected, actual);
+}
+
+TEST(CudaBigIntTest, testShiftRightSmallValues)
+{
+    BigInt left("2");
+    uint32_t offset(1);
+    BigInt expected("1");
+
+    auto actual = invokeShiftKernel(left, offset, testShiftRight);
+
+    EXPECT_EQ(expected, actual);
+}
+
+TEST(CudaBigIntTest, testShiftRightSmallValues2)
+{
+    BigInt left("1");
+    uint32_t offset(1);
+    BigInt expected("0");
 
     auto actual = invokeShiftKernel(left, offset, testShiftRight);
 

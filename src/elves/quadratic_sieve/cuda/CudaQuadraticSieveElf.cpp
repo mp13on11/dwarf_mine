@@ -5,6 +5,7 @@
 #include <cuda-utils/Memory.h>
 #include "NumberHelper.h"
 #include "KernelWrapper.h"
+#include <iostream>
 
 #include <array>
 #include <algorithm>
@@ -39,21 +40,38 @@ vector<BigInt> CudaQuadraticSieveElf::sieveSmoothSquares(
     CudaUtils::Memory<uint32_t> factorBase_d(factorBase.size());
     factorBase_d.transferFrom(factorBase.data());
 
+    array<uint32_t, 10> number_d;
+	mpz_export((void*)number_d.data(), 0, -1, sizeof(uint32_t), 0, 0, number.get_mpz_t());
+
     array<uint32_t, 10> start_d;
 	mpz_export((void*)start_d.data(), 0, -1, sizeof(uint32_t), 0, 0, start.get_mpz_t());
+
     array<uint32_t, 10> end_d;
 	mpz_export((void*)end_d.data(), 0, -1, sizeof(uint32_t), 0, 0, end.get_mpz_t());
 
-    megaWrapper(logs_d.get(), factorBase_d.get(), factorBase.size(), start_d.data(), end_d.data(), blockSize);
-
+	cout << "CUDA sieveSmoothSquares before kernel" << endl;
+    megaWrapper(number_d.data(), logs_d.get(), factorBase_d.get(), factorBase.size(), start_d.data(), end_d.data(), blockSize);
+    cout << "CUDA sieveSmoothSquares after kernel" << endl;
 
 //    CudaUtils::Memory<uint32_t> start_d = NumberHelper::BigIntToNumber(start);
 //    CudaUtils::Memory<uint32_t> end_d = NumberHelper::BigIntToNumber(end);
 //    CudaUtils::Memory<uint32_t> number_d = NumberHelper::BigIntToNumber(number);
 
+    cout << "before transfer" << endl;
+    vector<uint32_t> newLogs(blockSize+1);
+    logs_d.transferTo(newLogs.data());
+    cout << "after transfer" << endl;
 
-
-    return vector<BigInt>();
+    vector<BigInt> result;
+    uint32_t logTreshold = (int)(lb(number));
+    for(uint32_t i=0; i<=blockSize; i++)
+    {
+    	if(newLogs[i] < logTreshold) // probable smooth
+    	{
+    		result.emplace_back(start+i);
+    	}
+    }
+    return result;
 }
 
 /*

@@ -16,9 +16,9 @@ pair<BigInt, BigInt> sieveIntervalFast(
 )
 {
     const size_t maxRelations = factorBase.size() + 2;
-
+    cout << "before callback " << endl;
     SmoothSquareList smooths = sieveSmoothSquaresCallback(start, end, number, factorBase);
-
+    cout << "after callback" << endl;
     for(const BigInt& x : smooths)
     {
         BigInt remainder = (x*x) % number;

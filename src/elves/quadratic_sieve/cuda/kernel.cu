@@ -1,5 +1,6 @@
 #include "kernel.cuh"
 #include "Number.cuh"
+#include "stdio.h"
 
 __device__ float log(const Number& n)  
 {
@@ -22,7 +23,7 @@ __device__ float log(const Number& n)
             {
                 l++;
             }
-            high = (n.fields[i] << o) & (0xFFFFFFFF << o);
+            high = (n.fields[i] << o);// & (0xFFFFFFFF << o);
             low = (n.fields[i-1] >> l);
 
             return log((float) (low | high)) + log(2.0f)*((i-1)*32+l);
@@ -48,20 +49,65 @@ __device__ uint32_t log_2_22(Number x)
     return lb_scaled(x, 1023);
 }
 
-__global__ void megaKernel(uint32_t* logs, const uint32_t* factorBase, const int factorBaseSize, const Number* start, const Number* end, const uint32_t intervalLength)
+__global__ void megaKernel(const Number* number, uint32_t* logs, const uint32_t* factorBase, const int factorBaseSize, const Number* start, const Number* end, const uint32_t intervalLength)
 {
     int index = blockIdx.x * blockDim.x + threadIdx.x;
     Number newStart(*start + index * NUMBERS_PER_THREAD);
+    Number newEnd = newStart + Number(NUMBERS_PER_THREAD);
     
+   
+    
+    if (newStart > *end) return;
+    
+    if (index == 2) {
+    printf("start: %d\n", start->get_ui());
+    printf("newEnd: %d\n", newEnd.get_ui());
+    printf("newStart: %d\n", newStart.get_ui());
+}
+
     for (int i=0; i<factorBaseSize; ++i)
     {
-    	Number factor(factorBase[i]);
-    	  
-    	while (!(newStart % factor).isZero() || newStart >= *end) newStart += 1; 
+    	Number prime(factorBase[i]);
+    	Number primePower(prime);
     	
+        //printf("primePower %d < number %d\n", primePower.get_ui(), number->get_ui());
+        //printf("primePower < number %d\n", primePower > *number);
+        
+    	while (primePower.get_ui() < number->get_ui()) {
+    	   
+    	    //printf("testing primePower %d\n", primePower.get_ui());    
+    	    	    
+    	    int timesAdvanced = 0;
+        	//while (timesAdvanced <= NUMBERS_PER_THREAD && !(newStart % primePower).isZero() && newStart <= *end)
+        	
+        	
+        	Number rest = newStart;
+        	rest.divMod(primePower);
+        	printf("div rest %d\n", rest.get_ui());
+        	
+        	while (newStart <= *end) 
+        	{
+        	   
+        	   printf("advanced\n");
+        	   newStart += 1;
+        	   ++timesAdvanced;
+        	   if (timesAdvanced >= NUMBERS_PER_THREAD) break;
+        	   //rest = newStart % primePower;
+        	   
+        	} 
+        	
+        	printf("after while loop\n\n\n");
+        	
+        	for (; newStart < newEnd; newStart += primePower) 
+        	{
+        	   logs[newStart.get_ui()] -= log_2_22(primePower);
+        	}
+        	
+        	primePower *= prime;
+    	}
     	
-    	
-    }
+    	     	
+    } 
 }
 
 __global__ void testAddKernel(PNumData pLeft, PNumData pRight, PNumData output)
