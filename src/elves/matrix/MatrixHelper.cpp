@@ -17,6 +17,18 @@ namespace MatrixHelper
     static void fillMatrixFromStream(Matrix<float>& matrix, istream& stream);
     static vector<float> getValuesIn(const string& line);
 
+    void requestNextSlice(NodeId node)
+    {
+        MPI::COMM_WORLD.Send(&node, 1, MPI::INT, 0, MatrixHelper::TAG_REQUEST_SLICE);
+    }
+
+    NodeId getNextSliceRequest()
+    {
+        NodeId node;
+        MPI::COMM_WORLD.Recv(&node, 1, MPI::INT, MPI::ANY_SOURCE, MatrixHelper::TAG_REQUEST_SLICE);
+        return node;
+    }
+
     void sendMatrixTo(const Matrix<float>& matrix, NodeId node)
     {
         unsigned long dimensions[2] =

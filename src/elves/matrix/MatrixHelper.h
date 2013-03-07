@@ -14,9 +14,12 @@ class Matrix;
 namespace MatrixHelper
 {
     typedef std::pair<Matrix<float>, Matrix<float>> MatrixPair;
-
+    const int TAG_REQUEST_SLICE = 0;
+ 
     //
     // Send via MPI
+    void requestNextSlice(NodeId node);
+    NodeId getNextSliceRequest();
     void sendMatrixTo(const Matrix<float>& matrix, NodeId node);
     Matrix<float> receiveMatrixFrom(NodeId node);
 
