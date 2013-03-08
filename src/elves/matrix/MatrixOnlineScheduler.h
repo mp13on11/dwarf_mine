@@ -28,7 +28,6 @@ protected:
 
     virtual void orchestrateCalculation();
     virtual void calculateOnSlave();
-    virtual void calculateOnMaster();
     virtual void collectResults(
         //const std::vector<MatrixSlice>& slices,
         Matrix<float>& result) const;
