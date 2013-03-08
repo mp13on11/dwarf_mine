@@ -86,6 +86,11 @@ NodeId MatrixSlice::getNodeId() const
     return nodeId;
 }
 
+void MatrixSlice::setNodeId(const NodeId nodeId)
+{
+    this->nodeId = nodeId;
+}
+
 size_t MatrixSlice::getStartX() const
 {
     return x;

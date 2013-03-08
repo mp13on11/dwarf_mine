@@ -20,7 +20,7 @@ public:
 
 protected:
     std::vector<MatrixSlice> sliceDefinitions;
-    std::vector<MatrixSlice>::const_iterator currentSliceDefinition;
+    std::vector<MatrixSlice>::iterator currentSliceDefinition;
 
     virtual void doDispatch();
 
@@ -31,6 +31,7 @@ private:
     void sliceInput();
     void schedule();
     void fetchResultFrom(const NodeId node);
+    MatrixSlice getNextSliceDefinitionFor(const NodeId node);
     void sendNextSlicesTo(const NodeId node);
     bool hasSlices() const;
     bool haveSlavesFinished() const;

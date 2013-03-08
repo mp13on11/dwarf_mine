@@ -37,14 +37,14 @@ void MatrixOnlineScheduler::orchestrateCalculation()
 {
     sliceInput();
     schedule();
-    collectResults();
 }
 
 void MatrixOnlineScheduler::sliceInput()
 {
     MatrixSlicerOnline slicer;
-    sliceDefinitions = slicer.layout(left.rows(), right.columns(), 4, 4);
-    currentSliceDefinition = sliceDefinitions.cbegin();
+    result = Matrix<float>(left.rows(), right.columns());
+    sliceDefinitions = slicer.layout(result.rows(), result.columns(), 4, 4);
+    currentSliceDefinition = sliceDefinitions.begin();
 }
 
 void MatrixOnlineScheduler::schedule()
@@ -65,7 +65,18 @@ void MatrixOnlineScheduler::fetchResultFrom(const NodeId node)
     cout << "Receiving slave " << node << "'s result." << endl;
     Matrix<float> nodeResult = MatrixHelper::receiveMatrixFrom(node);
     if (nodeResult.empty()) return;
-    // TODO: Inject nodeResult into own result
+    MatrixSlice sliceDefinition = getNextSliceDefinitionFor(node);
+    sliceDefinition.injectSlice(nodeResult, result);
+    sliceDefinition.setNodeId(MpiHelper::MASTER);
+}
+
+MatrixSlice MatrixOnlineScheduler::getNextSliceDefinitionFor(const NodeId node)
+{
+    vector<MatrixSlice>::iterator it = sliceDefinitions.begin();
+    for (; it != sliceDefinitions.end(); ++it)
+        if ((*it).getNodeId() == node)
+            return *it;
+    throw "ERROR: No next slice definition found.";
 }
 
 void MatrixOnlineScheduler::sendNextSlicesTo(const NodeId node)
@@ -74,6 +85,7 @@ void MatrixOnlineScheduler::sendNextSlicesTo(const NodeId node)
     if (hasSlices())
     {
         requestedSlices = sliceMatrices(*currentSliceDefinition);
+        (*currentSliceDefinition).setNodeId(node);
         currentSliceDefinition++;
     }
     else
@@ -88,7 +100,7 @@ void MatrixOnlineScheduler::sendNextSlicesTo(const NodeId node)
 
 bool MatrixOnlineScheduler::hasSlices() const
 {
-    return currentSliceDefinition != sliceDefinitions.cend();
+    return currentSliceDefinition != sliceDefinitions.end();
 }
 
 bool MatrixOnlineScheduler::haveSlavesFinished() const
@@ -118,11 +130,5 @@ void MatrixOnlineScheduler::calculateNextResult(
     left = MatrixHelper::receiveMatrixFrom(MpiHelper::MASTER);
     right = MatrixHelper::receiveMatrixFrom(MpiHelper::MASTER);
     result = elf().multiply(left, right);
-}
-
-void MatrixOnlineScheduler::collectResults()
-{
-    result = Matrix<float>();
-    cout << "Collecting results... (not)" << endl;
 }
 

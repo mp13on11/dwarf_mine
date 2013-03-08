@@ -29,6 +29,7 @@ public:
     void injectSlice(const Matrix<float>& sliceData, Matrix<float>& destMatrix) const;
 
     NodeId getNodeId() const;
+    void setNodeId(const NodeId nodeId);
     std::size_t getStartX() const;
     std::size_t getStartY() const;
     std::size_t getColumns() const;
