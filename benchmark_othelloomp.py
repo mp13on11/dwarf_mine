@@ -7,7 +7,7 @@ from matplotlib.ticker import MultipleLocator, FormatStrFormatter
 
 from pylab import *
 def timesFromFile(fileName):
-    return [float(line) for line in open(fileName)]
+    return [float(line) for line in open(fileName, 'a+')]
 
 def avg(xs):
     return sum(xs) / len(xs)
@@ -143,14 +143,14 @@ def timeFile(threads, ext = ".txt"):
     return os.path.join(file_dir, "othello_smp_{0}{1}".format(threads, ext))
 
 def commandLine(threads):
-    return  "OMP_NUM_THREADS={0} ./release/src/runner/elf_runner "\
+    return  "OMP_NUM_THREADS={0} ./build/src/runner/elf_runner "\
             "-c montecarlo_tree_search "\
             "-m smp -i othello_field -o /dev/null " \
             "-w {1} -n {2} --time_output {3}".format(threads, warmups, iterations, timeFile(threads))
 
 
 def main():
-    numberOfThreads = range(1, 5, 1)
+    numberOfThreads = range(1, 151, 1)
 
     for threads in numberOfThreads:
         print "Executing with", threads, "thread(s)"
