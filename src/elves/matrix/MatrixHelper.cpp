@@ -19,14 +19,18 @@ namespace MatrixHelper
 
     void requestNextSlice(NodeId node)
     {
-        MPI::COMM_WORLD.Send(&node, 1, MPI::INT, 0, MatrixHelper::TAG_REQUEST_SLICE);
+        cout << "send... ";
+        MPI::COMM_WORLD.Ssend(&node, 1, MPI::INT, 0, MatrixHelper::TAG_REQUEST_SLICE);
+        cout << "done." << endl;
     }
 
     NodeId getNextSliceRequest()
     {
-        NodeId node;
-        MPI::COMM_WORLD.Recv(&node, 1, MPI::INT, MPI::ANY_SOURCE, MatrixHelper::TAG_REQUEST_SLICE);
-        return node;
+        int nodeId;
+        cout << "recv... ";
+        MPI::COMM_WORLD.Recv(&nodeId, 1, MPI::INT, MPI::ANY_SOURCE, MatrixHelper::TAG_REQUEST_SLICE);
+        cout << "done." << endl;
+        return NodeId(nodeId);
     }
 
     void sendMatrixTo(const Matrix<float>& matrix, NodeId node)
@@ -37,19 +41,24 @@ namespace MatrixHelper
             matrix.columns()
         };
         auto numElements = dimensions[0] * dimensions[1];
-        MPI::COMM_WORLD.Send(dimensions, 2, MPI::UNSIGNED_LONG, node, 0);
-        MPI::COMM_WORLD.Send(matrix.buffer(), numElements, MPI::FLOAT, node, 0);
+        cout << "send... ";
+        // Ssend blocks crash in MatrixOnlineScheduler::distributeToSlaves
+        MPI::COMM_WORLD.Ssend(dimensions, 2, MPI::UNSIGNED_LONG, node, 0);
+        MPI::COMM_WORLD.Ssend(matrix.buffer(), numElements, MPI::FLOAT, node, 0);
+        cout << "done." << endl;
     }
 
     Matrix<float> receiveMatrixFrom(NodeId node)
     {
         unsigned long dimensions[2];
+        cout << "recv... ";
         MPI::COMM_WORLD.Recv(dimensions, 2, MPI::UNSIGNED_LONG, node, 0);
         auto rows = dimensions[0];
         auto cols = dimensions[1];
         Matrix<float> result(rows, cols);
 
         MPI::COMM_WORLD.Recv(result.buffer(), rows*cols, MPI::FLOAT, node, 0);
+        cout << "done." << endl;
         return result;
     }
 

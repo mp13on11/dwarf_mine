@@ -36,8 +36,8 @@ void MatrixOnlineScheduler::doDispatch()
 void MatrixOnlineScheduler::orchestrateCalculation()
 {
     sliceInput();
-    future<void> distribution = async(launch::async, [&]{ distributeToSlaves(); });
-    future<void> calculation = async(launch::async, [&]{ calculateOnMaster(); });
+    auto distribution = async(launch::async, [&]{ distributeToSlaves(); });
+    auto calculation = async(launch::async, [&]{ calculateOnMaster(); });
     calculation.get();
     distribution.get();
     collectResults(/*SLICES, */result);
@@ -53,14 +53,17 @@ void MatrixOnlineScheduler::distributeToSlaves()
     while (hasSlices() || !haveSlavesFinished())
     {
         Matrix<float> requestedSlice;
+        cout << "Awaiting next slice request" << endl;
         NodeId requestingNode = MatrixHelper::getNextSliceRequest();
         if (hasSlices())
         {
+            cout << "Handing out slice to node " << requestingNode << "!" << endl;
             requestedSlice = Matrix<float>(1, 1);
             slices--;
         }
         else
         {
+            cout << "A slave (" << requestingNode << ") has finished!" << endl;
             requestedSlice = Matrix<float>(0, 0);
             finishedWorkers[requestingNode] = true;
         }
@@ -75,21 +78,24 @@ bool MatrixOnlineScheduler::hasSlices() const
 
 bool MatrixOnlineScheduler::haveSlavesFinished() const
 {
-    return finishedWorkers[0]
-        && finishedWorkers[1]
-        && finishedWorkers[2]
-        && finishedWorkers[3];
+    return finishedWorkers[0];
+        //&& finishedWorkers[1]
+        //&& finishedWorkers[2]
+        //&& finishedWorkers[3];
 }
 
 void MatrixOnlineScheduler::calculateOnSlave()
 {
+    cout << "Requesting slice..." << endl;
     MatrixHelper::requestNextSlice(MpiHelper::rank());
     Matrix<float> slice = MatrixHelper::receiveMatrixFrom(MpiHelper::MASTER);
+    cout << "Slice for slave!" << endl;
     while (slice.rows() == 1 && slice.columns() == 1)
     {
-        cout << "Slice for slave!" << endl;
+        cout << "Requesting slice..." << endl;
         MatrixHelper::requestNextSlice(MpiHelper::rank());
         slice = MatrixHelper::receiveMatrixFrom(MpiHelper::MASTER);
+        cout << "Slice for slave!" << endl;
     }
     cout << "Slave finished!" << endl;
     /*
@@ -104,13 +110,18 @@ void MatrixOnlineScheduler::calculateOnMaster()
     //const MatrixSlice& sliceDefinition,
     //Matrix<float>& result) const
 {
+    cout << "Requesting slice..." << endl;
     MatrixHelper::requestNextSlice(MpiHelper::MASTER);
+    cout << "Fetching slice..." << endl;
     Matrix<float> slice = MatrixHelper::receiveMatrixFrom(MpiHelper::MASTER);
+    cout << "Slice for master!" << endl;
     while (slice.rows() == 1 && slice.columns() == 1)
     {
-        cout << "Slice for master!" << endl;
+        cout << "Requesting slice..." << endl;
         MatrixHelper::requestNextSlice(MpiHelper::MASTER);
+        cout << "Fetching slice..." << endl;
         slice = MatrixHelper::receiveMatrixFrom(MpiHelper::MASTER);
+        cout << "Slice for master!" << endl;
     }
     cout << "Master finished!" << endl;
     /*
@@ -122,7 +133,7 @@ void MatrixOnlineScheduler::calculateOnMaster()
 
 void MatrixOnlineScheduler::collectResults(/*const vector<MatrixSlice>& sliceDefinitions, */Matrix<float>& result) const
 {
-    result = result;
+    result = Matrix<float>();
     cout << "Collecting results... (not)" << endl;
     /*
     for (const MatrixSlice& definition : sliceDefinitions)
