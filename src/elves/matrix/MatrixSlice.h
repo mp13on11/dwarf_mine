@@ -12,6 +12,12 @@ class MatrixSlice
 public:
     MatrixSlice() = default;
     MatrixSlice(
+        std::size_t startX,
+        std::size_t startY,
+        std::size_t columns,
+        std::size_t rows
+    );
+    MatrixSlice(
         NodeId responsibleNode,
         std::size_t startX,
         std::size_t startY,

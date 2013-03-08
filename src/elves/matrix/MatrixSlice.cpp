@@ -3,6 +3,19 @@
 #include <cassert>
 
 MatrixSlice::MatrixSlice(
+    size_t startX,
+    size_t startY,
+    size_t columns,
+    size_t rows
+) :
+    x(startX),
+    y(startY),
+    columns(columns),
+    rows(rows)
+{
+}
+
+MatrixSlice::MatrixSlice(
     NodeId responsibleNode,
     size_t startX,
     size_t startY,
