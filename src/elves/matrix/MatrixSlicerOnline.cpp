@@ -1,6 +1,7 @@
 #include "MatrixSlicerOnline.h"
 #include "MatrixSlice.h"
 #include <cmath>
+#include <iostream>
 
 using namespace std;
 

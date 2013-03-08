@@ -15,14 +15,12 @@ public:
     MatrixOnlineScheduler(const std::function<ElfPointer()>& factory);
     virtual ~MatrixOnlineScheduler();
 
-    static int slices;
-    static const int slaves = 3;
+    static const int slaves = 4;
     static bool finishedWorkers[4];
 
 protected:
-    Matrix<float> left;
-    Matrix<float> right;
-    Matrix<float> result;
+    std::vector<MatrixSlice> sliceDefinitions;
+    std::vector<MatrixSlice>::const_iterator currentSliceDefinition;
 
     virtual void doDispatch();
 
