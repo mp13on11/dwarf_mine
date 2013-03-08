@@ -26,13 +26,17 @@ protected:
 
     virtual void orchestrateCalculation();
     virtual void calculateOnSlave();
-    virtual void collectResults(
-        //const std::vector<MatrixSlice>& slices,
-        Matrix<float>& result) const;
 
 private:
     void sliceInput();
-    void distributeToSlaves();
+    void schedule();
+    void fetchResultFrom(const NodeId node);
+    void sendNextSlicesTo(const NodeId node);
     bool hasSlices() const;
     bool haveSlavesFinished() const;
+    void calculateNextResult(
+        Matrix<float>& result,
+        Matrix<float>& left,
+        Matrix<float>& right);
+    void collectResults();
 };

@@ -148,7 +148,6 @@ MatrixPair MatrixScheduler::sliceMatrices(const MatrixSlice& definition) const
 {
     Matrix<float> slicedLeft = definition.extractSlice(left, true);
     Matrix<float> slicedRight = definition.extractSlice(right, false);
-
     return { move(slicedLeft), move(slicedRight) };
 }
 

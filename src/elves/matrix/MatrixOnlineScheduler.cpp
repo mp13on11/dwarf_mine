@@ -27,7 +27,6 @@ MatrixOnlineScheduler::~MatrixOnlineScheduler()
 
 void MatrixOnlineScheduler::doDispatch()
 {
-    cout << "DISPATCH!" << endl;
     if (MpiHelper::isMaster())
         orchestrateCalculation();
     else
@@ -36,11 +35,9 @@ void MatrixOnlineScheduler::doDispatch()
 
 void MatrixOnlineScheduler::orchestrateCalculation()
 {
-    cout << "ORCH" << endl;
     sliceInput();
-    cout << "SDKLGFNSDKLFG" << endl; 
-    distributeToSlaves();
-    collectResults(/*SLICES, */result);
+    schedule();
+    collectResults();
 }
 
 void MatrixOnlineScheduler::sliceInput()
@@ -50,27 +47,43 @@ void MatrixOnlineScheduler::sliceInput()
     currentSliceDefinition = sliceDefinitions.cbegin();
 }
 
-void MatrixOnlineScheduler::distributeToSlaves()
+void MatrixOnlineScheduler::schedule()
 {
     while (hasSlices() || !haveSlavesFinished())
     {
-        MatrixPair requestedSlices;
-        cout << "Awaiting request" << endl;
-        NodeId requestingNode = MatrixHelper::getNextSliceRequest();
+        NodeId requestingNode;
+        cout << "Awaiting request." << endl;
+        requestingNode = MatrixHelper::getNextSliceRequest();
         cout << "Request from slave " << requestingNode << endl;
-        if (hasSlices())
-        {
-            requestedSlices = sliceMatrices(*currentSliceDefinition);
-            currentSliceDefinition++;
-        }
-        else
-        {
-            requestedSlices = MatrixPair(Matrix<float>(), Matrix<float>());
-            finishedWorkers[requestingNode-1] = true;
-        }
-        MatrixHelper::sendMatrixTo(requestedSlices.first, requestingNode);
-        MatrixHelper::sendMatrixTo(requestedSlices.second, requestingNode);
+        fetchResultFrom(requestingNode);
+        sendNextSlicesTo(requestingNode);
     }
+}
+
+void MatrixOnlineScheduler::fetchResultFrom(const NodeId node)
+{
+    cout << "Receiving slave " << node << "'s result." << endl;
+    Matrix<float> nodeResult = MatrixHelper::receiveMatrixFrom(node);
+    if (nodeResult.empty()) return;
+    // TODO: Inject nodeResult into own result
+}
+
+void MatrixOnlineScheduler::sendNextSlicesTo(const NodeId node)
+{
+    MatrixPair requestedSlices;
+    if (hasSlices())
+    {
+        requestedSlices = sliceMatrices(*currentSliceDefinition);
+        currentSliceDefinition++;
+    }
+    else
+    {
+        requestedSlices = MatrixPair(Matrix<float>(0, 0), Matrix<float>(0, 0));
+        finishedWorkers[node-1] = true;
+    }
+    cout << "Sending slices to slave " << node << endl;
+    MatrixHelper::sendMatrixTo(requestedSlices.first, node);
+    MatrixHelper::sendMatrixTo(requestedSlices.second, node);
 }
 
 bool MatrixOnlineScheduler::hasSlices() const
@@ -88,43 +101,28 @@ bool MatrixOnlineScheduler::haveSlavesFinished() const
 
 void MatrixOnlineScheduler::calculateOnSlave()
 {
-    cout << "Slave " << MpiHelper::rank() << " requesting slice." << endl;
-    MatrixHelper::requestNextSlice(MpiHelper::rank());
-    cout << "Slave " << MpiHelper::rank() << " fetching left slice." << endl;
-    Matrix<float> left = MatrixHelper::receiveMatrixFrom(MpiHelper::MASTER);
-    cout << "Slave " << MpiHelper::rank() << " fetching right slice." << endl;
-    Matrix<float> right = MatrixHelper::receiveMatrixFrom(MpiHelper::MASTER);
-    while (left.rows() > 0 && left.columns() > 0 && right.rows() > 0 && right.columns() > 0)
-    {
-    cout << "Slave " << MpiHelper::rank() << " requesting slice." << endl;
-        MatrixHelper::requestNextSlice(MpiHelper::rank());
-    cout << "Slave " << MpiHelper::rank() << " fetching left slice." << endl;
-        left = MatrixHelper::receiveMatrixFrom(MpiHelper::MASTER);
-    cout << "Slave " << MpiHelper::rank() << " fetching right slice." << endl;
-        right = MatrixHelper::receiveMatrixFrom(MpiHelper::MASTER);
-    }
-    /*
-    Matrix<float> left = MatrixHelper::receiveMatrixFrom(MpiHelper::MASTER);
-    Matrix<float> right = MatrixHelper::receiveMatrixFrom(MpiHelper::MASTER);
-    Matrix<float> result = elf().multiply(left, right);
-    MatrixHelper::sendMatrixTo(result, MpiHelper::MASTER);
-    */
+    Matrix<float> left, right, result = Matrix<float>(0, 0);
+    calculateNextResult(result, left, right);
+    while (!left.empty() && !right.empty())
+        calculateNextResult(result, left, right);
 }
 
-void MatrixOnlineScheduler::collectResults(/*const vector<MatrixSlice>& sliceDefinitions, */Matrix<float>& result) const
+void MatrixOnlineScheduler::calculateNextResult(
+    Matrix<float>& result,
+    Matrix<float>& left,
+    Matrix<float>& right)
+{
+    int rank = MpiHelper::rank();
+    MatrixHelper::requestNextSlice(rank);
+    MatrixHelper::sendMatrixTo(result, MpiHelper::MASTER);
+    left = MatrixHelper::receiveMatrixFrom(MpiHelper::MASTER);
+    right = MatrixHelper::receiveMatrixFrom(MpiHelper::MASTER);
+    result = elf().multiply(left, right);
+}
+
+void MatrixOnlineScheduler::collectResults()
 {
     result = Matrix<float>();
     cout << "Collecting results... (not)" << endl;
-    /*
-    for (const MatrixSlice& definition : sliceDefinitions)
-    {
-        auto nodeId = definition.getNodeId();
-        if (!MpiHelper::isMaster(nodeId))
-        {
-            Matrix<float> resultSlice = MatrixHelper::receiveMatrixFrom(nodeId);
-            definition.injectSlice(resultSlice, result);
-        }
-    }
-    */
 }
 
