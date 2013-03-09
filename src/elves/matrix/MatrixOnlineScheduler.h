@@ -31,7 +31,7 @@ private:
     void sliceInput();
     void schedule();
     void fetchResultFrom(const NodeId node);
-    MatrixSlice getNextSliceDefinitionFor(const NodeId node);
+    MatrixSlice& getNextSliceDefinitionFor(const NodeId node);
     void sendNextSlicesTo(const NodeId node);
     bool hasSlices() const;
     bool haveSlavesFinished() const;

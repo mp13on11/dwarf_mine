@@ -65,17 +65,16 @@ void MatrixOnlineScheduler::fetchResultFrom(const NodeId node)
     cout << "Receiving slave " << node << "'s result." << endl;
     Matrix<float> nodeResult = MatrixHelper::receiveMatrixFrom(node);
     if (nodeResult.empty()) return;
-    MatrixSlice sliceDefinition = getNextSliceDefinitionFor(node);
+    MatrixSlice& sliceDefinition = getNextSliceDefinitionFor(node);
     sliceDefinition.injectSlice(nodeResult, result);
     sliceDefinition.setNodeId(MpiHelper::MASTER);
 }
 
-MatrixSlice MatrixOnlineScheduler::getNextSliceDefinitionFor(const NodeId node)
+MatrixSlice& MatrixOnlineScheduler::getNextSliceDefinitionFor(const NodeId node)
 {
-    vector<MatrixSlice>::iterator it = sliceDefinitions.begin();
-    for (; it != sliceDefinitions.end(); ++it)
-        if ((*it).getNodeId() == node)
-            return *it;
+    for (auto& slice : sliceDefinitions)
+        if (slice.getNodeId() == node)
+            return slice;
     throw "ERROR: No next slice definition found.";
 }
 
