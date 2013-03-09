@@ -5,6 +5,7 @@
 
 #include <functional>
 #include <vector>
+#include <map>
 
 class MatrixElf;
 class MatrixSlice;
@@ -15,19 +16,17 @@ public:
     MatrixOnlineScheduler(const std::function<ElfPointer()>& factory);
     virtual ~MatrixOnlineScheduler();
 
-    static const int slaves = 4;
-    static bool finishedWorkers[4];
-
 protected:
-    std::vector<MatrixSlice> sliceDefinitions;
-    std::vector<MatrixSlice>::iterator currentSliceDefinition;
-
     virtual void doDispatch();
 
     virtual void orchestrateCalculation();
     virtual void calculateOnSlave();
 
 private:
+    static std::vector<MatrixSlice> sliceDefinitions;
+    static std::vector<MatrixSlice>::iterator currentSliceDefinition;
+    static std::map<NodeId, bool> finishedSlaves;
+
     void sliceInput();
     void schedule();
     void fetchResultFrom(const NodeId node);

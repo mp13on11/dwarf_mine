@@ -14,11 +14,16 @@
 using namespace std;
 using MatrixHelper::MatrixPair;
 
-bool MatrixOnlineScheduler::finishedWorkers[4] = {false, false, false, false};
+std::vector<MatrixSlice> MatrixOnlineScheduler::sliceDefinitions = std::vector<MatrixSlice>();
+std::vector<MatrixSlice>::iterator MatrixOnlineScheduler::currentSliceDefinition = MatrixOnlineScheduler::sliceDefinitions.begin();
+map<NodeId, bool> MatrixOnlineScheduler::finishedSlaves = map<NodeId, bool>();
 
 MatrixOnlineScheduler::MatrixOnlineScheduler(const function<ElfPointer()>& factory) :
     MatrixScheduler(factory)
 {
+    if (!MpiHelper::isMaster()) return;
+    for (size_t i = 1; i < MpiHelper::numberOfNodes(); ++i)
+        finishedSlaves[NodeId(i)] = false;
 }
 
 MatrixOnlineScheduler::~MatrixOnlineScheduler()
@@ -43,7 +48,7 @@ void MatrixOnlineScheduler::sliceInput()
 {
     MatrixSlicerOnline slicer;
     result = Matrix<float>(left.rows(), right.columns());
-    sliceDefinitions = slicer.layout(result.rows(), result.columns(), 4, 4);
+    sliceDefinitions = slicer.layout(result.rows(), result.columns(), finishedSlaves.size(), 1);
     currentSliceDefinition = sliceDefinitions.begin();
 }
 
@@ -90,7 +95,7 @@ void MatrixOnlineScheduler::sendNextSlicesTo(const NodeId node)
     else
     {
         requestedSlices = MatrixPair(Matrix<float>(0, 0), Matrix<float>(0, 0));
-        finishedWorkers[node-1] = true;
+        finishedSlaves[node] = true;
     }
     cout << "Sending slices to slave " << node << endl;
     MatrixHelper::sendMatrixTo(requestedSlices.first, node);
@@ -99,15 +104,22 @@ void MatrixOnlineScheduler::sendNextSlicesTo(const NodeId node)
 
 bool MatrixOnlineScheduler::hasSlices() const
 {
+    cout << "Current Slice: " << &(*currentSliceDefinition) << endl;
+    cout << "Last Slice:    " << &(*(sliceDefinitions.end())) << endl;
     return currentSliceDefinition != sliceDefinitions.end();
 }
 
 bool MatrixOnlineScheduler::haveSlavesFinished() const
 {
-    return finishedWorkers[0]
-        && finishedWorkers[1]
-        && finishedWorkers[2]
-        && finishedWorkers[3];
+    cout << "finishedSlaves.size() = " << finishedSlaves.size() << endl;
+    for (const auto& slaveState : finishedSlaves)
+        if (!slaveState.second)
+        {
+            cout << "Not all slaves have finished" << endl;
+            return false;
+        }
+    cout << "All slaves have finished" << endl;
+    return true;
 }
 
 void MatrixOnlineScheduler::calculateOnSlave()
