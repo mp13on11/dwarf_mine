@@ -8,9 +8,6 @@
 #include "MatrixSlicerOnline.h"
 #include "common/ProblemStatement.h"
 
-#include <future>
-#include <iostream>
-
 using namespace std;
 using MatrixHelper::MatrixPair;
 
@@ -57,9 +54,7 @@ void MatrixOnlineScheduler::schedule()
     while (hasSlices() || !haveSlavesFinished())
     {
         NodeId requestingNode;
-        cout << "Awaiting request." << endl;
         requestingNode = MatrixHelper::getNextSliceRequest();
-        cout << "Request from slave " << requestingNode << endl;
         fetchResultFrom(requestingNode);
         sendNextSlicesTo(requestingNode);
     }
@@ -67,7 +62,6 @@ void MatrixOnlineScheduler::schedule()
 
 void MatrixOnlineScheduler::fetchResultFrom(const NodeId node)
 {
-    cout << "Receiving slave " << node << "'s result." << endl;
     Matrix<float> nodeResult = MatrixHelper::receiveMatrixFrom(node);
     if (nodeResult.empty()) return;
     MatrixSlice& sliceDefinition = getNextSliceDefinitionFor(node);
@@ -97,28 +91,20 @@ void MatrixOnlineScheduler::sendNextSlicesTo(const NodeId node)
         requestedSlices = MatrixPair(Matrix<float>(0, 0), Matrix<float>(0, 0));
         finishedSlaves[node] = true;
     }
-    cout << "Sending slices to slave " << node << endl;
     MatrixHelper::sendMatrixTo(requestedSlices.first, node);
     MatrixHelper::sendMatrixTo(requestedSlices.second, node);
 }
 
 bool MatrixOnlineScheduler::hasSlices() const
 {
-    cout << "Current Slice: " << &(*currentSliceDefinition) << endl;
-    cout << "Last Slice:    " << &(*(sliceDefinitions.end())) << endl;
     return currentSliceDefinition != sliceDefinitions.end();
 }
 
 bool MatrixOnlineScheduler::haveSlavesFinished() const
 {
-    cout << "finishedSlaves.size() = " << finishedSlaves.size() << endl;
     for (const auto& slaveState : finishedSlaves)
         if (!slaveState.second)
-        {
-            cout << "Not all slaves have finished" << endl;
             return false;
-        }
-    cout << "All slaves have finished" << endl;
     return true;
 }
 

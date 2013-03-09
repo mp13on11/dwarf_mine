@@ -31,7 +31,6 @@ namespace MatrixHelper
 
     void sendMatrixTo(const Matrix<float>& matrix, NodeId node)
     {
-        cout << "Sending ";
         unsigned long dimensions[2] =
         {
             matrix.rows(),
@@ -40,12 +39,10 @@ namespace MatrixHelper
         auto numElements = dimensions[0] * dimensions[1];
         MPI::COMM_WORLD.Send(dimensions, 2, MPI::UNSIGNED_LONG, node, 0);
         MPI::COMM_WORLD.Send(matrix.buffer(), numElements, MPI::FLOAT, node, 0);
-        cout << "done" << endl;
     }
 
     Matrix<float> receiveMatrixFrom(NodeId node)
     {
-        cout << "Receiving ";
         unsigned long dimensions[2];
         MPI::COMM_WORLD.Recv(dimensions, 2, MPI::UNSIGNED_LONG, node, 0);
         auto rows = dimensions[0];
@@ -53,7 +50,6 @@ namespace MatrixHelper
         Matrix<float> result(rows, cols);
         MPI::COMM_WORLD.Recv(result.buffer(), rows*cols, MPI::FLOAT, node, 0);
         return result;
-        cout << "done" << endl;
     }
 
     void writeMatrixTo(const string& filename, const Matrix<float>& matrix, bool binary)
