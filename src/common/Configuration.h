@@ -54,6 +54,7 @@ private:
     size_t leftMatrixRows() const;
     size_t commonMatrixRowsColumns() const;
     size_t rightMatrixColumns() const;
+    std::string schedulingStrategy() const;
     size_t leftDigits() const;
     size_t rightDigits() const;
     size_t monteCarloTrials() const;

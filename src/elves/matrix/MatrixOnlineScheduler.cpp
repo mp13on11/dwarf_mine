@@ -27,6 +27,12 @@ MatrixOnlineScheduler::~MatrixOnlineScheduler()
 {
 }
 
+void MatrixOnlineScheduler::generateData(const DataGenerationParameters& params)
+{
+    MatrixScheduler::generateData(params);
+    // TODO: Adopt params.schedulingStrategy;
+}
+
 void MatrixOnlineScheduler::doDispatch()
 {
     if (MpiHelper::isMaster())

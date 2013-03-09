@@ -52,6 +52,7 @@ DataGenerationParameters Configuration::makeDataGenerationParameters() const
             leftMatrixRows(),
             commonMatrixRowsColumns(),
             rightMatrixColumns(),
+            schedulingStrategy(),
             leftDigits(),
             rightDigits(),
             monteCarloTrials()
@@ -155,6 +156,7 @@ options_description Configuration::createDescription()
         ("left_rows",            value<size_t>()->default_value(500), "Matrix: Number of left rows to be generated (overridden for benchmark by input file)")
         ("common_rows_columns",  value<size_t>()->default_value(500), "Matrix: Number of left columns / right rows to be generated (overridden for benchmark by input file)")
         ("right_columns",        value<size_t>()->default_value(500), "Matrix: Number of right columns to be generated (overridden for benchmark by input file)")
+        ("scheduling,s",         value<string>()->default_value("row-wise"), "Matrix: Scheduling strategy for online scheduling mode")
         ("left_digits",          value<size_t>()->default_value(8), "QuadraticSieve: Digits for product's left operand")
         ("right_digits",         value<size_t>()->default_value(8), "QuadraticSieve: Digits for product's right operand")
         ("time_output",          value<string>()->default_value("/dev/null"), "Output file for time measurements")
@@ -207,6 +209,11 @@ size_t Configuration::commonMatrixRowsColumns() const
 size_t Configuration::rightMatrixColumns() const
 {
     return variables["right_columns"].as<size_t>();
+}
+
+string Configuration::schedulingStrategy() const
+{
+    return variables["scheduling"].as<string>();
 }
 
 size_t Configuration::monteCarloTrials() const
