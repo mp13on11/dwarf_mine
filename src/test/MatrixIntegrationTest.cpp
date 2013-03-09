@@ -85,6 +85,7 @@ pid_t spawnChildProcess()
             "-i", INPUT_FILENAME,
             "-o", OUTPUT_FILENAME,
             "--import_configuration", CONF_FILENAME,
+            "-c", "matrix",
             nullptr
         );
         exit(-1);
