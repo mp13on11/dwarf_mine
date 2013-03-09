@@ -7,12 +7,10 @@
 
 class MatrixIntegrationTest : public testing::Test
 {
-public:
+protected:
     static void executeWith(const char* const matrixCategory);
     static void setupConfigFile();
     static pid_t spawnChildProcess(const char* const matrixCategory);
     static std::tuple<Matrix<float>, Matrix<float>> readMatrices();
-
-protected:
     virtual void TearDown();
 };

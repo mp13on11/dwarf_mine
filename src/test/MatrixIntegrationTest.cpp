@@ -21,9 +21,14 @@ const char* const   INPUT_FILENAME  = "small_input.bin";
 const char* const   OUTPUT_FILENAME = "small_output.bin";
 const char* const   MPIRUN_PATH     = MPIEXEC; // defined by CMake file
 
-TEST_F(MatrixIntegrationTest, TestSmallInputSMPScheduling)
+TEST_F(MatrixIntegrationTest, TestSmallInputSMPSchedulingOffline)
 {
     MatrixIntegrationTest::executeWith("matrix");
+}
+
+TEST_F(MatrixIntegrationTest, TestSmallInputSMPSchedulingOnline)
+{
+    MatrixIntegrationTest::executeWith("matrix_online");
 }
 
 void MatrixIntegrationTest::executeWith(const char* matrixCategory)
