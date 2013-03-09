@@ -1,12 +1,10 @@
 #include "MatrixIntegrationTest.h"
 #include "Utilities.h"
 #include "matrix/MatrixHelper.h"
-#include "matrix/Matrix.h"
 #include "matrix/MatrixElf.h"
 #include "matrix/smp/SMPMatrixElf.h"
 #include "common/SchedulerFactory.h"
 
-#include <cstdlib>
 #include <string>
 #include <fstream>
 #include <future>
@@ -23,14 +21,15 @@ const char* const   INPUT_FILENAME  = "small_input.bin";
 const char* const   OUTPUT_FILENAME = "small_output.bin";
 const char* const   MPIRUN_PATH     = MPIEXEC; // defined by CMake file
 
-void setupConfigFile();
-pid_t spawnChildProcess();
-std::tuple<Matrix<float>, Matrix<float>> readMatrices();
-
 TEST_F(MatrixIntegrationTest, TestSmallInputSMPScheduling)
 {
-    setupConfigFile();
-    pid_t pid = spawnChildProcess();
+    MatrixIntegrationTest::executeWith("matrix");
+}
+
+void MatrixIntegrationTest::executeWith(const char* matrixCategory)
+{
+    MatrixIntegrationTest::setupConfigFile();
+    pid_t pid = MatrixIntegrationTest::spawnChildProcess(matrixCategory);
 
     auto future = async(std::launch::async, [pid]() -> bool
     {
@@ -50,7 +49,7 @@ TEST_F(MatrixIntegrationTest, TestSmallInputSMPScheduling)
     ASSERT_TRUE(future.get()) << "Process not exited normally";
 
     Matrix<float> expectedMatrix, actualMatrix;
-    std::tie(expectedMatrix, actualMatrix) = readMatrices();
+    std::tie(expectedMatrix, actualMatrix) = MatrixIntegrationTest::readMatrices();
 
     EXPECT_TRUE(AreMatricesEquals(expectedMatrix, actualMatrix));
 }
@@ -61,14 +60,14 @@ void MatrixIntegrationTest::TearDown()
     remove(CONF_FILENAME);
 }
 
-void setupConfigFile()
+void MatrixIntegrationTest::setupConfigFile()
 {
     ofstream config(CONF_FILENAME);
     for (int i=0; i<NUM_NODES; ++i)
         config << i << " " << 1 << endl;
 }
 
-pid_t spawnChildProcess()
+pid_t MatrixIntegrationTest::spawnChildProcess(const char* const matrixCategory)
 {
     pid_t pid = fork();
     if(pid == 0) // child process
@@ -85,7 +84,7 @@ pid_t spawnChildProcess()
             "-i", INPUT_FILENAME,
             "-o", OUTPUT_FILENAME,
             "--import_configuration", CONF_FILENAME,
-            "-c", "matrix",
+            "-c", matrixCategory,
             nullptr
         );
         exit(-1);
@@ -93,7 +92,7 @@ pid_t spawnChildProcess()
     return pid;
 }
 
-std::tuple<Matrix<float>, Matrix<float>> readMatrices()
+std::tuple<Matrix<float>, Matrix<float>> MatrixIntegrationTest::readMatrices()
 {
     ifstream input("small_input.bin", ios_base::binary);
     auto inputMatrices = MatrixHelper::readMatrixPairFrom(input);
