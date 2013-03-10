@@ -10,6 +10,14 @@ map<string, function<unique_ptr<MatrixOnlineSchedulingStrategy>()>> MatrixOnline
         &getStrategy<MatrixOnlineSchedulingRowwise>
     }
 };
+
+vector<string> MatrixOnlineSchedulingStrategyFactory::getStrategies()
+{
+    vector<string> strategiesList;
+    for (const auto& strategyDefinition : strategies)
+        strategiesList.push_back(strategyDefinition.first);
+    return strategiesList;
+}
     
 unique_ptr<MatrixOnlineSchedulingStrategy>
 MatrixOnlineSchedulingStrategyFactory::getStrategy(const std::string& strategy)

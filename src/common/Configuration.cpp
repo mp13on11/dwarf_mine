@@ -4,6 +4,7 @@
 #include "DataGenerationParameters.h"
 #include "matrix/Matrix.h"
 #include "matrix/MatrixHelper.h"
+#include "matrix/MatrixOnlineSchedulingStrategyFactory.h"
 
 #include <stdexcept>
 #include <cstdlib>
@@ -138,6 +139,10 @@ options_description Configuration::createDescription()
 {
     string categories = boost::algorithm::join(SchedulerFactory::getValidCategories(), "\n\t    ");
     string categoriesDescription = "Elf to be run, valid categories:\n\t    " + categories;
+    string schedulingStrategies = boost::algorithm::join(
+        MatrixOnlineSchedulingStrategyFactory::getStrategies(), "\n\t    ");
+    string schedulingStrategiesDescription =
+        "Matrix: Scheduling strategy for online scheduling mode:\n\t    " + schedulingStrategies;
 
     options_description description("Options");
     description.add_options()
@@ -156,7 +161,7 @@ options_description Configuration::createDescription()
         ("left_rows",            value<size_t>()->default_value(500), "Matrix: Number of left rows to be generated (overridden for benchmark by input file)")
         ("common_rows_columns",  value<size_t>()->default_value(500), "Matrix: Number of left columns / right rows to be generated (overridden for benchmark by input file)")
         ("right_columns",        value<size_t>()->default_value(500), "Matrix: Number of right columns to be generated (overridden for benchmark by input file)")
-        ("scheduling,s",         value<string>()->default_value("row-wise"), "Matrix: Scheduling strategy for online scheduling mode")
+        ("scheduling,s",         value<string>()->default_value("row-wise"), schedulingStrategiesDescription.c_str())
         ("left_digits",          value<size_t>()->default_value(8), "QuadraticSieve: Digits for product's left operand")
         ("right_digits",         value<size_t>()->default_value(8), "QuadraticSieve: Digits for product's right operand")
         ("time_output",          value<string>()->default_value("/dev/null"), "Output file for time measurements")
