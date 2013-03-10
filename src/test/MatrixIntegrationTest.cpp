@@ -28,13 +28,15 @@ TEST_F(MatrixIntegrationTest, TestSmallInputSMPSchedulingOffline)
 
 TEST_F(MatrixIntegrationTest, TestSmallInputSMPSchedulingOnline)
 {
-    MatrixIntegrationTest::executeWith("matrix_online");
+    MatrixIntegrationTest::executeWith("matrix_online", "row-wise");
 }
 
-void MatrixIntegrationTest::executeWith(const char* matrixCategory)
+void MatrixIntegrationTest::executeWith(
+    const char* matrixCategory,
+    const char* scheduling)
 {
     MatrixIntegrationTest::setupConfigFile();
-    pid_t pid = MatrixIntegrationTest::spawnChildProcess(matrixCategory);
+    pid_t pid = MatrixIntegrationTest::spawnChildProcess(matrixCategory, scheduling);
 
     auto future = async(std::launch::async, [pid]() -> bool
     {
@@ -72,8 +74,11 @@ void MatrixIntegrationTest::setupConfigFile()
         config << i << " " << 1 << endl;
 }
 
-pid_t MatrixIntegrationTest::spawnChildProcess(const char* const matrixCategory)
+pid_t MatrixIntegrationTest::spawnChildProcess(
+    const char* matrixCategory,
+    const char* scheduling)
 {
+    string schedulingStrategy(scheduling);
     pid_t pid = fork();
     if(pid == 0) // child process
     {
@@ -90,6 +95,8 @@ pid_t MatrixIntegrationTest::spawnChildProcess(const char* const matrixCategory)
             "-o", OUTPUT_FILENAME,
             "--import_configuration", CONF_FILENAME,
             "-c", matrixCategory,
+            (schedulingStrategy != "" ? "-s" : ""),
+            (schedulingStrategy != "" ? scheduling : ""),
             nullptr
         );
         exit(-1);
