@@ -9,9 +9,6 @@
 #include <vector>
 #include <map>
 
-#include <fstream>
-#include <iostream>
-
 class MatrixElf;
 class MatrixSlice;
 
@@ -52,6 +49,4 @@ private:
     void sendResults();
     void receiveWork();
     void doWork();
-
-    std::ofstream file;
 };
