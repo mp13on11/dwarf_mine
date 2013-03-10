@@ -21,6 +21,7 @@ public:
     MatrixOnlineScheduler(const std::function<ElfPointer()>& factory);
     virtual ~MatrixOnlineScheduler();
 
+    virtual void configureWith(const Configuration& config);
     virtual void generateData(const DataGenerationParameters& params);
 
 protected:

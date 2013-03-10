@@ -32,10 +32,14 @@ MatrixOnlineScheduler::~MatrixOnlineScheduler()
 {
 }
 
+void MatrixOnlineScheduler::configureWith(const Configuration& config)
+{
+    schedulingStrategy = MatrixOnlineSchedulingStrategyFactory::getStrategy(config.schedulingStrategy());
+}
+
 void MatrixOnlineScheduler::generateData(const DataGenerationParameters& params)
 {
     MatrixScheduler::generateData(params);
-    schedulingStrategy = MatrixOnlineSchedulingStrategyFactory::getStrategy(params.schedulingStrategy);
 }
 
 void MatrixOnlineScheduler::orchestrateCalculation()

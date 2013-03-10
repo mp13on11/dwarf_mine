@@ -1,5 +1,4 @@
 #include "BenchmarkRunner.h"
-#include "Configuration.h"
 #include "MpiHelper.h"
 #include "SchedulerFactory.h"
 
@@ -11,7 +10,8 @@ typedef BenchmarkRunner::Measurement Measurement;
 /**
  * BenchmarkRunner determines the available devices and benchmarks them idenpendently
  */
-BenchmarkRunner::BenchmarkRunner(const Configuration& config) :
+BenchmarkRunner::BenchmarkRunner(Configuration& config) :
+        config(&config),
         iterations(config.iterations()), warmUps(config.warmUps()),
         clusterProblem(config.createProblemStatement()),
         scheduler(config.createScheduler())
@@ -62,6 +62,7 @@ vector<Measurement> BenchmarkRunner::runBenchmark(const BenchmarkResult& nodeWei
     if (MpiHelper::isMaster())
     {
         scheduler->setNodeset(nodeWeights);
+        scheduler->configureWith(*config);
         return benchmarkNodeset(useProblemStatement, targetMethod);
     }
     else if (slaveShouldRunWith(nodeWeights))
