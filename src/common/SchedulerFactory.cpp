@@ -4,6 +4,7 @@
 #include "factorization_montecarlo/FactorizationScheduler.h"
 #include "factorization_montecarlo/MonteCarloFactorizationElf.h"
 #include "matrix/MatrixScheduler.h"
+#include "matrix/MatrixOnlineScheduler.h"
 #include "matrix/smp/SMPMatrixElf.h"
 #include "montecarlo/MonteCarloScheduler.h"
 #include "montecarlo/smp/SMPMonteCarloElf.h"
@@ -72,6 +73,10 @@ static map<string, function<FactoryFunction(bool)>> sFactoryFunctionsMap =
     {
         "matrix",
         &createFactory<MatrixScheduler, SMPMatrixElf, CudaMatrixElf>
+    },
+    {
+        "matrix_online",
+        &createFactory<MatrixOnlineScheduler, SMPMatrixElf, CudaMatrixElf>
     },
     {
         "factorization_montecarlo",

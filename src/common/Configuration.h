@@ -32,6 +32,7 @@ public:
     bool shouldBeQuiet() const;
     bool shouldBeVerbose() const;
     std::string timeOutputFilename() const;
+    std::string schedulingStrategy() const;
 
     void validate() const;
     bool shouldPrintHelp() const;

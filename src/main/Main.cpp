@@ -52,7 +52,7 @@ void silenceOutputStreams(bool keepErrorStreams = false)
     }
 }
 
-void benchmarkWith(const Configuration& config)
+void benchmarkWith(Configuration& config)
 {
     BenchmarkRunner runner(config);
     BenchmarkResult nodeWeights;
