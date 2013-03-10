@@ -1,19 +1,22 @@
 #pragma once
 
-#include <vector>
+#include "MatrixOnlineScheduler.h"
+#include "MatrixSlicer.h"
 
-class MatrixOnlineScheduler;
-class MatrixSlice;
-template <typename T>
-class Matrix<T>;
-class BenchmarkResult;
+#include <vector>
+#include <map>
+
+typedef int NodeId;
+typedef double Rating;
+typedef std::pair<NodeId, Rating> NodeRating;
+typedef std::map<NodeId, Rating> BenchmarkResult;
 
 class MatrixOnlineSchedulingStrategy
 {
 public:
-    MatrixOnlineSchedulingStrategy(MatrixOnlineScheduler scheduler)
-    : scheduler(scheduler)
+    MatrixOnlineSchedulingStrategy(MatrixOnlineScheduler& scheduler)
     {
+        this->scheduler = std::shared_ptr<MatrixOnlineScheduler>(&scheduler);
     }
 
     virtual ~MatrixOnlineSchedulingStrategy()
@@ -26,7 +29,13 @@ public:
 
     virtual int getWorkAmountFor(const NodeId node) = 0;
 
+protected:
+    MatrixOnlineScheduler& getScheduler()
+    {
+        return *scheduler;
+    }
+
 private:
-    MatrixOnlineScheduler scheduler;
+    std::shared_ptr<MatrixOnlineScheduler> scheduler;
 };
 
