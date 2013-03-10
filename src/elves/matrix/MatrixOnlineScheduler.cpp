@@ -1,12 +1,14 @@
 #include "Elf.h"
 #include "Matrix.h"
 #include "MatrixElf.h"
-#include "MatrixHelper.h"
 #include "MatrixOnlineScheduler.h"
 #include "MatrixSlice.h"
 #include "MatrixSlicer.h"
 #include "MatrixSlicerOnline.h"
 #include "common/ProblemStatement.h"
+
+#include <algorithm>
+#include <iterator>
 
 using namespace std;
 using MatrixHelper::MatrixPair;
@@ -18,9 +20,11 @@ map<NodeId, bool> MatrixOnlineScheduler::finishedSlaves = map<NodeId, bool>();
 MatrixOnlineScheduler::MatrixOnlineScheduler(const function<ElfPointer()>& factory) :
     MatrixScheduler(factory)
 {
-    if (!MpiHelper::isMaster()) return;
-    for (size_t i = 1; i < MpiHelper::numberOfNodes(); ++i)
-        finishedSlaves[NodeId(i)] = false;
+    if (MpiHelper::isMaster())
+        for (size_t i = 1; i < MpiHelper::numberOfNodes(); ++i)
+            finishedSlaves[NodeId(i)] = false;
+    else
+        resultQueue.push_back(Matrix<float>(0, 0));
 }
 
 MatrixOnlineScheduler::~MatrixOnlineScheduler()
@@ -33,14 +37,6 @@ void MatrixOnlineScheduler::generateData(const DataGenerationParameters& params)
     // TODO: Adopt params.schedulingStrategy;
 }
 
-void MatrixOnlineScheduler::doDispatch()
-{
-    if (MpiHelper::isMaster())
-        orchestrateCalculation();
-    else
-        calculateOnSlave();
-}
-
 void MatrixOnlineScheduler::orchestrateCalculation()
 {
     sliceInput();
@@ -51,7 +47,11 @@ void MatrixOnlineScheduler::sliceInput()
 {
     MatrixSlicerOnline slicer;
     result = Matrix<float>(left.rows(), right.columns());
-    sliceDefinitions = slicer.layout(result.rows(), result.columns(), finishedSlaves.size(), 1);
+    sliceDefinitions = slicer.layout(
+        result.rows(),
+        result.columns(),
+        workAmount * finishedSlaves.size(),
+        1);
     currentSliceDefinition = sliceDefinitions.begin();
 }
 
@@ -59,20 +59,33 @@ void MatrixOnlineScheduler::schedule()
 {
     while (hasSlices() || !haveSlavesFinished())
     {
-        NodeId requestingNode;
-        requestingNode = MatrixHelper::getNextSliceRequest();
-        fetchResultFrom(requestingNode);
-        sendNextSlicesTo(requestingNode);
+        cout << "Awaiting request" << endl;
+        const NodeId requestingNode = MatrixHelper::waitForSlicesRequest();
+        cout << "Node " << requestingNode << " requested" << endl;
+        const int workAmount = getWorkAmountFor(requestingNode);
+        fetchResultsFrom(requestingNode, workAmount);
+        sendNextSlicesTo(requestingNode, workAmount);
     }
 }
 
-void MatrixOnlineScheduler::fetchResultFrom(const NodeId node)
+void MatrixOnlineScheduler::fetchResultsFrom(const NodeId node, const int workAmount)
 {
-    Matrix<float> nodeResult = MatrixHelper::receiveMatrixFrom(node);
-    if (nodeResult.empty()) return;
-    MatrixSlice& sliceDefinition = getNextSliceDefinitionFor(node);
-    sliceDefinition.injectSlice(nodeResult, result);
-    sliceDefinition.setNodeId(MpiHelper::MASTER);
+    cout << "\tFetching results from node " << node << endl;
+    for (int i = 0; i < workAmount; ++i)
+    {
+        Matrix<float> nodeResult = MatrixHelper::receiveMatrixFrom(node);
+        cout << "\t\tReceived result " << i << " from node " << node << endl;
+        if (nodeResult.empty()) return;
+        MatrixSlice& sliceDefinition = getNextSliceDefinitionFor(node);
+        sliceDefinition.injectSlice(nodeResult, result);
+        sliceDefinition.setNodeId(MpiHelper::MASTER);
+        cout << "\t\tMerged result from node " << node << endl;
+    }
+}
+
+int MatrixOnlineScheduler::getWorkAmountFor(const NodeId node) const
+{
+    return workAmount * (node/node); // Temporary b/c warnings = errors :)
 }
 
 MatrixSlice& MatrixOnlineScheduler::getNextSliceDefinitionFor(const NodeId node)
@@ -83,22 +96,41 @@ MatrixSlice& MatrixOnlineScheduler::getNextSliceDefinitionFor(const NodeId node)
     throw "ERROR: No next slice definition found.";
 }
 
-void MatrixOnlineScheduler::sendNextSlicesTo(const NodeId node)
+void MatrixOnlineScheduler::sendNextSlicesTo(const NodeId node, const int workAmount)
 {
-    MatrixPair requestedSlices;
-    if (hasSlices())
+    cout << "\tSending work to node " << node << endl;
+    sendWorkAmountTo(node, workAmount);
+    for (int i = 0; i < workAmount; ++i)
     {
-        requestedSlices = sliceMatrices(*currentSliceDefinition);
-        (*currentSliceDefinition).setNodeId(node);
-        currentSliceDefinition++;
+        MatrixPair requestedSlices;
+        if (hasSlices())
+        {
+            requestedSlices = sliceMatrices(*currentSliceDefinition);
+            (*currentSliceDefinition).setNodeId(node);
+            currentSliceDefinition++;
+        }
+        else
+        {
+            requestedSlices = MatrixPair(Matrix<float>(0, 0), Matrix<float>(0, 0));
+            finishedSlaves[node] = true;
+        }
+        cout << "\t\tSending work " << i << (finishedSlaves[node] ? " (empty)" : "") << endl;
+        MatrixHelper::sendMatrixTo(requestedSlices.first, node);
+        MatrixHelper::sendMatrixTo(requestedSlices.second, node);
+        if (finishedSlaves[node]) { cout << "\t\tNode " << node << " finished." << endl; return;}
     }
-    else
-    {
-        requestedSlices = MatrixPair(Matrix<float>(0, 0), Matrix<float>(0, 0));
-        finishedSlaves[node] = true;
-    }
-    MatrixHelper::sendMatrixTo(requestedSlices.first, node);
-    MatrixHelper::sendMatrixTo(requestedSlices.second, node);
+}
+
+void MatrixOnlineScheduler::sendWorkAmountTo(const NodeId node, const int workAmount)
+{
+    const int actualWorkAmount = min(getRemainingWorkAmount() + 1, workAmount);
+    cout << "\tWork amount is " << actualWorkAmount << endl;
+    MatrixHelper::sendWorkAmountTo(node, actualWorkAmount);
+}
+
+int MatrixOnlineScheduler::getRemainingWorkAmount()
+{
+    return distance(currentSliceDefinition, sliceDefinitions.end());
 }
 
 bool MatrixOnlineScheduler::hasSlices() const
@@ -116,22 +148,70 @@ bool MatrixOnlineScheduler::haveSlavesFinished() const
 
 void MatrixOnlineScheduler::calculateOnSlave()
 {
-    Matrix<float> left, right, result = Matrix<float>(0, 0);
-    calculateNextResult(result, left, right);
-    while (!left.empty() && !right.empty())
-        calculateNextResult(result, left, right);
+    file.open("/tmp/log");
+    while (hasToWork())
+    {
+        file << "Has to work" << endl;
+        workQueue.clear();
+        file << "\tInitiating communication" << endl;
+        initiateCommunication();
+        file << "\tSending results" << endl;
+        sendResults();
+        resultQueue.clear();
+        file << "\tReceiving work" << endl;
+        receiveWork();
+        file << "\tCalculating" << endl;
+        doWork();
+    }
+    file << "Finished work" << endl;
+    workQueue.clear();
+    file << "\tInitiating communication" << endl;
+    initiateCommunication();
+    file << "\tSending results" << endl;
+    sendResults();
+    resultQueue.clear();
+    file.close();
 }
 
-void MatrixOnlineScheduler::calculateNextResult(
-    Matrix<float>& result,
-    Matrix<float>& left,
-    Matrix<float>& right)
+bool MatrixOnlineScheduler::hasToWork()
 {
-    int rank = MpiHelper::rank();
-    MatrixHelper::requestNextSlice(rank);
-    MatrixHelper::sendMatrixTo(result, MpiHelper::MASTER);
-    left = MatrixHelper::receiveMatrixFrom(MpiHelper::MASTER);
-    right = MatrixHelper::receiveMatrixFrom(MpiHelper::MASTER);
-    result = elf().multiply(left, right);
+    file << "Work queue empty? " << (workQueue.empty() ? "Yes" : "No") << endl;
+    if (!workQueue.empty())
+        file << "Received empty input? " << ((workQueue.back().first.empty() || workQueue.back().second.empty()) ? "Yes" : "No") << endl;
+    return workQueue.empty()
+        || (!workQueue.back().first.empty() && !workQueue.back().second.empty());
+}
+
+void MatrixOnlineScheduler::initiateCommunication() const
+{
+    MatrixHelper::requestNextSlices(MpiHelper::rank());
+}
+
+void MatrixOnlineScheduler::sendResults()
+{
+    for (const auto& result : resultQueue)
+    {
+        file << "\t\tSending result " << &result << endl;
+        MatrixHelper::sendMatrixTo(result, MpiHelper::MASTER);
+    }
+}
+
+void MatrixOnlineScheduler::receiveWork()
+{
+    const int workAmount = MatrixHelper::receiveWorkAmountFrom(MpiHelper::MASTER);
+    for (int i = 0; i < workAmount; ++i)
+    {
+        file << "\t\tReceiving work " << i+1 << "/" << workAmount << endl;
+        Matrix<float> left = MatrixHelper::receiveMatrixFrom(MpiHelper::MASTER);
+        Matrix<float> right = MatrixHelper::receiveMatrixFrom(MpiHelper::MASTER);
+        workQueue.push_back({left, right});
+        file << "\t\tWork received" << endl;
+    }
+}
+
+void MatrixOnlineScheduler::doWork()
+{
+    for (const auto& work : workQueue)
+        resultQueue.push_back(elf().multiply(work.first, work.second));
 }
 

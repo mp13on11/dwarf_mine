@@ -2,11 +2,14 @@
 
 #include "Matrix.h"
 #include "MatrixScheduler.h"
+#include "MatrixHelper.h"
 
 #include <functional>
 #include <vector>
 #include <map>
-#include <string>
+
+#include <fstream>
+#include <iostream>
 
 class MatrixElf;
 class MatrixSlice;
@@ -20,27 +23,33 @@ public:
     virtual void generateData(const DataGenerationParameters& params);
 
 protected:
-    virtual void doDispatch();
-
     virtual void orchestrateCalculation();
     virtual void calculateOnSlave();
 
 private:
+    static const int workAmount = 4;
     static std::vector<MatrixSlice> sliceDefinitions;
     static std::vector<MatrixSlice>::iterator currentSliceDefinition;
     static std::map<NodeId, bool> finishedSlaves;
-    std::string mode;
+    std::vector<MatrixHelper::MatrixPair> workQueue;
+    std::vector<Matrix<float>> resultQueue;
 
     void sliceInput();
     void schedule();
-    void fetchResultFrom(const NodeId node);
+    void fetchResultsFrom(const NodeId node, const int workAmount);
+    int getWorkAmountFor(const NodeId node) const;
     MatrixSlice& getNextSliceDefinitionFor(const NodeId node);
-    void sendNextSlicesTo(const NodeId node);
+    void sendNextSlicesTo(const NodeId node, const int workAmount);
+    void sendWorkAmountTo(const NodeId node, const int workAmount);
+    int getRemainingWorkAmount();
     bool hasSlices() const;
     bool haveSlavesFinished() const;
-    void calculateNextResult(
-        Matrix<float>& result,
-        Matrix<float>& left,
-        Matrix<float>& right);
-    void collectResults();
+
+    bool hasToWork();
+    void initiateCommunication() const;
+    void sendResults();
+    void receiveWork();
+    void doWork();
+
+    std::ofstream file;
 };

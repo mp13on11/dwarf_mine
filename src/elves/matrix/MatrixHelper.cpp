@@ -17,12 +17,24 @@ namespace MatrixHelper
     static void fillMatrixFromStream(Matrix<float>& matrix, istream& stream);
     static vector<float> getValuesIn(const string& line);
 
-    void requestNextSlice(NodeId node)
+    int receiveWorkAmountFrom(const NodeId node)
+    {
+        int amount;
+        MPI::COMM_WORLD.Recv(&amount, 1, MPI::INT, node, 0);
+        return amount;
+    }
+
+    void sendWorkAmountTo(const NodeId node, const int amount)
+    {
+        MPI::COMM_WORLD.Send(&amount, 1, MPI::INT, node, 0);
+    }
+
+    void requestNextSlices(NodeId node)
     {
         MPI::COMM_WORLD.Send(&node, 1, MPI::INT, 0, MatrixHelper::TAG_REQUEST_SLICE);
     }
 
-    NodeId getNextSliceRequest()
+    NodeId waitForSlicesRequest()
     {
         int nodeId;
         MPI::COMM_WORLD.Recv(&nodeId, 1, MPI::INT, MPI::ANY_SOURCE, MatrixHelper::TAG_REQUEST_SLICE);

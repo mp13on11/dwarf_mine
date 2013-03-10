@@ -18,8 +18,10 @@ namespace MatrixHelper
  
     //
     // Send via MPI
-    void requestNextSlice(NodeId node);
-    NodeId getNextSliceRequest();
+    int receiveWorkAmountFrom(const NodeId node);
+    void sendWorkAmountTo(const NodeId node, const int amount);
+    void requestNextSlices(NodeId node);
+    NodeId waitForSlicesRequest();
     void sendMatrixTo(const Matrix<float>& matrix, NodeId node);
     Matrix<float> receiveMatrixFrom(NodeId node);
 
