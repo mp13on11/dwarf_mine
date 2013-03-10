@@ -14,13 +14,10 @@ typedef std::map<NodeId, Rating> BenchmarkResult;
 class MatrixOnlineSchedulingStrategy
 {
 public:
-    MatrixOnlineSchedulingStrategy(MatrixOnlineScheduler& scheduler)
+    void setScheduler(MatrixOnlineScheduler& scheduler)
     {
         this->scheduler = std::shared_ptr<MatrixOnlineScheduler>(&scheduler);
-    }
-
-    virtual ~MatrixOnlineSchedulingStrategy()
-    {
+        reset();
     }
 
     virtual std::vector<MatrixSlice> getSliceDefinitions(
@@ -34,6 +31,8 @@ protected:
     {
         return *scheduler;
     }
+
+    virtual void reset() = 0;
 
 private:
     std::shared_ptr<MatrixOnlineScheduler> scheduler;
