@@ -1,4 +1,5 @@
 #include "MatrixOnlineSchedulingRowwise.h"
+#include "Matrix.h"
 
 using namespace std;
 

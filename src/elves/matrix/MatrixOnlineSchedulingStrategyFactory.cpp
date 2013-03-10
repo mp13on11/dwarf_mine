@@ -14,6 +14,8 @@ map<string, function<unique_ptr<MatrixOnlineSchedulingStrategy>()>> MatrixOnline
 unique_ptr<MatrixOnlineSchedulingStrategy>
 MatrixOnlineSchedulingStrategyFactory::getStrategy(const std::string& strategy)
 {
+    if (strategies.find(strategy) == strategies.end())
+        throw "ERROR: Can't find desired matrix online scheduling mode.";
     return strategies[strategy]();
 }
 

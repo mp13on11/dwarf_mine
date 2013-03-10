@@ -5,6 +5,7 @@
 #include "MatrixSlice.h"
 #include "MatrixSlicer.h"
 #include "MatrixSlicerOnline.h"
+#include "MatrixOnlineSchedulingStrategyFactory.h"
 #include "common/ProblemStatement.h"
 
 #include <algorithm>
@@ -34,7 +35,7 @@ MatrixOnlineScheduler::~MatrixOnlineScheduler()
 void MatrixOnlineScheduler::generateData(const DataGenerationParameters& params)
 {
     MatrixScheduler::generateData(params);
-    // TODO: Adopt params.schedulingStrategy;
+    schedulingStrategy = MatrixOnlineSchedulingStrategyFactory::getStrategy(params.schedulingStrategy);
 }
 
 void MatrixOnlineScheduler::orchestrateCalculation()
@@ -47,11 +48,7 @@ void MatrixOnlineScheduler::sliceInput()
 {
     MatrixSlicerOnline slicer;
     result = Matrix<float>(left.rows(), right.columns());
-    sliceDefinitions = slicer.layout(
-        result.rows(),
-        result.columns(),
-        workAmount * finishedSlaves.size(),
-        1);
+    sliceDefinitions = schedulingStrategy->getSliceDefinitions(result, nodeSet);
     currentSliceDefinition = sliceDefinitions.begin();
 }
 
@@ -85,7 +82,7 @@ void MatrixOnlineScheduler::fetchResultsFrom(const NodeId node, const int workAm
 
 int MatrixOnlineScheduler::getWorkAmountFor(const NodeId node) const
 {
-    return workAmount * (node/node); // Temporary b/c warnings = errors :)
+    return schedulingStrategy->getWorkAmountFor(node);
 }
 
 MatrixSlice& MatrixOnlineScheduler::getNextSliceDefinitionFor(const NodeId node)

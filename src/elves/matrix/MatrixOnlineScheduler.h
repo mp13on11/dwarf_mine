@@ -3,6 +3,7 @@
 #include "Matrix.h"
 #include "MatrixScheduler.h"
 #include "MatrixHelper.h"
+#include "MatrixOnlineSchedulingStrategy.h"
 
 #include <functional>
 #include <vector>
@@ -27,7 +28,7 @@ protected:
     virtual void calculateOnSlave();
 
 private:
-    static const int workAmount = 4;
+    std::unique_ptr<MatrixOnlineSchedulingStrategy> schedulingStrategy;
     static std::vector<MatrixSlice> sliceDefinitions;
     static std::vector<MatrixSlice>::iterator currentSliceDefinition;
     static std::map<NodeId, bool> finishedSlaves;
