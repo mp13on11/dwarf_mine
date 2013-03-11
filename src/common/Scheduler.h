@@ -15,10 +15,7 @@ public:
     void setNodeset(const BenchmarkResult& benchmarkResult);
     void setNodeset(NodeId singleNode);
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-    virtual void configureWith(const Configuration& config) {}
-#pragma GCC diagnostic pop
+    virtual void configureWith(const Configuration& config);
     virtual void generateData(const DataGenerationParameters& params) = 0;
     virtual void provideData(std::istream& input) = 0;
     virtual void dispatch() = 0;
@@ -30,3 +27,7 @@ protected:
 
     BenchmarkResult nodeSet;
 };
+
+inline void Scheduler::configureWith(const Configuration&)
+{
+}
