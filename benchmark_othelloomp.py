@@ -143,7 +143,7 @@ def timeFile(threads, ext = ".txt"):
     return os.path.join(file_dir, "othello_smp_{0}{1}".format(threads, ext))
 
 def commandLine(threads):
-    return  "OMP_NUM_THREADS={0} ./release/src/runner/elf_runner "\
+    return  "OMP_NUM_THREADS={0} ./build/src/main/dwarf_mine --no_mpi "\
             "-c montecarlo_tree_search "\
             "-m smp -i othello_field -o /dev/null " \
             "-w {1} -n {2} --time_output {3}".format(threads, warmups, iterations, timeFile(threads))
