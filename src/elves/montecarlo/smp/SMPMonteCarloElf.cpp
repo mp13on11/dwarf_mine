@@ -45,42 +45,38 @@ void rollout(OthelloState& state, RandomGenerator generator)
 
 OthelloResult SMPMonteCarloElf::getBestMoveFor(OthelloState& rootState, size_t reiterations, size_t nodeId, size_t commonSeed)
 {
-    size_t threadCount = omp_get_max_threads();
-    vector<mt19937> engines;
-    for (size_t i = 0; i < threadCount; ++i)
-    {
-        engines.emplace_back(OthelloHelper::generateUniqueSeed(nodeId, i, commonSeed));
-    }
-
-    auto generator = [&engines](size_t limit){ 
-        uniform_int_distribution<size_t> distribution(0, limit - 1);
-        return distribution(engines[omp_get_thread_num()]);
-    };    
-
-
     vector<OthelloResult> childResults;
     vector<OthelloState> childStates;
 
     expand(rootState, childStates, childResults);
 
-    // no parallel for to enable a form of workstealing 
-    // threads do not have to execute the same number of cycles but instead 
-    #pragma omp parallel for schedule(dynamic, WORKSTEALING_BLOCKSIZE) shared(childResults) 
-    for(size_t i=0; i<reiterations; ++i)
+    #pragma omp parallel
     {
-        // select randomly
-        size_t selectedIndex = generator(childStates.size());
-        OthelloState selectedState = childStates[selectedIndex];
+        // thread-private random number generator
+        mt19937 engine(OthelloHelper::generateUniqueSeed(nodeId, omp_get_thread_num(), commonSeed));
 
-        // rollout
-        rollout(selectedState, generator);
+        auto generator = [&engine](size_t limit){ 
+            uniform_int_distribution<size_t> distribution(0, limit - 1);
+            return distribution(engine);
+        };
 
-        // backpropagate
-        #pragma omp critical(selectedIndex)
+        #pragma omp for schedule(dynamic, WORKSTEALING_BLOCKSIZE)
+        for(size_t i=0; i<reiterations; ++i)
         {
-            childResults[selectedIndex].visits++;
-            if (selectedState.hasWon(selectedState.getCurrentEnemy()))
-                childResults[selectedIndex].wins++;
+            // select randomly
+            size_t selectedIndex = generator(childStates.size());
+            OthelloState selectedState = childStates[selectedIndex];
+
+            // rollout
+            rollout(selectedState, generator);
+
+            // backpropagate
+            #pragma omp critical(selectedIndex)
+            {
+                childResults[selectedIndex].visits++;
+                if (selectedState.hasWon(selectedState.getCurrentEnemy()))
+                    childResults[selectedIndex].wins++;
+            }
         }
     }
 
