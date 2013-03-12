@@ -63,39 +63,24 @@ OthelloResult SMPMonteCarloElf::getBestMoveFor(OthelloState& rootState, size_t r
 
     expand(rootState, childStates, childResults);
 
-    size_t executedIterations = 0;
     // no parallel for to enable a form of workstealing 
     // threads do not have to execute the same number of cycles but instead 
-    #pragma omp parallel shared(executedIterations, childStates, childResults) 
+    #pragma omp parallel for schedule(dynamic, WORKSTEALING_BLOCKSIZE) shared(childResults) 
+    for(size_t i=0; i<reiterations; ++i)
     {
-        while (executedIterations < reiterations)
+        // select randomly
+        size_t selectedIndex = generator(childStates.size());
+        OthelloState selectedState = childStates[selectedIndex];
+
+        // rollout
+        rollout(selectedState, generator);
+
+        // backpropagate
+        #pragma omp critical(selectedIndex)
         {
-            size_t start = 0;
-            size_t end = 0;
-            // calculate the next block to iterate over
-            #pragma omp critical
-            {
-                start = executedIterations;
-                end = min(start + WORKSTEALING_BLOCKSIZE, reiterations);
-                executedIterations += end - start;
-            }
-            for (size_t i = start; i < end; ++i)
-            {
-                // select
-                size_t selectedIndex = generator(childStates.size());
-                OthelloState selectedState = childStates[selectedIndex];
-
-                // roleout
-                rollout(selectedState, generator);
-
-                // backpropagate
-                #pragma omp critical(selectedIndex)
-                {
-                    childResults[selectedIndex].visits++;
-                    if (selectedState.hasWon(selectedState.getCurrentEnemy()))
-                        childResults[selectedIndex].wins++;
-                }
-            }
+            childResults[selectedIndex].visits++;
+            if (selectedState.hasWon(selectedState.getCurrentEnemy()))
+                childResults[selectedIndex].wins++;
         }
     }
 
