@@ -75,10 +75,7 @@ void MonteCarloScheduler::doDispatch(BenchmarkResult nodeSet)
     if (MpiHelper::isMaster())
     {
         distributeInput(nodeSet);
-        if (_localRepetitions != 0)
-        {
-            calculate();
-        }
+        calculate();
         collectResults(nodeSet);
     }
     else
@@ -116,6 +113,9 @@ pair<vector<NodeRating>, Rating> weightRatings(const BenchmarkResult& ratings)
 
 void MonteCarloScheduler::calculate()
 {
+    if (_localRepetitions == 0)
+        return;
+
     _result = elf().getBestMoveFor(_state, _localRepetitions, MpiHelper::rank(), _commonSeed);
 }
 
