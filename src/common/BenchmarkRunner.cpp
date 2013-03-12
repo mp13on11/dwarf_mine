@@ -22,14 +22,21 @@ BenchmarkRunner::BenchmarkRunner(Configuration& config) :
 BenchmarkResult BenchmarkRunner::benchmarkIndividualNodes() const
 {
     vector<Measurement> averageRunTimes;
-    inPreBenchmark = true;
 
-    for (size_t i=0; i<MpiHelper::numberOfNodes(); ++i)
+    if (MpiHelper::isMaster())
     {
-        vector<Measurement> runTimes = runBenchmark(
-            {{static_cast<NodeId>(i), 1}}, *generatedProblem
-        );
-        averageRunTimes.push_back(averageOf(runTimes));
+        for (size_t i=0; i<MpiHelper::numberOfNodes(); ++i)
+        {
+            scheduler->setNodeset({{i, 1}});
+            BenchmarkMethod targetMethod = [&](){ scheduler->dispatchBenchmark(i); };
+            vector<Measurement> runTimes =  benchmarkNodeset(*generatedProblem, targetMethod);
+            averageRunTimes.push_back(averageOf(runTimes));
+        }
+    }
+    else
+    {
+        BenchmarkMethod targetMethod = [&](){ scheduler->dispatchBenchmark(MpiHelper::rank()); };
+        benchmarkSlave(targetMethod);
     }
 
     return calculateNodeWeights(averageRunTimes);
@@ -37,41 +44,18 @@ BenchmarkResult BenchmarkRunner::benchmarkIndividualNodes() const
 
 vector<Measurement> BenchmarkRunner::runBenchmark(const BenchmarkResult& nodeWeights) const
 {
-    inPreBenchmark = false;
-    return runBenchmark(nodeWeights, *fileProblem);
-}
-
-vector<Measurement> BenchmarkRunner::runBenchmark(const BenchmarkResult& nodeWeights, const ProblemStatement& problem) const
-{
-    BenchmarkMethod targetMethod;
-
-    if (inPreBenchmark)
-    {
-        targetMethod = [&]()
-            {
-                scheduler->dispatchBenchmark(nodeWeights.begin()->first);
-            };
-    }
-    else
-    {
-        targetMethod = [&]()
-            {
-                scheduler->dispatch();
-            };
-    }
+    BenchmarkMethod targetMethod = bind(&Scheduler::dispatch, scheduler.get());
 
     if (MpiHelper::isMaster())
     {
         scheduler->setNodeset(nodeWeights);
-        scheduler->configureWith(*config);
-        return benchmarkNodeset(problem, targetMethod);
+        return benchmarkNodeset(*fileProblem, targetMethod);
     }
-    else if (slaveShouldRunWith(nodeWeights))
+    else
     {
         benchmarkSlave(targetMethod);
+        return vector<Measurement>();
     }
-
-    return vector<Measurement>(iterations, Measurement(0));
 }
 
 vector<Measurement> BenchmarkRunner::benchmarkNodeset(const ProblemStatement& problem, BenchmarkMethod targetMethod) const
@@ -88,6 +72,7 @@ vector<Measurement> BenchmarkRunner::benchmarkNodeset(const ProblemStatement& pr
     {
         result.push_back(measureCall(targetMethod));
     }
+
 
     scheduler->outputData(problem);
 
