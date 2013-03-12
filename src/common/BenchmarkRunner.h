@@ -21,6 +21,7 @@ public:
 
     BenchmarkResult benchmarkIndividualNodes() const;
     std::vector<Measurement> runBenchmark(const BenchmarkResult& nodeWeights) const;
+    std::vector<Measurement> runElf() const;
 
 private:
     typedef std::function<void()> BenchmarkMethod;

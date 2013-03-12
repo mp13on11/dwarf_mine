@@ -44,7 +44,7 @@ BenchmarkResult BenchmarkRunner::benchmarkIndividualNodes() const
 
 vector<Measurement> BenchmarkRunner::runBenchmark(const BenchmarkResult& nodeWeights) const
 {
-    BenchmarkMethod targetMethod = bind(&Scheduler::dispatch, scheduler.get());
+    BenchmarkMethod targetMethod = [&](){ scheduler->dispatch(); };
 
     if (MpiHelper::isMaster())
     {
@@ -56,6 +56,13 @@ vector<Measurement> BenchmarkRunner::runBenchmark(const BenchmarkResult& nodeWei
         benchmarkSlave(targetMethod);
         return vector<Measurement>();
     }
+}
+
+vector<Measurement> BenchmarkRunner::runElf() const
+{
+    BenchmarkMethod targetMethod = [&](){ scheduler->dispatchSimple(); };
+    scheduler->setNodeset({{0, 0}});
+    return benchmarkNodeset(*fileProblem, targetMethod);
 }
 
 vector<Measurement> BenchmarkRunner::benchmarkNodeset(const ProblemStatement& problem, BenchmarkMethod targetMethod) const
