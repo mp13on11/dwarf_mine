@@ -9,6 +9,7 @@
 #include <ratio>
 #include <vector>
 #include <atomic>
+#include <algorithm>
 
 using namespace std;
 
@@ -80,13 +81,5 @@ OthelloResult SMPMonteCarloElf::getBestMoveFor(OthelloState& rootState, size_t r
         }
     }
 
-    OthelloResult* bestResult = nullptr;
-    for (auto& result : childResults)
-    {
-        if (bestResult == nullptr || bestResult->successRate() < result.successRate())
-        {
-            bestResult = &result;
-        }
-    }
-    return *bestResult;
+    return *max_element(childResults.begin(), childResults.end());
 }
