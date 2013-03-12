@@ -256,5 +256,7 @@ std::ostream& operator<<(std::ostream& s, const Configuration& c)
 
 unique_ptr<Scheduler> Configuration::createScheduler() const
 {
-    return createSchedulerFactory()->createScheduler();
+    auto scheduler = createSchedulerFactory()->createScheduler();
+    scheduler->configureWith(*this);
+    return scheduler;
 }
