@@ -30,14 +30,17 @@ Configuration::Configuration(int argc, char** argv) :
 unique_ptr<ProblemStatement> Configuration::createProblemStatement() const
 {
     if(!useFiles())
-    {
-        return unique_ptr<ProblemStatement>(
-            new ProblemStatement(category(), makeDataGenerationParameters())
-        );
-    }
+        return createGeneratedProblemStatement();
 
     return unique_ptr<ProblemStatement>(
         new ProblemStatement(category(), inputFilename(), outputFilename())
+    );
+}
+
+unique_ptr<ProblemStatement> Configuration::createGeneratedProblemStatement() const
+{
+    return unique_ptr<ProblemStatement>(
+        new ProblemStatement(category(), makeDataGenerationParameters())
     );
 }
 

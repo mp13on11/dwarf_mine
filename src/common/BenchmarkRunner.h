@@ -33,11 +33,12 @@ private:
     size_t iterations;
     size_t warmUps;
     mutable bool inPreBenchmark;
-    std::unique_ptr<ProblemStatement> clusterProblem;
+    std::unique_ptr<ProblemStatement> fileProblem;
+    std::unique_ptr<ProblemStatement> generatedProblem;
     std::unique_ptr<Scheduler> scheduler;
 
-    std::vector<Measurement> runBenchmark(const BenchmarkResult& nodeWeights, bool useProblemStatement) const;
-    std::vector<Measurement> benchmarkNodeset(bool useProblemStatement, BenchmarkMethod targetMethod) const;
+    std::vector<Measurement> runBenchmark(const BenchmarkResult& nodeWeights, const ProblemStatement& problem) const;
+    std::vector<Measurement> benchmarkNodeset(const ProblemStatement& problem, BenchmarkMethod targetMethod) const;
     void benchmarkSlave(BenchmarkMethod targetMethod) const;
     Measurement measureCall(BenchmarkMethod targetMethod) const;
 };

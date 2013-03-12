@@ -20,3 +20,20 @@ void Scheduler::setNodeset(NodeId singleNode)
 {
     nodeSet = {{singleNode, 0}};
 }
+
+void Scheduler::provideData(const ProblemStatement& problem)
+{
+	if (problem.hasInput())
+	{
+		provideData(problem.getInput());
+	}
+	else
+	{
+		generateData(problem.getDataGenerationParameters());
+	}
+}
+
+void Scheduler::outputData(const ProblemStatement& problem)
+{
+	outputData(problem.getOutput());
+}
