@@ -14,7 +14,6 @@ public:
     virtual ~Scheduler() = 0;
 
     void setNodeset(const BenchmarkResult& benchmarkResult);
-    void setNodeset(NodeId singleNode);
 
     void provideData(const ProblemStatement& problem);
     void outputData(const ProblemStatement& problem);

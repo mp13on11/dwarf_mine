@@ -16,7 +16,7 @@ SimpleBenchmarkRunner::SimpleBenchmarkRunner(const Configuration& config) :
 
     unique_ptr<SchedulerFactory> factory = config.createSchedulerFactory();
     scheduler = factory->createScheduler();
-    scheduler->setNodeset(0);
+    scheduler->setNodeset({{0, 0}});
 }
 
 vector<Measurement> SimpleBenchmarkRunner::run() const
