@@ -3,7 +3,7 @@
 
 MpiGuard::MpiGuard(int argc, char** argv)
 {
-    MPI::Init(argc, argv);
+    MPI::Init_thread(argc, argv, MPI_THREAD_MULTIPLE);
 }
 
 MpiGuard::~MpiGuard()
