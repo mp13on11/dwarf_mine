@@ -52,47 +52,21 @@ public:
         Player enemyPlayer = _state->getEnemyPlayer();
         int neighbourX = _playfieldX + directionX;
         int neighbourY = _playfieldY + directionY;
-
-// Optimized try
-/*
+        
         int neighbourIndex = neighbourY * FIELD_DIMENSION + neighbourX;
-
         while (_state->inBounds(neighbourX, neighbourY) && _state->field[neighbourIndex] == enemyPlayer)
         {
             foundEnemy = true;
-            neighbourX += directionX;
-            neighbourY += directionY;    
-            neighbourIndex = neighbourY * FIELD_DIMENSION + neighbourX;
-        }
-
-//__syncthreads();
-
-        
-        if (_state->inBounds(neighbourX, neighbourY) && _state->field[neighbourIndex] == enemyPlayer)
-        {
-            _state->possible[_playfieldIndex] |= foundEnemy;
-        }
-*/
-// OLD VERSION
-        
-        int neighbourIndex = neighbourY * FIELD_DIMENSION + neighbourX;
-        while (_state->inBounds(neighbourX, neighbourY) && _state->field[neighbourIndex] != Free && look)
-        {
-            
-            if(_state->field[neighbourIndex] == enemyPlayer)
-            {
-                foundEnemy = true;
-            }
-            if (_state->field[neighbourIndex] == _state->currentPlayer)
-            {
-                if (foundEnemy)
-                    _state->possible[_playfieldIndex] = true;
-                look = false;
-            }
             
             neighbourX += directionX;
             neighbourY += directionY;
             neighbourIndex = neighbourY * FIELD_DIMENSION + neighbourX;
+        }
+
+        if (_state->inBounds(neighbourX, neighbourY) && _state->field[neighbourIndex] == _state->currentPlayer)
+        {
+            if (foundEnemy)
+                _state->possible[_playfieldIndex] |= foundEnemy;      
         }
     }
 
