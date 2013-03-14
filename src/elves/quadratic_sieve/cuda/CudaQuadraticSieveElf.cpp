@@ -66,7 +66,7 @@ vector<BigInt> CudaQuadraticSieveElf::sieveSmoothSquares(
     uint32_t logTreshold = (int)(lb(number));
     for(uint32_t i=0; i<=blockSize; i++)
     {
-    	//cout << "log: " << newLogs[i] << endl;
+    	cout << "log: " << newLogs[i] << endl;
     	if(newLogs[i] < logTreshold) // probable smooth
     	{
     		result.emplace_back(start+i);
