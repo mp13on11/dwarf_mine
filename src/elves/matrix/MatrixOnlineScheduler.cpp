@@ -101,7 +101,7 @@ vector<MatrixPair> MatrixOnlineScheduler::getNextWorkFor(
     const int workAmount)
 {
     vector<MatrixPair> work;
-    for (; currentSliceDefinition != sliceDefinitions.end(); ++currentSliceDefinition)
+    for (int i = 0; currentSliceDefinition != sliceDefinitions.end() && i < workAmount; ++currentSliceDefinition, ++i)
     {
         work.push_back(sliceMatrices(*currentSliceDefinition));
         currentSliceDefinition->setNodeId(node);
