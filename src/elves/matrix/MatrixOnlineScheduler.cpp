@@ -10,7 +10,13 @@
 
 #include <algorithm>
 #include <iterator>
-#include <future>
+
+#include <iostream>
+#include <fstream>
+#include <chrono>
+#include <thread>
+#include <mutex>
+std::mutex writeMutex;
 
 using namespace std;
 using MatrixHelper::MatrixPair;
@@ -18,6 +24,7 @@ using MatrixHelper::MatrixPair;
 vector<MatrixSlice> MatrixOnlineScheduler::sliceDefinitions = std::vector<MatrixSlice>();
 vector<MatrixSlice>::iterator MatrixOnlineScheduler::currentSliceDefinition = MatrixOnlineScheduler::sliceDefinitions.begin();
 map<NodeId, bool> MatrixOnlineScheduler::finishedSlaves = map<NodeId, bool>();
+map<NodeId, std::future<void>> MatrixOnlineScheduler::scheduleHandlers = map<NodeId ,std::future<void>>();
 mutex MatrixOnlineScheduler::schedulingMutex;
 
 MatrixOnlineScheduler::MatrixOnlineScheduler(const function<ElfPointer()>& factory) :
@@ -63,7 +70,10 @@ void MatrixOnlineScheduler::schedule()
     while (hasSlices() || !haveSlavesFinished())
     {
         const NodeId requestingNode = MatrixHelper::waitForSlicesRequest();
-        async(launch::async, [&] { schedule(requestingNode); });
+        if (scheduleHandlers.find(requestingNode) != scheduleHandlers.end())
+            throw "FATAL: Node shouldn't request more work without having received all work before!";
+        scheduleHandlers[requestingNode] = async(launch::async,
+            [&, requestingNode] () { schedule(requestingNode); });
     }
 }
 

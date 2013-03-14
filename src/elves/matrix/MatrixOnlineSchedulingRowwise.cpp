@@ -6,7 +6,7 @@
 
 using namespace std;
 
-const int MatrixOnlineSchedulingRowwise::defaultWorkAmount = 3;
+const int MatrixOnlineSchedulingRowwise::defaultWorkAmount = 1;
 
 vector<MatrixSlice> MatrixOnlineSchedulingRowwise::getSliceDefinitions(
     const Matrix<float>& result,

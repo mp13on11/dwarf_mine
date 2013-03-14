@@ -5,6 +5,7 @@
 #include "MatrixHelper.h"
 #include "MatrixOnlineSchedulingStrategy.h"
 
+#include <future>
 #include <functional>
 #include <vector>
 #include <map>
@@ -33,6 +34,7 @@ private:
     static std::vector<MatrixSlice> sliceDefinitions;
     static std::vector<MatrixSlice>::iterator currentSliceDefinition;
     static std::map<NodeId, bool> finishedSlaves;
+    static std::map<NodeId, std::future<void>> scheduleHandlers;
     static std::mutex schedulingMutex;
     std::vector<MatrixHelper::MatrixPair> workQueue;
     std::vector<Matrix<float>> resultQueue;
