@@ -13,7 +13,7 @@ void megaWrapper(const uint32_t* number, uint32_t* logs_d, const uint32_t* facto
     
     Number* number_d; 
     cudaMalloc(&number_d, sizeof(uint32_t)*NUM_FIELDS);
-    cudaMemcpy(number_d, start, NUM_FIELDS*sizeof(uint32_t), cudaMemcpyHostToDevice);
+    cudaMemcpy(number_d, number, NUM_FIELDS*sizeof(uint32_t), cudaMemcpyHostToDevice);
        
 	Number* start_d; 
 	cudaMalloc(&start_d, sizeof(uint32_t)*NUM_FIELDS);
