@@ -56,32 +56,21 @@ public:
         Player enemyPlayer = _state->getEnemyPlayer();
         int neighbourX = _playfieldX + directionX;
         int neighbourY = _playfieldY + directionY;
-        while (look)
+        
+        int neighbourIndex = neighbourY * FIELD_DIMENSION + neighbourX;
+        while (_state->inBounds(neighbourX, neighbourY) && _state->field[neighbourIndex] == enemyPlayer)
         {
-            int neighbourIndex = neighbourY * FIELD_DIMENSION + neighbourX;
-            if (_state->inBounds(neighbourX, neighbourY))
-            {
-                if (_state->field[neighbourIndex] == Free)
-                {
-                    look = false;
-                }
-                else if(_state->field[neighbourIndex] == enemyPlayer)
-                {
-                    foundEnemy = true;
-                }
-                else if (_state->field[neighbourIndex] == _state->currentPlayer)
-                {
-                    if (foundEnemy)
-                        _state->possible[_playfieldIndex] = true;
-                    look = false;
-                }
-            }
-            else
-            {
-                look = false;
-            }
+            foundEnemy = true;
+            
             neighbourX += directionX;
             neighbourY += directionY;
+            neighbourIndex = neighbourY * FIELD_DIMENSION + neighbourX;
+        }
+
+        if (_state->inBounds(neighbourX, neighbourY) && _state->field[neighbourIndex] == _state->currentPlayer)
+        {
+            if (foundEnemy)
+                _state->possible[_playfieldIndex] |= foundEnemy;      
         }
     }
 
