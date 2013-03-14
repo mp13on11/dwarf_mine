@@ -10,13 +10,15 @@
 
 #include <algorithm>
 #include <iterator>
+#include <future>
 
 using namespace std;
 using MatrixHelper::MatrixPair;
 
-std::vector<MatrixSlice> MatrixOnlineScheduler::sliceDefinitions = std::vector<MatrixSlice>();
-std::vector<MatrixSlice>::iterator MatrixOnlineScheduler::currentSliceDefinition = MatrixOnlineScheduler::sliceDefinitions.begin();
+vector<MatrixSlice> MatrixOnlineScheduler::sliceDefinitions = std::vector<MatrixSlice>();
+vector<MatrixSlice>::iterator MatrixOnlineScheduler::currentSliceDefinition = MatrixOnlineScheduler::sliceDefinitions.begin();
 map<NodeId, bool> MatrixOnlineScheduler::finishedSlaves = map<NodeId, bool>();
+mutex MatrixOnlineScheduler::schedulingMutex;
 
 MatrixOnlineScheduler::MatrixOnlineScheduler(const function<ElfPointer()>& factory) :
     MatrixScheduler(factory)
@@ -61,10 +63,15 @@ void MatrixOnlineScheduler::schedule()
     while (hasSlices() || !haveSlavesFinished())
     {
         const NodeId requestingNode = MatrixHelper::waitForSlicesRequest();
-        const int workAmount = getWorkAmountFor(requestingNode);
-        fetchResultsFrom(requestingNode, workAmount);
-        sendNextSlicesTo(requestingNode, workAmount);
+        async(launch::async, [&] { schedule(requestingNode); });
     }
+}
+
+void MatrixOnlineScheduler::schedule(const NodeId node)
+{
+    const int lastWorkAmount = getLastWorkAmountFor(node);
+    fetchResultsFrom(node, lastWorkAmount);
+    sendNextSlicesTo(node);
 }
 
 void MatrixOnlineScheduler::fetchResultsFrom(const NodeId node, const int workAmount)
@@ -79,9 +86,29 @@ void MatrixOnlineScheduler::fetchResultsFrom(const NodeId node, const int workAm
     }
 }
 
-int MatrixOnlineScheduler::getWorkAmountFor(const NodeId node) const
+int MatrixOnlineScheduler::getLastWorkAmountFor(const NodeId node) const
 {
-    return schedulingStrategy->getWorkAmountFor(node);
+    return schedulingStrategy->getLastWorkAmountFor(*this, node);
+}
+
+int MatrixOnlineScheduler::getNextWorkAmountFor(const NodeId node) const
+{
+    return schedulingStrategy->getNextWorkAmountFor(*this, node);
+}
+
+vector<MatrixPair> MatrixOnlineScheduler::getNextWorkFor(
+    const NodeId node,
+    const int workAmount)
+{
+    vector<MatrixPair> work;
+    for (; currentSliceDefinition != sliceDefinitions.end(); ++currentSliceDefinition)
+    {
+        work.push_back(sliceMatrices(*currentSliceDefinition));
+        currentSliceDefinition->setNodeId(node);
+    }
+    if ((int) work.size() < workAmount)
+        work.push_back(MatrixPair(Matrix<float>(0,0), Matrix<float>(0,0)));
+    return work;
 }
 
 MatrixSlice& MatrixOnlineScheduler::getNextSliceDefinitionFor(const NodeId node)
@@ -92,38 +119,28 @@ MatrixSlice& MatrixOnlineScheduler::getNextSliceDefinitionFor(const NodeId node)
     throw "ERROR: No next slice definition found.";
 }
 
-void MatrixOnlineScheduler::sendNextSlicesTo(const NodeId node, const int workAmount)
+void MatrixOnlineScheduler::sendNextSlicesTo(const NodeId node)
 {
-    sendWorkAmountTo(node, workAmount);
-    for (int i = 0; i < workAmount; ++i)
+    schedulingMutex.lock();
+    const int workAmount = getNextWorkAmountFor(node);
+    const vector<MatrixPair> work = getNextWorkFor(node, workAmount);
+    schedulingMutex.unlock();
+
+    MatrixHelper::sendWorkAmountTo(node, workAmount);
+    for (const auto& workPair : work)
     {
-        MatrixPair requestedSlices;
-        if (hasSlices())
-        {
-            requestedSlices = sliceMatrices(*currentSliceDefinition);
-            (*currentSliceDefinition).setNodeId(node);
-            currentSliceDefinition++;
-        }
-        else
-        {
-            requestedSlices = MatrixPair(Matrix<float>(0, 0), Matrix<float>(0, 0));
+        if (workPair.first.empty() || workPair.second.empty())
             finishedSlaves[node] = true;
-        }
-        MatrixHelper::sendMatrixTo(requestedSlices.first, node);
-        MatrixHelper::sendMatrixTo(requestedSlices.second, node);
-        if (finishedSlaves[node]) return;
+        MatrixHelper::sendMatrixTo(workPair.first, node);
+        MatrixHelper::sendMatrixTo(workPair.second, node);
     }
 }
 
-void MatrixOnlineScheduler::sendWorkAmountTo(const NodeId node, const int workAmount)
+int MatrixOnlineScheduler::getRemainingWorkAmount() const
 {
-    const int actualWorkAmount = min(getRemainingWorkAmount() + 1, workAmount);
-    MatrixHelper::sendWorkAmountTo(node, actualWorkAmount);
-}
-
-int MatrixOnlineScheduler::getRemainingWorkAmount()
-{
-    return distance(currentSliceDefinition, sliceDefinitions.end());
+    return hasSlices() ?
+        distance(currentSliceDefinition, sliceDefinitions.end()) :
+        0;
 }
 
 bool MatrixOnlineScheduler::hasSlices() const

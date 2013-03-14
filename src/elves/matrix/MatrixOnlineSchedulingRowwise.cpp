@@ -1,7 +1,12 @@
 #include "MatrixOnlineSchedulingRowwise.h"
 #include "Matrix.h"
+#include "MatrixOnlineScheduler.h"
+
+#include <algorithm>
 
 using namespace std;
+
+const int MatrixOnlineSchedulingRowwise::defaultWorkAmount = 3;
 
 vector<MatrixSlice> MatrixOnlineSchedulingRowwise::getSliceDefinitions(
     const Matrix<float>& result,
@@ -16,12 +21,26 @@ vector<MatrixSlice> MatrixOnlineSchedulingRowwise::getSliceDefinitions(
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-parameter"
-int MatrixOnlineSchedulingRowwise::getWorkAmountFor(const NodeId node)
+int MatrixOnlineSchedulingRowwise::getLastWorkAmountFor(
+    const MatrixOnlineScheduler& scheduler,
+    const NodeId node)
 {
-    return 1;
+    return lastWorkAmounts.find(node) != lastWorkAmounts.end() ?
+        lastWorkAmounts[node] :
+        1;
 }
 #pragma GCC diagnostic pop
 
+int MatrixOnlineSchedulingRowwise::getNextWorkAmountFor(
+    const MatrixOnlineScheduler& scheduler,
+    const NodeId node)
+{
+    const int remainingWorkAmount = scheduler.getRemainingWorkAmount();
+    const int nextWorkAmount = max(min(remainingWorkAmount + 1, defaultWorkAmount), 1);
+    lastWorkAmounts[node] = nextWorkAmount;
+    return nextWorkAmount;
+}
+   
 void MatrixOnlineSchedulingRowwise::reset()
 {
 }

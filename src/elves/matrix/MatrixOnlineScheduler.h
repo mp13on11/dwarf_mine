@@ -8,6 +8,7 @@
 #include <functional>
 #include <vector>
 #include <map>
+#include <mutex>
 
 class MatrixElf;
 class MatrixSlice;
@@ -21,6 +22,8 @@ public:
     virtual void configureWith(const Configuration& config);
     virtual void generateData(const DataGenerationParameters& params);
 
+    int getRemainingWorkAmount() const;
+
 protected:
     virtual void orchestrateCalculation();
     virtual void calculateOnSlave();
@@ -30,17 +33,21 @@ private:
     static std::vector<MatrixSlice> sliceDefinitions;
     static std::vector<MatrixSlice>::iterator currentSliceDefinition;
     static std::map<NodeId, bool> finishedSlaves;
+    static std::mutex schedulingMutex;
     std::vector<MatrixHelper::MatrixPair> workQueue;
     std::vector<Matrix<float>> resultQueue;
 
     void sliceInput();
     void schedule();
+    void schedule(const NodeId node);
     void fetchResultsFrom(const NodeId node, const int workAmount);
-    int getWorkAmountFor(const NodeId node) const;
+    int getLastWorkAmountFor(const NodeId node) const;
+    int getNextWorkAmountFor(const NodeId node) const;
+    std::vector<MatrixHelper::MatrixPair> getNextWorkFor(
+        const NodeId node,
+        const int workAmount);
     MatrixSlice& getNextSliceDefinitionFor(const NodeId node);
-    void sendNextSlicesTo(const NodeId node, const int workAmount);
-    void sendWorkAmountTo(const NodeId node, const int workAmount);
-    int getRemainingWorkAmount();
+    void sendNextSlicesTo(const NodeId node);
     bool hasSlices() const;
     bool haveSlavesFinished() const;
 
