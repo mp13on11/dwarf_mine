@@ -1,6 +1,6 @@
 #pragma once
 
-
+#include "OthelloField.h"
 
 typedef struct _CudaGameState
 {
@@ -41,5 +41,16 @@ typedef struct _CudaGameState
             if (field[i] == requestedPlayer) superiority++;
         }
         return superiority >= 0;
+    }
+
+    __device__ bool isUnchanged()
+    {
+        __syncthreads();
+        bool same = true;
+        for (size_t i = 0; i < size; i++)
+        {
+            same &= (oldField[i] == field[i]);
+        }
+        return same;
     }
 } CudaGameState;

@@ -52,7 +52,6 @@ OthelloResult CudaMonteCarloElf::getBestMoveFor(OthelloState& state, size_t reit
     cudaResults.transferTo(aggregatedChildResults.data());
 
     // invert results since they are calculated for the enemy player
-
     OthelloResult worstEnemyResult;
 
     for (auto& result : aggregatedChildResults)

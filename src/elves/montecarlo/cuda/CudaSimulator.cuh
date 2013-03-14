@@ -1,6 +1,8 @@
 #pragma once
 
 #include "CudaUtil.cuh"
+#include "CudaGameState.cuh"
+#include "CudaDebug.cuh"
 
 class CudaSimulator
 {
@@ -25,6 +27,8 @@ public:
     
     __device__ void calculatePossibleMoves()
     {
+        __syncthreads();
+        
         _state->possible[threadIdx.x] = false;
     
         __syncthreads();
@@ -159,6 +163,8 @@ public:
 
     __device__ void flipEnemyCounter(size_t moveIndex, size_t limit)
     {
+        __syncthreads();
+
         _state->oldField[_playfieldIndex] = _state->field[_playfieldIndex];
 
         __syncthreads();

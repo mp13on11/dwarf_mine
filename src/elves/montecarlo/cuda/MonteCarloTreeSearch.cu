@@ -13,12 +13,11 @@
 const int THREADS_PER_BLOCK = 64;
 
 __global__ void setupStateForRandom(curandState* state, size_t* seeds);
-__global__ void simulateGameLeaf(curandState* deviceState, Field* playfield, Player currentPlayer, size_t* wins, size_t* visits);
 __global__ void simulateGame(size_t reiterations, curandState* deviceStates, size_t numberOfPlayfields, Field* playfields, Player currentPlayer, OthelloResult* results);
 
 __global__ void testRandomNumber(float fakedRandom, size_t maximum, size_t* randomNumberResult);
 __global__ void testDoStep(curandState* deviceState, Field* playfield, Player currentPlayer, float fakedRandom);
-__global__ void testSimulateGameLeaf(curandState* deviceState, Field* playfield, Player currentPlayer, size_t* wins, size_t* visits);
+__global__ void testExpandLeaf(curandState* deviceState, Field* playfield, Player currentPlayer, size_t* wins, size_t* visits);
 
 void gameSimulation(size_t numberOfBlocks, size_t iterations, size_t* seeds, size_t numberOfPlayfields, Field* playfields, Player currentPlayer, OthelloResult* results)
 {
@@ -44,16 +43,6 @@ void setupSeedForTest(size_t numberOfBlocks, curandState* deviceStates)
     CudaUtils::checkState();
 }
 
-void leafSimulation(size_t reiterations, size_t dimension, Field* playfield, Player currentPlayer, size_t* moveX, size_t* moveY, size_t* wins, size_t* visits)
-{
-    curandState* deviceStates;
-    size_t numberOfBlocks = 1;
-    setupSeedForTest(numberOfBlocks, deviceStates);
-
-    simulateGameLeaf <<< numberOfBlocks, THREADS_PER_BLOCK >>>(deviceStates, playfield, currentPlayer, wins, visits);
-    CudaUtils::checkState();
-}
-
 void testDoStepProxy(Field* playfield, Player currentPlayer, float fakedRandom)
 {
     curandState* deviceStates;
@@ -70,12 +59,12 @@ void testRandomNumberProxy(float fakedRandom, size_t maximum, size_t* randomMove
     CudaUtils::checkState();
 }
 
-void testSimulateGameLeafProxy(size_t dimension, Field* playfield, Player currentPlayer, size_t* wins, size_t* visits)
+void testExpandLeafProxy(size_t dimension, Field* playfield, Player currentPlayer, size_t* wins, size_t* visits)
 {
     curandState* deviceStates;
     size_t numberOfBlocks = 1;
     setupSeedForTest(numberOfBlocks, deviceStates);
     
-    testSimulateGameLeaf <<< numberOfBlocks, THREADS_PER_BLOCK >>>(deviceStates, playfield, currentPlayer, wins, visits);
+    testExpandLeaf <<< numberOfBlocks, THREADS_PER_BLOCK >>>(deviceStates, playfield, currentPlayer, wins, visits);
     CudaUtils::checkState();
 }
