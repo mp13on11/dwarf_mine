@@ -15,7 +15,7 @@ vector<MatrixSlice> MatrixOnlineSchedulingRowwise::getSliceDefinitions(
     return slicer.layout(
         result.rows(),
         result.columns(),
-        nodeSet.size(),
+        (nodeSet.size() - 1) * defaultWorkAmount,
         1);
 }
 

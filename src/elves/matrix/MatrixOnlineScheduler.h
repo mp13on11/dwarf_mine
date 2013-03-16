@@ -34,7 +34,7 @@ private:
     static std::vector<MatrixSlice> sliceDefinitions;
     static std::vector<MatrixSlice>::iterator currentSliceDefinition;
     static std::map<NodeId, bool> finishedSlaves;
-    static std::map<NodeId, std::future<void>> scheduleHandlers;
+    static std::vector<std::future<void>> scheduleHandlers;
     static std::mutex schedulingMutex;
     std::vector<MatrixHelper::MatrixPair> workQueue;
     std::vector<Matrix<float>> resultQueue;
@@ -47,6 +47,7 @@ private:
     int getNextWorkAmountFor(const NodeId node) const;
     std::vector<MatrixHelper::MatrixPair> getNextWorkFor(
         const NodeId node,
+        std::vector<MatrixSlice>::iterator& workSlice,
         const int workAmount);
     MatrixSlice& getNextSliceDefinitionFor(const NodeId node);
     void sendNextSlicesTo(const NodeId node);
