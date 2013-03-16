@@ -2,6 +2,8 @@
 #include <Elf.h>
 #include <common/ProblemStatement.h>
 #include <common/MpiHelper.h>
+#include <OthelloResult.h>
+#include <OthelloUtil.h>
 #include <limits>
 #include <utility>
 #include <vector>
@@ -10,13 +12,16 @@
 #include <sstream>
 #include <mpi.h>
 #include <cmath>
+#include <cassert>
 
 using namespace std;
 
-const Player DEFAULTPLAYER = Player::White;
+const Player DEFAULT_PLAYER = Player::White;
+const size_t DEFAULT_SEED = 7337;
+const size_t DEFAULT_REITERATIONS = 1000U;
 
 MonteCarloScheduler::MonteCarloScheduler(const function<ElfPointer()>& factory) :
-    SchedulerTemplate(factory), _repetitions(1000U), _localRepetitions(0U)
+    SchedulerTemplate(factory), _repetitions(DEFAULT_REITERATIONS), _localRepetitions(0U), _commonSeed(DEFAULT_SEED)
 {
 }
 
@@ -24,10 +29,11 @@ void MonteCarloScheduler::provideData(std::istream& input)
 {
     input.clear();
     input.seekg(0);
+    input >>_commonSeed;
     input >>_repetitions;
     vector<Field> playfield;
     OthelloHelper::readPlayfieldFromStream(input, playfield);
-    _state = OthelloState(playfield, DEFAULTPLAYER);
+    _state = OthelloState(playfield, DEFAULT_PLAYER);
 }
 
 void MonteCarloScheduler::generateData(const DataGenerationParameters& params)
@@ -43,7 +49,7 @@ void MonteCarloScheduler::generateData(const DataGenerationParameters& params)
         F, F, F, F, F, F, F, F
     };
     _repetitions = params.monteCarloTrials;
-    _state = OthelloState(playfield, DEFAULTPLAYER);
+    _state = OthelloState(playfield, DEFAULT_PLAYER);
 }
 
 bool MonteCarloScheduler::hasData() const
@@ -53,31 +59,36 @@ bool MonteCarloScheduler::hasData() const
 
 void MonteCarloScheduler::outputData(std::ostream& output)
 {
+    cout<< "Move: ("<<_result.x<<", "<<_result.y<<")\n"
+        << "Wins: "<<_result.wins<<"/"<<_result.visits<<" = " <<_result.successRate()<<endl;
     OthelloHelper::writeResultToStream(output, _result);
 }
 
 void MonteCarloScheduler::doSimpleDispatch()
 {
+    _localRepetitions = _repetitions;
     calculate();
+}
+
+void MonteCarloScheduler::doDispatch(BenchmarkResult nodeSet)
+{
+    if (MpiHelper::isMaster())
+    {
+        distributeInput(nodeSet);
+        calculate();
+        collectResults(nodeSet);
+    }
+    else
+    {
+        collectInput(nodeSet);
+        calculate();
+        gatherResults(nodeSet);
+    }
 }
 
 void MonteCarloScheduler::doDispatch()
 {
-    if (MpiHelper::isMaster())
-    {
-        distributeInput();
-        if (_localRepetitions != 0)
-        {
-            calculate();
-        }
-        collectResults();
-    }
-    else
-    {
-        collectInput();
-        calculate();
-        gatherResults();
-    }
+   doDispatch(nodeSet);
 }
 
 pair<vector<NodeRating>, Rating> weightRatings(const BenchmarkResult& ratings)
@@ -102,15 +113,14 @@ pair<vector<NodeRating>, Rating> weightRatings(const BenchmarkResult& ratings)
 
 void MonteCarloScheduler::calculate()
 {
-    _result = elf().getBestMoveFor(_state, _localRepetitions);
+    if (_localRepetitions == 0)
+        return;
+
+    _result = elf().getBestMoveFor(_state, _localRepetitions, MpiHelper::rank(), _commonSeed);
 }
 
-vector<OthelloResult> MonteCarloScheduler::gatherResults()
+void registerOthelloResultToMPI(MPI_Datatype& type)
 {
-    size_t numberOfNodes = nodeSet.size();
-    vector<OthelloResult> results(numberOfNodes);
-
-    MPI_Datatype MPI_OthelloResult;
     MPI_Datatype elementTypes[] = { 
         MPI::INT, 
         MPI::INT, 
@@ -130,8 +140,17 @@ vector<OthelloResult> MonteCarloScheduler::gatherResults()
         3 * sizeof(size_t)
     };
 
-    MPI_Type_create_struct(4, elementLengths, elementDisplacements, elementTypes, &MPI_OthelloResult);
-    MPI_Type_commit(&MPI_OthelloResult);
+    MPI_Type_create_struct(4, elementLengths, elementDisplacements, elementTypes, &type);
+    MPI_Type_commit(&type);
+}
+
+vector<OthelloResult> MonteCarloScheduler::gatherResults(BenchmarkResult nodeSet)
+{
+    size_t numberOfNodes = nodeSet.size();
+    vector<OthelloResult> results(numberOfNodes);
+
+    MPI_Datatype MPI_OthelloResult;
+    registerOthelloResultToMPI(MPI_OthelloResult);
     
     if (MpiHelper::isMaster())
     {
@@ -143,8 +162,7 @@ vector<OthelloResult> MonteCarloScheduler::gatherResults()
                 results[0] = _result;
             }
             else
-            {
-                
+            {                
                 MPI::COMM_WORLD.Recv(results.data() + i , 1, MPI_OthelloResult, node.first, 0);
             }
             i++;
@@ -157,13 +175,14 @@ vector<OthelloResult> MonteCarloScheduler::gatherResults()
     return results;
 }
 
-void MonteCarloScheduler::collectInput()
+void MonteCarloScheduler::collectInput(BenchmarkResult /*nodeSet*/)
 {
-    unsigned long parameters[] = {0, 0};
-    MPI::COMM_WORLD.Recv(parameters, 2, MPI::UNSIGNED_LONG, MpiHelper::MASTER, 0);
+    unsigned long parameters[] = {0, 0, 0};
+    MPI::COMM_WORLD.Recv(parameters, 3, MPI::UNSIGNED_LONG, MpiHelper::MASTER, 0);
 
-    size_t bufferSize = (size_t)parameters[0];
-    _localRepetitions = (size_t)parameters[1];
+    size_t bufferSize = (size_t) parameters[0];
+    _commonSeed =       (size_t) parameters[1];
+    _localRepetitions = (size_t) parameters[2];
 
     Playfield playfield(bufferSize);
 
@@ -173,7 +192,7 @@ void MonteCarloScheduler::collectInput()
     _state = OthelloState(playfield, Player::White);
 }
 
-void MonteCarloScheduler::distributeInput()
+void MonteCarloScheduler::distributeInput(BenchmarkResult nodeSet)
 {
     size_t bufferSize = _state.playfieldSideLength() * _state.playfieldSideLength();
     vector<NodeRating> ratings;
@@ -186,8 +205,12 @@ void MonteCarloScheduler::distributeInput()
     {
         if (!MpiHelper::isMaster(rating.first))
         {
-            unsigned long parameters[] = { bufferSize, (size_t)round(_repetitions * rating.second / ratingSum) };
-            MPI::COMM_WORLD.Send(parameters, 2, MPI::UNSIGNED_LONG, rating.first, 0);
+            unsigned long parameters[] = { 
+                bufferSize, 
+                _commonSeed, 
+                (size_t)round(_repetitions * rating.second / ratingSum) 
+            };
+            MPI::COMM_WORLD.Send(parameters, 3, MPI::UNSIGNED_LONG, rating.first, 0);
             MPI::COMM_WORLD.Send(_state.playfieldBuffer(), bufferSize, MPI_FIELD, rating.first, 0);
         }
         else
@@ -207,9 +230,9 @@ void MonteCarloScheduler::distributeInput()
 
 
 
-void MonteCarloScheduler::collectResults()
+void MonteCarloScheduler::collectResults(BenchmarkResult nodeSet)
 {
-    vector<OthelloResult> results = gatherResults();
+    vector<OthelloResult> results = gatherResults(nodeSet);
 
     vector<OthelloResult> accumulatedResults;
     OthelloResult* bestMove = nullptr;
@@ -229,11 +252,8 @@ void MonteCarloScheduler::collectResults()
             accumulatedResults.push_back(r);
             existingMove = &(accumulatedResults.back());
         }
-        else
-        {
-            existingMove->visits += r.visits;
-            existingMove->wins += r.wins;
-        }
+        existingMove->visits += r.visits;
+        existingMove->wins += r.wins;
         if (bestMove == nullptr || bestMove->successRate() < existingMove->successRate())
         {
             bestMove = existingMove;
@@ -242,6 +262,7 @@ void MonteCarloScheduler::collectResults()
     _result = *bestMove;
 }
 
-void MonteCarloScheduler::doBenchmarkDispatch(NodeId /*node*/)
+void MonteCarloScheduler::doBenchmarkDispatch(NodeId node)
 {
+    doDispatch({{node, 1}});
 }    

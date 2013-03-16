@@ -63,8 +63,8 @@ TEST_F(OthelloStateTest, GetPossibleMovesTest)
 TEST_F(OthelloStateTest, SimpleFlippingTest)
 {
     state->doMove(OthelloMove{4, 2});
-
-    ASSERT_EQ(Field::White, state->atPosition(4, 3));
+    
+    ASSERT_EQ(Field::White, state->playfield(4, 3));
     auto actualMoves = state->getPossibleMoves();
     
     // next the Black player's possible moves
@@ -120,7 +120,6 @@ TEST_F(OthelloStateTest, LockedStateTest)
 
     ASSERT_EQ(Player::White, lockedState.getCurrentPlayer());
     auto possibleMoves = lockedState.getPossibleMoves();
-    ASSERT_FALSE(lockedState.hasPossibleMoves());
     ASSERT_EQ(0U, possibleMoves.size());
 
     ASSERT_FALSE(lockedState.hasWon(Player::White));
@@ -139,7 +138,7 @@ TEST_F(OthelloStateTest, LockedWhiteStateTest)
 
     ASSERT_EQ(Player::White, lockedWhiteState.getCurrentPlayer());
     auto possibleMoves = lockedWhiteState.getPossibleMoves();
-    ASSERT_FALSE(lockedWhiteState.hasPossibleMoves());
+    ASSERT_EQ(0U, possibleMoves.size());
 
     OthelloState blackState(playfield, Player::Black);
 

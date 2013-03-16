@@ -7,7 +7,7 @@
 #include <mpi.h>
 
 class MonteCarloElf;
-class OthelloResult;
+struct OthelloResult;
 
 class MonteCarloScheduler: public SchedulerTemplate<MonteCarloElf>
 {
@@ -30,13 +30,15 @@ protected:
     OthelloResult _result;
     size_t _repetitions;
     size_t _localRepetitions;
+    size_t _commonSeed;
 
 private:
+    void doDispatch(BenchmarkResult nodeSet);
     void orchestrateCalculation();
     void calculateOnSlave();
     void calculate();
-    void distributeInput();
-    void collectInput();
-    void collectResults();
-    std::vector<OthelloResult> gatherResults();
+    void distributeInput(BenchmarkResult nodeSet);
+    void collectInput(BenchmarkResult nodeSet);
+    void collectResults(BenchmarkResult nodeSet);
+    std::vector<OthelloResult> gatherResults(BenchmarkResult nodeSet);
 };

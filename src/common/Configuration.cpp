@@ -30,14 +30,17 @@ Configuration::Configuration(int argc, char** argv) :
 unique_ptr<ProblemStatement> Configuration::createProblemStatement() const
 {
     if(!useFiles())
-    {
-        return unique_ptr<ProblemStatement>(
-            new ProblemStatement(category(), makeDataGenerationParameters())
-        );
-    }
+        return createGeneratedProblemStatement();
 
     return unique_ptr<ProblemStatement>(
         new ProblemStatement(category(), inputFilename(), outputFilename())
+    );
+}
+
+unique_ptr<ProblemStatement> Configuration::createGeneratedProblemStatement() const
+{
+    return unique_ptr<ProblemStatement>(
+        new ProblemStatement(category(), makeDataGenerationParameters())
     );
 }
 
@@ -125,6 +128,12 @@ bool Configuration::shouldPrintHelp() const
     return variables.count("help") > 0;
 }
 
+bool Configuration::shouldRunWithoutMPI() const
+{
+    return variables.count("no_mpi") > 0;
+}
+
+
 string Configuration::timeOutputFilename() const
 {
     return variables["time_output"].as<string>();
@@ -158,6 +167,7 @@ options_description Configuration::createDescription()
         ("skip_benchmark",       "Skip the benchmark run")
         ("quiet,q",              "Do not output anything")
         ("verbose,v",            "Show output from all MPI processes")
+        ("no_mpi",               "Run the elf directly, without any MPI messaging")
         ("left_rows",            value<size_t>()->default_value(500), "Matrix: Number of left rows to be generated (overridden for benchmark by input file)")
         ("common_rows_columns",  value<size_t>()->default_value(500), "Matrix: Number of left columns / right rows to be generated (overridden for benchmark by input file)")
         ("right_columns",        value<size_t>()->default_value(500), "Matrix: Number of right columns to be generated (overridden for benchmark by input file)")
@@ -253,5 +263,7 @@ std::ostream& operator<<(std::ostream& s, const Configuration& c)
 
 unique_ptr<Scheduler> Configuration::createScheduler() const
 {
-    return createSchedulerFactory()->createScheduler();
+    auto scheduler = createSchedulerFactory()->createScheduler();
+    scheduler->configureWith(*this);
+    return scheduler;
 }

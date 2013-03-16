@@ -5,12 +5,41 @@ from math import sqrt
 from matplotlib import pyplot
 from matplotlib.ticker import MultipleLocator, FormatStrFormatter
 
-
+from pylab import *
 def timesFromFile(fileName):
     return [float(line) for line in open(fileName)]
 
 def avg(xs):
     return sum(xs) / len(xs)
+
+def chunk(list,size):
+    return [list[i:i + size] for i in range(0, len(list), size)]
+
+def plotChange(threadTimes, fileName, iterations):
+    chunksPerThread = dict((singleThreadTimes, chunk(threadTimes[singleThreadTimes], iterations)) for singleThreadTimes in threadTimes)
+    fig = pyplot.figure(figsize=(20, 10))
+
+    pyplot.title('Othello')
+    pyplot.xlabel('Run')
+    pyplot.ylabel('Runtime')
+
+    for key in chunksPerThread:
+        threadChunk = chunksPerThread[key]
+
+        avgSpeedUps = [[avg(runTimes) / 1000] for runTimes in threadChunk]
+
+        xticks = range(1, len(threadChunk)+1)
+        pyplot.xticks(xticks)
+
+        pyplot.plot(xticks, avgSpeedUps, '-')
+
+
+    pyplot.legend(["#Thread {0}".format(key) for key in chunksPerThread.keys()])
+    ylim(0)
+    xlim(1)
+    # pyplot.show()
+
+    pyplot.savefig(fileName, dpi=80)
 
 def plotSpeedUp(threadTimes, fileName):
     xticks = range(1, len(threadTimes)+1)
@@ -51,10 +80,10 @@ def plotSpeedUp(threadTimes, fileName):
 
     pyplot.ylim(0)
 
-    pyplot.title('MatMul (SMP, 1000x1000)')
+    pyplot.title('Othello')
     pyplot.xlabel('OMP_NUM_THREADS')
     pyplot.ylabel('SpeedUp')
-    pyplot.show()
+    #pyplot.show()
     pyplot.savefig(fileName, dpi=80)
 
 
@@ -97,10 +126,10 @@ def plotBurnDown(threadTimes, fileName):
 
     pyplot.ylim(0)
 
-    pyplot.title('MatMul (SMP, 1000x1000)')
+    pyplot.title('Othello')
     pyplot.xlabel('OMP_NUM_THREADS')
     pyplot.ylabel('Burndown (SpeedUp / Thread)')
-    pyplot.show()
+    #pyplot.show()
     pyplot.savefig(fileName, dpi=80)
 
 
@@ -111,16 +140,17 @@ warmups = iterations / 10
 
 
 def timeFile(threads, ext = ".txt"):
-    return os.path.join(file_dir, "matmul_smp_{0}_1000{1}".format(threads, ext))
+    return os.path.join(file_dir, "othello_smp_{0}{1}".format(threads, ext))
 
 def commandLine(threads):
     return  "OMP_NUM_THREADS={0} ./build/src/main/dwarf_mine --no_mpi "\
-            "-m smp --left_rows 1000 --common_rows_columns 1000 --right_columns 1000 "\
+            "-c montecarlo_tree_search "\
+            "-m smp -i othello_field -o /dev/null " \
             "-w {1} -n {2} --time_output {3}".format(threads, warmups, iterations, timeFile(threads))
 
 
 def main():
-    numberOfThreads = range(1, 151, 1)
+    numberOfThreads = range(1, 5, 1)
 
     for threads in numberOfThreads:
         print "Executing with", threads, "thread(s)"
@@ -131,6 +161,6 @@ def main():
     print "Plotting..."
     plotSpeedUp(alltimes, timeFile("all", "_speedup.png"))
     plotBurnDown(alltimes, timeFile("all", "_burndown.png"))
-
+    plotChange(alltimes, timeFile("all", "_change.png"), iterations)
 
 main()

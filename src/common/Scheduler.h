@@ -5,6 +5,7 @@
 #include <iosfwd>
 
 struct DataGenerationParameters;
+class ProblemStatement;
 
 class Scheduler
 {
@@ -13,20 +14,23 @@ public:
     virtual ~Scheduler() = 0;
 
     void setNodeset(const BenchmarkResult& benchmarkResult);
-    void setNodeset(NodeId singleNode);
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-    virtual void configureWith(const Configuration& config) {}
-#pragma GCC diagnostic pop
-    virtual void generateData(const DataGenerationParameters& params) = 0;
-    virtual void provideData(std::istream& input) = 0;
+    void provideData(const ProblemStatement& problem);
+    void outputData(const ProblemStatement& problem);
+
+    virtual void configureWith(const Configuration& config);
     virtual void dispatch() = 0;
-    virtual void outputData(std::ostream& output) = 0;
     virtual void dispatchSimple() = 0;
     virtual void dispatchBenchmark(NodeId node) = 0;
 
 protected:
-
     BenchmarkResult nodeSet;
+
+    virtual void generateData(const DataGenerationParameters& params) = 0;
+    virtual void provideData(std::istream& input) = 0;
+    virtual void outputData(std::ostream& output) = 0;
 };
+
+inline void Scheduler::configureWith(const Configuration&)
+{
+}

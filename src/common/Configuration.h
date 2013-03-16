@@ -20,6 +20,7 @@ public:
     std::unique_ptr<Scheduler> createScheduler() const;
 
     std::unique_ptr<ProblemStatement> createProblemStatement() const;
+    std::unique_ptr<ProblemStatement> createGeneratedProblemStatement() const;
     std::unique_ptr<SchedulerFactory> createSchedulerFactory() const;
 
     size_t warmUps() const;
@@ -36,6 +37,8 @@ public:
 
     void validate() const;
     bool shouldPrintHelp() const;
+
+    bool shouldRunWithoutMPI() const;
 
     friend std::ostream& operator<<(std::ostream& s, const Configuration& c);
 
