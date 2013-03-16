@@ -113,6 +113,20 @@ vector<MatrixPair> MatrixOnlineScheduler::getNextWorkFor(
     return work;
 }
 
+void MatrixOnlineScheduler::getWorkData(
+    const NodeId node,
+    vector<MatrixPair>& work,
+    int& workAmount)
+{
+    schedulingMutex.lock();
+    vector<MatrixSlice>::iterator workStartingSliceDefinition = currentSliceDefinition;
+    int remainingWorkAmount = getRemainingWorkAmount();
+    workAmount = getNextWorkAmountFor(node);
+    currentSliceDefinition += min(remainingWorkAmount, workAmount);
+    schedulingMutex.unlock();
+    work = getNextWorkFor(node, workStartingSliceDefinition, workAmount);
+}
+
 MatrixSlice& MatrixOnlineScheduler::getNextSliceDefinitionFor(const NodeId node)
 {
     for (auto& slice : sliceDefinitions)
@@ -123,17 +137,9 @@ MatrixSlice& MatrixOnlineScheduler::getNextSliceDefinitionFor(const NodeId node)
 
 void MatrixOnlineScheduler::sendNextSlicesTo(const NodeId node)
 {
-    vector<MatrixSlice>::iterator workStartingSliceDefinition;
-    schedulingMutex.lock();
-    int workAmount = getNextWorkAmountFor(node);
-    workStartingSliceDefinition = currentSliceDefinition;
-    if (workAmount > getRemainingWorkAmount())
-        currentSliceDefinition += getRemainingWorkAmount();
-    else
-        currentSliceDefinition += workAmount;
-    schedulingMutex.unlock();
-    const vector<MatrixPair> work = getNextWorkFor(node, workStartingSliceDefinition, workAmount);
-
+    int workAmount;
+    vector<MatrixPair> work;
+    getWorkData(node, work, workAmount);
     MatrixHelper::sendWorkAmountTo(node, workAmount);
     for (const auto& workPair : work)
     {

@@ -49,6 +49,10 @@ private:
         const NodeId node,
         std::vector<MatrixSlice>::iterator& workSlice,
         const int workAmount);
+    void getWorkData(
+        const NodeId node,
+        std::vector<MatrixHelper::MatrixPair>& work,
+        int& workAmount);
     MatrixSlice& getNextSliceDefinitionFor(const NodeId node);
     void sendNextSlicesTo(const NodeId node);
     bool hasSlices() const;
