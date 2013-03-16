@@ -11,13 +11,6 @@
 #include <algorithm>
 #include <iterator>
 
-#include <iostream>
-#include <fstream>
-#include <chrono>
-#include <thread>
-#include <mutex>
-std::mutex writeMutex;
-
 using namespace std;
 using MatrixHelper::MatrixPair;
 
@@ -70,8 +63,7 @@ void MatrixOnlineScheduler::schedule()
     while (hasSlices() || !haveSlavesFinished())
     {
         const NodeId requestingNode = MatrixHelper::waitForSlicesRequest();
-        if (scheduleHandlers.find(requestingNode) != scheduleHandlers.end())
-            throw "FATAL: Node shouldn't request more work without having received all work before!";
+        cout << "Serving node " << requestingNode << endl; 
         scheduleHandlers[requestingNode] = async(launch::async,
             [&, requestingNode] () { schedule(requestingNode); });
     }

@@ -14,7 +14,7 @@ class Matrix;
 namespace MatrixHelper
 {
     typedef std::pair<Matrix<float>, Matrix<float>> MatrixPair;
-    const int TAG_REQUEST_SLICE = 0;
+    const int TAG_REQUEST_SLICE = 1;
  
     //
     // Send via MPI
