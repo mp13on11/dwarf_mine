@@ -37,7 +37,7 @@ do
             ;;
     esac
 done
-\/usr\/local\/cuda\/bin\/nvcc
+
 if [ "$INTEGRATE" = "yes" ]; then
     sed -i "s/CMAKE_CXX_COMPILER:FILEPATH=\/usr\/bin\/c++/CMAKE_CXX_COMPILER:FILEPATH=\/usr\/local\/bin\/vtc++/g" "$CACHE_FILE"
     cmake $CACHE_DIR
