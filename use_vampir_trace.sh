@@ -37,10 +37,11 @@ do
             ;;
     esac
 done
-
+\/usr\/local\/cuda\/bin\/nvcc
 if [ "$INTEGRATE" = "yes" ]; then
     sed -i "s/CMAKE_CXX_COMPILER:FILEPATH=\/usr\/bin\/c++/CMAKE_CXX_COMPILER:FILEPATH=\/usr\/local\/bin\/vtc++/g" "$CACHE_FILE"
-    sed -i "s/CUDA_NVCC_EXECUTABLE:FILEPATH=\/usr\/local\/cude\/bin\/nvcc/CUDA_NVCC_EXECUTABLE:FILEPATH=\/usr\/local\/bin\/vtnvcc/g" "$CACHE_FILE"
+    cmake $CACHE_DIR
+    sed -i "s/CUDA_NVCC_EXECUTABLE:FILEPATH=\/usr\/local\/cuda\/bin\/nvcc/CUDA_NVCC_EXECUTABLE:FILEPATH=\/usr\/local\/bin\/vtnvcc/g" "$CACHE_FILE"
     cmake $CACHE_DIR
     sed -i "s/CMAKE_CXX_FLAGS:STRING=*/CMAKE_CXX_FLAGS:STRING=-vt:inst compinst -vt:hyb /g" "$CACHE_FILE"
     sed -i "s/CUDA_NVCC_FLAGS:STRING=*/CUDA_NVCC_FLAGS:STRING=-vt:inst compinst -vt:hyb /g" "$CACHE_FILE"
@@ -50,7 +51,8 @@ if [ "$INTEGRATE" = "yes" ]; then
     exit 1
 elif [ "$INTEGRATE" = "no" ]; then
     sed -i "s/CMAKE_CXX_COMPILER:FILEPATH=\/usr\/local\/bin\/vtc++/CMAKE_CXX_COMPILER:FILEPATH=\/usr\/bin\/c++/g" "$CACHE_FILE"
-    sed -i "s/CUDA_NVCC_EXECUTABLE:FILEPATH=\/usr\/local\/bin\/vtnvcc/CUDA_NVCC_EXECUTABLE:FILEPATH=\/usr\/local\/cude\/bin\/nvcc/g" "$CACHE_FILE"
+    cmake $CACHE_DIR
+    sed -i "s/CUDA_NVCC_EXECUTABLE:FILEPATH=\/usr\/local\/bin\/vtnvcc/CUDA_NVCC_EXECUTABLE:FILEPATH=\/usr\/local\/cuda\/bin\/nvcc/g" "$CACHE_FILE"
     cmake $CACHE_DIR
     sed -i "s/CMAKE_CXX_FLAGS:STRING=-vt:inst compinst -vt:hyb */CMAKE_CXX_FLAGS:STRING=/g" "$CACHE_FILE"
     sed -i "s/CUDA_NVCC_FLAGS:STRING=-vt:inst compinst -vt:hyb */CUDA_NVCC_FLAGS:STRING=/g" "$CACHE_FILE"
