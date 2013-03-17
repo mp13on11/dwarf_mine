@@ -46,6 +46,7 @@ if [ "$INTEGRATE" = "yes" ]; then
     sed -i "s/CMAKE_CXX_FLAGS:STRING=*/CMAKE_CXX_FLAGS:STRING=-vt:inst compinst -vt:hyb /g" "$CACHE_FILE"
     sed -i "s/CUDA_NVCC_FLAGS:STRING=*/CUDA_NVCC_FLAGS:STRING=-vt:inst compinst -vt:hyb /g" "$CACHE_FILE"
     sed -i "s/CMAKE_BUILD_TYPE:STRING=*/CMAKE_BUILD_TYPE:STRING=RelWithDebInfo/g" "$CACHE_FILE"
+    sed -i "s/WARNINGS_AS_ERRORS:BOOL=ON/WARNINGS_AS_ERRORS:BOOL=OFF/g" "$CACHE_FILE"
     cmake $CACHE_DIR
     echo "Done integrating VampirTrace configuration."
     exit 1
@@ -57,6 +58,7 @@ elif [ "$INTEGRATE" = "no" ]; then
     sed -i "s/CMAKE_CXX_FLAGS:STRING=-vt:inst compinst -vt:hyb */CMAKE_CXX_FLAGS:STRING=/g" "$CACHE_FILE"
     sed -i "s/CUDA_NVCC_FLAGS:STRING=-vt:inst compinst -vt:hyb */CUDA_NVCC_FLAGS:STRING=/g" "$CACHE_FILE"
     sed -i "s/CMAKE_BUILD_TYPE:STRING=RelWithDebInfo/CMAKE_BUILD_TYPE:STRING=/g" "$CACHE_FILE"
+    sed -i "s/WARNINGS_AS_ERRORS:BOOL=OFF/WARNINGS_AS_ERRORS:BOOL=ON/g" "$CACHE_FILE"
     cmake $CACHE_DIR
     echo "Done removing VampirTrace configuration."
     exit 1
