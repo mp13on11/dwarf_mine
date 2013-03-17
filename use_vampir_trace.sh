@@ -1,22 +1,64 @@
-#!/bin/sh
+#!/bin/bash
+# Kudos to https://rsalveti.wordpress.com/2007/04/03/bash-parsing-arguments-with-getopts/
 
-if [ "$1" = "-h" ] || [ "$1" != "true" ] && [ "$1" != "false" ] || [ "$2" = "" ]; then
-    echo "Usage: {true|false} path/to/CMakeCache.txt.\nUse -h to show this message."
-    exit
+usage()
+{
+echo "Usage: $0 options
+
+Sets compilers to VampirTrace compiler wrappers and configures them with flags, or vice-versa.
+
+OPTIONS:
+    -h  Show this message
+    -s  Configure with or without VampirTrace (yes|no)
+    -f  Path to build directory's CMakeCache.txt"
+}
+
+INTEGRATE=
+CACHE_FILE=
+CACHE_DIR=
+
+while getopts "h:s:f:*" OPTION
+do
+    case $OPTION in
+        h)  
+            usage
+            exit 1
+            ;;
+        s)  
+            INTEGRATE=$OPTARG
+            ;;
+        f)  
+            CACHE_FILE=$OPTARG
+            CACHE_DIR=${CACHE_FILE%*CMakeCache.txt}
+            ;;
+        *)  
+            usage
+            exit
+            ;;
+    esac
+done
+
+if [ "$INTEGRATE" = "yes" ]; then
+    sed -i "s/CMAKE_CXX_COMPILER:FILEPATH=\/usr\/bin\/c++/CMAKE_CXX_COMPILER:FILEPATH=\/usr\/local\/bin\/vtc++/g" "$CACHE_FILE"
+    sed -i "s/CUDA_NVCC_EXECUTABLE:FILEPATH=\/usr\/local\/cude\/bin\/nvcc/CUDA_NVCC_EXECUTABLE:FILEPATH=\/usr\/local\/bin\/vtnvcc/g" "$CACHE_FILE"
+    cmake $CACHE_DIR
+    sed -i "s/CMAKE_CXX_FLAGS:STRING=*/CMAKE_CXX_FLAGS:STRING=-vt:inst compinst -vt:hyb /g" "$CACHE_FILE"
+    sed -i "s/CUDA_NVCC_FLAGS:STRING=*/CUDA_NVCC_FLAGS:STRING=-vt:inst compinst -vt:hyb /g" "$CACHE_FILE"
+    sed -i "s/CMAKE_BUILD_TYPE:STRING=*/CMAKE_BUILD_TYPE:STRING=RelWithDebInfo/g" "$CACHE_FILE"
+    cmake $CACHE_DIR
+    echo "Done integrating VampirTrace configuration."
+    exit 1
+elif [ "$INTEGRATE" = "no" ]; then
+    sed -i "s/CMAKE_CXX_COMPILER:FILEPATH=\/usr\/local\/bin\/vtc++/CMAKE_CXX_COMPILER:FILEPATH=\/usr\/bin\/c++/g" "$CACHE_FILE"
+    sed -i "s/CUDA_NVCC_EXECUTABLE:FILEPATH=\/usr\/local\/bin\/vtnvcc/CUDA_NVCC_EXECUTABLE:FILEPATH=\/usr\/local\/cude\/bin\/nvcc/g" "$CACHE_FILE"
+    cmake $CACHE_DIR
+    sed -i "s/CMAKE_CXX_FLAGS:STRING=-vt:inst compinst -vt:hyb */CMAKE_CXX_FLAGS:STRING=/g" "$CACHE_FILE"
+    sed -i "s/CUDA_NVCC_FLAGS:STRING=-vt:inst compinst -vt:hyb */CUDA_NVCC_FLAGS:STRING=/g" "$CACHE_FILE"
+    sed -i "s/CMAKE_BUILD_TYPE:STRING=RelWithDebInfo/CMAKE_BUILD_TYPE:STRING=/g" "$CACHE_FILE"
+    cmake $CACHE_DIR
+    echo "Done removing VampirTrace configuration."
+    exit 1
 fi
 
-if [ "$1" = "true" ]; then
-    sed -i "s/CMAKE_CXX_COMPILER:FILEPATH=\/usr\/bin\/c++/CMAKE_CXX_COMPILER:FILEPATH=\/usr\/local\/bin\/vtc++/g" "$2"
-    sed -i "s/CUDA_NVCC_EXECUTABLE:FILEPATH=\/usr\/local\/cude\/bin\/nvcc/CUDA_NVCC_EXECUTABLE:FILEPATH=\/usr\/local\/bin\/vtnvcc/g" "$2"
-    sed -i "s/CMAKE_CXX_FLAGS:STRING=*/CMAKE_CXX_FLAGS:STRING=-vt:inst compinst -vt:hyb /g" "$2"
-    sed -i "s/CUDA_NVCC_FLAGS:STRING=*/CUDA_NVCC_FLAGS:STRING=-vt:inst compinst -vt:hyb /g" "$2"
-    sed -i "s/CMAKE_CONFIGURATION_TYPES:STRING=*/CMAKE_CONFIGURATION_TYPES:STRING=RelWithDebInfo;/g" "$2"
-    sed -i "s/CMAKE_BUILD_TYPE:STRING=*/CMAKE_BUILD_TYPE:STRING=RelWithDebInfo/g" "$2"
-elif [ "$1" = "false" ]; then
-    sed -i "s/CMAKE_CXX_COMPILER:FILEPATH=\/usr\/local\/bin\/vtc++/CMAKE_CXX_COMPILER:FILEPATH=\/usr\/bin\/c++/g" "$2"
-    sed -i "s/CUDA_NVCC_EXECUTABLE:FILEPATH=\/usr\/local\/bin\/vtnvcc/CUDA_NVCC_EXECUTABLE:FILEPATH=\/usr\/local\/cude\/bin\/nvcc/g" "$2"
-    sed -i "s/CMAKE_CXX_FLAGS:STRING=-vt:inst compinst -vt:hyb */CMAKE_CXX_FLAGS:STRING=/g" "$2"
-    sed -i "s/CUDA_NVCC_FLAGS:STRING=-vt:inst compinst -vt:hyb */CUDA_NVCC_FLAGS:STRING=/g" "$2"
-    sed -i "s/CMAKE_CONFIGURATION_TYPES:STRING=RelWithDebInfo;*/CMAKE_CONFIGURATION_TYPES:STRING=/g" "$2"
-    sed -i "s/CMAKE_BUILD_TYPE:STRING=RelWithDebInfo/CMAKE_BUILD_TYPE:STRING=/g" "$2"
-fi
+usage
+exit
