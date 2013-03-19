@@ -1,16 +1,14 @@
 #pragma once
 
 #include "MatrixSlicer.h"
+#include "common/BenchmarkResults.h"
+#include "common/MpiHelper.h"
 
 #include <vector>
 #include <map>
 #include <memory>
 
 class MatrixOnlineScheduler;
-typedef int NodeId;
-typedef double Rating;
-typedef std::pair<NodeId, Rating> NodeRating;
-typedef std::map<NodeId, Rating> BenchmarkResult;
 
 class MatrixOnlineSchedulingStrategy
 {

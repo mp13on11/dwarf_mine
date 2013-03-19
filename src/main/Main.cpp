@@ -2,6 +2,7 @@
 #include "common/Configuration.h"
 #include "common/MpiGuard.h"
 #include "common/MpiHelper.h"
+#include "common/TimingProfiler.h"
 
 #include <fstream>
 #include <iostream>
@@ -53,16 +54,47 @@ void silenceOutputStreams(bool keepErrorStreams = false)
     }
 }
 
-void printResults(const vector<BenchmarkRunner::Measurement>& results, ostream& timeFile)
+BenchmarkResult nodeWeightsFrom(const BenchmarkResult& averageExecutionTimes)
 {
-    cout << "Measured Times: µs" << endl;
-
-    for (const auto& measurement : results)
+    Rating sum = 0;
+    for (const auto& timePair : averageExecutionTimes)
     {
-        cout << "\t" << measurement.count() << endl;
+        sum += timePair.second;
+    }
+
+    BenchmarkResult weights;
+    for (const auto& timePair : averageExecutionTimes)
+    {
+        weights[timePair.first] = timePair.second / sum;
+    }
+
+    return weights;
+}
+
+BenchmarkResult determineNodeWeights(const BenchmarkRunner& runner)
+{
+    TimingProfiler profiler;
+    BenchmarkResult averageTimes;
+    
+    for (size_t i=0; i<MpiHelper::numberOfNodes(); ++i)
+    {
+        runner.benchmarkNode(i, profiler);
+        averageTimes[i] = profiler.averageIterationTime().count();
+    }
+
+    return nodeWeightsFrom(averageTimes);
+}
+
+void printResults(const TimingProfiler& profiler, ostream& timeFile)
+{
+    cout << "Execution times (microseconds):" << endl;
+    
+    for (const auto& iterationTime : profiler.iterationTimes())
+    {
+        cout << "\t" << iterationTime.count() << endl;
 
         if (MpiHelper::isMaster())
-            timeFile << measurement.count() << endl;
+            timeFile << iterationTime.count() << endl;
     }
 }
 
@@ -70,6 +102,7 @@ void benchmarkWith(Configuration& config)
 {
     BenchmarkRunner runner(config);
     BenchmarkResult nodeWeights;
+    TimingProfiler profiler;
 
     ofstream timeFile;
 
@@ -86,30 +119,32 @@ void benchmarkWith(Configuration& config)
         if (MpiHelper::numberOfNodes() > 1)
             throw runtime_error("Process was told to run without MPI support, but was called via mpirun");
 
-        printResults(runner.runElf(), timeFile);
+        runner.runElf(profiler);
+        printResults(profiler, timeFile);
     }
     else
     {
         if (config.shouldExportConfiguration() || !config.shouldImportConfiguration())
         {
-            cout << "Calculating node weights" <<endl;
-            nodeWeights = runner.benchmarkIndividualNodes();
+            cout << "Calculating node weights" << endl;
+            nodeWeights = determineNodeWeights(runner);
             cout << "Weighted " << endl << nodeWeights;
         }
         if (config.shouldExportConfiguration())
         {
-            cout << "Exporting node weights" <<endl;
+            cout << "Exporting node weights" << endl;
             exportClusterConfiguration(config.exportConfigurationFilename(), nodeWeights);
         }
         if (config.shouldImportConfiguration())
         {
-            cout << "Importing node weights" <<endl;
+            cout << "Importing node weights" << endl;
             nodeWeights = importClusterConfiguration(config.importConfigurationFilename());
         }
         if (!config.shouldSkipBenchmark())
         {
-            cout << "Running benchmark" <<endl;
-            printResults(runner.runBenchmark(nodeWeights), timeFile);
+            cout << "Running benchmark" << endl;
+            runner.runBenchmark(nodeWeights, profiler);
+            printResults(profiler, timeFile);
         }
     }
 }
