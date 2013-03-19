@@ -7,7 +7,6 @@
 class Communicator
 {
 public:
-
     static const int MASTER_RANK = 0;
 
     Communicator();
@@ -15,11 +14,14 @@ public:
 
     Communicator createSubCommunicator(std::initializer_list<int> newNodes) const;
 
+    bool isValid() const;
     bool isMaster() const;
     int rank() const;
     size_t size() const;
     double weight() const;
     std::vector<double> weights() const;
+
+    MPI::Intracomm* operator->() const;
 
 private:
     MPI::Intracomm _communicator;
@@ -55,6 +57,12 @@ Communicator::Communicator(const MPI::Intracomm& communicator, const std::vector
     }
 }
 
+
+MPI::Intracomm* Communicator::operator->() const
+{
+    return & _communicator;
+}
+
 void Communicator::broadcastWeights()
 {
     _communicator.Bcast(_weights.data(), _weights.size(), MPI::DOUBLE, MASTER_RANK);
@@ -71,6 +79,11 @@ Communicator Communicator::createSubCommunicator(std::initializer_list<int> newN
         newWeights.push_back(_weights[nodeRank]);
     }
     return Communicator(newMPICommunicator, newWeights); 
+}
+
+bool Communicator::isValid() const
+{
+    return _communicator != MPI::COMM_NULL;
 }
 
 bool Communicator::isMaster() const
