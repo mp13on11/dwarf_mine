@@ -1,4 +1,4 @@
-#include <elves/factorize/cuda/kernel.cuh>
+#include <elves/quadratic_sieve/cuda/kernel.cuh>
 #include <elves/cuda-utils/ErrorHandling.h>
 
 extern __global__ void testAddKernel(PNumData pLeft, PNumData pRight, PNumData output);

@@ -114,7 +114,7 @@ def timeFile(threads, ext = ".txt"):
     return os.path.join(file_dir, "matmul_smp_{0}_1000{1}".format(threads, ext))
 
 def commandLine(threads):
-    return  "OMP_NUM_THREADS={0} ./build/src/runner/elf_runner "\
+    return  "OMP_NUM_THREADS={0} ./build/src/main/dwarf_mine --no_mpi "\
             "-m smp --left_rows 1000 --common_rows_columns 1000 --right_columns 1000 "\
             "-w {1} -n {2} --time_output {3}".format(threads, warmups, iterations, timeFile(threads))
 

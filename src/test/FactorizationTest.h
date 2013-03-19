@@ -1,10 +1,10 @@
 #pragma once
 
-#include <elves/factorize/FactorizationElf.h>
-#include <factorize/BigInt.h>
+#include <elves/quadratic_sieve/QuadraticSieveElf.h>
+#include <elves/common-factorization/BigInt.h>
 
 #include <memory>
-#include <map>
+#include <utility>
 #include <gtest/gtest.h>
 
 class FactorizationTest : public testing::TestWithParam<std::pair<BigInt, BigInt>>

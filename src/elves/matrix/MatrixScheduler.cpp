@@ -11,6 +11,7 @@
 #include <iostream>
 #include <memory>
 #include <sstream>
+#include <random>
 
 using namespace std;
 using MatrixHelper::MatrixPair;
@@ -24,11 +25,16 @@ MatrixScheduler::~MatrixScheduler()
 {
 }
 
-void MatrixScheduler::provideData(ProblemStatement& statement)
+void MatrixScheduler::doSimpleDispatch()
 {
-    statement.input->clear();
-    statement.input->seekg(0);
-    auto matrices = MatrixHelper::readMatrixPairFrom(*(statement.input));
+    result = elf().multiply(left, right);
+}
+
+void MatrixScheduler::provideData(istream& input)
+{
+    input.clear();
+    input.seekg(0);
+    auto matrices = MatrixHelper::readMatrixPairFrom(input);
     left = matrices.first;
     right = matrices.second;
 }
@@ -38,9 +44,20 @@ bool MatrixScheduler::hasData() const
     return !left.empty() || !right.empty();
 }
 
-void MatrixScheduler::outputData(ProblemStatement& statement)
+void MatrixScheduler::outputData(ostream& output)
 {
-    MatrixHelper::writeMatrixTo(*(statement.output), result);
+    MatrixHelper::writeMatrixTo(output, result);
+}
+
+void MatrixScheduler::generateData(const DataGenerationParameters& params)
+{
+    left  = Matrix<float>(params.leftRows, params.common);
+    right = Matrix<float>(params.common, params.rightColumns);
+    auto distribution = uniform_real_distribution<float> (-100, +100);
+    auto engine = mt19937(time(nullptr));
+    auto generator = bind(distribution, engine);
+    MatrixHelper::fill(left, generator);
+    MatrixHelper::fill(right, generator);
 }
 
 void MatrixScheduler::doDispatch()
@@ -131,6 +148,11 @@ MatrixPair MatrixScheduler::sliceMatrices(const MatrixSlice& definition) const
 {
     Matrix<float> slicedLeft = definition.extractSlice(left, true);
     Matrix<float> slicedRight = definition.extractSlice(right, false);
-
     return { move(slicedLeft), move(slicedRight) };
 }
+
+void MatrixScheduler::doBenchmarkDispatch(NodeId /*node*/)
+{
+    dispatch();
+}    
+

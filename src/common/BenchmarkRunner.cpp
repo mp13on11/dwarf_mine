@@ -1,5 +1,4 @@
 #include "BenchmarkRunner.h"
-#include "Configuration.h"
 #include "MpiHelper.h"
 #include "SchedulerFactory.h"
 
@@ -11,10 +10,11 @@ typedef BenchmarkRunner::Measurement Measurement;
 /**
  * BenchmarkRunner determines the available devices and benchmarks them idenpendently
  */
-BenchmarkRunner::BenchmarkRunner(const Configuration& config) :
+BenchmarkRunner::BenchmarkRunner(Configuration& config) :
+        config(&config),
         iterations(config.iterations()), warmUps(config.warmUps()),
-        individualProblem(config.createProblemStatement(true)),
-        clusterProblem(config.createProblemStatement(false)),
+        fileProblem(config.createProblemStatement()),
+        generatedProblem(config.createGeneratedProblemStatement()),
         scheduler(config.createScheduler())
 {
 }
@@ -23,12 +23,20 @@ BenchmarkResult BenchmarkRunner::benchmarkIndividualNodes() const
 {
     vector<Measurement> averageRunTimes;
 
-    for (size_t i=0; i<MpiHelper::numberOfNodes(); ++i)
+    if (MpiHelper::isMaster())
     {
-        vector<Measurement> runTimes = runBenchmark(
-                {{static_cast<NodeId>(i), 1}}, *individualProblem
-            );
-        averageRunTimes.push_back(averageOf(runTimes));
+        for (size_t i=0; i<MpiHelper::numberOfNodes(); ++i)
+        {
+            scheduler->setNodeset({{i, 1}});
+            BenchmarkMethod targetMethod = [&](){ scheduler->dispatchBenchmark(i); };
+            vector<Measurement> runTimes =  benchmarkNodeset(*generatedProblem, targetMethod);
+            averageRunTimes.push_back(averageOf(runTimes));
+        }
+    }
+    else
+    {
+        BenchmarkMethod targetMethod = [&](){ scheduler->dispatchBenchmark(MpiHelper::rank()); };
+        benchmarkSlave(targetMethod);
     }
 
     return calculateNodeWeights(averageRunTimes);
@@ -36,25 +44,28 @@ BenchmarkResult BenchmarkRunner::benchmarkIndividualNodes() const
 
 vector<Measurement> BenchmarkRunner::runBenchmark(const BenchmarkResult& nodeWeights) const
 {
-    return runBenchmark(nodeWeights, *clusterProblem);
-}
+    BenchmarkMethod targetMethod = [&](){ scheduler->dispatch(); };
 
-vector<Measurement> BenchmarkRunner::runBenchmark(const BenchmarkResult& nodeWeights, ProblemStatement& problem) const
-{
     if (MpiHelper::isMaster())
     {
         scheduler->setNodeset(nodeWeights);
-        return benchmarkNodeset(problem);
+        return benchmarkNodeset(*fileProblem, targetMethod);
     }
-    else if (slaveShouldRunWith(nodeWeights))
+    else
     {
-        benchmarkSlave();
+        benchmarkSlave(targetMethod);
+        return vector<Measurement>();
     }
-
-    return vector<Measurement>(iterations, Measurement(0));
 }
 
-vector<Measurement> BenchmarkRunner::benchmarkNodeset(ProblemStatement& problem) const
+vector<Measurement> BenchmarkRunner::runElf() const
+{
+    BenchmarkMethod targetMethod = [&](){ scheduler->dispatchSimple(); };
+    scheduler->setNodeset({{0, 0}});
+    return benchmarkNodeset(*fileProblem, targetMethod);
+}
+
+vector<Measurement> BenchmarkRunner::benchmarkNodeset(const ProblemStatement& problem, BenchmarkMethod targetMethod) const
 {
     vector<Measurement> result;
 
@@ -62,29 +73,32 @@ vector<Measurement> BenchmarkRunner::benchmarkNodeset(ProblemStatement& problem)
 
     for (size_t i = 0; i < warmUps; ++i)
     {
-        measureCall();
+        measureCall(targetMethod);
     }
     for (size_t i = 0; i < iterations; ++i)
     {
-        result.push_back(measureCall());
+        result.push_back(measureCall(targetMethod));
     }
+
 
     scheduler->outputData(problem);
 
     return result;
 }
 
-void BenchmarkRunner::benchmarkSlave() const
+void BenchmarkRunner::benchmarkSlave(BenchmarkMethod targetMethod) const
 {
     for (size_t i = 0; i < iterations + warmUps; ++i)
-        scheduler->dispatch(); // slave side
+    {
+        targetMethod();
+    }
 }
 
-Measurement BenchmarkRunner::measureCall() const
+Measurement BenchmarkRunner::measureCall(BenchmarkMethod targetMethod) const
 {
-    high_resolution_clock::time_point before = high_resolution_clock::now();
-    scheduler->dispatch();
-    return high_resolution_clock::now() - before;
+    auto before = high_resolution_clock::now();
+    targetMethod();
+    return duration_cast<Measurement>(high_resolution_clock::now() - before);
 }
 
 BenchmarkResult BenchmarkRunner::calculateNodeWeights(const vector<Measurement>& averageRunTimes)

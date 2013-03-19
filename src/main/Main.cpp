@@ -1,14 +1,13 @@
 #include "common/BenchmarkRunner.h"
-#include "common/CommandLineConfiguration.h"
+#include "common/Configuration.h"
 #include "common/MpiGuard.h"
 #include "common/MpiHelper.h"
-#include "matrix/MatrixHelper.h"
-#include "matrix/Matrix.h"
 
 #include <fstream>
 #include <iostream>
 #include <stdexcept>
 #include <string>
+#include <vector>
 
 using namespace std;
 
@@ -54,7 +53,20 @@ void silenceOutputStreams(bool keepErrorStreams = false)
     }
 }
 
-void benchmarkWith(const Configuration& config)
+void printResults(const vector<BenchmarkRunner::Measurement>& results, ostream& timeFile)
+{
+    cout << "Measured Times: µs" << endl;
+
+    for (const auto& measurement : results)
+    {
+        cout << "\t" << measurement.count() << endl;
+
+        if (MpiHelper::isMaster())
+            timeFile << measurement.count() << endl;
+    }
+}
+
+void benchmarkWith(Configuration& config)
 {
     BenchmarkRunner runner(config);
     BenchmarkResult nodeWeights;
@@ -69,34 +81,35 @@ void benchmarkWith(const Configuration& config)
             throw runtime_error("Failed to open file \"" + config.timeOutputFilename() + "\"");
     }
 
-    if (config.shouldExportConfiguration() || !config.shouldImportConfiguration())
+    if(config.shouldRunWithoutMPI())
     {
-        cout << "Calculating node weights" <<endl;
-        nodeWeights = runner.benchmarkIndividualNodes();
-        cout << "Weighted " << endl << nodeWeights;
-    }
-    if (config.shouldExportConfiguration())
-    {
-        cout << "Exporting node weights" <<endl;
-        exportClusterConfiguration(config.exportConfigurationFilename(), nodeWeights);
-    }
-    if (config.shouldImportConfiguration())
-    {
-        cout << "Importing node weights" <<endl;
-        nodeWeights = importClusterConfiguration(config.importConfigurationFilename());
-    }
-    if (!config.shouldSkipBenchmark())
-    {
-        cout << "Running benchmark" <<endl;
-        auto clusterResults = runner.runBenchmark(nodeWeights);
-        cout << "Measured Times: µs" << endl;
+        if (MpiHelper::numberOfNodes() > 1)
+            throw runtime_error("Process was told to run without MPI support, but was called via mpirun");
 
-        for (const auto& measurement : clusterResults)
+        printResults(runner.runElf(), timeFile);
+    }
+    else
+    {
+        if (config.shouldExportConfiguration() || !config.shouldImportConfiguration())
         {
-            cout << "\t" << measurement.count() << endl;
-
-            if (MpiHelper::isMaster())
-                timeFile << measurement.count() << endl;
+            cout << "Calculating node weights" <<endl;
+            nodeWeights = runner.benchmarkIndividualNodes();
+            cout << "Weighted " << endl << nodeWeights;
+        }
+        if (config.shouldExportConfiguration())
+        {
+            cout << "Exporting node weights" <<endl;
+            exportClusterConfiguration(config.exportConfigurationFilename(), nodeWeights);
+        }
+        if (config.shouldImportConfiguration())
+        {
+            cout << "Importing node weights" <<endl;
+            nodeWeights = importClusterConfiguration(config.importConfigurationFilename());
+        }
+        if (!config.shouldSkipBenchmark())
+        {
+            cout << "Running benchmark" <<endl;
+            printResults(runner.runBenchmark(nodeWeights), timeFile);
         }
     }
 }
@@ -108,7 +121,7 @@ int main(int argc, char** argv)
 
     try
     {
-        CommandLineConfiguration config(argc, argv);
+        Configuration config(argc, argv);
 
         if (config.shouldPrintHelp())
         {
@@ -125,7 +138,7 @@ int main(int argc, char** argv)
     }
     catch (const boost::program_options::error& e)
     {
-        CommandLineConfiguration::printHelp();
+        Configuration::printHelp();
         cerr << e.what() << endl;
         return 1;
     }

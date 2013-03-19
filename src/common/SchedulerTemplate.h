@@ -17,9 +17,13 @@ public:
     virtual ~SchedulerTemplate() = 0;
 
     virtual void dispatch();
+    virtual void dispatchSimple();
+    virtual void dispatchBenchmark(NodeId node);
 
 protected:
     virtual void doDispatch() = 0;
+    virtual void doSimpleDispatch() = 0;
+    virtual void doBenchmarkDispatch(NodeId node) = 0;
     virtual bool hasData() const = 0;
     ElfType& elf() const;
 
@@ -57,13 +61,31 @@ void SchedulerTemplate<ElfType>::dispatch()
 }
 
 template<typename ElfType>
+void SchedulerTemplate<ElfType>::dispatchSimple()
+{
+    _elf.reset(_factory());
+    validate();
+    doSimpleDispatch();
+    _elf.release();
+}
+
+template<typename ElfType>
+void SchedulerTemplate<ElfType>::dispatchBenchmark(NodeId node)
+{
+    _elf.reset(_factory());
+    validate();
+    doBenchmarkDispatch(node);
+    _elf.release();
+}
+
+template<typename ElfType>
 void SchedulerTemplate<ElfType>::validate() const
 {
     if (MpiHelper::isMaster())
     {
         if (!hasData())
         {
-            throw std::runtime_error("SchedulerTemplate::dispatch(): No ProblemStatement configured!");
+            throw std::runtime_error("SchedulerTemplate::dispatch(): No input data provided or generated!");
         }
 
         if (nodeSet.empty())

@@ -16,14 +16,19 @@ void Scheduler::setNodeset(const BenchmarkResult& benchmarkResult)
     nodeSet = benchmarkResult;
 }
 
-void Scheduler::setNodeset(NodeId singleNode)
+void Scheduler::provideData(const ProblemStatement& problem)
 {
-    nodeSet = {{singleNode, 0}};
+	if (problem.hasInput())
+	{
+		provideData(problem.getInput());
+	}
+	else
+	{
+		generateData(problem.getDataGenerationParameters());
+	}
 }
 
-void Scheduler::dispatch(ProblemStatement& statement)
+void Scheduler::outputData(const ProblemStatement& problem)
 {
-    provideData(statement);
-    dispatch();
-    outputData(statement);
+	outputData(problem.getOutput());
 }

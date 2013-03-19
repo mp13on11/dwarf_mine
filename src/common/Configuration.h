@@ -1,34 +1,65 @@
 #pragma once
 
+#include <boost/program_options.hpp>
+#include <iosfwd>
 #include <memory>
 #include <string>
 
 class ProblemStatement;
 class Scheduler;
 class SchedulerFactory;
+struct DataGenerationParameters;
 
 class Configuration
 {
 public:
-    virtual ~Configuration() = 0;
+    static void printHelp();
+
+    Configuration(int argc, char** argv);
 
     std::unique_ptr<Scheduler> createScheduler() const;
 
-    virtual std::unique_ptr<ProblemStatement> createProblemStatement(bool forceGenerated = false) const = 0;
-    virtual std::unique_ptr<SchedulerFactory> createSchedulerFactory() const = 0;
+    std::unique_ptr<ProblemStatement> createProblemStatement() const;
+    std::unique_ptr<ProblemStatement> createGeneratedProblemStatement() const;
+    std::unique_ptr<SchedulerFactory> createSchedulerFactory() const;
 
-    virtual size_t warmUps() const = 0;
-    virtual size_t iterations() const = 0;
-    virtual bool shouldExportConfiguration() const = 0;
-    virtual bool shouldImportConfiguration() const = 0;
-    virtual bool shouldSkipBenchmark() const = 0;
-    virtual std::string importConfigurationFilename() const = 0;
-    virtual std::string exportConfigurationFilename() const = 0;
-    virtual bool shouldBeQuiet() const = 0;
-    virtual bool shouldBeVerbose() const = 0;
-    virtual std::string timeOutputFilename() const = 0;
+    size_t warmUps() const;
+    size_t iterations() const;
+    bool shouldExportConfiguration() const;
+    bool shouldImportConfiguration() const;
+    bool shouldSkipBenchmark() const;
+    std::string importConfigurationFilename() const;
+    std::string exportConfigurationFilename() const;
+    bool shouldBeQuiet() const;
+    bool shouldBeVerbose() const;
+    std::string timeOutputFilename() const;
+    std::string schedulingStrategy() const;
+
+    void validate() const;
+    bool shouldPrintHelp() const;
+
+    bool shouldRunWithoutMPI() const;
+
+    friend std::ostream& operator<<(std::ostream& s, const Configuration& c);
+
+private:
+    std::string mode() const;
+    std::string category() const;
+
+    DataGenerationParameters makeDataGenerationParameters() const;
+
+    static boost::program_options::options_description createDescription();
+
+    boost::program_options::options_description description;
+    boost::program_options::variables_map variables;
+
+    std::string inputFilename() const;
+    std::string outputFilename() const;
+    size_t leftMatrixRows() const;
+    size_t commonMatrixRowsColumns() const;
+    size_t rightMatrixColumns() const;
+    size_t leftDigits() const;
+    size_t rightDigits() const;
+    size_t monteCarloTrials() const;
+    bool useFiles() const;
 };
-
-inline Configuration::~Configuration()
-{
-}

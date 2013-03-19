@@ -1,9 +1,10 @@
 #include "FactorizationTest.h"
 #include "Utilities.h"
 #include "common/SchedulerFactory.h"
-#include "factorize/BigInt.h"
-#include "factorize/QuadraticSieve.h"
-#include "factorize/cuda/CudaFactorizationElf.h"
+#include "elves/common-factorization/BigInt.h"
+#include "elves/quadratic_sieve/QuadraticSieve.h"
+#include "elves/quadratic_sieve/smp/SmpQuadraticSieveElf.h"
+#include "elves/quadratic_sieve/cuda/CudaQuadraticSieveElf.h"
 
 #include <memory>
 #include <vector>
@@ -22,11 +23,13 @@ INSTANTIATE_TEST_CASE_P(
     PrimePairs,
     FactorizationTest,
     testing::Values(
+        //make_pair(BigInt("37975227936943673922808872755445627854565536638199"),
+        //          BigInt("40094690950920881030683735292761468389214899724061"))
         // The large pair takes too long at the moment
-        make_pair(BigInt("551226983117"), BigInt("554724632351"))
-        //make_pair(BigInt("15485863"), BigInt("15534733")),
-        //make_pair(BigInt("1313839"), BigInt("1327901")),
-        //make_pair(BigInt("547"), BigInt("719"))
+        //make_pair(BigInt("551226983117"), BigInt("554724632351"))
+        make_pair(BigInt("15485863"), BigInt("15534733")),
+        make_pair(BigInt("1313839"), BigInt("1327901")),
+        make_pair(BigInt("547"), BigInt("719"))
     )
 );
 
@@ -37,15 +40,6 @@ void FactorizationTest::SetUp()
     q = inputPair.second;
     product = p*q;
 }
-
-/*
-TEST_P(FactorizationTest, testFactorizationCuda)
-{
-    unique_ptr<CudaFactorizationElf> elf(new CudaFactorizationElf());
-    auto actual = elf->factorize(product);
-    EXPECT_EQ(p, actual.first);
-    EXPECT_EQ(q, actual.second);
-}*/
 
 TEST_P(FactorizationTest, testFactorizationFermat)
 {
@@ -130,19 +124,17 @@ TEST_P(FactorizationTest, testFactorizationPollardRho)
 
 TEST_P(FactorizationTest, testFactorizationQuadraticSieve)
 {
-    QuadraticSieve qs(product);
-
+    using namespace std::placeholders;
     auto start = high_resolution_clock::now();
 
-    auto pq = qs.factorize();
+    unique_ptr<QuadraticSieveElf> elf(new SmpQuadraticSieveElf());
+    BigInt actualP, actualQ;
+    tie(actualP, actualQ) = QuadraticSieveHelper::factor(product, bind(&QuadraticSieveElf::sieveSmoothSquares, elf.get(), _1, _2, _3, _4));
+
 
     auto end = high_resolution_clock::now();
     milliseconds elapsed = duration_cast<milliseconds>(end - start);
     std::cout << "total time: " << elapsed.count() / 1000.0 << " seconds" << endl;
-
-
-    BigInt actualP = pq.first;
-    BigInt actualQ = pq.second;
 
     if(actualP > actualQ)
         swap(actualP, actualQ);
@@ -150,7 +142,6 @@ TEST_P(FactorizationTest, testFactorizationQuadraticSieve)
     ASSERT_EQ(p, actualP);
     ASSERT_EQ(q, actualQ);
 }
-
 
 TEST(QuadraticSieveTest, testModularSquareRoot)
 {
@@ -162,7 +153,7 @@ TEST(QuadraticSieveTest, testModularSquareRoot)
     {
         BigInt expectedRoot(rootstring);
         BigInt n = (expectedRoot*expectedRoot) % primeMod;
-        BigInt root = QuadraticSieve::rootModPrime(n, primeMod);
+        BigInt root = QuadraticSieveHelper::rootModPrime(n, primeMod);
         ASSERT_NE(0, root);
         ASSERT_EQ(n, (root*root)%primeMod);
     }
@@ -178,7 +169,7 @@ TEST(QuadraticSieveTest, testModularSquareRoot2)
     {
         BigInt expectedRoot(rootstring);
         BigInt n = (expectedRoot*expectedRoot) % primeMod;
-        BigInt root = QuadraticSieve::rootModPrime(n, primeMod);
+        BigInt root = QuadraticSieveHelper::rootModPrime(n, primeMod);
         ASSERT_NE(0, root);
         ASSERT_EQ(n, (root*root)%primeMod);
     }
@@ -190,7 +181,41 @@ TEST(QuadraticSieveTest, testModularSquareRootInvalid)
     BigInt primeMod("7");
     BigInt n("3");
 
-    BigInt root = QuadraticSieve::rootModPrime(n, primeMod);
+    ASSERT_THROW(QuadraticSieveHelper::rootModPrime(n, primeMod), logic_error);
+}
 
-    ASSERT_EQ(0, root);
+TEST(QuadraticSieveTest, testExtensiveSquareRooting)
+{
+    vector<string> primeStrings = {"2", "3", "5", "7", "11", "13", "71", "229", "541"};
+    BigInt threshold("10000");
+
+    BigInt primePower;
+    for(const string& primeString : primeStrings)
+    {
+        BigInt prime(primeString);
+        BigInt primePower = prime;
+        for(uint32_t power=1; primePower < threshold; power++, primePower*=prime)
+        {
+            map<BigInt, vector<BigInt>> rootsPerResidue;
+            for(BigInt x=0; x<primePower; ++x)
+            {
+                BigInt residue = (x*x) % primePower;
+                rootsPerResidue[residue].push_back(x);
+            }
+
+            for (auto& rpr: rootsPerResidue) {
+                const BigInt& residue = rpr.first;
+                const vector<BigInt>& expectedRoots = rpr.second;
+
+                auto actualRoots = QuadraticSieveHelper::squareRootsModPrimePower(
+                                    residue, prime, power);
+                sort(actualRoots.begin(), actualRoots.end());
+
+                ASSERT_EQ(expectedRoots.size(), actualRoots.size()) << "Vectors x and y are of unequal length";
+                for (size_t i = 0; i < actualRoots.size(); ++i) {
+                  ASSERT_EQ(expectedRoots[i], actualRoots[i]) << "Vectors x and y differ at index " << i;
+                }
+            }
+        }
+    }
 }

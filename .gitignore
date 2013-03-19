@@ -1,4 +1,5 @@
 build/
+output
 out.txt
 *.cproject
 *.project
@@ -6,3 +7,6 @@ out.txt
 *.sublime-project
 *.sublime-workspace
 *.swp
+*.swo
+*.cmake
+*CMakeFiles/
