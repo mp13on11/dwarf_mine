@@ -20,10 +20,10 @@ public:
     double weight() const;
     std::vector<double> weights() const;
 
-    MPI::Intracomm* operator->() ;
+    MPI::Intracomm* operator->() const;
 
 private:
-    MPI::Intracomm _communicator;
+    mutable MPI::Intracomm _communicator;
     std::vector<double> _weights;
 
     Communicator(const MPI::Intracomm& communicator, const std::vector<double>& weights);
@@ -32,7 +32,7 @@ private:
     void broadcastWeights();
 };
 
-inline MPI::Intracomm* Communicator::operator->()
+inline MPI::Intracomm* Communicator::operator->() const
 {
     return & _communicator;
 }

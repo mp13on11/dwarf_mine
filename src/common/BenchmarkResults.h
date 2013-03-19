@@ -1,25 +1,23 @@
 #pragma once
 
-#include "MpiHelper.h"
-
 #include <map>
 #include <iosfwd>
 
 typedef double Rating; // TODO
-typedef std::pair<NodeId, Rating> NodeRating;
+typedef std::pair<int, Rating> NodeRating;
 
 class BenchmarkResult
 {
 public:
-    typedef std::map<NodeId, Rating>::const_iterator const_iterator;
-    typedef std::map<NodeId, Rating>::iterator iterator;
-    typedef std::map<NodeId, Rating>::value_type value_type;
+    typedef std::map<int, Rating>::const_iterator const_iterator;
+    typedef std::map<int, Rating>::iterator iterator;
+    typedef std::map<int, Rating>::value_type value_type;
 
     BenchmarkResult();
-    BenchmarkResult(const std::map<NodeId,Rating>& ratings);
+    BenchmarkResult(const std::map<int,Rating>& ratings);
     BenchmarkResult(std::initializer_list<value_type> init);
 
-    Rating& operator[](const NodeId& nodeId);
+    Rating& operator[](const int& nodeId);
     const_iterator begin() const;
     const_iterator end() const;
     iterator begin();
@@ -29,7 +27,7 @@ public:
     bool empty() const;
 
 private:
-    std::map<NodeId, Rating> _ratings;
+    std::map<int, Rating> _ratings;
 };
 
 std::ostream& operator<<(std::ostream& o, const BenchmarkResult& results);
@@ -39,7 +37,7 @@ inline BenchmarkResult::BenchmarkResult()
 {
 }
 
-inline BenchmarkResult::BenchmarkResult(const std::map<NodeId,Rating>& ratings) : 
+inline BenchmarkResult::BenchmarkResult(const std::map<int,Rating>& ratings) : 
     _ratings(ratings) 
 {
 }
@@ -74,7 +72,7 @@ inline size_t BenchmarkResult::size() const
     return _ratings.size();
 }
 
-inline Rating& BenchmarkResult::operator[](const NodeId& nodeId)
+inline Rating& BenchmarkResult::operator[](const int& nodeId)
 {
     return _ratings[nodeId];
 }

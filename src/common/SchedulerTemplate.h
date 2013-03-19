@@ -19,7 +19,7 @@ public:
 
     virtual void dispatch();
     virtual void dispatchSimple();
-    virtual void dispatchBenchmark(NodeId node);
+    virtual void dispatchBenchmark(int node);
 
 protected:
     Communicator communicator;
@@ -27,7 +27,7 @@ protected:
 
     virtual void doDispatch() = 0;
     virtual void doSimpleDispatch() = 0;
-    virtual void doBenchmarkDispatch(NodeId node) = 0;
+    virtual void doBenchmarkDispatch(int node) = 0;
     virtual bool hasData() const = 0;
     ElfType& elf() const;
 
@@ -76,7 +76,7 @@ void SchedulerTemplate<ElfType>::dispatchSimple()
 }
 
 template<typename ElfType>
-void SchedulerTemplate<ElfType>::dispatchBenchmark(NodeId node)
+void SchedulerTemplate<ElfType>::dispatchBenchmark(int node)
 {
     _elf.reset(_factory());
     validate();

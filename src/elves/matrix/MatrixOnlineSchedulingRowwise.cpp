@@ -14,7 +14,7 @@ vector<MatrixSlice> MatrixOnlineSchedulingRowwise::getSliceDefinitions(
         1);
 }
 
-int MatrixOnlineSchedulingRowwise::getWorkAmountFor(const NodeId /* node */)
+int MatrixOnlineSchedulingRowwise::getWorkAmountFor(const int /* node */)
 {
     return 1;
 }

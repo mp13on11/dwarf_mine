@@ -9,7 +9,7 @@ public:
     virtual std::vector<MatrixSlice> getSliceDefinitions(
         const Matrix<float>& result,
         const BenchmarkResult& nodeSet);
-    virtual int getWorkAmountFor(const NodeId node);
+    virtual int getWorkAmountFor(const int node);
 
 protected:
     virtual void reset();

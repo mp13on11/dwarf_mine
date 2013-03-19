@@ -1,13 +1,12 @@
 #include "BenchmarkRunner.h"
 #include "Communicator.h"
-#include "MpiHelper.h"
 #include "Profiler.h"
 #include "Scheduler.h"
 #include "SchedulerFactory.h"
 
 using namespace std;
 
-BenchmarkRunner::BenchmarkRunner(Configuration& config) :
+BenchmarkRunner::BenchmarkRunner(const Configuration& config) :
         config(&config),
         iterations(config.iterations()), warmUps(config.warmUps()),
         fileProblem(config.createProblemStatement()),
@@ -21,7 +20,7 @@ void BenchmarkRunner::benchmarkNode(const Communicator& communicator, Profiler& 
         return;
 
     unique_ptr<Scheduler> scheduler = config->createScheduler(communicator);
-    BenchmarkMethod targetMethod = [&](){ scheduler->dispatchBenchmark(Communicator::MASTER_RANK); };
+    BenchmarkMethod targetMethod = [&](){ scheduler->dispatchBenchmark(communicator.size()-1); };
 
     if (communicator.isMaster())
     {

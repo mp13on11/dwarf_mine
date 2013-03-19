@@ -14,7 +14,7 @@ class Profiler;
 class BenchmarkRunner
 {
 public:
-    explicit BenchmarkRunner(Configuration& config);
+    explicit BenchmarkRunner(const Configuration& config);
 
     void benchmarkNode(const Communicator& communicator, Profiler& profiler) const;
     void runBenchmark(const Communicator& communicator, Profiler& profiler) const;
@@ -23,7 +23,7 @@ public:
 private:
     typedef std::function<void()> BenchmarkMethod;
 
-    Configuration* config;
+    const Configuration* config;
     size_t iterations;
     size_t warmUps;
     std::unique_ptr<ProblemStatement> fileProblem;

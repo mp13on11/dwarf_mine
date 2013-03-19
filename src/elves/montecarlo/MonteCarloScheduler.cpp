@@ -1,7 +1,6 @@
 #include "MonteCarloScheduler.h"
 #include <Elf.h>
 #include <common/ProblemStatement.h>
-#include <common/MpiHelper.h>
 #include <OthelloResult.h>
 #include <OthelloUtil.h>
 #include <limits>
@@ -10,7 +9,6 @@
 #include <iostream>
 #include <memory>
 #include <sstream>
-#include <mpi.h>
 #include <cmath>
 #include <cassert>
 
@@ -75,7 +73,7 @@ void MonteCarloScheduler::doSimpleDispatch()
 
 void MonteCarloScheduler::doDispatch(BenchmarkResult nodeSet)
 {
-    if (MpiHelper::isMaster())
+    if (communicator.isMaster())
     {
         distributeInput(nodeSet);
         calculate();
@@ -119,7 +117,7 @@ void MonteCarloScheduler::calculate()
     if (_localRepetitions == 0)
         return;
 
-    _result = elf().getBestMoveFor(_state, _localRepetitions, MpiHelper::rank(), _commonSeed);
+    _result = elf().getBestMoveFor(_state, _localRepetitions, communicator.rank(), _commonSeed);
 }
 
 void registerOthelloResultToMPI(MPI_Datatype& type)
@@ -155,25 +153,25 @@ vector<OthelloResult> MonteCarloScheduler::gatherResults(BenchmarkResult nodeSet
     MPI_Datatype MPI_OthelloResult;
     registerOthelloResultToMPI(MPI_OthelloResult);
     
-    if (MpiHelper::isMaster())
+    if (communicator.isMaster())
     {
         int i = 0;
         for (const auto& node : nodeSet)
         {
-            if (MpiHelper::isMaster(node.first))
+            if (node.first == Communicator::MASTER_RANK)
             {
                 results[0] = _result;
             }
             else
             {                
-                MPI::COMM_WORLD.Recv(results.data() + i , 1, MPI_OthelloResult, node.first, 0);
+                communicator->Recv(results.data() + i , 1, MPI_OthelloResult, node.first, 0);
             }
             i++;
         }
     }
     else
     {
-        MPI::COMM_WORLD.Send(&_result, 1, MPI_OthelloResult, MpiHelper::MASTER, 0);
+        communicator->Send(&_result, 1, MPI_OthelloResult, Communicator::MASTER_RANK, 0);
     }
     return results;
 }
@@ -181,7 +179,7 @@ vector<OthelloResult> MonteCarloScheduler::gatherResults(BenchmarkResult nodeSet
 void MonteCarloScheduler::collectInput(BenchmarkResult /*nodeSet*/)
 {
     unsigned long parameters[] = {0, 0, 0};
-    MPI::COMM_WORLD.Recv(parameters, 3, MPI::UNSIGNED_LONG, MpiHelper::MASTER, 0);
+    communicator->Recv(parameters, 3, MPI::UNSIGNED_LONG, Communicator::MASTER_RANK, 0);
 
     size_t bufferSize = (size_t) parameters[0];
     _commonSeed =       (size_t) parameters[1];
@@ -190,7 +188,7 @@ void MonteCarloScheduler::collectInput(BenchmarkResult /*nodeSet*/)
     Playfield playfield(bufferSize);
 
     auto MPI_FIELD = MPI::INT;
-    MPI::COMM_WORLD.Recv(playfield.data(), bufferSize, MPI_FIELD, MpiHelper::MASTER, 0);
+    communicator->Recv(playfield.data(), bufferSize, MPI_FIELD, Communicator::MASTER_RANK, 0);
 
     _state = OthelloState(playfield, Player::White);
 }
@@ -206,15 +204,15 @@ void MonteCarloScheduler::distributeInput(BenchmarkResult nodeSet)
     const NodeRating* masterRating = nullptr;
     for (const auto& rating : ratings)
     {
-        if (!MpiHelper::isMaster(rating.first))
+        if (rating.first != Communicator::MASTER_RANK)
         {
             unsigned long parameters[] = { 
                 bufferSize, 
                 _commonSeed, 
                 (size_t)round(_repetitions * rating.second / ratingSum) 
             };
-            MPI::COMM_WORLD.Send(parameters, 3, MPI::UNSIGNED_LONG, rating.first, 0);
-            MPI::COMM_WORLD.Send(_state.playfieldBuffer(), bufferSize, MPI_FIELD, rating.first, 0);
+            communicator->Send(parameters, 3, MPI::UNSIGNED_LONG, rating.first, 0);
+            communicator->Send(_state.playfieldBuffer(), bufferSize, MPI_FIELD, rating.first, 0);
         }
         else
         {
@@ -265,7 +263,7 @@ void MonteCarloScheduler::collectResults(BenchmarkResult nodeSet)
     _result = *bestMove;
 }
 
-void MonteCarloScheduler::doBenchmarkDispatch(NodeId node)
+void MonteCarloScheduler::doBenchmarkDispatch(int /* node */)
 {
-    doDispatch({{node, 1}});
+    doDispatch();
 }    

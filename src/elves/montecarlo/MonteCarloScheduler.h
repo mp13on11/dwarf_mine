@@ -4,7 +4,6 @@
 #include "MonteCarloElf.h"
 #include <functional>
 #include <vector>
-#include <mpi.h>
 
 class MonteCarloElf;
 struct OthelloResult;
@@ -24,7 +23,7 @@ protected:
     virtual bool hasData() const;
     virtual void doDispatch();
     virtual void doSimpleDispatch();
-    virtual void doBenchmarkDispatch(NodeId node);
+    virtual void doBenchmarkDispatch(int node);
 
     OthelloState _state;
     OthelloResult _result;

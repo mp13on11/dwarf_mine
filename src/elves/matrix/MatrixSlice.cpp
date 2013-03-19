@@ -16,7 +16,7 @@ MatrixSlice::MatrixSlice(
 }
 
 MatrixSlice::MatrixSlice(
-    NodeId responsibleNode,
+    int responsibleNode,
     size_t startX,
     size_t startY,
     size_t columns,
@@ -81,12 +81,12 @@ void MatrixSlice::injectSlice(const Matrix<float>& sliceData, Matrix<float>& des
     }
 }
 
-NodeId MatrixSlice::getNodeId() const
+int MatrixSlice::getNodeId() const
 {
     return nodeId;
 }
 
-void MatrixSlice::setNodeId(const NodeId nodeId)
+void MatrixSlice::setNodeId(const int nodeId)
 {
     this->nodeId = nodeId;
 }

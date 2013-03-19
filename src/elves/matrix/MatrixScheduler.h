@@ -27,7 +27,7 @@ protected:
     virtual bool hasData() const;
     virtual void doDispatch();
     virtual void doSimpleDispatch();
-    virtual void doBenchmarkDispatch(NodeId node);
+    virtual void doBenchmarkDispatch(int node);
 
     virtual void orchestrateCalculation();
     virtual void calculateOnSlave();

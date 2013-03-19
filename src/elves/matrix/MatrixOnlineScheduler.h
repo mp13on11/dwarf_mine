@@ -29,17 +29,17 @@ private:
     std::unique_ptr<MatrixOnlineSchedulingStrategy> schedulingStrategy;
     static std::vector<MatrixSlice> sliceDefinitions;
     static std::vector<MatrixSlice>::iterator currentSliceDefinition;
-    static std::map<NodeId, bool> finishedSlaves;
+    static std::map<int, bool> finishedSlaves;
     std::vector<MatrixHelper::MatrixPair> workQueue;
     std::vector<Matrix<float>> resultQueue;
 
     void sliceInput();
     void schedule();
-    void fetchResultsFrom(const NodeId node, const int workAmount);
-    int getWorkAmountFor(const NodeId node) const;
-    MatrixSlice& getNextSliceDefinitionFor(const NodeId node);
-    void sendNextSlicesTo(const NodeId node, const int workAmount);
-    void sendWorkAmountTo(const NodeId node, const int workAmount);
+    void fetchResultsFrom(const int node, const int workAmount);
+    int getWorkAmountFor(const int node) const;
+    MatrixSlice& getNextSliceDefinitionFor(const int node);
+    void sendNextSlicesTo(const int node, const int workAmount);
+    void sendWorkAmountTo(const int node, const int workAmount);
     int getRemainingWorkAmount();
     bool hasSlices() const;
     bool haveSlavesFinished() const;
