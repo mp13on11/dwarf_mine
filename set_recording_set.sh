@@ -2,11 +2,12 @@
 
 usage()
 {
-echo "Usage: . set_recording_set.sh option
+echo "Usage: . set_recording_set.sh option [buffersize=32]
 
 WARNING: You MUST type the . character to allow the script to set global environment variables.
 
 Sets global environment variables for VampirTrace to record corresponding performance events.
+You can specify a per-process buffer size in MB to reduce the amount of flushes. (Default: 32 MB)
 
 OPTIONS:
     cache_l1
@@ -24,6 +25,15 @@ setRecordingSet()
 export VT_MODE=STAT:TRACE
 export VT_STAT_PROPS=ALL
 export VT_MAX_FLUSHES=0
+
+if [ "$2" != "" ]; then
+    echo "Setting VampirTrace buffer size to $2 MB."
+    export VT_BUFFER_SIZE="$2M"
+else
+    # Default to VampirTrace's default (currently 32 MB)
+    echo "Defaulting VampirTrace buffer size to 32 MB."
+    export VT_BUFFER_SIZE=
+fi
 
 case $1 in
     cache_l1)
