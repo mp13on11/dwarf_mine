@@ -29,7 +29,6 @@ private:
 
     static Measurement averageOf(const std::vector<Measurement>& runTimes);
     static BenchmarkResult calculateNodeWeights(const std::vector<Measurement>& averageRunTimes);
-    static bool slaveShouldRunWith(const BenchmarkResult& nodeWeights);
 
     size_t iterations;
     size_t warmUps;

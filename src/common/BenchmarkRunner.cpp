@@ -130,9 +130,3 @@ Measurement BenchmarkRunner::averageOf(const vector<Measurement>& runTimes)
 
     return sum / runTimes.size();
 }
-
-bool BenchmarkRunner::slaveShouldRunWith(const BenchmarkResult& nodeWeights)
-{
-    // returns true if the slave's rank is included in the nodeWeights
-    return nodeWeights.find(MpiHelper::rank()) != nodeWeights.end();
-}
