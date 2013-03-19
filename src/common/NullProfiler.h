@@ -5,10 +5,10 @@
 class NullProfiler : public Profiler
 {
 public:
-	virtual void beginIterationBlock();
-	virtual void beginIteration();
-	virtual void endIteration();
-	virtual void endIterationBlock();
+    virtual void beginIterationBlock();
+    virtual void beginIteration();
+    virtual void endIteration();
+    virtual void endIterationBlock();
 };
 
 inline void NullProfiler::beginIterationBlock()

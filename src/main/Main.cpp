@@ -57,12 +57,11 @@ void silenceOutputStreams(bool keepErrorStreams = false)
 BenchmarkResult determineNodeWeights(const BenchmarkRunner& runner)
 {
     NullProfiler profiler;
-    runner.benchmarkIndividualNodes(profiler);
-
     BenchmarkResult result;
-
+    
     for (size_t i=0; i<MpiHelper::numberOfNodes(); ++i)
     {
+        runner.benchmarkNode(i, profiler);
         result[i] = 1.0 / MpiHelper::numberOfNodes();
     }
 

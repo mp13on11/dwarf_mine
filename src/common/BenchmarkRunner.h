@@ -16,7 +16,7 @@ class BenchmarkRunner
 public:
     explicit BenchmarkRunner(Configuration& config);
 
-    void benchmarkIndividualNodes(Profiler& profiler) const;
+    void benchmarkNode(int node, Profiler& profiler) const;
     void runBenchmark(const BenchmarkResult& nodeWeights, Profiler& profiler) const;
     void runElf(Profiler& profiler) const;
 

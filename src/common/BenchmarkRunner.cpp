@@ -14,22 +14,19 @@ BenchmarkRunner::BenchmarkRunner(Configuration& config) :
 {
 }
 
-void BenchmarkRunner::benchmarkIndividualNodes(Profiler& profiler) const
+void BenchmarkRunner::benchmarkNode(int node, Profiler& profiler) const
 {
     if (MpiHelper::isMaster())
     {
-        for (size_t i=0; i<MpiHelper::numberOfNodes(); ++i)
-        {
-            BenchmarkMethod targetMethod = [&](){ scheduler->dispatchBenchmark(i); };
+        BenchmarkMethod targetMethod = [&](){ scheduler->dispatchBenchmark(node); };
 
-            initializeMaster(*generatedProblem, {{i, 1}});
-            run(targetMethod, profiler);
-            finalizeMaster(*generatedProblem);
-        }
+        initializeMaster(*generatedProblem, {{node, 1}});
+        run(targetMethod, profiler);
+        finalizeMaster(*generatedProblem);
     }
-    else
+    else if (MpiHelper::rank() == node)
     {
-        BenchmarkMethod targetMethod = [&](){ scheduler->dispatchBenchmark(MpiHelper::rank()); };
+        BenchmarkMethod targetMethod = [&](){ scheduler->dispatchBenchmark(node); };
         run(targetMethod, profiler);
     }
 }
