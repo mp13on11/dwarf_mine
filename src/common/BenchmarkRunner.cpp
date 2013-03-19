@@ -3,13 +3,7 @@
 #include "SchedulerFactory.h"
 
 using namespace std;
-using namespace std::chrono;
 
-typedef BenchmarkRunner::Measurement Measurement;
-
-/**
- * BenchmarkRunner determines the available devices and benchmarks them idenpendently
- */
 BenchmarkRunner::BenchmarkRunner(Configuration& config) :
         config(&config),
         iterations(config.iterations()), warmUps(config.warmUps()),
@@ -19,114 +13,61 @@ BenchmarkRunner::BenchmarkRunner(Configuration& config) :
 {
 }
 
-BenchmarkResult BenchmarkRunner::benchmarkIndividualNodes() const
+void BenchmarkRunner::benchmarkIndividualNodes() const
 {
-    vector<Measurement> averageRunTimes;
-
     if (MpiHelper::isMaster())
     {
         for (size_t i=0; i<MpiHelper::numberOfNodes(); ++i)
         {
             scheduler->setNodeset({{i, 1}});
             BenchmarkMethod targetMethod = [&](){ scheduler->dispatchBenchmark(i); };
-            vector<Measurement> runTimes =  benchmarkNodeset(*generatedProblem, targetMethod);
-            averageRunTimes.push_back(averageOf(runTimes));
+            benchmarkNodeset(*generatedProblem, targetMethod);
         }
     }
     else
     {
         BenchmarkMethod targetMethod = [&](){ scheduler->dispatchBenchmark(MpiHelper::rank()); };
-        benchmarkSlave(targetMethod);
+        run(targetMethod);
     }
-
-    return calculateNodeWeights(averageRunTimes);
 }
 
-vector<Measurement> BenchmarkRunner::runBenchmark(const BenchmarkResult& nodeWeights) const
+void BenchmarkRunner::runBenchmark(const BenchmarkResult& nodeWeights) const
 {
     BenchmarkMethod targetMethod = [&](){ scheduler->dispatch(); };
 
     if (MpiHelper::isMaster())
     {
         scheduler->setNodeset(nodeWeights);
-        return benchmarkNodeset(*fileProblem, targetMethod);
+        benchmarkNodeset(*fileProblem, targetMethod);
     }
     else
     {
-        benchmarkSlave(targetMethod);
-        return vector<Measurement>();
+        run(targetMethod);
     }
 }
 
-vector<Measurement> BenchmarkRunner::runElf() const
+void BenchmarkRunner::runElf() const
 {
     BenchmarkMethod targetMethod = [&](){ scheduler->dispatchSimple(); };
     scheduler->setNodeset({{0, 0}});
-    return benchmarkNodeset(*fileProblem, targetMethod);
+    benchmarkNodeset(*fileProblem, targetMethod);
 }
 
-vector<Measurement> BenchmarkRunner::benchmarkNodeset(const ProblemStatement& problem, BenchmarkMethod targetMethod) const
+void BenchmarkRunner::benchmarkNodeset(const ProblemStatement& problem, BenchmarkMethod targetMethod) const
 {
-    vector<Measurement> result;
-
     scheduler->provideData(problem);
-
-    for (size_t i = 0; i < warmUps; ++i)
-    {
-        measureCall(targetMethod);
-    }
-    for (size_t i = 0; i < iterations; ++i)
-    {
-        result.push_back(measureCall(targetMethod));
-    }
-
-
+    run(targetMethod);
     scheduler->outputData(problem);
-
-    return result;
 }
 
-void BenchmarkRunner::benchmarkSlave(BenchmarkMethod targetMethod) const
+void BenchmarkRunner::run(BenchmarkMethod targetMethod) const
 {
-    for (size_t i = 0; i < iterations + warmUps; ++i)
+    for (size_t i = 0; i < warmUps; ++i)
     {
         targetMethod();
     }
-}
-
-Measurement BenchmarkRunner::measureCall(BenchmarkMethod targetMethod) const
-{
-    auto before = high_resolution_clock::now();
-    targetMethod();
-    return duration_cast<Measurement>(high_resolution_clock::now() - before);
-}
-
-BenchmarkResult BenchmarkRunner::calculateNodeWeights(const vector<Measurement>& averageRunTimes)
-{
-    BenchmarkResult result;
-    double totalPerformance = 0;
-
-    for (const Measurement& averageRunTime : averageRunTimes)
-        totalPerformance += 1.0 / averageRunTime.count();
-
-    for (size_t i=0; i<averageRunTimes.size(); ++i)
+    for (size_t i = 0; i < iterations; ++i)
     {
-        double performance = 1.0 / averageRunTimes[i].count();
-        result[i] = performance / totalPerformance;
+        targetMethod();
     }
-
-    return result;
-}
-
-Measurement BenchmarkRunner::averageOf(const vector<Measurement>& runTimes)
-{
-    if (runTimes.empty())
-        return Measurement(0);
-
-    Measurement sum(0);
-
-    for (const Measurement& runTime : runTimes)
-        sum += runTime;
-
-    return sum / runTimes.size();
 }

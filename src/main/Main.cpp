@@ -53,17 +53,18 @@ void silenceOutputStreams(bool keepErrorStreams = false)
     }
 }
 
-void printResults(const vector<BenchmarkRunner::Measurement>& results, ostream& timeFile)
+BenchmarkResult determineNodeWeights(const BenchmarkRunner& runner)
 {
-    cout << "Measured Times: µs" << endl;
+    runner.benchmarkIndividualNodes();
 
-    for (const auto& measurement : results)
+    BenchmarkResult result;
+
+    for (size_t i=0; i<MpiHelper::numberOfNodes(); ++i)
     {
-        cout << "\t" << measurement.count() << endl;
-
-        if (MpiHelper::isMaster())
-            timeFile << measurement.count() << endl;
+        result[i] = 1.0 / MpiHelper::numberOfNodes();
     }
+
+    return result;
 }
 
 void benchmarkWith(Configuration& config)
@@ -86,30 +87,30 @@ void benchmarkWith(Configuration& config)
         if (MpiHelper::numberOfNodes() > 1)
             throw runtime_error("Process was told to run without MPI support, but was called via mpirun");
 
-        printResults(runner.runElf(), timeFile);
+        runner.runElf();
     }
     else
     {
         if (config.shouldExportConfiguration() || !config.shouldImportConfiguration())
         {
-            cout << "Calculating node weights" <<endl;
-            nodeWeights = runner.benchmarkIndividualNodes();
+            cout << "Calculating node weights" << endl;
+            nodeWeights = determineNodeWeights(runner);
             cout << "Weighted " << endl << nodeWeights;
         }
         if (config.shouldExportConfiguration())
         {
-            cout << "Exporting node weights" <<endl;
+            cout << "Exporting node weights" << endl;
             exportClusterConfiguration(config.exportConfigurationFilename(), nodeWeights);
         }
         if (config.shouldImportConfiguration())
         {
-            cout << "Importing node weights" <<endl;
+            cout << "Importing node weights" << endl;
             nodeWeights = importClusterConfiguration(config.importConfigurationFilename());
         }
         if (!config.shouldSkipBenchmark())
         {
-            cout << "Running benchmark" <<endl;
-            printResults(runner.runBenchmark(nodeWeights), timeFile);
+            cout << "Running benchmark" << endl;
+            runner.runBenchmark(nodeWeights);
         }
     }
 }
