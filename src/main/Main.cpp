@@ -2,7 +2,6 @@
 #include "common/Configuration.h"
 #include "common/MpiGuard.h"
 #include "common/MpiHelper.h"
-#include "common/NullProfiler.h"
 #include "common/TimingProfiler.h"
 
 #include <fstream>
@@ -86,11 +85,24 @@ BenchmarkResult determineNodeWeights(const BenchmarkRunner& runner)
     return nodeWeightsFrom(averageTimes);
 }
 
+void printResults(const TimingProfiler& profiler, ostream& timeFile)
+{
+    cout << "Execution times (microseconds):" << endl;
+    
+    for (const auto& iterationTime : profiler.iterationTimes())
+    {
+        cout << "\t" << iterationTime.count() << endl;
+
+        if (MpiHelper::isMaster())
+            timeFile << iterationTime.count() << endl;
+    }
+}
+
 void benchmarkWith(Configuration& config)
 {
     BenchmarkRunner runner(config);
     BenchmarkResult nodeWeights;
-    NullProfiler profiler;
+    TimingProfiler profiler;
 
     ofstream timeFile;
 
@@ -108,6 +120,7 @@ void benchmarkWith(Configuration& config)
             throw runtime_error("Process was told to run without MPI support, but was called via mpirun");
 
         runner.runElf(profiler);
+        printResults(profiler, timeFile);
     }
     else
     {
@@ -131,6 +144,7 @@ void benchmarkWith(Configuration& config)
         {
             cout << "Running benchmark" << endl;
             runner.runBenchmark(nodeWeights, profiler);
+            printResults(profiler, timeFile);
         }
     }
 }
