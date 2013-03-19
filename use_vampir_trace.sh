@@ -42,6 +42,7 @@ if [ "$USE" = "yes" ]; then
     replace "CUDA_NVCC_FLAGS:STRING=*" "CUDA_NVCC_FLAGS:STRING=-vt:inst compinst -vt:hyb "
     replace "CMAKE_BUILD_TYPE:STRING=*" "CMAKE_BUILD_TYPE:STRING=RelWithDebInfo"
     replace "WARNINGS_AS_ERRORS:BOOL=ON" "WARNINGS_AS_ERRORS:BOOL=OFF"
+    replace "USE_VAMPIR_TRACE:BOOL=OFF" "USE_VAMPIR_TRACE:BOOL=ON"
     updateCmake
     echo "Done integrating VampirTrace configuration."                        
     exit 1
@@ -54,6 +55,7 @@ elif [ "$USE" = "no" ]; then
     replace "CUDA_NVCC_FLAGS:STRING=-vt:inst compinst -vt:hyb *" "CUDA_NVCC_FLAGS:STRING="
     replace "CMAKE_BUILD_TYPE:STRING=RelWithDebInfo" "CMAKE_BUILD_TYPE:STRING="
     replace "WARNINGS_AS_ERRORS:BOOL=OFF" "WARNINGS_AS_ERRORS:BOOL=ON"
+    replace "USE_VAMPIR_TRACE:BOOL=ON" "USE_VAMPIR_TRACE:BOOL=OFF"
     updateCmake
     echo "Done removing VampirTrace configuration."
     exit 1

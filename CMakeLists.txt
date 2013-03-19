@@ -5,6 +5,7 @@ PROJECT(dwarf_mine)
 SET(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/CMakeModules)
 SET(CMAKE_CONFIGURATION_TYPES "Debug;Release;RelWithDebInfo" CACHE STRING "limited configs" FORCE)
 SET(CMAKE_DEBUG_POSTFIX "d")
+OPTION(USE_VAMPIR_TRACE OFF)
 
 INCLUDE(Utils)
 
@@ -45,3 +46,10 @@ ENDIF()
 
 ADD_SUBDIRECTORY(gtest-1.6.0)
 ADD_SUBDIRECTORY(src)
+
+IF(USE_VAMPIR_TRACE)
+    ADD_CUSTOM_TARGET(symbols ALL
+        COMMAND find . -name *.so > /tmp/dwarf_mine.symbols.init\; tr \"\\n\" \" \" < /tmp/dwarf_mine.symbols.init | nm ./src/main/dwarf_mine > /tmp/dwarf_mine.symbols
+    )   
+    ADD_DEPENDENCIES(symbols dwarf_mine)
+ENDIF()
