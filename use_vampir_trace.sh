@@ -3,63 +3,46 @@
 
 usage()
 {
-echo "Usage: $0 options
+echo "Usage: $0 yes|no path/to/build/CMakeCache.txt
 
-Sets compilers to VampirTrace compiler wrappers and configures them with flags, or vice-versa.
-
-OPTIONS:
-    -h  Show this message
-    -s  Configure with or without VampirTrace (yes|no)
-    -f  Path to build directory's CMakeCache.txt"
+Sets compilers to VampirTrace compiler wrappers and configures them with flags, or vice-versa."
 }
 
-INTEGRATE=
-CACHE_FILE=
-CACHE_DIR=
+CACHE_FILE=$2
+CACHE_DIR=${CACHE_FILE%*CMakeCache.txt}
 
-while getopts "h:s:f:*" OPTION
-do
-    case $OPTION in
-        h)  
-            usage
-            exit 1
-            ;;
-        s)  
-            INTEGRATE=$OPTARG
-            ;;
-        f)  
-            CACHE_FILE=$OPTARG
-            CACHE_DIR=${CACHE_FILE%*CMakeCache.txt}
-            ;;
-        *)  
-            usage
-            exit
-            ;;
-    esac
-done
+replace()
+{
+    sed -i "s/$1/$2/g" "$CACHE_FILE"
+}
 
-if [ "$INTEGRATE" = "yes" ]; then
-    sed -i "s/CMAKE_CXX_COMPILER:FILEPATH=\/usr\/bin\/c++/CMAKE_CXX_COMPILER:FILEPATH=\/usr\/local\/bin\/vtc++/g" "$CACHE_FILE"
+updateCmake()
+{
     cmake $CACHE_DIR
-    sed -i "s/CUDA_NVCC_EXECUTABLE:FILEPATH=\/usr\/local\/cuda\/bin\/nvcc/CUDA_NVCC_EXECUTABLE:FILEPATH=\/usr\/local\/bin\/vtnvcc/g" "$CACHE_FILE"
-    cmake $CACHE_DIR
-    sed -i "s/CMAKE_CXX_FLAGS:STRING=*/CMAKE_CXX_FLAGS:STRING=-vt:inst compinst -vt:hyb /g" "$CACHE_FILE"
-    sed -i "s/CUDA_NVCC_FLAGS:STRING=*/CUDA_NVCC_FLAGS:STRING=-vt:inst compinst -vt:hyb /g" "$CACHE_FILE"
-    sed -i "s/CMAKE_BUILD_TYPE:STRING=*/CMAKE_BUILD_TYPE:STRING=RelWithDebInfo/g" "$CACHE_FILE"
-    sed -i "s/WARNINGS_AS_ERRORS:BOOL=ON/WARNINGS_AS_ERRORS:BOOL=OFF/g" "$CACHE_FILE"
-    cmake $CACHE_DIR
-    echo "Done integrating VampirTrace configuration."
+}
+
+if [ "$1" = "yes" ]; then
+    replace "CMAKE_CXX_COMPILER:FILEPATH=\/usr\/bin\/c++" "CMAKE_CXX_COMPILER:FILEPATH=\/usr\/local\/bin\/vtc++"
+    updateCmake
+    replace "CUDA_NVCC_EXECUTABLE:FILEPATH=\/usr\/local\/cuda\/bin\/nvcc" "CUDA_NVCC_EXECUTABLE:FILEPATH=\/usr\/local\/bin\/vtnvcc"
+    updateCmake
+    replace "CMAKE_CXX_FLAGS:STRING=*" "CMAKE_CXX_FLAGS:STRING=-vt:inst compinst -vt:hyb "
+    replace "CUDA_NVCC_FLAGS:STRING=*" "CUDA_NVCC_FLAGS:STRING=-vt:inst compinst -vt:hyb "
+    replace "CMAKE_BUILD_TYPE:STRING=*" "CMAKE_BUILD_TYPE:STRING=RelWithDebInfo"
+    replace "WARNINGS_AS_ERRORS:BOOL=ON" "WARNINGS_AS_ERRORS:BOOL=OFF"
+    updateCmake
+    echo "Done integrating VampirTrace configuration."                        
     exit 1
-elif [ "$INTEGRATE" = "no" ]; then
-    sed -i "s/CMAKE_CXX_COMPILER:FILEPATH=\/usr\/local\/bin\/vtc++/CMAKE_CXX_COMPILER:FILEPATH=\/usr\/bin\/c++/g" "$CACHE_FILE"
-    cmake $CACHE_DIR
-    sed -i "s/CUDA_NVCC_EXECUTABLE:FILEPATH=\/usr\/local\/bin\/vtnvcc/CUDA_NVCC_EXECUTABLE:FILEPATH=\/usr\/local\/cuda\/bin\/nvcc/g" "$CACHE_FILE"
-    cmake $CACHE_DIR
-    sed -i "s/CMAKE_CXX_FLAGS:STRING=-vt:inst compinst -vt:hyb */CMAKE_CXX_FLAGS:STRING=/g" "$CACHE_FILE"
-    sed -i "s/CUDA_NVCC_FLAGS:STRING=-vt:inst compinst -vt:hyb */CUDA_NVCC_FLAGS:STRING=/g" "$CACHE_FILE"
-    sed -i "s/CMAKE_BUILD_TYPE:STRING=RelWithDebInfo/CMAKE_BUILD_TYPE:STRING=/g" "$CACHE_FILE"
-    sed -i "s/WARNINGS_AS_ERRORS:BOOL=OFF/WARNINGS_AS_ERRORS:BOOL=ON/g" "$CACHE_FILE"
-    cmake $CACHE_DIR
+elif [ "$1" = "no" ]; then
+    replace "CMAKE_CXX_COMPILER:FILEPATH=\/usr\/local\/bin\/vtc++" "CMAKE_CXX_COMPILER:FILEPATH=\/usr\/bin\/c++"
+    updateCmake
+    replace "CUDA_NVCC_EXECUTABLE:FILEPATH=\/usr\/local\/bin\/vtnvcc" "CUDA_NVCC_EXECUTABLE:FILEPATH=\/usr\/local\/cuda\/bin\/nvcc"
+    updateCmake
+    replace "CMAKE_CXX_FLAGS:STRING=-vt:inst compinst -vt:hyb *" "CMAKE_CXX_FLAGS:STRING="
+    replace "CUDA_NVCC_FLAGS:STRING=-vt:inst compinst -vt:hyb *" "CUDA_NVCC_FLAGS:STRING="
+    replace "CMAKE_BUILD_TYPE:STRING=RelWithDebInfo" "CMAKE_BUILD_TYPE:STRING="
+    replace "WARNINGS_AS_ERRORS:BOOL=OFF" "WARNINGS_AS_ERRORS:BOOL=ON"
+    updateCmake
     echo "Done removing VampirTrace configuration."
     exit 1
 fi
