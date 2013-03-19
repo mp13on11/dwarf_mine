@@ -1,9 +1,11 @@
 #include "common/BenchmarkRunner.h"
+#include "common/Communicator.h"
 #include "common/Configuration.h"
 #include "common/MpiGuard.h"
 #include "common/MpiHelper.h"
 #include "common/TimingProfiler.h"
 
+#include <chrono>
 #include <fstream>
 #include <iostream>
 #include <stdexcept>
@@ -11,36 +13,48 @@
 #include <vector>
 
 using namespace std;
+using namespace std::chrono;
 
-void exportClusterConfiguration(const string& filename, BenchmarkResult& result)
+void exportWeightedCommunicator(const string& filename, const Communicator& communicator)
 {
     fstream file(filename, fstream::out);
+
     if (!file.is_open())
     {
-        cerr << "ERROR: Could not write "<<filename<<endl;
+        cerr << "ERROR: Could not write "<< filename <<endl;
         exit(1);
     }
-    file << result;
+
+    for (double weight : communicator.weights())
+        file << weight << endl;
+
     file.close();
 }
 
-BenchmarkResult importClusterConfiguration(const string& filename)
+Communicator importWeightedCommunicator(const string& filename)
 {
     fstream file(filename, fstream::in);
+
     if (!file.is_open())
     {
         cerr << "ERROR: Could not read "<<filename<<endl;
         exit(1);
     }
-    BenchmarkResult result;
-    file >> result;
-    file.close();
-    if (result.size() != MpiHelper::numberOfNodes())
+
+    vector<double> weights;
+
+    while (file.good())
     {
-        cerr << "ERROR: Number of nodes does not match configured number of nodes" <<endl;
-        exit(1);
+        double weight;
+        file >> weight;
+
+        if (file.good())
+            weights.push_back(weight);
     }
-    return result;
+
+    file.close();
+
+    return Communicator(weights);
 }
 
 void silenceOutputStreams(bool keepErrorStreams = false)
@@ -54,35 +68,39 @@ void silenceOutputStreams(bool keepErrorStreams = false)
     }
 }
 
-BenchmarkResult nodeWeightsFrom(const BenchmarkResult& averageExecutionTimes)
+vector<double> nodeWeightsFrom(const vector<microseconds>& averageExecutionTimes)
 {
-    Rating sum = 0;
-    for (const auto& timePair : averageExecutionTimes)
+    microseconds sum(0);
+    for (microseconds time : averageExecutionTimes)
     {
-        sum += timePair.second;
+        sum += time;
     }
 
-    BenchmarkResult weights;
-    for (const auto& timePair : averageExecutionTimes)
+    vector<double> weights;
+    for (microseconds time : averageExecutionTimes)
     {
-        weights[timePair.first] = timePair.second / sum;
+        weights.push_back(static_cast<double>(time.count()) / static_cast<double>(sum.count()));
     }
-
     return weights;
 }
 
-BenchmarkResult determineNodeWeights(const BenchmarkRunner& runner)
+Communicator determineWeightedCommunicator(const BenchmarkRunner& runner, const Communicator& unweightedCommunicator)
 {
     TimingProfiler profiler;
-    BenchmarkResult averageTimes;
+    vector<microseconds> averageTimes;
     
-    for (size_t i=0; i<MpiHelper::numberOfNodes(); ++i)
+    for (size_t i=0; i<unweightedCommunicator.size(); ++i)
     {
-        runner.benchmarkNode(i, profiler);
-        averageTimes[i] = profiler.averageIterationTime().count();
+        cout << "Creating Communicator ..." << endl;
+        Communicator subCommunicator = unweightedCommunicator.createSubCommunicator(
+                {Communicator::MASTER_RANK*1, static_cast<int>(i)}
+            );
+        cout << "Communicator successfully created" << endl;
+        runner.benchmarkNode(subCommunicator, profiler);
+        averageTimes.push_back(profiler.averageIterationTime());
     }
-
-    return nodeWeightsFrom(averageTimes);
+    
+    return Communicator(nodeWeightsFrom(averageTimes));
 }
 
 void printResults(const TimingProfiler& profiler, ostream& timeFile)
@@ -101,7 +119,6 @@ void printResults(const TimingProfiler& profiler, ostream& timeFile)
 void benchmarkWith(Configuration& config)
 {
     BenchmarkRunner runner(config);
-    BenchmarkResult nodeWeights;
     TimingProfiler profiler;
 
     ofstream timeFile;
@@ -119,31 +136,31 @@ void benchmarkWith(Configuration& config)
         if (MpiHelper::numberOfNodes() > 1)
             throw runtime_error("Process was told to run without MPI support, but was called via mpirun");
 
-        runner.runElf(profiler);
+        runner.runElf(Communicator(), profiler);
         printResults(profiler, timeFile);
     }
     else
     {
+        Communicator communicator;
         if (config.shouldExportConfiguration() || !config.shouldImportConfiguration())
         {
             cout << "Calculating node weights" << endl;
-            nodeWeights = determineNodeWeights(runner);
-            cout << "Weighted " << endl << nodeWeights;
+            communicator = determineWeightedCommunicator(runner, communicator);
         }
         if (config.shouldExportConfiguration())
         {
             cout << "Exporting node weights" << endl;
-            exportClusterConfiguration(config.exportConfigurationFilename(), nodeWeights);
+            exportWeightedCommunicator(config.exportConfigurationFilename(), communicator);
         }
         if (config.shouldImportConfiguration())
         {
             cout << "Importing node weights" << endl;
-            nodeWeights = importClusterConfiguration(config.importConfigurationFilename());
+            communicator = importWeightedCommunicator(config.importConfigurationFilename());
         }
         if (!config.shouldSkipBenchmark())
         {
             cout << "Running benchmark" << endl;
-            runner.runBenchmark(nodeWeights, profiler);
+            runner.runBenchmark(communicator, profiler);
             printResults(profiler, timeFile);
         }
     }

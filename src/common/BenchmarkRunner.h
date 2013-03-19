@@ -7,6 +7,7 @@
 #include <functional>
 #include <memory>
 
+class Communicator;
 class Configuration;
 class Profiler;
 
@@ -15,9 +16,9 @@ class BenchmarkRunner
 public:
     explicit BenchmarkRunner(Configuration& config);
 
-    void benchmarkNode(int node, Profiler& profiler) const;
-    void runBenchmark(const BenchmarkResult& nodeWeights, Profiler& profiler) const;
-    void runElf(Profiler& profiler) const;
+    void benchmarkNode(const Communicator& communicator, Profiler& profiler) const;
+    void runBenchmark(const Communicator& communicator, Profiler& profiler) const;
+    void runElf(const Communicator& communicator, Profiler& profiler) const;
 
 private:
     typedef std::function<void()> BenchmarkMethod;

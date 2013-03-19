@@ -71,7 +71,7 @@ void MatrixIntegrationTest::setupConfigFile()
 {
     ofstream config(CONF_FILENAME);
     for (int i=0; i<NUM_NODES; ++i)
-        config << i << " " << 1 << endl;
+        config << 1 << endl;
 }
 
 pid_t MatrixIntegrationTest::spawnChildProcess(

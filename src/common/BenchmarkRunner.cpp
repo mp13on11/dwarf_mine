@@ -1,4 +1,5 @@
 #include "BenchmarkRunner.h"
+#include "Communicator.h"
 #include "MpiHelper.h"
 #include "Profiler.h"
 #include "Scheduler.h"
@@ -14,34 +15,45 @@ BenchmarkRunner::BenchmarkRunner(Configuration& config) :
 {
 }
 
-void BenchmarkRunner::benchmarkNode(int node, Profiler& profiler) const
+void BenchmarkRunner::benchmarkNode(const Communicator& communicator, Profiler& profiler) const
 {
+    if (!communicator.isValid())
+        return;
+
     unique_ptr<Scheduler> scheduler = config->createScheduler();
-    BenchmarkMethod targetMethod = [&](){ scheduler->dispatchBenchmark(node); };
+    BenchmarkMethod targetMethod = [&](){ scheduler->dispatchBenchmark(Communicator::MASTER_RANK); };
 
     if (MpiHelper::isMaster())
     {
-        scheduler->setNodeset({{node, 1}});
+        scheduler->setNodeset({{Communicator::MASTER_RANK, 1}});
         scheduler->provideData(*generatedProblem);
 
         run(targetMethod, profiler);
         
         scheduler->outputData(*generatedProblem);
     }
-    else if (MpiHelper::rank() == node)
+    else if (MpiHelper::rank() == -1)
     {
         run(targetMethod, profiler);
     }
 }
 
-void BenchmarkRunner::runBenchmark(const BenchmarkResult& nodeWeights, Profiler& profiler) const
+void BenchmarkRunner::runBenchmark(const Communicator& communicator, Profiler& profiler) const
 {
+    if (!communicator.isValid())
+        return;
+    
     unique_ptr<Scheduler> scheduler = config->createScheduler();
     BenchmarkMethod targetMethod = [&](){ scheduler->dispatch(); };
 
     if (MpiHelper::isMaster())
     {
-        scheduler->setNodeset(nodeWeights);
+        BenchmarkResult nodeSet;
+        for (size_t i=0; i<communicator.size(); ++i)
+        {
+            nodeSet[i] = communicator.weights()[i];
+        }
+        scheduler->setNodeset(nodeSet);
         scheduler->provideData(*fileProblem);
 
         run(targetMethod, profiler);
@@ -54,8 +66,11 @@ void BenchmarkRunner::runBenchmark(const BenchmarkResult& nodeWeights, Profiler&
     }
 }
 
-void BenchmarkRunner::runElf(Profiler& profiler) const
+void BenchmarkRunner::runElf(const Communicator& communicator, Profiler& profiler) const
 {
+    if (!communicator.isValid())
+        return;
+    
     unique_ptr<Scheduler> scheduler = config->createScheduler();
     BenchmarkMethod targetMethod = [&](){ scheduler->dispatchSimple(); };
 
