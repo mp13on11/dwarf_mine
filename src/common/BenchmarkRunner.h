@@ -21,14 +21,15 @@ public:
 
 private:
     typedef std::function<void()> BenchmarkMethod;
-    Configuration* config;
 
+    Configuration* config;
     size_t iterations;
     size_t warmUps;
     std::unique_ptr<ProblemStatement> fileProblem;
     std::unique_ptr<ProblemStatement> generatedProblem;
     std::unique_ptr<Scheduler> scheduler;
 
-    void benchmarkNodeset(const ProblemStatement& problem, BenchmarkMethod targetMethod) const;
     void run(BenchmarkMethod targetMethod) const;
+    void initializeMaster(const ProblemStatement& problem, const BenchmarkResult& nodeWeights = {{0, 1}}) const;
+    void finalizeMaster(const ProblemStatement& problem) const;
 };

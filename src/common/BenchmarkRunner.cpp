@@ -19,9 +19,11 @@ void BenchmarkRunner::benchmarkIndividualNodes() const
     {
         for (size_t i=0; i<MpiHelper::numberOfNodes(); ++i)
         {
-            scheduler->setNodeset({{i, 1}});
             BenchmarkMethod targetMethod = [&](){ scheduler->dispatchBenchmark(i); };
-            benchmarkNodeset(*generatedProblem, targetMethod);
+
+            initializeMaster(*generatedProblem, {{i, 1}});
+            run(targetMethod);
+            finalizeMaster(*generatedProblem);
         }
     }
     else
@@ -37,8 +39,9 @@ void BenchmarkRunner::runBenchmark(const BenchmarkResult& nodeWeights) const
 
     if (MpiHelper::isMaster())
     {
-        scheduler->setNodeset(nodeWeights);
-        benchmarkNodeset(*fileProblem, targetMethod);
+        initializeMaster(*fileProblem, nodeWeights);
+        run(targetMethod);
+        finalizeMaster(*fileProblem);
     }
     else
     {
@@ -49,15 +52,10 @@ void BenchmarkRunner::runBenchmark(const BenchmarkResult& nodeWeights) const
 void BenchmarkRunner::runElf() const
 {
     BenchmarkMethod targetMethod = [&](){ scheduler->dispatchSimple(); };
-    scheduler->setNodeset({{0, 0}});
-    benchmarkNodeset(*fileProblem, targetMethod);
-}
 
-void BenchmarkRunner::benchmarkNodeset(const ProblemStatement& problem, BenchmarkMethod targetMethod) const
-{
-    scheduler->provideData(problem);
+    initializeMaster(*fileProblem);
     run(targetMethod);
-    scheduler->outputData(problem);
+    finalizeMaster(*fileProblem);
 }
 
 void BenchmarkRunner::run(BenchmarkMethod targetMethod) const
@@ -70,4 +68,15 @@ void BenchmarkRunner::run(BenchmarkMethod targetMethod) const
     {
         targetMethod();
     }
+}
+
+void BenchmarkRunner::initializeMaster(const ProblemStatement& problem, const BenchmarkResult& nodeWeights) const
+{
+    scheduler->setNodeset(nodeWeights);
+    scheduler->provideData(problem);
+}
+
+void BenchmarkRunner::finalizeMaster(const ProblemStatement& problem) const
+{
+    scheduler->outputData(problem);
 }
