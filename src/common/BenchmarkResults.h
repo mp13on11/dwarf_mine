@@ -32,8 +32,7 @@ private:
     std::map<NodeId, Rating> _ratings;
 };
 
-std::ostream& operator<<(std::ostream& o, BenchmarkResult& results);
-std::istream& operator>>(std::istream& k, BenchmarkResult& results);
+std::ostream& operator<<(std::ostream& o, const BenchmarkResult& results);
 
 
 inline BenchmarkResult::BenchmarkResult()

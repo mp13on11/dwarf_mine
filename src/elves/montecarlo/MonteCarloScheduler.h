@@ -12,7 +12,7 @@ struct OthelloResult;
 class MonteCarloScheduler: public SchedulerTemplate<MonteCarloElf>
 {
 public:
-    MonteCarloScheduler(const std::function<ElfPointer()>& factory);
+    MonteCarloScheduler(const Communicator& communicator, const std::function<ElfPointer()>& factory);
     virtual ~MonteCarloScheduler() = default;
 
     virtual void provideData(std::istream& input);

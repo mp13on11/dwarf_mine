@@ -261,9 +261,9 @@ std::ostream& operator<<(std::ostream& s, const Configuration& c)
     return s;
 }
 
-unique_ptr<Scheduler> Configuration::createScheduler() const
+unique_ptr<Scheduler> Configuration::createScheduler(const Communicator& communicator) const
 {
-    auto scheduler = createSchedulerFactory()->createScheduler();
+    auto scheduler = createSchedulerFactory()->createScheduler(communicator);
     scheduler->configureWith(*this);
     return scheduler;
 }

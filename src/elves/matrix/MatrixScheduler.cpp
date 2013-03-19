@@ -16,8 +16,8 @@
 using namespace std;
 using MatrixHelper::MatrixPair;
 
-MatrixScheduler::MatrixScheduler(const function<ElfPointer()>& factory) :
-    SchedulerTemplate(factory)
+MatrixScheduler::MatrixScheduler(const Communicator& communicator, const function<ElfPointer()>& factory) :
+    SchedulerTemplate(communicator, factory)
 {
 }
 
@@ -91,6 +91,7 @@ Matrix<float> MatrixScheduler::dispatchAndReceive() const
     //MatrixSlicer slicer;
     MatrixSlicerSquarified slicer;
     //vector<MatrixSlice> sliceDefinitions = slicer.sliceAndDice(nodeSet, result.rows(), result.columns());
+    cout << "Nodeset, jetzt kommt es: " << nodeSet << endl;
     vector<MatrixSlice> sliceDefinitions = slicer.layout(nodeSet, result.rows(), result.columns());
     const MatrixSlice* masterSlice = distributeSlices(sliceDefinitions);
     if (masterSlice != nullptr)

@@ -11,11 +11,6 @@ Scheduler::~Scheduler()
 {
 }
 
-void Scheduler::setNodeset(const BenchmarkResult& benchmarkResult)
-{
-    nodeSet = benchmarkResult;
-}
-
 void Scheduler::provideData(const ProblemStatement& problem)
 {
 	if (problem.hasInput())

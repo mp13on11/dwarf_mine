@@ -32,9 +32,9 @@ typedef SchedulerFactory::FactoryFunction FactoryFunction;
 template<typename SchedulerType, typename ElfType>
 static FactoryFunction innerCreateFactory()
 {
-    return []()
+    return [](const Communicator& communicator)
     { 
-        return new SchedulerType([]()
+        return new SchedulerType(communicator, []()
             {
                 return new ElfType();
             }
@@ -132,7 +132,7 @@ SchedulerFactory::SchedulerFactory(const FactoryFunction& factory) :
 {
 }
 
-unique_ptr<Scheduler> SchedulerFactory::createScheduler() const
+unique_ptr<Scheduler> SchedulerFactory::createScheduler(const Communicator& communicator) const
 {
-    return unique_ptr<Scheduler>(factory());
+    return unique_ptr<Scheduler>(factory(communicator));
 }

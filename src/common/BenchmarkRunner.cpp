@@ -20,19 +20,18 @@ void BenchmarkRunner::benchmarkNode(const Communicator& communicator, Profiler& 
     if (!communicator.isValid())
         return;
 
-    unique_ptr<Scheduler> scheduler = config->createScheduler();
+    unique_ptr<Scheduler> scheduler = config->createScheduler(communicator);
     BenchmarkMethod targetMethod = [&](){ scheduler->dispatchBenchmark(Communicator::MASTER_RANK); };
 
-    if (MpiHelper::isMaster())
+    if (communicator.isMaster())
     {
-        scheduler->setNodeset({{Communicator::MASTER_RANK, 1}});
         scheduler->provideData(*generatedProblem);
 
         run(targetMethod, profiler);
         
         scheduler->outputData(*generatedProblem);
     }
-    else if (MpiHelper::rank() == -1)
+    else
     {
         run(targetMethod, profiler);
     }
@@ -43,17 +42,11 @@ void BenchmarkRunner::runBenchmark(const Communicator& communicator, Profiler& p
     if (!communicator.isValid())
         return;
     
-    unique_ptr<Scheduler> scheduler = config->createScheduler();
+    unique_ptr<Scheduler> scheduler = config->createScheduler(communicator);
     BenchmarkMethod targetMethod = [&](){ scheduler->dispatch(); };
 
-    if (MpiHelper::isMaster())
+    if (communicator.isMaster())
     {
-        BenchmarkResult nodeSet;
-        for (size_t i=0; i<communicator.size(); ++i)
-        {
-            nodeSet[i] = communicator.weights()[i];
-        }
-        scheduler->setNodeset(nodeSet);
         scheduler->provideData(*fileProblem);
 
         run(targetMethod, profiler);
@@ -71,10 +64,9 @@ void BenchmarkRunner::runElf(const Communicator& communicator, Profiler& profile
     if (!communicator.isValid())
         return;
     
-    unique_ptr<Scheduler> scheduler = config->createScheduler();
+    unique_ptr<Scheduler> scheduler = config->createScheduler(communicator);
     BenchmarkMethod targetMethod = [&](){ scheduler->dispatchSimple(); };
 
-    scheduler->setNodeset({{0, 1}});
     scheduler->provideData(*fileProblem);
 
     run(targetMethod, profiler);

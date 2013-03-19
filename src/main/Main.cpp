@@ -99,7 +99,7 @@ Communicator determineWeightedCommunicator(const BenchmarkRunner& runner, const 
         runner.benchmarkNode(subCommunicator, profiler);
         averageTimes.push_back(profiler.averageIterationTime());
     }
-    
+    cout << "Weight determination session completed" << endl;
     return Communicator(nodeWeightsFrom(averageTimes));
 }
 

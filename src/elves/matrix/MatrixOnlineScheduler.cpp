@@ -18,8 +18,8 @@ std::vector<MatrixSlice> MatrixOnlineScheduler::sliceDefinitions = std::vector<M
 std::vector<MatrixSlice>::iterator MatrixOnlineScheduler::currentSliceDefinition = MatrixOnlineScheduler::sliceDefinitions.begin();
 map<NodeId, bool> MatrixOnlineScheduler::finishedSlaves = map<NodeId, bool>();
 
-MatrixOnlineScheduler::MatrixOnlineScheduler(const function<ElfPointer()>& factory) :
-    MatrixScheduler(factory)
+MatrixOnlineScheduler::MatrixOnlineScheduler(const Communicator& communicator, const function<ElfPointer()>& factory) :
+    MatrixScheduler(communicator, factory)
 {
     if (MpiHelper::isMaster())
         for (size_t i = 1; i < MpiHelper::numberOfNodes(); ++i)

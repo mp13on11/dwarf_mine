@@ -1,6 +1,5 @@
 #pragma once
 
-#include "BenchmarkResults.h"
 #include "Configuration.h"
 #include <iosfwd>
 
@@ -13,19 +12,15 @@ public:
     Scheduler();
     virtual ~Scheduler() = 0;
 
-    void setNodeset(const BenchmarkResult& benchmarkResult);
-
     void provideData(const ProblemStatement& problem);
     void outputData(const ProblemStatement& problem);
 
     virtual void configureWith(const Configuration& config);
     virtual void dispatch() = 0;
     virtual void dispatchSimple() = 0;
-    virtual void dispatchBenchmark(NodeId node) = 0;
+    virtual void dispatchBenchmark(int node) = 0;
 
 protected:
-    BenchmarkResult nodeSet;
-
     virtual void generateData(const DataGenerationParameters& params) = 0;
     virtual void provideData(std::istream& input) = 0;
     virtual void outputData(std::ostream& output) = 0;

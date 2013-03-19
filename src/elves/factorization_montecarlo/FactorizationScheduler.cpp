@@ -12,8 +12,8 @@ using namespace std::chrono;
 
 const BigInt DEFAULT_PRODUCT(1649);
 
-FactorizationScheduler::FactorizationScheduler(const function<ElfPointer()>& factory) :
-    SchedulerTemplate(factory)
+FactorizationScheduler::FactorizationScheduler(const Communicator& communicator, const function<ElfPointer()>& factory) :
+    SchedulerTemplate(communicator, factory)
 {
 }
 

@@ -11,7 +11,7 @@ class MonteCarloFactorizationElf;
 class FactorizationScheduler : public SchedulerTemplate<MonteCarloFactorizationElf>
 {
 public:
-    FactorizationScheduler(const std::function<ElfPointer()>& factory);
+    FactorizationScheduler(const Communicator& communicator, const std::function<ElfPointer()>& factory);
 
     virtual void provideData(std::istream& input);
     virtual void outputData(std::ostream& output);

@@ -15,7 +15,7 @@ class MatrixSlice;
 class MatrixOnlineScheduler: public MatrixScheduler
 {
 public:
-    MatrixOnlineScheduler(const std::function<ElfPointer()>& factory);
+    MatrixOnlineScheduler(const Communicator& communicator, const std::function<ElfPointer()>& factory);
     virtual ~MatrixOnlineScheduler();
 
     virtual void configureWith(const Configuration& config);

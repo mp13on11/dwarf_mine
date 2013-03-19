@@ -20,8 +20,11 @@ const Player DEFAULT_PLAYER = Player::White;
 const size_t DEFAULT_SEED = 7337;
 const size_t DEFAULT_REITERATIONS = 1000U;
 
-MonteCarloScheduler::MonteCarloScheduler(const function<ElfPointer()>& factory) :
-    SchedulerTemplate(factory), _repetitions(DEFAULT_REITERATIONS), _localRepetitions(0U), _commonSeed(DEFAULT_SEED)
+MonteCarloScheduler::MonteCarloScheduler(const Communicator& communicator, const function<ElfPointer()>& factory) :
+    SchedulerTemplate(communicator, factory),
+    _repetitions(DEFAULT_REITERATIONS),
+    _localRepetitions(0U),
+    _commonSeed(DEFAULT_SEED)
 {
 }
 

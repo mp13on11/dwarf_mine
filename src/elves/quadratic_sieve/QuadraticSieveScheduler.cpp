@@ -55,10 +55,9 @@ inline BigInt arrayToBigInt(const SerializedBigInt& data)
     return result;
 }
 
-QuadraticSieveScheduler::QuadraticSieveScheduler(const std::function<ElfPointer()>& factory) :
-    SchedulerTemplate(factory)
+QuadraticSieveScheduler::QuadraticSieveScheduler(const Communicator& communicator, const std::function<ElfPointer()>& factory) :
+    SchedulerTemplate(communicator, factory)
 {
-
 }
 
 void QuadraticSieveScheduler::provideData(istream& input)

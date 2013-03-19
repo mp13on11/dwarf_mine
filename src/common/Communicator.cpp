@@ -41,12 +41,6 @@ void Communicator::broadcastWeights()
 Communicator Communicator::createSubCommunicator(initializer_list<int> notNecessarilyDistinctNewNodes) const
 {
     auto newNodes = distinctValues<int>(notNecessarilyDistinctNewNodes);
-    stringstream nodes;
-    for (auto n : newNodes)
-    {
-        nodes << " " << n;
-    }
-    cout << nodes.str() << endl;
 
     bool isIncluded = find(newNodes.begin(), newNodes.end(), rank()) != newNodes.end();
     int color = isIncluded ? 1 : MPI_UNDEFINED;
@@ -62,7 +56,7 @@ Communicator Communicator::createSubCommunicator(initializer_list<int> notNecess
     for (int nodeRank : newNodes)
     {
         newWeights.push_back(_weights[nodeRank]);
-        newWeightsSum += nodeRank;
+        newWeightsSum += _weights[nodeRank];
     }
     for(size_t i=0; i<newWeights.size(); i++)
     {

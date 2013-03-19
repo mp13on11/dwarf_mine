@@ -10,7 +10,7 @@ class QuadraticSieveElf;
 class QuadraticSieveScheduler : public SchedulerTemplate<QuadraticSieveElf>
 {
 public:
-    QuadraticSieveScheduler(const std::function<ElfPointer()>& factory);
+    QuadraticSieveScheduler(const Communicator& communicator, const std::function<ElfPointer()>& factory);
 
     virtual void provideData(std::istream& input);
     virtual void outputData(std::ostream& output);
