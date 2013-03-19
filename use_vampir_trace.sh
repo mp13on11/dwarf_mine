@@ -3,12 +3,24 @@
 
 usage()
 {
-echo "Usage: $0 yes|no path/to/build/CMakeCache.txt
+echo "Usage: $0 [yes|no] [path/to/build/CMakeCache.txt]
+         Or: $0 (implicit yes with ./build/CMakeCache.txt)
 
 Sets compilers to VampirTrace compiler wrappers and configures them with flags, or vice-versa."
 }
 
+USE=
+CACHE_FILE=
+CACHE_DIR=
+
+USE=$1
+if [ "$USE" != "yes" ] && [ "$USE" != "no" ]; then
+    USE="yes"
+fi
 CACHE_FILE=$2
+if [ "$CACHE_FILE" == "" ]; then
+    CACHE_FILE="./build/CMakeCache.txt"
+fi
 CACHE_DIR=${CACHE_FILE%*CMakeCache.txt}
 
 replace()
@@ -21,7 +33,7 @@ updateCmake()
     cmake $CACHE_DIR
 }
 
-if [ "$1" = "yes" ]; then
+if [ "$USE" = "yes" ]; then
     replace "CMAKE_CXX_COMPILER:FILEPATH=\/usr\/bin\/c++" "CMAKE_CXX_COMPILER:FILEPATH=\/usr\/local\/bin\/vtc++"
     updateCmake
     replace "CUDA_NVCC_EXECUTABLE:FILEPATH=\/usr\/local\/cuda\/bin\/nvcc" "CUDA_NVCC_EXECUTABLE:FILEPATH=\/usr\/local\/bin\/vtnvcc"
@@ -33,7 +45,7 @@ if [ "$1" = "yes" ]; then
     updateCmake
     echo "Done integrating VampirTrace configuration."                        
     exit 1
-elif [ "$1" = "no" ]; then
+elif [ "$USE" = "no" ]; then
     replace "CMAKE_CXX_COMPILER:FILEPATH=\/usr\/local\/bin\/vtc++" "CMAKE_CXX_COMPILER:FILEPATH=\/usr\/bin\/c++"
     updateCmake
     replace "CUDA_NVCC_EXECUTABLE:FILEPATH=\/usr\/local\/bin\/vtnvcc" "CUDA_NVCC_EXECUTABLE:FILEPATH=\/usr\/local\/cuda\/bin\/nvcc"
