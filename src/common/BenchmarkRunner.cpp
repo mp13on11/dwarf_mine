@@ -1,6 +1,7 @@
 #include "BenchmarkRunner.h"
 #include "MpiHelper.h"
 #include "Profiler.h"
+#include "Scheduler.h"
 #include "SchedulerFactory.h"
 
 using namespace std;
@@ -9,20 +10,23 @@ BenchmarkRunner::BenchmarkRunner(Configuration& config) :
         config(&config),
         iterations(config.iterations()), warmUps(config.warmUps()),
         fileProblem(config.createProblemStatement()),
-        generatedProblem(config.createGeneratedProblemStatement()),
-        scheduler(config.createScheduler())
+        generatedProblem(config.createGeneratedProblemStatement())
 {
 }
 
 void BenchmarkRunner::benchmarkNode(int node, Profiler& profiler) const
 {
+    unique_ptr<Scheduler> scheduler = config->createScheduler();
     BenchmarkMethod targetMethod = [&](){ scheduler->dispatchBenchmark(node); };
 
     if (MpiHelper::isMaster())
     {
-        initializeMaster(*generatedProblem, {{node, 1}});
+        scheduler->setNodeset({{node, 1}});
+        scheduler->provideData(*generatedProblem);
+
         run(targetMethod, profiler);
-        finalizeMaster(*generatedProblem);
+        
+        scheduler->outputData(*generatedProblem);
     }
     else if (MpiHelper::rank() == node)
     {
@@ -32,13 +36,17 @@ void BenchmarkRunner::benchmarkNode(int node, Profiler& profiler) const
 
 void BenchmarkRunner::runBenchmark(const BenchmarkResult& nodeWeights, Profiler& profiler) const
 {
+    unique_ptr<Scheduler> scheduler = config->createScheduler();
     BenchmarkMethod targetMethod = [&](){ scheduler->dispatch(); };
 
     if (MpiHelper::isMaster())
     {
-        initializeMaster(*fileProblem, nodeWeights);
+        scheduler->setNodeset(nodeWeights);
+        scheduler->provideData(*fileProblem);
+
         run(targetMethod, profiler);
-        finalizeMaster(*fileProblem);
+        
+        scheduler->outputData(*fileProblem);
     }
     else
     {
@@ -48,11 +56,15 @@ void BenchmarkRunner::runBenchmark(const BenchmarkResult& nodeWeights, Profiler&
 
 void BenchmarkRunner::runElf(Profiler& profiler) const
 {
+    unique_ptr<Scheduler> scheduler = config->createScheduler();
     BenchmarkMethod targetMethod = [&](){ scheduler->dispatchSimple(); };
 
-    initializeMaster(*fileProblem);
+    scheduler->setNodeset({{0, 1}});
+    scheduler->provideData(*fileProblem);
+
     run(targetMethod, profiler);
-    finalizeMaster(*fileProblem);
+    
+    scheduler->outputData(*fileProblem);
 }
 
 void BenchmarkRunner::run(BenchmarkMethod targetMethod, Profiler& profiler) const
@@ -72,15 +84,4 @@ void BenchmarkRunner::run(BenchmarkMethod targetMethod, Profiler& profiler) cons
     }
 
     profiler.endIterationBlock();
-}
-
-void BenchmarkRunner::initializeMaster(const ProblemStatement& problem, const BenchmarkResult& nodeWeights) const
-{
-    scheduler->setNodeset(nodeWeights);
-    scheduler->provideData(problem);
-}
-
-void BenchmarkRunner::finalizeMaster(const ProblemStatement& problem) const
-{
-    scheduler->outputData(problem);
 }

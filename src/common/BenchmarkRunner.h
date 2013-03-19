@@ -3,7 +3,6 @@
 #include "BenchmarkResults.h"
 #include "Configuration.h"
 #include "ProblemStatement.h"
-#include "Scheduler.h"
 
 #include <functional>
 #include <memory>
@@ -28,9 +27,6 @@ private:
     size_t warmUps;
     std::unique_ptr<ProblemStatement> fileProblem;
     std::unique_ptr<ProblemStatement> generatedProblem;
-    std::unique_ptr<Scheduler> scheduler;
 
     void run(BenchmarkMethod targetMethod, Profiler& profiler) const;
-    void initializeMaster(const ProblemStatement& problem, const BenchmarkResult& nodeWeights = {{0, 1}}) const;
-    void finalizeMaster(const ProblemStatement& problem) const;
 };
