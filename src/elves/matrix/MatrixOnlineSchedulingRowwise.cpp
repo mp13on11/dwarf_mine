@@ -14,13 +14,10 @@ vector<MatrixSlice> MatrixOnlineSchedulingRowwise::getSliceDefinitions(
         1);
 }
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-int MatrixOnlineSchedulingRowwise::getWorkAmountFor(const NodeId node)
+int MatrixOnlineSchedulingRowwise::getWorkAmountFor(const NodeId /* node */)
 {
     return 1;
 }
-#pragma GCC diagnostic pop
 
 void MatrixOnlineSchedulingRowwise::reset()
 {
