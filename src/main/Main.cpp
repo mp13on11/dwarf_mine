@@ -2,6 +2,7 @@
 #include "common/Configuration.h"
 #include "common/MpiGuard.h"
 #include "common/MpiHelper.h"
+#include "common/NullProfiler.h"
 
 #include <fstream>
 #include <iostream>
@@ -55,7 +56,8 @@ void silenceOutputStreams(bool keepErrorStreams = false)
 
 BenchmarkResult determineNodeWeights(const BenchmarkRunner& runner)
 {
-    runner.benchmarkIndividualNodes();
+    NullProfiler profiler;
+    runner.benchmarkIndividualNodes(profiler);
 
     BenchmarkResult result;
 
@@ -71,6 +73,7 @@ void benchmarkWith(Configuration& config)
 {
     BenchmarkRunner runner(config);
     BenchmarkResult nodeWeights;
+    NullProfiler profiler;
 
     ofstream timeFile;
 
@@ -87,7 +90,7 @@ void benchmarkWith(Configuration& config)
         if (MpiHelper::numberOfNodes() > 1)
             throw runtime_error("Process was told to run without MPI support, but was called via mpirun");
 
-        runner.runElf();
+        runner.runElf(profiler);
     }
     else
     {
@@ -110,7 +113,7 @@ void benchmarkWith(Configuration& config)
         if (!config.shouldSkipBenchmark())
         {
             cout << "Running benchmark" << endl;
-            runner.runBenchmark(nodeWeights);
+            runner.runBenchmark(nodeWeights, profiler);
         }
     }
 }
