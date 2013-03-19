@@ -3,6 +3,7 @@
 #include "common/MpiGuard.h"
 #include "common/MpiHelper.h"
 #include "common/NullProfiler.h"
+#include "common/TimingProfiler.h"
 
 #include <fstream>
 #include <iostream>
@@ -54,18 +55,35 @@ void silenceOutputStreams(bool keepErrorStreams = false)
     }
 }
 
+BenchmarkResult nodeWeightsFrom(const BenchmarkResult& averageExecutionTimes)
+{
+    Rating sum = 0;
+    for (const auto& timePair : averageExecutionTimes)
+    {
+        sum += timePair.second;
+    }
+
+    BenchmarkResult weights;
+    for (const auto& timePair : averageExecutionTimes)
+    {
+        weights[timePair.first] = timePair.second / sum;
+    }
+
+    return weights;
+}
+
 BenchmarkResult determineNodeWeights(const BenchmarkRunner& runner)
 {
-    NullProfiler profiler;
-    BenchmarkResult result;
+    TimingProfiler profiler;
+    BenchmarkResult averageTimes;
     
     for (size_t i=0; i<MpiHelper::numberOfNodes(); ++i)
     {
         runner.benchmarkNode(i, profiler);
-        result[i] = 1.0 / MpiHelper::numberOfNodes();
+        averageTimes[i] = profiler.averageIterationTime().count();
     }
 
-    return result;
+    return nodeWeightsFrom(averageTimes);
 }
 
 void benchmarkWith(Configuration& config)

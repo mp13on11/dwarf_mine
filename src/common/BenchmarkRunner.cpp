@@ -16,17 +16,16 @@ BenchmarkRunner::BenchmarkRunner(Configuration& config) :
 
 void BenchmarkRunner::benchmarkNode(int node, Profiler& profiler) const
 {
+    BenchmarkMethod targetMethod = [&](){ scheduler->dispatchBenchmark(node); };
+
     if (MpiHelper::isMaster())
     {
-        BenchmarkMethod targetMethod = [&](){ scheduler->dispatchBenchmark(node); };
-
         initializeMaster(*generatedProblem, {{node, 1}});
         run(targetMethod, profiler);
         finalizeMaster(*generatedProblem);
     }
     else if (MpiHelper::rank() == node)
     {
-        BenchmarkMethod targetMethod = [&](){ scheduler->dispatchBenchmark(node); };
         run(targetMethod, profiler);
     }
 }
