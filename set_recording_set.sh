@@ -25,6 +25,7 @@ setRecordingSet()
 export VT_MODE=STAT:TRACE
 export VT_STAT_PROPS=ALL
 export VT_MAX_FLUSHES=0
+export VT_GNU_NMFILE=/tmp/dwarf_mine.symbols
 
 if [ "$2" != "" ]; then
     echo "Setting VampirTrace buffer size to $2 MB."
