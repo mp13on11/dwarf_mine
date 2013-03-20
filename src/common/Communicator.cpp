@@ -31,10 +31,14 @@ Communicator::Communicator(const MPI::Intracomm& communicator, const vector<doub
     _weights(normalize(weights))
 {
     validateWeights();
+    broadcastWeights();
 }
 
 void Communicator::broadcastWeights()
 {
+    if (!isValid())
+        return;
+    
     _communicator.Bcast(_weights.data(), _weights.size(), MPI::DOUBLE, MASTER_RANK);
 }
 
