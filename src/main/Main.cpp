@@ -139,11 +139,8 @@ void benchmarkWith(const Configuration& config)
             throw runtime_error("Failed to open file \"" + config.timeOutputFilename() + "\"");
     }
 
-    if(config.shouldRunWithoutMPI())
+    if(communicator.size() == 1)
     {
-        if (communicator.size() > 1)
-            throw runtime_error("Process was told to run without MPI support, but was called via mpirun");
-
         runner.runBenchmark(communicator, profiler);
         printResults(communicator, profiler, timeFile);
     }
