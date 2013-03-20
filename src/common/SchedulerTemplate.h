@@ -23,7 +23,6 @@ protected:
 
     virtual void doDispatch() = 0;
     virtual void doSimpleDispatch() = 0;
-    virtual void doBenchmarkDispatch(int node) = 0;
     virtual bool hasData() const = 0;
     ElfType& elf() const;
 
@@ -79,10 +78,6 @@ void SchedulerTemplate<ElfType>::performDispatch()
     if (communicator.isWorld() && communicator.size() == 1)
     {
         doSimpleDispatch();
-    }
-    else if (!communicator.isWorld() && communicator.size() <= 2) // Master node and up to one slave node
-    {
-        doBenchmarkDispatch(communicator.size() - 1);
     }
     else
     {

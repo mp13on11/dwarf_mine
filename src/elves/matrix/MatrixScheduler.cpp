@@ -152,9 +152,3 @@ MatrixPair MatrixScheduler::sliceMatrices(const MatrixSlice& definition) const
     Matrix<float> slicedRight = definition.extractSlice(right, false);
     return { move(slicedLeft), move(slicedRight) };
 }
-
-void MatrixScheduler::doBenchmarkDispatch(int /*node*/)
-{
-    doDispatch();
-}    
-

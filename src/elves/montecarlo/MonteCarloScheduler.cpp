@@ -71,11 +71,6 @@ void MonteCarloScheduler::doSimpleDispatch()
     calculate();
 }
 
-void MonteCarloScheduler::doBenchmarkDispatch(int /* node */)
-{
-    doDispatch();
-}
-
 void MonteCarloScheduler::doDispatch()
 {
     distributeInput();

@@ -23,7 +23,6 @@ protected:
     virtual bool hasData() const;
     virtual void doDispatch();
     virtual void doSimpleDispatch();
-    virtual void doBenchmarkDispatch(int node);
 
     OthelloState _state;
     OthelloResult _result;
