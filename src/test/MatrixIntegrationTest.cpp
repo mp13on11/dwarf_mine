@@ -82,6 +82,7 @@ pid_t MatrixIntegrationTest::spawnChildProcess(
     pid_t pid = fork();
     if(pid == 0) // child process
     {
+        bool usesOnlineScheduling = schedulingStrategy != "";
         execl(MPIRUN_PATH,
             MPIRUN_PATH,
             "-n", boost::lexical_cast<string>(NUM_NODES).c_str(),
@@ -95,6 +96,7 @@ pid_t MatrixIntegrationTest::spawnChildProcess(
             "-o", OUTPUT_FILENAME,
             "--import_configuration", CONF_FILENAME,
             "-c", matrixCategory,
+            (usesOnlineScheduling ? "--mpi_thread_multiple" : ""),
             (schedulingStrategy != "" ? "-s" : ""),
             (schedulingStrategy != "" ? scheduling : ""),
             nullptr
