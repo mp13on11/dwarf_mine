@@ -172,6 +172,7 @@ options_description Configuration::createDescription()
         ("common_rows_columns",  value<size_t>()->default_value(500), "Matrix: Number of left columns / right rows to be generated (overridden for benchmark by input file)")
         ("right_columns",        value<size_t>()->default_value(500), "Matrix: Number of right columns to be generated (overridden for benchmark by input file)")
         ("scheduling,s",         value<string>()->default_value("row-wise"), schedulingStrategiesDescription.c_str())
+        ("mpi_thread_multiple",  "Initialize MPI with thread multiple support.")
         ("left_digits",          value<size_t>()->default_value(8), "QuadraticSieve: Digits for product's left operand")
         ("right_digits",         value<size_t>()->default_value(8), "QuadraticSieve: Digits for product's right operand")
         ("time_output",          value<string>()->default_value("/dev/null"), "Output file for time measurements")
@@ -229,6 +230,11 @@ size_t Configuration::rightMatrixColumns() const
 string Configuration::schedulingStrategy() const
 {
     return variables["scheduling"].as<string>();
+}
+
+bool Configuration::mpiThreadMultiple() const
+{
+    return variables.count("mpi_thread_multiple") > 0;
 }
 
 size_t Configuration::monteCarloTrials() const
