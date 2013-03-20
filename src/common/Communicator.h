@@ -6,12 +6,14 @@
 class Communicator
 {
 public:
+    struct Node;
+
     static const int MASTER_RANK;
 
     Communicator();
     Communicator(const std::vector<double>& weights);
 
-    Communicator createSubCommunicator(std::initializer_list<int> newNodes) const;
+    Communicator createSubCommunicator(std::initializer_list<Node> newNodes) const;
 
     bool isValid() const;
     bool isWorld() const;
@@ -31,6 +33,20 @@ private:
 
     void validateWeightCount() const;
     void broadcastWeights();
+    std::vector<double> calculateNewWeightsFor(const std::vector<Node>& newNodes) const;
+};
+
+struct Communicator::Node
+{
+    int rank;
+    double weight;
+
+    Node(int rank);
+    Node(int rank, double weight);
+
+    bool operator!=(const Communicator::Node &other) const;
+    bool operator==(const Communicator::Node &other) const;
+    bool operator<(const Communicator::Node &other) const;
 };
 
 inline MPI::Intracomm* Communicator::operator->() const
@@ -71,4 +87,29 @@ inline double Communicator::weight() const
 inline std::vector<double> Communicator::weights() const
 {
     return _weights;
+}
+
+inline Communicator::Node::Node(int rank)
+    : rank(rank), weight(1.0)
+{
+}
+
+inline Communicator::Node::Node(int rank, double weight)
+    : rank(rank), weight(weight)
+{
+}
+
+inline bool Communicator::Node::operator!=(const Communicator::Node &other) const
+{
+    return !(*this == other);
+}
+
+inline bool Communicator::Node::operator==(const Communicator::Node &other) const
+{
+    return rank == other.rank;
+}
+
+inline bool Communicator::Node::operator<(const Communicator::Node &other) const
+{
+    return rank < other.rank;
 }

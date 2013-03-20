@@ -38,11 +38,11 @@ void Communicator::broadcastWeights()
     _communicator.Bcast(_weights.data(), _weights.size(), MPI::DOUBLE, MASTER_RANK);
 }
 
-Communicator Communicator::createSubCommunicator(initializer_list<int> notNecessarilyDistinctNewNodes) const
+Communicator Communicator::createSubCommunicator(initializer_list<Node> notNecessarilyDistinctNewNodes) const
 {
-    auto newNodes = distinctValues<int>(notNecessarilyDistinctNewNodes);
+    auto newNodes = distinctValues<Node>(notNecessarilyDistinctNewNodes);
 
-    bool isIncluded = find(newNodes.begin(), newNodes.end(), rank()) != newNodes.end();
+    bool isIncluded = find(newNodes.begin(), newNodes.end(), Node(rank())) != newNodes.end();
     int color = isIncluded ? 1 : MPI_UNDEFINED;
     auto newMPICommunicator = _communicator.Split(color, 0);
 
@@ -51,18 +51,29 @@ Communicator Communicator::createSubCommunicator(initializer_list<int> notNecess
         return Communicator(newMPICommunicator, {}); 
     }
 
+    return Communicator(newMPICommunicator, calculateNewWeightsFor(newNodes)); 
+}
+
+vector<double> Communicator::calculateNewWeightsFor(const vector<Node>& newNodes) const
+{
     vector<double> newWeights;
     double newWeightsSum = 0;
-    for (int nodeRank : newNodes)
+
+    for (Node node : newNodes)
     {
-        newWeights.push_back(_weights[nodeRank]);
-        newWeightsSum += _weights[nodeRank];
+        newWeights.push_back(_weights[node.rank] * node.weight);
+        newWeightsSum += newWeights.back();
     }
+
+    if (newWeightsSum == 0)
+        return newWeights;
+
     for(size_t i=0; i<newWeights.size(); i++)
     {
         newWeights[i] /= newWeightsSum;
     }
-    return Communicator(newMPICommunicator, newWeights); 
+
+    return newWeights;
 }
 
 void Communicator::validateWeightCount() const

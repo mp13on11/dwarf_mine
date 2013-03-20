@@ -88,6 +88,23 @@ vector<double> nodeWeightsFrom(const vector<microseconds>& averageExecutionTimes
     return weights;
 }
 
+Communicator createSubCommunicatorFor(const Communicator& communicator, int rank)
+{
+    if (rank == Communicator::MASTER_RANK)
+    {
+        return communicator.createSubCommunicator({
+                Communicator::Node(rank, 1.0)
+            });
+    }
+    else
+    {
+        return communicator.createSubCommunicator({
+                Communicator::Node(Communicator::MASTER_RANK, 0.0),
+                Communicator::Node(rank, 1.0)
+            });
+    }
+}
+
 Communicator determineWeightedCommunicator(const BenchmarkRunner& runner, const Communicator& unweightedCommunicator)
 {
     TimingProfiler profiler;
@@ -97,9 +114,7 @@ Communicator determineWeightedCommunicator(const BenchmarkRunner& runner, const 
 
     for (size_t i=0; i<unweightedCommunicator.size(); ++i)
     {
-        Communicator subCommunicator = unweightedCommunicator.createSubCommunicator(
-                {Communicator::MASTER_RANK*1, static_cast<int>(i)}
-            );
+        Communicator subCommunicator = createSubCommunicatorFor(unweightedCommunicator, i);
         runner.runBenchmark(subCommunicator, profiler);
         averageTimes.push_back(profiler.averageIterationTime());
 
