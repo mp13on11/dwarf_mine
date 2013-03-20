@@ -6,9 +6,11 @@
 #include <cmath>
 #include <cstring>
 #include <cuda-utils/ErrorHandling.h>
+#include <future>
 
 using namespace std;
 
+size_t NUMBER_OF_STREAMS = 16;
 size_t NUMBER_OF_BLOCKS = 64;
 
 void initialize(const OthelloState& state, vector<Field>& aggregatedPlayfields, vector<OthelloResult>& aggregatedResults)
@@ -37,113 +39,100 @@ OthelloResult CudaMonteCarloElf::getBestMoveFor(OthelloState& state, size_t reit
 
 OthelloResult CudaMonteCarloElf::getBestMoveForMultipleStream(OthelloState& state, size_t reiterations, size_t nodeId, size_t commonSeed)
 {
-    cudaStream_t stream1, stream2;
-    CudaUtils::checkError(cudaStreamCreate(&stream1));
-    CudaUtils::checkError(cudaStreamCreate(&stream2));
+    
+    vector<OthelloResult> collectedChildResults;
+    vector<future<vector<OthelloResult>>> streamResults;
 
-    vector<Field> aggregatedChildStatePlayfields1;
-    vector<Field> aggregatedChildStatePlayfields2;
-    vector<OthelloResult> aggregatedChildResults1;
-    vector<OthelloResult> aggregatedChildResults2;
-    initialize(state, aggregatedChildStatePlayfields1, aggregatedChildResults1);
-    initialize(state, aggregatedChildStatePlayfields2, aggregatedChildResults2);
-
-    vector<size_t> seeds1;
-    vector<size_t> seeds2;
-    for (size_t i = 0; i < NUMBER_OF_BLOCKS; ++i)
+    for (size_t currentStreamId = 0; currentStreamId < NUMBER_OF_STREAMS; ++currentStreamId)
     {
-        seeds1.push_back(OthelloHelper::generateUniqueSeed(nodeId, pow(2, i), commonSeed));
-        seeds2.push_back(OthelloHelper::generateUniqueSeed(nodeId, pow(2, i) + 1, commonSeed));
+        streamResults.push_back(async(launch::async, [=, &state, &reiterations, &nodeId, &commonSeed]() -> vector<OthelloResult> {
+            cudaStream_t stream;
+            CudaUtils::checkError(cudaStreamCreate(&stream));
+
+            vector<Field> childPlayfields;
+            vector<OthelloResult> childResults;
+            initialize(state, childPlayfields, childResults);
+
+            vector<size_t> seeds;
+            for (size_t i = 0; i < NUMBER_OF_BLOCKS; ++i)
+            {
+                seeds.push_back(OthelloHelper::generateUniqueSeed(nodeId, NUMBER_OF_STREAMS * NUMBER_OF_BLOCKS * i + currentStreamId , commonSeed));
+            }
+            size_t* cudaSeeds;
+            CudaUtils::checkError(cudaMalloc(&cudaSeeds, sizeof(size_t) * seeds.size()));
+            Field *cudaPlayfields;
+            CudaUtils::checkError(cudaMalloc(&cudaPlayfields, sizeof(Field) * childPlayfields.size()));
+
+            OthelloResult *cudaResults;
+            CudaUtils::checkError(cudaMalloc(&cudaResults, sizeof(OthelloResult) * childResults.size()));
+
+            size_t *hostSeeds;
+            CudaUtils::checkError(cudaMallocHost(&hostSeeds, sizeof(size_t) * seeds.size()));
+            // copy to pinned memory
+            copy(seeds.data(), seeds.data() + seeds.size(), hostSeeds);
+            CudaUtils::checkError(cudaMemcpyAsync(cudaSeeds, hostSeeds, sizeof(size_t) * seeds.size(), cudaMemcpyHostToDevice, stream));
+            
+            Field *hostPlayfields;
+            CudaUtils::checkError(cudaMallocHost(&hostPlayfields, sizeof(Field) * childPlayfields.size()));
+            // copy to pinned memory
+            copy(childPlayfields.data(), childPlayfields.data() + childPlayfields.size(), hostPlayfields);
+
+            CudaUtils::checkError(cudaMemcpyAsync(cudaPlayfields, hostPlayfields, sizeof(Field) * childPlayfields.size(), cudaMemcpyHostToDevice, stream));
+
+            OthelloResult *hostResults;
+            CudaUtils::checkError(cudaMallocHost(&hostResults, sizeof(OthelloResult) * childResults.size()));
+            
+            copy(childResults.data(), childResults.data() + childResults.size(), hostResults);
+            
+            CudaUtils::checkError(cudaMemcpyAsync(cudaResults, hostResults, sizeof(OthelloResult) * childResults.size(), cudaMemcpyHostToDevice, stream));
+            reiterations = 2;
+            gameSimulationStreamed(NUMBER_OF_BLOCKS, size_t(ceil(reiterations * 1.0 / NUMBER_OF_STREAMS)), cudaSeeds, childResults.size(), cudaPlayfields, state.getCurrentEnemy(), cudaResults, stream);
+
+            CudaUtils::checkError(cudaMemcpyAsync(hostResults, cudaResults, sizeof(OthelloResult) * childResults.size(), cudaMemcpyDeviceToHost, stream));
+            
+            CudaUtils::checkError(cudaStreamSynchronize(stream));
+
+            copy(hostResults, hostResults + childResults.size(), childResults.data());
+
+            cudaFreeHost(hostResults);
+            cudaFreeHost(hostPlayfields);
+            cudaFreeHost(hostSeeds);
+            cudaFree(cudaSeeds);
+            cudaFree(cudaResults);
+            cudaFree(cudaPlayfields);    
+            return childResults;
+        }));
     }
-    //CudaUtils::StreamedMemory<size_t> cudaSeeds1(seeds1.size());
-    //CudaUtils::StreamedMemory<size_t> cudaSeeds2(seeds2.size());
-    size_t *cudaSeeds1, *cudaSeeds2;
-    CudaUtils::checkError(cudaMalloc(&cudaSeeds1, sizeof(size_t) * seeds1.size()));
-    CudaUtils::checkError(cudaMalloc(&cudaSeeds2, sizeof(size_t) * seeds2.size()));
-
-    //CudaUtils::StreamedMemory<Field> cudaPlayfields1(aggregatedChildStatePlayfields1.size());
-    //CudaUtils::StreamedMemory<Field> cudaPlayfields2(aggregatedChildStatePlayfields2.size());
-    Field *cudaPlayfields1, *cudaPlayfields2;
-    CudaUtils::checkError(cudaMalloc(&cudaPlayfields1, sizeof(Field) * aggregatedChildStatePlayfields1.size()));
-    CudaUtils::checkError(cudaMalloc(&cudaPlayfields2, sizeof(Field) * aggregatedChildStatePlayfields2.size()));
-    // CudaUtils::StreamedMemory<OthelloResult> cudaResults1(aggregatedChildResults1.size());
-    // CudaUtils::StreamedMemory<OthelloResult> cudaResults2(aggregatedChildResults2.size());
-    OthelloResult *cudaResults1, *cudaResults2;
-    CudaUtils::checkError(cudaMalloc(&cudaResults1, sizeof(OthelloResult) * aggregatedChildResults1.size()));
-    CudaUtils::checkError(cudaMalloc(&cudaResults2, sizeof(OthelloResult) * aggregatedChildResults2.size()));
-
-    // cudaSeeds1.transferFrom(seeds1.data());
-    // cudaSeeds2.transferFrom(seeds2.data());
-    size_t *hostSeeds1, *hostSeeds2;
-    CudaUtils::checkError(cudaMallocHost(&hostSeeds1, sizeof(size_t) * seeds1.size()));
-    CudaUtils::checkError(cudaMallocHost(&hostSeeds2, sizeof(size_t) * seeds2.size()));
-    copy(seeds1.data(), seeds1.data() + seeds1.size(), hostSeeds1);
-    copy(seeds2.data(), seeds2.data() + seeds2.size(), hostSeeds2);
-    CudaUtils::checkError(cudaMemcpyAsync(cudaSeeds1, hostSeeds1, sizeof(size_t) * seeds1.size(), cudaMemcpyHostToDevice, stream1));
-    CudaUtils::checkError(cudaMemcpyAsync(cudaSeeds2, hostSeeds2, sizeof(size_t) * seeds2.size(), cudaMemcpyHostToDevice, stream2));
-    // cudaPlayfields1.transferFrom(aggregatedChildStatePlayfields1.data());
-    // cudaPlayfields2.transferFrom(aggregatedChildStatePlayfields2.data());
-
-    Field *hostPlayfields1, *hostPlayfields2;
-    CudaUtils::checkError(cudaMallocHost(&hostPlayfields1, sizeof(Field) * aggregatedChildStatePlayfields1.size()));
-    CudaUtils::checkError(cudaMallocHost(&hostPlayfields2, sizeof(Field) * aggregatedChildStatePlayfields2.size()));
-    copy(aggregatedChildStatePlayfields1.data(), aggregatedChildStatePlayfields1.data() + aggregatedChildStatePlayfields1.size(), hostPlayfields1);
-    copy(aggregatedChildStatePlayfields2.data(), aggregatedChildStatePlayfields2.data() + aggregatedChildStatePlayfields2.size(), hostPlayfields2);
-    CudaUtils::checkError(cudaMemcpyAsync(cudaPlayfields1, hostPlayfields1, sizeof(Field) * aggregatedChildStatePlayfields1.size(), cudaMemcpyHostToDevice, stream1));
-    CudaUtils::checkError(cudaMemcpyAsync(cudaPlayfields2, hostPlayfields2, sizeof(Field) * aggregatedChildStatePlayfields2.size(), cudaMemcpyHostToDevice, stream2));
-    // cudaResults1.transferFrom(aggregatedChildResults1.data());
-    // cudaResults2.transferFrom(aggregatedChildResults2.data());
-
-    OthelloResult *hostResults1, *hostResults2;
-    CudaUtils::checkError(cudaMallocHost(&hostResults1, sizeof(OthelloResult) * aggregatedChildResults1.size()));
-    CudaUtils::checkError(cudaMallocHost(&hostResults2, sizeof(OthelloResult) * aggregatedChildResults2.size()));
-    copy(aggregatedChildResults1.data(), aggregatedChildResults1.data() + aggregatedChildResults1.size(), hostResults1);
-    copy(aggregatedChildResults2.data(), aggregatedChildResults2.data() + aggregatedChildResults2.size(), hostResults2);
-    CudaUtils::checkError(cudaMemcpyAsync(cudaResults1, hostResults1, sizeof(OthelloResult) * aggregatedChildResults1.size(), cudaMemcpyHostToDevice, stream1));
-    CudaUtils::checkError(cudaMemcpyAsync(cudaResults2, hostResults2, sizeof(OthelloResult) * aggregatedChildResults2.size(), cudaMemcpyHostToDevice, stream2));
-    
-    gameSimulationStreamed(NUMBER_OF_BLOCKS, size_t(ceil(reiterations / 2.0)), cudaSeeds1, aggregatedChildResults1.size(), cudaPlayfields1, state.getCurrentEnemy(), cudaResults1, stream1);
-    gameSimulationStreamed(NUMBER_OF_BLOCKS, size_t(ceil(reiterations / 2.0)), cudaSeeds2, aggregatedChildResults2.size(), cudaPlayfields2, state.getCurrentEnemy(), cudaResults2, stream2);
-
-    // cudaResults1.transferTo(aggregatedChildResults1.data());
-    // cudaResults2.transferTo(aggregatedChildResults2.data());
-    
-    CudaUtils::checkError(cudaStreamSynchronize(stream1));
-    CudaUtils::checkError(cudaStreamSynchronize(stream2));
-    
-    cudaMemcpyAsync(hostResults1, cudaResults1, sizeof(OthelloResult) * aggregatedChildResults1.size(), cudaMemcpyDeviceToHost, stream1);
-    cudaMemcpyAsync(hostResults2, cudaResults2, sizeof(OthelloResult) * aggregatedChildResults2.size(), cudaMemcpyDeviceToHost, stream2);
-    
     cudaDeviceSynchronize();
-    CudaUtils::checkState();
-    copy(hostResults1, hostResults1 + aggregatedChildResults1.size(), aggregatedChildResults1.data());
-    copy(hostResults2, hostResults2 + aggregatedChildResults2.size(), aggregatedChildResults2.data());
-
-
-    // CudaUtils::checkError(cudaMemcpy(cudaResults1, aggregatedChildResults1.data(), sizeof(OthelloResult) * aggregatedChildResults1.size(), cudaMemcpyDeviceToHost));
-    // CudaUtils::checkError(cudaMemcpy(cudaResults2, aggregatedChildResults2.data(), sizeof(OthelloResult) * aggregatedChildResults2.size(), cudaMemcpyDeviceToHost));
-    // invert results since they are calculated for the enemy player
-    OthelloResult worstEnemyResult;
+    for (auto& future : streamResults)
+    {
+        for (const auto& result : future.get())
+        {
+            collectedChildResults.push_back(result);
+        }
+    }
 
     vector<OthelloResult> aggregatedChildResults;
-    for (auto& result: aggregatedChildResults1)
+    for (auto& result: collectedChildResults)
     {
-        aggregatedChildResults.push_back(result);
-        //cout << "Stream 1 {" << result.x << ", "<<result.y<<"}: "<<result.wins<<"/"<<result.visits<<endl;
-    }
-    for (auto& result: aggregatedChildResults2)
-    {
-        //cout << "Stream 2 {" << result.x << ", "<<result.y<<"}: "<<result.wins<<"/"<<result.visits<<endl;
+        //cout << "Stream {" << result.x << ", "<<result.y<<"}: "<<result.wins<<"/"<<result.visits<<endl;
+        bool existed = false;
         for (auto& aggregatedResult : aggregatedChildResults)
         {
             if (aggregatedResult.x == result.x && aggregatedResult.y == result.y)
             {
                 aggregatedResult.visits += result.visits;
                 aggregatedResult.wins += result.wins;
+                existed = true;
+                break;
             }
-            break;
+        }
+        if (!existed)
+        {
+            aggregatedChildResults.push_back(result);
         }
     }
+    OthelloResult worstEnemyResult;
 
     for (auto& result : aggregatedChildResults)
     {
