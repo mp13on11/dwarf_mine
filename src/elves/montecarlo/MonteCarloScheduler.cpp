@@ -73,16 +73,15 @@ void MonteCarloScheduler::doSimpleDispatch()
 
 void MonteCarloScheduler::doDispatch(BenchmarkResult nodeSet)
 {
+    distributeInput();
+    calculate();
+
     if (communicator.isMaster())
     {
-        distributeInput(nodeSet);
-        calculate();
         collectResults(nodeSet);
     }
     else
     {
-        collectInput(nodeSet);
-        calculate();
         gatherResults(nodeSet);
     }
 }
@@ -176,57 +175,46 @@ vector<OthelloResult> MonteCarloScheduler::gatherResults(BenchmarkResult nodeSet
     return results;
 }
 
-void MonteCarloScheduler::collectInput(BenchmarkResult /*nodeSet*/)
+void MonteCarloScheduler::distributeInput()
 {
-    unsigned long parameters[] = {0, 0, 0};
-    communicator->Recv(parameters, 3, MPI::UNSIGNED_LONG, Communicator::MASTER_RANK, 0);
-
-    size_t bufferSize = (size_t) parameters[0];
-    _commonSeed =       (size_t) parameters[1];
-    _localRepetitions = (size_t) parameters[2];
-
-    Playfield playfield(bufferSize);
-
-    auto MPI_FIELD = MPI::INT;
-    communicator->Recv(playfield.data(), bufferSize, MPI_FIELD, Communicator::MASTER_RANK, 0);
-
-    _state = OthelloState(playfield, Player::White);
+    size_t bufferSize = distributeCommonParameters();
+    distributePlayfield(bufferSize);
 }
 
-void MonteCarloScheduler::distributeInput(BenchmarkResult nodeSet)
+size_t MonteCarloScheduler::distributeCommonParameters()
 {
     size_t bufferSize = _state.playfieldSideLength() * _state.playfieldSideLength();
-    vector<NodeRating> ratings;
-    Rating ratingSum;
-    tie(ratings, ratingSum) = weightRatings(nodeSet);
+    unsigned long commonParameters[] = {bufferSize, _commonSeed, _repetitions};
 
-    auto MPI_FIELD = MPI::INT;
-    const NodeRating* masterRating = nullptr;
-    for (const auto& rating : ratings)
+    communicator->Bcast(commonParameters, 3, MPI::UNSIGNED_LONG, Communicator::MASTER_RANK);
+
+    bufferSize = commonParameters[0];
+    _commonSeed = commonParameters[1];
+    _repetitions = commonParameters[2];
+    _localRepetitions = _repetitions * communicator.weight();
+
+    return bufferSize;
+}
+
+void MonteCarloScheduler::distributePlayfield(size_t bufferSize)
+{
+    Playfield playfield;
+
+    if (communicator.isMaster())
     {
-        if (rating.first != Communicator::MASTER_RANK)
-        {
-            unsigned long parameters[] = { 
-                bufferSize, 
-                _commonSeed, 
-                (size_t)round(_repetitions * rating.second / ratingSum) 
-            };
-            communicator->Send(parameters, 3, MPI::UNSIGNED_LONG, rating.first, 0);
-            communicator->Send(_state.playfieldBuffer(), bufferSize, MPI_FIELD, rating.first, 0);
-        }
-        else
-        {
-            masterRating = &rating;
-        }
-    }
-    if (masterRating != nullptr)
-    {
-        _localRepetitions = (size_t)(_repetitions * masterRating->second / ratingSum);
+        playfield = Playfield(
+                _state.playfieldBuffer(), _state.playfieldBuffer() + bufferSize
+            );
     }
     else
     {
-        _localRepetitions = 0;
+        playfield = Playfield(bufferSize);
     }
+
+    auto MPI_FIELD = MPI::INT;
+    communicator->Bcast(playfield.data(), bufferSize, MPI_FIELD, Communicator::MASTER_RANK);
+
+    _state = OthelloState(playfield, Player::White);
 }
 
 
