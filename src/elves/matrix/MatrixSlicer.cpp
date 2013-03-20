@@ -34,7 +34,7 @@ size_t MatrixSlicer::determinePivot(size_t rowsOrCols) const
 
 size_t MatrixSlicer::processRating(size_t y, size_t x, size_t rows, size_t cols, bool colWise) const
 {
-    NodeId processor = ratings.front().first;
+    int processor = ratings.front().first;
     size_t pivot = determinePivot(colWise ? cols : rows);
     
     if (colWise)

@@ -1,4 +1,5 @@
 #include "MatrixHelper.h"
+#include "common/Communicator.h"
 #include "Matrix.h"
 #include "MismatchedMatricesException.h"
 
@@ -8,7 +9,6 @@
 #include <iostream>
 #include <sstream>
 #include <stdexcept>
-#include <mpi.h>
 
 using namespace std;
 
@@ -17,31 +17,31 @@ namespace MatrixHelper
     static void fillMatrixFromStream(Matrix<float>& matrix, istream& stream);
     static vector<float> getValuesIn(const string& line);
 
-    int receiveWorkAmountFrom(const NodeId node)
+    int receiveWorkAmountFrom(const Communicator& communicator, const int node)
     {
         int amount;
-        MPI::COMM_WORLD.Recv(&amount, 1, MPI::INT, node, 0);
+        communicator->Recv(&amount, 1, MPI::INT, node, 0);
         return amount;
     }
 
-    void sendWorkAmountTo(const NodeId node, const int amount)
+    void sendWorkAmountTo(const Communicator& communicator, const int node, const int amount)
     {
-        MPI::COMM_WORLD.Send(&amount, 1, MPI::INT, node, 0);
+        communicator->Send(&amount, 1, MPI::INT, node, 0);
     }
 
-    void requestNextSlices(NodeId node)
+    void requestNextSlices(const Communicator& communicator, int node)
     {
-        MPI::COMM_WORLD.Send(&node, 1, MPI::INT, 0, MatrixHelper::TAG_REQUEST_SLICE);
+        communicator->Send(&node, 1, MPI::INT, 0, MatrixHelper::TAG_REQUEST_SLICE);
     }
 
-    NodeId waitForSlicesRequest()
+    int waitForSlicesRequest(const Communicator& communicator)
     {
         int nodeId;
-        MPI::COMM_WORLD.Recv(&nodeId, 1, MPI::INT, MPI::ANY_SOURCE, MatrixHelper::TAG_REQUEST_SLICE);
-        return NodeId(nodeId);
+        communicator->Recv(&nodeId, 1, MPI::INT, MPI::ANY_SOURCE, MatrixHelper::TAG_REQUEST_SLICE);
+        return nodeId;
     }
 
-    void sendMatrixTo(const Matrix<float>& matrix, NodeId node)
+    void sendMatrixTo(const Communicator& communicator, const Matrix<float>& matrix, int node)
     {
         unsigned long dimensions[2] =
         {
@@ -49,18 +49,18 @@ namespace MatrixHelper
             matrix.columns()
         };
         auto numElements = dimensions[0] * dimensions[1];
-        MPI::COMM_WORLD.Send(dimensions, 2, MPI::UNSIGNED_LONG, node, 0);
-        MPI::COMM_WORLD.Send(matrix.buffer(), numElements, MPI::FLOAT, node, 0);
+        communicator->Send(dimensions, 2, MPI::UNSIGNED_LONG, node, 0);
+        communicator->Send(matrix.buffer(), numElements, MPI::FLOAT, node, 0);
     }
 
-    Matrix<float> receiveMatrixFrom(NodeId node)
+    Matrix<float> receiveMatrixFrom(const Communicator& communicator, int node)
     {
         unsigned long dimensions[2];
-        MPI::COMM_WORLD.Recv(dimensions, 2, MPI::UNSIGNED_LONG, node, 0);
+        communicator->Recv(dimensions, 2, MPI::UNSIGNED_LONG, node, 0);
         auto rows = dimensions[0];
         auto cols = dimensions[1];
         Matrix<float> result(rows, cols);
-        MPI::COMM_WORLD.Recv(result.buffer(), rows*cols, MPI::FLOAT, node, 0);
+        communicator->Recv(result.buffer(), rows*cols, MPI::FLOAT, node, 0);
         return result;
     }
 

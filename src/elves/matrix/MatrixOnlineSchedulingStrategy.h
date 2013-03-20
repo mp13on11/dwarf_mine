@@ -1,16 +1,13 @@
 #pragma once
 
 #include "MatrixSlicer.h"
+#include "common/BenchmarkResults.h"
 
 #include <vector>
 #include <map>
 #include <memory>
 
 class MatrixOnlineScheduler;
-typedef int NodeId;
-typedef double Rating;
-typedef std::pair<NodeId, Rating> NodeRating;
-typedef std::map<NodeId, Rating> BenchmarkResult;
 
 class MatrixOnlineSchedulingStrategy
 {
@@ -20,10 +17,10 @@ public:
         const BenchmarkResult& nodeSet) = 0;
     virtual int getLastWorkAmountFor(
         const MatrixOnlineScheduler& scheduler,
-        const NodeId node) = 0;
+        const int node) = 0;
     virtual int getNextWorkAmountFor(
         const MatrixOnlineScheduler& scheduler,
-        const NodeId node) = 0;
+        const int node) = 0;
 
 protected:
     virtual void reset() = 0;

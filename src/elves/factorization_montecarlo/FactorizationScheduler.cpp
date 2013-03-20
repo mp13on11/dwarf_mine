@@ -3,7 +3,6 @@
 #include "common/ProblemStatement.h"
 
 #include <memory>
-#include <mpi.h>
 #include <stdexcept>
 #include <vector>
 
@@ -12,8 +11,8 @@ using namespace std::chrono;
 
 const BigInt DEFAULT_PRODUCT(1649);
 
-FactorizationScheduler::FactorizationScheduler(const function<ElfPointer()>& factory) :
-    SchedulerTemplate(factory)
+FactorizationScheduler::FactorizationScheduler(const Communicator& communicator, const function<ElfPointer()>& factory) :
+    SchedulerTemplate(communicator, factory)
 {
 }
 
@@ -61,22 +60,22 @@ bool FactorizationScheduler::hasData() const
 
 void FactorizationScheduler::distributeNumber()
 {
-    if (MpiHelper::isMaster())
+    if (communicator.isMaster())
     {
         string s = number.get_str();
         unsigned long size = s.length();
-        MPI::COMM_WORLD.Bcast(&size, 1, MPI::UNSIGNED_LONG, MpiHelper::MASTER);
-        MPI::COMM_WORLD.Bcast(
+        communicator->Bcast(&size, 1, MPI::UNSIGNED_LONG, Communicator::MASTER_RANK);
+        communicator->Bcast(
                 const_cast<char*>(s.c_str()), size,
-                MPI::CHAR, MpiHelper::MASTER
+                MPI::CHAR, Communicator::MASTER_RANK
             );
     }
     else
     {
         unsigned long size = 0;
-        MPI::COMM_WORLD.Bcast(&size, 1, MPI::UNSIGNED_LONG, MpiHelper::MASTER);
+        communicator->Bcast(&size, 1, MPI::UNSIGNED_LONG, Communicator::MASTER_RANK);
         unique_ptr<char[]> items(new char[size]);
-        MPI::COMM_WORLD.Bcast(items.get(), size, MPI::CHAR, MpiHelper::MASTER);
+        communicator->Bcast(items.get(), size, MPI::CHAR, Communicator::MASTER_RANK);
 
         number = BigInt(string(items.get(), size));
     }
@@ -84,10 +83,10 @@ void FactorizationScheduler::distributeNumber()
 
 void FactorizationScheduler::sendResultToMaster(int rank, future<BigIntPair>& f)
 {
-    if (!MpiHelper::isMaster() && rank != MpiHelper::rank())
+    if (!communicator.isMaster() && rank != communicator.rank())
         return;
 
-    if (rank == MpiHelper::rank())
+    if (rank == communicator.rank())
     {
         BigIntPair pair = f.get();
         p = pair.first;
@@ -95,20 +94,20 @@ void FactorizationScheduler::sendResultToMaster(int rank, future<BigIntPair>& f)
     }
 
     // if the master found the result, nothing more to do
-    if(MpiHelper::isMaster(rank))
+    if(rank == Communicator::MASTER_RANK)
         return;
 
     // a slave found the result, he has to send it to the master
-    if (MpiHelper::isMaster())
+    if (communicator.isMaster())
     {
         unsigned long sizes[] = { 0, 0 };
-        MPI::COMM_WORLD.Recv(sizes, 2, MPI::UNSIGNED_LONG, rank, 1);
+        communicator->Recv(sizes, 2, MPI::UNSIGNED_LONG, rank, 1);
 
         unique_ptr<char[]> first(new char[sizes[0]]);
         unique_ptr<char[]> second(new char[sizes[1]]);
 
-        MPI::COMM_WORLD.Recv(first.get(), sizes[0], MPI::CHAR, rank, 2);
-        MPI::COMM_WORLD.Recv(second.get(), sizes[1], MPI::CHAR, rank, 3);
+        communicator->Recv(first.get(), sizes[0], MPI::CHAR, rank, 2);
+        communicator->Recv(second.get(), sizes[1], MPI::CHAR, rank, 3);
 
         p = BigInt(string(first.get(), sizes[0]));
         q = BigInt(string(second.get(), sizes[1]));
@@ -119,26 +118,26 @@ void FactorizationScheduler::sendResultToMaster(int rank, future<BigIntPair>& f)
         string second = q.get_str();
         unsigned long sizes[] = { first.length(), second.length() };
 
-        MPI::COMM_WORLD.Send(sizes, 2, MPI::UNSIGNED_LONG, MpiHelper::MASTER, 1);
-        MPI::COMM_WORLD.Send(first.c_str(), first.size(), MPI::CHAR, MpiHelper::MASTER, 2);
-        MPI::COMM_WORLD.Send(second.c_str(), second.size(), MPI::CHAR, MpiHelper::MASTER, 3);
+        communicator->Send(sizes, 2, MPI::UNSIGNED_LONG, Communicator::MASTER_RANK, 1);
+        communicator->Send(first.c_str(), first.size(), MPI::CHAR, Communicator::MASTER_RANK, 2);
+        communicator->Send(second.c_str(), second.size(), MPI::CHAR, Communicator::MASTER_RANK, 3);
     }
 }
 
 int FactorizationScheduler::distributeFinishedStateRegularly(future<BigIntPair>& f) const
 {
-    unique_ptr<bool[]> states(new bool[MpiHelper::numberOfNodes()]);
+    unique_ptr<bool[]> states(new bool[communicator.size()]);
 
     while (true)
     {
         bool finished = f.wait_for(seconds(5)) == future_status::ready;
 
-        MPI::COMM_WORLD.Allgather(
+        communicator->Allgather(
                 &finished, 1, MPI::BOOL,
                 states.get(), 1, MPI::BOOL
             );
 
-        for (size_t i=0; i<MpiHelper::numberOfNodes(); i++)
+        for (size_t i=0; i<communicator.size(); i++)
         {
             if (states[i])
                 return i;
@@ -146,6 +145,6 @@ int FactorizationScheduler::distributeFinishedStateRegularly(future<BigIntPair>&
     }
 }
 
-void FactorizationScheduler::doBenchmarkDispatch(NodeId /*node*/)
+void FactorizationScheduler::doBenchmarkDispatch(int /*node*/)
 {
 }    

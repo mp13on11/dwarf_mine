@@ -1,8 +1,10 @@
 #include "common/BenchmarkRunner.h"
+#include "common/Communicator.h"
 #include "common/Configuration.h"
 #include "common/MpiGuard.h"
-#include "common/MpiHelper.h"
+#include "common/TimingProfiler.h"
 
+#include <chrono>
 #include <fstream>
 #include <iostream>
 #include <stdexcept>
@@ -10,36 +12,48 @@
 #include <vector>
 
 using namespace std;
+using namespace std::chrono;
 
-void exportClusterConfiguration(const string& filename, BenchmarkResult& result)
+void exportWeightedCommunicator(const string& filename, const Communicator& communicator)
 {
     fstream file(filename, fstream::out);
+
     if (!file.is_open())
     {
-        cerr << "ERROR: Could not write "<<filename<<endl;
+        cerr << "ERROR: Could not write "<< filename <<endl;
         exit(1);
     }
-    file << result;
+
+    for (double weight : communicator.weights())
+        file << weight << endl;
+
     file.close();
 }
 
-BenchmarkResult importClusterConfiguration(const string& filename)
+Communicator importWeightedCommunicator(const string& filename)
 {
     fstream file(filename, fstream::in);
+
     if (!file.is_open())
     {
         cerr << "ERROR: Could not read "<<filename<<endl;
         exit(1);
     }
-    BenchmarkResult result;
-    file >> result;
-    file.close();
-    if (result.size() != MpiHelper::numberOfNodes())
+
+    vector<double> weights;
+
+    while (file.good())
     {
-        cerr << "ERROR: Number of nodes does not match configured number of nodes" <<endl;
-        exit(1);
+        double weight;
+        file >> weight;
+
+        if (file.good())
+            weights.push_back(weight);
     }
-    return result;
+
+    file.close();
+
+    return Communicator(weights);
 }
 
 void silenceOutputStreams(bool keepErrorStreams = false)
@@ -53,27 +67,71 @@ void silenceOutputStreams(bool keepErrorStreams = false)
     }
 }
 
-void printResults(const vector<BenchmarkRunner::Measurement>& results, ostream& timeFile)
+vector<double> nodeWeightsFrom(const vector<microseconds>& averageExecutionTimes)
 {
-    cout << "Measured Times: µs" << endl;
-
-    for (const auto& measurement : results)
+    microseconds sum(0);
+    for (microseconds time : averageExecutionTimes)
     {
-        cout << "\t" << measurement.count() << endl;
+        sum += time;
+    }
 
-        if (MpiHelper::isMaster())
-            timeFile << measurement.count() << endl;
+    vector<double> weights;
+    for (microseconds time : averageExecutionTimes)
+    {
+        weights.push_back(static_cast<double>(time.count()) / static_cast<double>(sum.count()));
+    }
+    return weights;
+}
+
+Communicator determineWeightedCommunicator(const BenchmarkRunner& runner, const Communicator& unweightedCommunicator)
+{
+    TimingProfiler profiler;
+    vector<microseconds> averageTimes;
+    
+    for (size_t i=0; i<unweightedCommunicator.size(); ++i)
+    {
+        Communicator subCommunicator = unweightedCommunicator.createSubCommunicator(
+                {Communicator::MASTER_RANK*1, static_cast<int>(i)}
+            );
+        runner.benchmarkNode(subCommunicator, profiler);
+        averageTimes.push_back(profiler.averageIterationTime());
+    }
+    return Communicator(nodeWeightsFrom(averageTimes));
+}
+
+void printResults(const Communicator& communicator, const TimingProfiler& profiler, ostream& timeFile)
+{
+    cout << "Execution times (microseconds):" << endl;
+    
+    for (const auto& iterationTime : profiler.iterationTimes())
+    {
+        cout << "\t" << iterationTime.count() << endl;
+
+        if (communicator.isMaster())
+            timeFile << iterationTime.count() << endl;
     }
 }
 
-void benchmarkWith(Configuration& config)
+void benchmarkWith(const Configuration& config)
 {
     BenchmarkRunner runner(config);
-    BenchmarkResult nodeWeights;
-
+    TimingProfiler profiler;
+    Communicator communicator;
     ofstream timeFile;
 
-    if (MpiHelper::isMaster())
+    if (config.shouldPrintHelp())
+    {
+        config.printHelp();
+        return;
+    }
+
+    if (!config.shouldBeVerbose() && (config.shouldBeQuiet() || !communicator.isMaster()))
+        silenceOutputStreams(true);
+
+    cout << config << endl;
+
+
+    if (communicator.isMaster())
     {
         timeFile.open(config.timeOutputFilename(), ios::app);
 
@@ -83,33 +141,34 @@ void benchmarkWith(Configuration& config)
 
     if(config.shouldRunWithoutMPI())
     {
-        if (MpiHelper::numberOfNodes() > 1)
+        if (communicator.size() > 1)
             throw runtime_error("Process was told to run without MPI support, but was called via mpirun");
 
-        printResults(runner.runElf(), timeFile);
+        runner.runElf(communicator, profiler);
+        printResults(communicator, profiler, timeFile);
     }
     else
     {
         if (config.shouldExportConfiguration() || !config.shouldImportConfiguration())
         {
-            cout << "Calculating node weights" <<endl;
-            nodeWeights = runner.benchmarkIndividualNodes();
-            cout << "Weighted " << endl << nodeWeights;
+            cout << "Calculating node weights" << endl;
+            communicator = determineWeightedCommunicator(runner, communicator);
         }
         if (config.shouldExportConfiguration())
         {
-            cout << "Exporting node weights" <<endl;
-            exportClusterConfiguration(config.exportConfigurationFilename(), nodeWeights);
+            cout << "Exporting node weights" << endl;
+            exportWeightedCommunicator(config.exportConfigurationFilename(), communicator);
         }
         if (config.shouldImportConfiguration())
         {
-            cout << "Importing node weights" <<endl;
-            nodeWeights = importClusterConfiguration(config.importConfigurationFilename());
+            cout << "Importing node weights" << endl;
+            communicator = importWeightedCommunicator(config.importConfigurationFilename());
         }
         if (!config.shouldSkipBenchmark())
         {
-            cout << "Running benchmark" <<endl;
-            printResults(runner.runBenchmark(nodeWeights), timeFile);
+            cout << "Running benchmark" << endl;
+            runner.runBenchmark(communicator, profiler);
+            printResults(communicator, profiler, timeFile);
         }
     }
 }
@@ -121,20 +180,7 @@ int main(int argc, char** argv)
 
     try
     {
-        Configuration config(argc, argv);
-
-        if (config.shouldPrintHelp())
-        {
-            config.printHelp();
-            return 0;
-        }
-
-        if (!config.shouldBeVerbose() && (config.shouldBeQuiet() || !MpiHelper::isMaster()))
-            silenceOutputStreams(true);
-
-        cout << config << endl;
-
-        benchmarkWith(config);
+        benchmarkWith(Configuration(argc, argv));
     }
     catch (const boost::program_options::error& e)
     {

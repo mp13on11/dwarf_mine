@@ -13,10 +13,10 @@ public:
         const BenchmarkResult& nodeSet);
     virtual int getLastWorkAmountFor(
         const MatrixOnlineScheduler& scheduler,
-        const NodeId node);
+        const int node);
     virtual int getNextWorkAmountFor(
         const MatrixOnlineScheduler& scheduler,
-        const NodeId node);
+        const int node);
 
 protected:
     virtual void reset();
@@ -24,6 +24,6 @@ protected:
 private:
     static const int defaultWorkAmount;
     MatrixSlicerOnline slicer;
-    std::map<NodeId, int> lastWorkAmounts;
+    std::map<int, int> lastWorkAmounts;
 };
 

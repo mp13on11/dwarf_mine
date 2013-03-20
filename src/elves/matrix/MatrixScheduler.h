@@ -12,7 +12,7 @@ class MatrixSlice;
 class MatrixScheduler: public SchedulerTemplate<MatrixElf>
 {
 public:
-    MatrixScheduler(const std::function<ElfPointer()>& factory);
+    MatrixScheduler(const Communicator& communicator, const std::function<ElfPointer()>& factory);
     virtual ~MatrixScheduler();
 
     virtual void provideData(std::istream& input);
@@ -27,7 +27,7 @@ protected:
     virtual bool hasData() const;
     virtual void doDispatch();
     virtual void doSimpleDispatch();
-    virtual void doBenchmarkDispatch(NodeId node);
+    virtual void doBenchmarkDispatch(int node);
 
     virtual void orchestrateCalculation();
     virtual void calculateOnSlave();

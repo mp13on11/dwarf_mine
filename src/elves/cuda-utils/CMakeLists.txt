@@ -1,4 +1,4 @@
-SET(LIBRARY_NAME cuda-utils)
+SET(LIBRARY_NAME cooda-utils)
 
 # Export library for main subproject
 SET(CUDA_UTILS_LIB ${LIBRARY_NAME} CACHE STRING INTERNAL FORCE)

@@ -1,4 +1,4 @@
-SET(LIBRARY_NAME cuda-matrix)
+SET(LIBRARY_NAME cooda-matrix)
 
 # Export library for main subproject
 SET(CUDA_MATRIX_ELF_LIB ${LIBRARY_NAME} CACHE STRING INTERNAL FORCE)

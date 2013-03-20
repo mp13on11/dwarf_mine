@@ -5,6 +5,7 @@
 #include <memory>
 #include <string>
 
+class Communicator;
 class ProblemStatement;
 class Scheduler;
 class SchedulerFactory;
@@ -17,7 +18,7 @@ public:
 
     Configuration(int argc, char** argv);
 
-    std::unique_ptr<Scheduler> createScheduler() const;
+    std::unique_ptr<Scheduler> createScheduler(const Communicator& communicator) const;
 
     std::unique_ptr<ProblemStatement> createProblemStatement() const;
     std::unique_ptr<ProblemStatement> createGeneratedProblemStatement() const;

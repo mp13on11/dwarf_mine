@@ -1,138 +1,93 @@
 #include "BenchmarkRunner.h"
-#include "MpiHelper.h"
+#include "Communicator.h"
+#include "Profiler.h"
+#include "Scheduler.h"
 #include "SchedulerFactory.h"
 
 using namespace std;
-using namespace std::chrono;
 
-typedef BenchmarkRunner::Measurement Measurement;
-
-/**
- * BenchmarkRunner determines the available devices and benchmarks them idenpendently
- */
-BenchmarkRunner::BenchmarkRunner(Configuration& config) :
+BenchmarkRunner::BenchmarkRunner(const Configuration& config) :
         config(&config),
         iterations(config.iterations()), warmUps(config.warmUps()),
         fileProblem(config.createProblemStatement()),
-        generatedProblem(config.createGeneratedProblemStatement()),
-        scheduler(config.createScheduler())
+        generatedProblem(config.createGeneratedProblemStatement())
 {
 }
 
-BenchmarkResult BenchmarkRunner::benchmarkIndividualNodes() const
+void BenchmarkRunner::benchmarkNode(const Communicator& communicator, Profiler& profiler) const
 {
-    vector<Measurement> averageRunTimes;
+    if (!communicator.isValid())
+        return;
 
-    if (MpiHelper::isMaster())
+    unique_ptr<Scheduler> scheduler = config->createScheduler(communicator);
+    BenchmarkMethod targetMethod = [&](){ scheduler->dispatchBenchmark(communicator.size()-1); };
+
+    if (communicator.isMaster())
     {
-        for (size_t i=0; i<MpiHelper::numberOfNodes(); ++i)
-        {
-            scheduler->setNodeset({{i, 1}});
-            BenchmarkMethod targetMethod = [&](){ scheduler->dispatchBenchmark(i); };
-            vector<Measurement> runTimes =  benchmarkNodeset(*generatedProblem, targetMethod);
-            averageRunTimes.push_back(averageOf(runTimes));
-        }
+        scheduler->provideData(*generatedProblem);
+
+        run(targetMethod, profiler);
+        
+        scheduler->outputData(*generatedProblem);
     }
     else
     {
-        BenchmarkMethod targetMethod = [&](){ scheduler->dispatchBenchmark(MpiHelper::rank()); };
-        benchmarkSlave(targetMethod);
+        run(targetMethod, profiler);
     }
-
-    return calculateNodeWeights(averageRunTimes);
 }
 
-vector<Measurement> BenchmarkRunner::runBenchmark(const BenchmarkResult& nodeWeights) const
+void BenchmarkRunner::runBenchmark(const Communicator& communicator, Profiler& profiler) const
 {
+    if (!communicator.isValid())
+        return;
+    
+    unique_ptr<Scheduler> scheduler = config->createScheduler(communicator);
     BenchmarkMethod targetMethod = [&](){ scheduler->dispatch(); };
 
-    if (MpiHelper::isMaster())
+    if (communicator.isMaster())
     {
-        scheduler->setNodeset(nodeWeights);
-        return benchmarkNodeset(*fileProblem, targetMethod);
+        scheduler->provideData(*fileProblem);
+
+        run(targetMethod, profiler);
+        
+        scheduler->outputData(*fileProblem);
     }
     else
     {
-        benchmarkSlave(targetMethod);
-        return vector<Measurement>();
+        run(targetMethod, profiler);
     }
 }
 
-vector<Measurement> BenchmarkRunner::runElf() const
+void BenchmarkRunner::runElf(const Communicator& communicator, Profiler& profiler) const
 {
+    if (!communicator.isValid())
+        return;
+    
+    unique_ptr<Scheduler> scheduler = config->createScheduler(communicator);
     BenchmarkMethod targetMethod = [&](){ scheduler->dispatchSimple(); };
-    scheduler->setNodeset({{0, 0}});
-    return benchmarkNodeset(*fileProblem, targetMethod);
+
+    scheduler->provideData(*fileProblem);
+
+    run(targetMethod, profiler);
+    
+    scheduler->outputData(*fileProblem);
 }
 
-vector<Measurement> BenchmarkRunner::benchmarkNodeset(const ProblemStatement& problem, BenchmarkMethod targetMethod) const
+void BenchmarkRunner::run(BenchmarkMethod targetMethod, Profiler& profiler) const
 {
-    vector<Measurement> result;
-
-    scheduler->provideData(problem);
-
     for (size_t i = 0; i < warmUps; ++i)
-    {
-        measureCall(targetMethod);
-    }
-    for (size_t i = 0; i < iterations; ++i)
-    {
-        result.push_back(measureCall(targetMethod));
-    }
-
-
-    scheduler->outputData(problem);
-
-    return result;
-}
-
-void BenchmarkRunner::benchmarkSlave(BenchmarkMethod targetMethod) const
-{
-    for (size_t i = 0; i < iterations + warmUps; ++i)
     {
         targetMethod();
     }
-}
 
-Measurement BenchmarkRunner::measureCall(BenchmarkMethod targetMethod) const
-{
-    auto before = high_resolution_clock::now();
-    targetMethod();
-    return duration_cast<Measurement>(high_resolution_clock::now() - before);
-}
+    profiler.beginIterationBlock();
 
-BenchmarkResult BenchmarkRunner::calculateNodeWeights(const vector<Measurement>& averageRunTimes)
-{
-    BenchmarkResult result;
-    double totalPerformance = 0;
-
-    for (const Measurement& averageRunTime : averageRunTimes)
-        totalPerformance += 1.0 / averageRunTime.count();
-
-    for (size_t i=0; i<averageRunTimes.size(); ++i)
+    for (size_t i = 0; i < iterations; ++i)
     {
-        double performance = 1.0 / averageRunTimes[i].count();
-        result[i] = performance / totalPerformance;
+        profiler.beginIteration();
+        targetMethod();
+        profiler.endIteration();
     }
 
-    return result;
-}
-
-Measurement BenchmarkRunner::averageOf(const vector<Measurement>& runTimes)
-{
-    if (runTimes.empty())
-        return Measurement(0);
-
-    Measurement sum(0);
-
-    for (const Measurement& runTime : runTimes)
-        sum += runTime;
-
-    return sum / runTimes.size();
-}
-
-bool BenchmarkRunner::slaveShouldRunWith(const BenchmarkResult& nodeWeights)
-{
-    // returns true if the slave's rank is included in the nodeWeights
-    return nodeWeights.find(MpiHelper::rank()) != nodeWeights.end();
+    profiler.endIterationBlock();
 }

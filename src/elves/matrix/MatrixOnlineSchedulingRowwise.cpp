@@ -23,7 +23,7 @@ vector<MatrixSlice> MatrixOnlineSchedulingRowwise::getSliceDefinitions(
 #pragma GCC diagnostic ignored "-Wunused-parameter"
 int MatrixOnlineSchedulingRowwise::getLastWorkAmountFor(
     const MatrixOnlineScheduler& scheduler,
-    const NodeId node)
+    const int node)
 {
     return lastWorkAmounts.find(node) != lastWorkAmounts.end() ?
         lastWorkAmounts[node] :
@@ -33,7 +33,7 @@ int MatrixOnlineSchedulingRowwise::getLastWorkAmountFor(
 
 int MatrixOnlineSchedulingRowwise::getNextWorkAmountFor(
     const MatrixOnlineScheduler& scheduler,
-    const NodeId node)
+    const int node)
 {
     const int remainingWorkAmount = scheduler.getRemainingWorkAmount();
     const int nextWorkAmount = max(min(remainingWorkAmount + 1, defaultWorkAmount), 1);
