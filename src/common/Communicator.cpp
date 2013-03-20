@@ -20,17 +20,17 @@ Communicator::Communicator() :
 
 Communicator::Communicator(const vector<double>& weights) : 
     _communicator(MPI::COMM_WORLD),
-    _weights(weights)
+    _weights(normalize(weights))
 {
-    validateWeightCount();
+    validateWeights();
     broadcastWeights();
 }
 
 Communicator::Communicator(const MPI::Intracomm& communicator, const vector<double>& weights) : 
     _communicator(communicator),
-    _weights(weights)
+    _weights(normalize(weights))
 {
-    validateWeightCount();
+    validateWeights();
 }
 
 void Communicator::broadcastWeights()
@@ -57,26 +57,21 @@ Communicator Communicator::createSubCommunicator(initializer_list<Node> notNeces
 vector<double> Communicator::calculateNewWeightsFor(const vector<Node>& newNodes) const
 {
     vector<double> newWeights;
-    double newWeightsSum = 0;
 
     for (Node node : newNodes)
     {
+        if (node.weight < 0)
+            throw runtime_error(negativeWeightMessage(node.weight, node.rank));
+
         newWeights.push_back(_weights[node.rank] * node.weight);
-        newWeightsSum += newWeights.back();
     }
 
-    if (newWeightsSum == 0)
-        return newWeights;
-
-    for(size_t i=0; i<newWeights.size(); i++)
-    {
-        newWeights[i] /= newWeightsSum;
-    }
+    cout << endl;
 
     return newWeights;
 }
 
-void Communicator::validateWeightCount() const
+void Communicator::validateWeights() const
 {
     if (isValid())
     {
@@ -89,11 +84,43 @@ void Communicator::validateWeightCount() const
 
             throw runtime_error(stream.str());
         }
+
+        for (size_t i=0; i<_weights.size(); ++i)
+        {
+            if (_weights[i] < 0)
+                throw runtime_error(negativeWeightMessage(_weights[i], i));
+        }
     }
     else if (!_weights.empty())
     {
         throw runtime_error("Received weights for a null communicator.");
     }
+}
+
+string Communicator::negativeWeightMessage(double weight, int rank)
+{
+    stringstream stream;
+    stream << "Detected negative weight (" << weight
+        << ") for node " << rank << ".";
+
+    return stream.str();
+}
+
+vector<double> Communicator::normalize(const vector<double>& weights)
+{
+    double sum = accumulate(weights.begin(), weights.end(), 0.0);
+
+    if (sum == 0)
+        return weights;
+
+    vector<double> normalized(weights);
+
+    for (size_t i=0; i<weights.size(); ++i)
+    {
+        normalized[i] /= sum;
+    }
+
+    return normalized;
 }
 
 template<typename T, typename S>

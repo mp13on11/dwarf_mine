@@ -1,6 +1,7 @@
 #pragma once
 
 #include <mpi.h>
+#include <string>
 #include <vector>
 
 class Communicator
@@ -26,12 +27,15 @@ public:
     MPI::Intracomm* operator->() const;
 
 private:
+    static std::vector<double> normalize(const std::vector<double>& weights);
+    static std::string negativeWeightMessage(double weight, int rank);
+
     mutable MPI::Intracomm _communicator;
     std::vector<double> _weights;
 
     Communicator(const MPI::Intracomm& communicator, const std::vector<double>& weights);
 
-    void validateWeightCount() const;
+    void validateWeights() const;
     void broadcastWeights();
     std::vector<double> calculateNewWeightsFor(const std::vector<Node>& newNodes) const;
 };
