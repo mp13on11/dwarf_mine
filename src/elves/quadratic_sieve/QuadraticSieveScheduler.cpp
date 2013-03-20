@@ -3,7 +3,6 @@
 #include "QuadraticSieveElf.h"
 #include "common/ProblemStatement.h"
 #include "common/Utils.h"
-#include <mpi.h>
 #include <numeric>
 
 template<typename ElemType>
@@ -26,8 +25,8 @@ std::ostream& operator<<(std::ostream& stream, const std::vector<ElemType>& list
 using namespace std;
 using namespace std::placeholders;
 
-BigInt receiveBigInt();
-BigInt receiveBigIntFromMaster();
+BigInt receiveBigInt(const Communicator& communicator);
+BigInt receiveBigIntFromMaster(const Communicator& communicator);
 
 struct serializedBigIntDeleter
 {
@@ -55,10 +54,9 @@ inline BigInt arrayToBigInt(const SerializedBigInt& data)
     return result;
 }
 
-QuadraticSieveScheduler::QuadraticSieveScheduler(const std::function<ElfPointer()>& factory) :
-    SchedulerTemplate(factory)
+QuadraticSieveScheduler::QuadraticSieveScheduler(const Communicator& communicator, const std::function<ElfPointer()>& factory) :
+    SchedulerTemplate(communicator, factory)
 {
-
 }
 
 void QuadraticSieveScheduler::provideData(istream& input)
@@ -123,7 +121,7 @@ SmoothSquareList unpackBigintVector(const vector<size_t>& sizes, const vector<ui
 
 void QuadraticSieveScheduler::doDispatch()
 {
-    if (MpiHelper::isMaster())
+    if (communicator.isMaster())
     {
         tie(p, q) = QuadraticSieveHelper::factor(
             number,
@@ -132,63 +130,63 @@ void QuadraticSieveScheduler::doDispatch()
     }
     else
     {
-        BigInt number = receiveBigInt();
-        BigInt start = receiveBigIntFromMaster();
-        BigInt end = receiveBigIntFromMaster();
+        BigInt number = receiveBigInt(communicator);
+        BigInt start = receiveBigIntFromMaster(communicator);
+        BigInt end = receiveBigIntFromMaster(communicator);
         size_t factorBaseSize;
-        MPI::COMM_WORLD.Bcast(&factorBaseSize, 1, MPI::UNSIGNED_LONG, MpiHelper::MASTER);
+        communicator->Bcast(&factorBaseSize, 1, MPI::UNSIGNED_LONG, Communicator::MASTER_RANK);
         vector<smallPrime_t> factorBase(factorBaseSize);
-        MPI::COMM_WORLD.Bcast(factorBase.data(), factorBaseSize, MPI::INT, MpiHelper::MASTER);
+        communicator->Bcast(factorBase.data(), factorBaseSize, MPI::INT, Communicator::MASTER_RANK);
 
         auto result = elf().sieveSmoothSquares(start, end, number, factorBase);
         int resultSize = result.size();
-        MPI::COMM_WORLD.Gather(&resultSize, 1, MPI::INT, nullptr, 0, MPI::INT, MpiHelper::MASTER);
+        communicator->Gather(&resultSize, 1, MPI::INT, nullptr, 0, MPI::INT, Communicator::MASTER_RANK);
 
         vector<size_t> resultsSizes;
         vector<uint32_t> resultsData;
         packBigintVector(resultsSizes, resultsData, result);
 
-        MPI::COMM_WORLD.Gatherv(resultsSizes.data(), resultSize, MPI::UNSIGNED_LONG, nullptr, nullptr, nullptr, MPI::UNSIGNED_LONG, MpiHelper::MASTER);
-        MPI::COMM_WORLD.Gatherv(resultsData.data(), resultsData.size(), MPI::INT, nullptr, nullptr, nullptr, MPI::INT, MpiHelper::MASTER);
+        communicator->Gatherv(resultsSizes.data(), resultSize, MPI::UNSIGNED_LONG, nullptr, nullptr, nullptr, MPI::UNSIGNED_LONG, Communicator::MASTER_RANK);
+        communicator->Gatherv(resultsData.data(), resultsData.size(), MPI::INT, nullptr, nullptr, nullptr, MPI::INT, Communicator::MASTER_RANK);
     }
 }
 
 
-void sendBigInt(const BigInt& number)
+void sendBigInt(const Communicator& communicator, const BigInt& number)
 {
     auto serialized = bigIntToArray(number);
-    MPI::COMM_WORLD.Bcast(&serialized.second, 1, MPI::UNSIGNED_LONG, MpiHelper::MASTER);
-    MPI::COMM_WORLD.Bcast(serialized.first.get(), serialized.second, MPI::INT, MpiHelper::MASTER);
+    communicator->Bcast(&serialized.second, 1, MPI::UNSIGNED_LONG, Communicator::MASTER_RANK);
+    communicator->Bcast(serialized.first.get(), serialized.second, MPI::INT, Communicator::MASTER_RANK);
 }
 
-BigInt receiveBigInt()
+BigInt receiveBigInt(const Communicator& communicator)
 {
     SerializedBigInt result;
-    MPI::COMM_WORLD.Bcast(&result.second, 1, MPI::UNSIGNED_LONG, MpiHelper::MASTER);
+    communicator->Bcast(&result.second, 1, MPI::UNSIGNED_LONG, Communicator::MASTER_RANK);
     result.first.reset(reinterpret_cast<uint32_t*>(malloc(result.second * sizeof(uint32_t))));
-    MPI::COMM_WORLD.Bcast(result.first.get(), result.second, MPI::INT, MpiHelper::MASTER);
+    communicator->Bcast(result.first.get(), result.second, MPI::INT, Communicator::MASTER_RANK);
     return arrayToBigInt(result);
 }
 
-void sendBigIntTo(const BigInt& number, int nodeId)
+void sendBigIntTo(const Communicator& communicator, const BigInt& number, int nodeId)
 {
     auto serialized = bigIntToArray(number);
-    MPI::COMM_WORLD.Send(&serialized.second, 1, MPI::UNSIGNED_LONG, nodeId, 0);
-    MPI::COMM_WORLD.Send(serialized.first.get(), serialized.second, MPI::INT, nodeId, 0);
+    communicator->Send(&serialized.second, 1, MPI::UNSIGNED_LONG, nodeId, 0);
+    communicator->Send(serialized.first.get(), serialized.second, MPI::INT, nodeId, 0);
 }
 
-BigInt receiveBigIntFromMaster()
+BigInt receiveBigIntFromMaster(const Communicator& communicator)
 {
     SerializedBigInt result;
-    MPI::COMM_WORLD.Recv(&result.second, 1, MPI::UNSIGNED_LONG, MpiHelper::MASTER, 0);
+    communicator->Recv(&result.second, 1, MPI::UNSIGNED_LONG, Communicator::MASTER_RANK, 0);
     result.first.reset(reinterpret_cast<uint32_t*>(malloc(result.second * sizeof(uint32_t))));
-    MPI::COMM_WORLD.Recv(result.first.get(), result.second, MPI::INT, MpiHelper::MASTER, 0);
+    communicator->Recv(result.first.get(), result.second, MPI::INT, Communicator::MASTER_RANK, 0);
     return arrayToBigInt(result);
 }
 
-void QuadraticSieveScheduler::doBenchmarkDispatch(NodeId node)
+void QuadraticSieveScheduler::doBenchmarkDispatch(int node)
 {
-    if (MpiHelper::isMaster())
+    if (communicator.isMaster())
     {
         BigInt start = 15510279;
         BigInt end = 15557641;
@@ -210,23 +208,23 @@ void QuadraticSieveScheduler::doBenchmarkDispatch(NodeId node)
             1123, 1129, 1151, 1153, 1163, 1171, 1181, 1187, 1193, 1201, 1213, 1217, 1223, 1229,
             1231, 1237, 1249, 1259, 1277, 1279, 1283, 1289, 1291, 1297, 1301, 1303, 1307, 1319, 1321, 1327
         };
-        sendBigIntTo(start, node);
-        sendBigIntTo(end, node);
-        sendBigIntTo(number, node);
+        sendBigIntTo(communicator, start, node);
+        sendBigIntTo(communicator, end, node);
+        sendBigIntTo(communicator, number, node);
         size_t factorBaseSize = factorBase.size();
-        MPI::COMM_WORLD.Send(&factorBaseSize, 1, MPI::UNSIGNED_LONG, node, 0);
-        MPI::COMM_WORLD.Send(factorBase.data(), factorBaseSize, MPI::INT, node, 0);
+        communicator->Send(&factorBaseSize, 1, MPI::UNSIGNED_LONG, node, 0);
+        communicator->Send(factorBase.data(), factorBaseSize, MPI::INT, node, 0);
     }
     else
     {
-        BigInt start = receiveBigIntFromMaster();
-        BigInt end = receiveBigIntFromMaster();
-        BigInt number = receiveBigIntFromMaster();
+        BigInt start = receiveBigIntFromMaster(communicator);
+        BigInt end = receiveBigIntFromMaster(communicator);
+        BigInt number = receiveBigIntFromMaster(communicator);
 
         size_t factorBaseSize;
-        MPI::COMM_WORLD.Recv(&factorBaseSize, 1, MPI::UNSIGNED_LONG, MpiHelper::MASTER, 0);
+        communicator->Recv(&factorBaseSize, 1, MPI::UNSIGNED_LONG, Communicator::MASTER_RANK, 0);
         FactorBase factorBase(factorBaseSize);
-        MPI::COMM_WORLD.Recv(factorBase.data(), factorBaseSize, MPI::INT, MpiHelper::MASTER, 0);
+        communicator->Recv(factorBase.data(), factorBaseSize, MPI::INT, Communicator::MASTER_RANK, 0);
 
         elf().sieveSmoothSquares(start, end, number, factorBase);
     }
@@ -239,22 +237,22 @@ vector<BigInt> QuadraticSieveScheduler::sieveDistributed(
     const FactorBase& factorBase
 )
 {
-    sendBigInt(number);
+    sendBigInt(communicator, number);
 
     BigInt intervalLength = end - start;
-    BigInt chunkSize = div_ceil(intervalLength, BigInt(MpiHelper::numberOfNodes()));
+    BigInt chunkSize = div_ceil(intervalLength, BigInt(communicator.size()));
 
-    for (size_t nodeId=1; nodeId < MpiHelper::numberOfNodes(); ++nodeId)
+    for (size_t nodeId=1; nodeId < communicator.size(); ++nodeId)
     {
         BigInt partialStart = start + chunkSize*nodeId;
         BigInt partialEnd = min(partialStart + chunkSize, end);
-        sendBigIntTo(partialStart, nodeId);
-        sendBigIntTo(partialEnd, nodeId);
+        sendBigIntTo(communicator, partialStart, nodeId);
+        sendBigIntTo(communicator, partialEnd, nodeId);
     }
 
     size_t factorBaseSize = factorBase.size();
-    MPI::COMM_WORLD.Bcast(&factorBaseSize, 1, MPI::UNSIGNED_LONG, MpiHelper::MASTER);
-    MPI::COMM_WORLD.Bcast(const_cast<smallPrime_t*>(factorBase.data()), factorBaseSize, MPI::INT, MpiHelper::MASTER);
+    communicator->Bcast(&factorBaseSize, 1, MPI::UNSIGNED_LONG, Communicator::MASTER_RANK);
+    communicator->Bcast(const_cast<smallPrime_t*>(factorBase.data()), factorBaseSize, MPI::INT, Communicator::MASTER_RANK);
 
     SmoothSquareList masterResult = elf().sieveSmoothSquares(start, min(start + chunkSize, end), number, factorBase);
     size_t resultSize = masterResult.size();
@@ -263,44 +261,44 @@ vector<BigInt> QuadraticSieveScheduler::sieveDistributed(
     vector<uint32_t> numberData;
     packBigintVector(numberSizes, numberData, masterResult);
 
-    vector<int> resultSizes(MpiHelper::numberOfNodes());
-    MPI::COMM_WORLD.Gather(&resultSize, 1, MPI::INT, resultSizes.data(), 1, MPI::INT, MpiHelper::MASTER);
+    vector<int> resultSizes(communicator.size());
+    communicator->Gather(&resultSize, 1, MPI::INT, resultSizes.data(), 1, MPI::INT, Communicator::MASTER_RANK);
 
     auto totalSmoothSquares = std::accumulate(resultSizes.begin(), resultSizes.end(), 0);
 
 
     // gather sizes of smooth squares
-    vector<int> displs(MpiHelper::numberOfNodes());
+    vector<int> displs(communicator.size());
     displs[0] = 0;
-    for (size_t nodeId = 1; nodeId < MpiHelper::numberOfNodes(); ++nodeId)
+    for (size_t nodeId = 1; nodeId < communicator.size(); ++nodeId)
     {
         displs[nodeId] = displs[nodeId - 1] + resultSizes.at(nodeId - 1);
     }
     vector<size_t> allNumberSizes(totalSmoothSquares);
-    MPI::COMM_WORLD.Gatherv(numberSizes.data(), resultSize, MPI::UNSIGNED_LONG, allNumberSizes.data(), resultSizes.data(), displs.data(), MPI::UNSIGNED_LONG, MpiHelper::MASTER);
+    communicator->Gatherv(numberSizes.data(), resultSize, MPI::UNSIGNED_LONG, allNumberSizes.data(), resultSizes.data(), displs.data(), MPI::UNSIGNED_LONG, Communicator::MASTER_RANK);
 
 
     // gather smooth squares
     auto numberSizesSum = std::accumulate(allNumberSizes.begin(), allNumberSizes.end(), 0);
     vector<uint32_t> allNumberData(numberSizesSum);
-    vector<int> sizePerNode(MpiHelper::numberOfNodes());
+    vector<int> sizePerNode(communicator.size());
     auto accumulateStart = allNumberSizes.begin();
     //auto accumulateEnd = allNumberSizes.begin() + resultSizes[0];
-    for (size_t nodeId = 0; nodeId < MpiHelper::numberOfNodes(); ++nodeId)
+    for (size_t nodeId = 0; nodeId < communicator.size(); ++nodeId)
     {
         auto accumulateEnd = accumulateStart + resultSizes[nodeId];
         sizePerNode[nodeId] = std::accumulate(accumulateStart, accumulateEnd, 0);
         accumulateStart = accumulateEnd;
 
     }
-    vector<int> dataDispls(MpiHelper::numberOfNodes());
+    vector<int> dataDispls(communicator.size());
     dataDispls[0] = 0;
-    for (size_t nodeId = 1; nodeId < MpiHelper::numberOfNodes(); ++nodeId)
+    for (size_t nodeId = 1; nodeId < communicator.size(); ++nodeId)
     {
         dataDispls[nodeId] = dataDispls[nodeId - 1] + sizePerNode[nodeId - 1];
     }
 
-    MPI::COMM_WORLD.Gatherv(numberData.data(), numberData.size(), MPI::INT, allNumberData.data(), sizePerNode.data(), dataDispls.data(), MPI::INT, MpiHelper::MASTER);
+    communicator->Gatherv(numberData.data(), numberData.size(), MPI::INT, allNumberData.data(), sizePerNode.data(), dataDispls.data(), MPI::INT, Communicator::MASTER_RANK);
 
     return unpackBigintVector(allNumberSizes, allNumberData);
 }

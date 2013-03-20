@@ -3,7 +3,20 @@
 #include <cassert>
 
 MatrixSlice::MatrixSlice(
-    NodeId responsibleNode,
+    size_t startX,
+    size_t startY,
+    size_t columns,
+    size_t rows
+) :
+    x(startX),
+    y(startY),
+    columns(columns),
+    rows(rows)
+{
+}
+
+MatrixSlice::MatrixSlice(
+    int responsibleNode,
     size_t startX,
     size_t startY,
     size_t columns,
@@ -68,9 +81,14 @@ void MatrixSlice::injectSlice(const Matrix<float>& sliceData, Matrix<float>& des
     }
 }
 
-NodeId MatrixSlice::getNodeId() const
+int MatrixSlice::getNodeId() const
 {
     return nodeId;
+}
+
+void MatrixSlice::setNodeId(const int nodeId)
+{
+    this->nodeId = nodeId;
 }
 
 size_t MatrixSlice::getStartX() const

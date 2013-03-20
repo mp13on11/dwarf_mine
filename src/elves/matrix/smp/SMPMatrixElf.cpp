@@ -10,6 +10,7 @@ using namespace std;
 
 SMPMatrixElf::MatrixT SMPMatrixElf::multiply(const MatrixT& left, const MatrixT& right)
 {
+    if (left.empty() || right.empty()) return MatrixT();
     MatrixT c(left.rows(), right.columns());
 
     size_t elementsPerBlock = 10*10;

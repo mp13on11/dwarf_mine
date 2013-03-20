@@ -24,4 +24,10 @@ struct OthelloResult
     {
         return 1.0 * wins / visits;
     }
+
+    bool operator<(const OthelloResult& other) const 
+    {
+        return this->successRate() < other.successRate();
+    }
+
 };

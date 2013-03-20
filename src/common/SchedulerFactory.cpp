@@ -4,6 +4,7 @@
 #include "factorization_montecarlo/FactorizationScheduler.h"
 #include "factorization_montecarlo/MonteCarloFactorizationElf.h"
 #include "matrix/MatrixScheduler.h"
+#include "matrix/MatrixOnlineScheduler.h"
 #include "matrix/smp/SMPMatrixElf.h"
 #include "montecarlo/MonteCarloScheduler.h"
 #include "montecarlo/smp/SMPMonteCarloElf.h"
@@ -31,9 +32,9 @@ typedef SchedulerFactory::FactoryFunction FactoryFunction;
 template<typename SchedulerType, typename ElfType>
 static FactoryFunction innerCreateFactory()
 {
-    return []()
+    return [](const Communicator& communicator)
     { 
-        return new SchedulerType([]()
+        return new SchedulerType(communicator, []()
             {
                 return new ElfType();
             }
@@ -72,6 +73,10 @@ static map<string, function<FactoryFunction(bool)>> sFactoryFunctionsMap =
     {
         "matrix",
         &createFactory<MatrixScheduler, SMPMatrixElf, CudaMatrixElf>
+    },
+    {
+        "matrix_online",
+        &createFactory<MatrixOnlineScheduler, SMPMatrixElf, CudaMatrixElf>
     },
     {
         "factorization_montecarlo",
@@ -127,7 +132,7 @@ SchedulerFactory::SchedulerFactory(const FactoryFunction& factory) :
 {
 }
 
-unique_ptr<Scheduler> SchedulerFactory::createScheduler() const
+unique_ptr<Scheduler> SchedulerFactory::createScheduler(const Communicator& communicator) const
 {
-    return unique_ptr<Scheduler>(factory());
+    return unique_ptr<Scheduler>(factory(communicator));
 }
