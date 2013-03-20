@@ -71,24 +71,11 @@ void MonteCarloScheduler::doSimpleDispatch()
     calculate();
 }
 
-void MonteCarloScheduler::doDispatch(BenchmarkResult nodeSet)
+void MonteCarloScheduler::doDispatch()
 {
     distributeInput();
     calculate();
-
-    if (communicator.isMaster())
-    {
-        collectResults(nodeSet);
-    }
-    else
-    {
-        gatherResults(nodeSet);
-    }
-}
-
-void MonteCarloScheduler::doDispatch()
-{
-   doDispatch(nodeSet);
+    collectResults();
 }
 
 pair<vector<NodeRating>, Rating> weightRatings(const BenchmarkResult& ratings)
@@ -144,34 +131,19 @@ void registerOthelloResultToMPI(MPI_Datatype& type)
     MPI_Type_commit(&type);
 }
 
-vector<OthelloResult> MonteCarloScheduler::gatherResults(BenchmarkResult nodeSet)
+vector<OthelloResult> MonteCarloScheduler::gatherResults()
 {
-    size_t numberOfNodes = nodeSet.size();
-    vector<OthelloResult> results(numberOfNodes);
+    vector<OthelloResult> results(communicator.size());
 
     MPI_Datatype MPI_OthelloResult;
     registerOthelloResultToMPI(MPI_OthelloResult);
+
+    communicator->Gather(
+            &_result, 1, MPI_OthelloResult,
+            results.data(), 1, MPI_OthelloResult,
+            Communicator::MASTER_RANK
+        );
     
-    if (communicator.isMaster())
-    {
-        int i = 0;
-        for (const auto& node : nodeSet)
-        {
-            if (node.first == Communicator::MASTER_RANK)
-            {
-                results[0] = _result;
-            }
-            else
-            {                
-                communicator->Recv(results.data() + i , 1, MPI_OthelloResult, node.first, 0);
-            }
-            i++;
-        }
-    }
-    else
-    {
-        communicator->Send(&_result, 1, MPI_OthelloResult, Communicator::MASTER_RANK, 0);
-    }
     return results;
 }
 
@@ -219,9 +191,9 @@ void MonteCarloScheduler::distributePlayfield(size_t bufferSize)
 
 
 
-void MonteCarloScheduler::collectResults(BenchmarkResult nodeSet)
+void MonteCarloScheduler::collectResults()
 {
-    vector<OthelloResult> results = gatherResults(nodeSet);
+    vector<OthelloResult> results = gatherResults();
 
     vector<OthelloResult> accumulatedResults;
     OthelloResult* bestMove = nullptr;

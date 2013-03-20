@@ -32,13 +32,12 @@ protected:
     size_t _commonSeed;
 
 private:
-    void doDispatch(BenchmarkResult nodeSet);
     void orchestrateCalculation();
     void calculateOnSlave();
     void calculate();
     void distributeInput();
     size_t distributeCommonParameters();
     void distributePlayfield(size_t size);
-    void collectResults(BenchmarkResult nodeSet);
-    std::vector<OthelloResult> gatherResults(BenchmarkResult nodeSet);
+    void collectResults();
+    std::vector<OthelloResult> gatherResults();
 };
