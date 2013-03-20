@@ -37,10 +37,10 @@ void gameSimulationStreamed(size_t numberOfBlocks, size_t iterations, size_t* se
     cudaMalloc(&deviceStates, sizeof(curandState) * numberOfBlocks);
     
     setupStateForRandom <<< numberOfBlocks, 1, 0, stream >>> (deviceStates, seeds);
-    CudaUtils::checkState();
+    //CudaUtils::checkState();
     
     simulateGame <<< numberOfBlocks, THREADS_PER_BLOCK, 0, stream >>> (size_t(ceil(iterations * 1.0 / numberOfBlocks)), deviceStates, numberOfPlayfields, playfields, currentPlayer, results);
-    CudaUtils::checkState();
+    //CudaUtils::checkState();
 }
 
 void setupSeedForTest(size_t numberOfBlocks, curandState* deviceStates)

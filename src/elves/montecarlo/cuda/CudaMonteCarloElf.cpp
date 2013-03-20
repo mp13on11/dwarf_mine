@@ -101,17 +101,21 @@ OthelloResult CudaMonteCarloElf::getBestMoveForMultipleStream(OthelloState& stat
     copy(aggregatedChildResults2.data(), aggregatedChildResults2.data() + aggregatedChildResults2.size(), hostResults2);
     CudaUtils::checkError(cudaMemcpyAsync(cudaResults1, hostResults1, sizeof(OthelloResult) * aggregatedChildResults1.size(), cudaMemcpyHostToDevice, stream1));
     CudaUtils::checkError(cudaMemcpyAsync(cudaResults2, hostResults2, sizeof(OthelloResult) * aggregatedChildResults2.size(), cudaMemcpyHostToDevice, stream2));
-    gameSimulationStreamed(NUMBER_OF_BLOCKS, reiterations, cudaSeeds1, aggregatedChildResults1.size(), cudaPlayfields1, state.getCurrentEnemy(), cudaResults1, stream1);
-    gameSimulationStreamed(NUMBER_OF_BLOCKS, reiterations, cudaSeeds2, aggregatedChildResults2.size(), cudaPlayfields2, state.getCurrentEnemy(), cudaResults2, stream2);
+    
+    gameSimulationStreamed(NUMBER_OF_BLOCKS, size_t(ceil(reiterations / 2.0)), cudaSeeds1, aggregatedChildResults1.size(), cudaPlayfields1, state.getCurrentEnemy(), cudaResults1, stream1);
+    gameSimulationStreamed(NUMBER_OF_BLOCKS, size_t(ceil(reiterations / 2.0)), cudaSeeds2, aggregatedChildResults2.size(), cudaPlayfields2, state.getCurrentEnemy(), cudaResults2, stream2);
 
     // cudaResults1.transferTo(aggregatedChildResults1.data());
     // cudaResults2.transferTo(aggregatedChildResults2.data());
     
     CudaUtils::checkError(cudaStreamSynchronize(stream1));
     CudaUtils::checkError(cudaStreamSynchronize(stream2));
+    
     cudaMemcpyAsync(hostResults1, cudaResults1, sizeof(OthelloResult) * aggregatedChildResults1.size(), cudaMemcpyDeviceToHost, stream1);
     cudaMemcpyAsync(hostResults2, cudaResults2, sizeof(OthelloResult) * aggregatedChildResults2.size(), cudaMemcpyDeviceToHost, stream2);
+    
     cudaDeviceSynchronize();
+    CudaUtils::checkState();
     copy(hostResults1, hostResults1 + aggregatedChildResults1.size(), aggregatedChildResults1.data());
     copy(hostResults2, hostResults2 + aggregatedChildResults2.size(), aggregatedChildResults2.data());
 
