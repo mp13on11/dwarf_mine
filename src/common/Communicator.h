@@ -14,6 +14,7 @@ public:
     Communicator createSubCommunicator(std::initializer_list<int> newNodes) const;
 
     bool isValid() const;
+    bool isWorld() const;
     bool isMaster() const;
     int rank() const;
     size_t size() const;
@@ -40,6 +41,11 @@ inline MPI::Intracomm* Communicator::operator->() const
 inline bool Communicator::isValid() const
 {
     return _communicator != MPI::COMM_NULL;
+}
+
+inline bool Communicator::isWorld() const
+{
+    return _communicator == MPI::COMM_WORLD;
 }
 
 inline bool Communicator::isMaster() const

@@ -93,7 +93,7 @@ Communicator determineWeightedCommunicator(const BenchmarkRunner& runner, const 
         Communicator subCommunicator = unweightedCommunicator.createSubCommunicator(
                 {Communicator::MASTER_RANK*1, static_cast<int>(i)}
             );
-        runner.benchmarkNode(subCommunicator, profiler);
+        runner.runBenchmark(subCommunicator, profiler);
         averageTimes.push_back(profiler.averageIterationTime());
     }
     return Communicator(nodeWeightsFrom(averageTimes));
@@ -144,7 +144,7 @@ void benchmarkWith(const Configuration& config)
         if (communicator.size() > 1)
             throw runtime_error("Process was told to run without MPI support, but was called via mpirun");
 
-        runner.runElf(communicator, profiler);
+        runner.runBenchmark(communicator, profiler);
         printResults(communicator, profiler, timeFile);
     }
     else

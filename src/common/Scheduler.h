@@ -17,8 +17,6 @@ public:
 
     virtual void configureWith(const Configuration& config);
     virtual void dispatch() = 0;
-    virtual void dispatchSimple() = 0;
-    virtual void dispatchBenchmark(int node) = 0;
 
 protected:
     virtual void generateData(const DataGenerationParameters& params) = 0;

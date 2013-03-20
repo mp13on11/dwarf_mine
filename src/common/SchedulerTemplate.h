@@ -18,8 +18,6 @@ public:
     virtual ~SchedulerTemplate() = 0;
 
     virtual void dispatch();
-    virtual void dispatchSimple();
-    virtual void dispatchBenchmark(int node);
 
 protected:
     Communicator communicator;
@@ -36,6 +34,7 @@ private:
     std::function<ElfPointer()> _factory;
 
     void validate() const;
+    void performDispatch();
 };
 
 template<typename ElfType>
@@ -62,25 +61,7 @@ void SchedulerTemplate<ElfType>::dispatch()
 {
     _elf.reset(_factory());
     validate();
-    doDispatch();
-    _elf.release();
-}
-
-template<typename ElfType>
-void SchedulerTemplate<ElfType>::dispatchSimple()
-{
-    _elf.reset(_factory());
-    validate();
-    doSimpleDispatch();
-    _elf.release();
-}
-
-template<typename ElfType>
-void SchedulerTemplate<ElfType>::dispatchBenchmark(int node)
-{
-    _elf.reset(_factory());
-    validate();
-    doBenchmarkDispatch(node);
+    performDispatch();
     _elf.release();
 }
 
@@ -93,5 +74,22 @@ void SchedulerTemplate<ElfType>::validate() const
         {
             throw std::runtime_error("SchedulerTemplate::dispatch(): No input data provided or generated!");
         }
+    }
+}
+
+template<typename ElfType>
+void SchedulerTemplate<ElfType>::performDispatch()
+{
+    if (communicator.isWorld() && communicator.size() == 1)
+    {
+        doSimpleDispatch();
+    }
+    else if (!communicator.isWorld() && communicator.size() <= 2) // Master node and up to one slave node
+    {
+        doBenchmarkDispatch(communicator.size() - 1);
+    }
+    else
+    {
+        doDispatch();
     }
 }
