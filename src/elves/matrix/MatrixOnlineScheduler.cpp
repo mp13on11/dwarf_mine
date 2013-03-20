@@ -69,7 +69,9 @@ void MatrixOnlineScheduler::sliceInput()
 {
     MatrixSlicerOnline slicer;
     result = Matrix<float>(left.rows(), right.columns());
-    sliceDefinitions = schedulingStrategy->getSliceDefinitions(result, nodeSet);
+    sliceDefinitions = schedulingStrategy->getSliceDefinitions(
+            result, communicator.nodeSet()
+        );
     currentSliceDefinition = sliceDefinitions.begin();
 }
 

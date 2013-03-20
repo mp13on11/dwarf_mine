@@ -1,6 +1,5 @@
 #pragma once
 
-#include "BenchmarkResults.h"
 #include "Communicator.h"
 #include "Scheduler.h"
 
@@ -21,7 +20,6 @@ public:
 
 protected:
     Communicator communicator;
-    BenchmarkResult nodeSet;
 
     virtual void doDispatch() = 0;
     virtual void doSimpleDispatch() = 0;
@@ -41,8 +39,6 @@ template<typename ElfType>
 SchedulerTemplate<ElfType>::SchedulerTemplate(const Communicator& communicator, const std::function<ElfPointer()>& factory) :
     communicator(communicator), _factory(factory)
 {
-    for (size_t i=0; i<communicator.size(); ++i)
-        nodeSet[i] = communicator.weights()[i];
 }
 
 template<typename ElfType>

@@ -1,5 +1,7 @@
 #pragma once
 
+#include "BenchmarkResults.h"
+
 #include <mpi.h>
 #include <string>
 #include <vector>
@@ -23,6 +25,7 @@ public:
     size_t size() const;
     double weight() const;
     std::vector<double> weights() const;
+    BenchmarkResult nodeSet() const;
 
     MPI::Intracomm* operator->() const;
 
@@ -91,6 +94,16 @@ inline double Communicator::weight() const
 inline std::vector<double> Communicator::weights() const
 {
     return _weights;
+}
+
+inline BenchmarkResult Communicator::nodeSet() const
+{
+    BenchmarkResult nodeSet;
+
+    for (size_t i=0; i<_weights.size(); ++i)
+        nodeSet[i] = _weights[i];
+
+    return nodeSet;
 }
 
 inline Communicator::Node::Node(int rank)
