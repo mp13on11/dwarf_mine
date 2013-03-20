@@ -78,26 +78,6 @@ void MonteCarloScheduler::doDispatch()
     collectResults();
 }
 
-pair<vector<NodeRating>, Rating> weightRatings(const BenchmarkResult& ratings)
-{
-    vector<NodeRating> positiveRatings;
-    Rating ratingSum = 0;
-    Rating ratingMax = 0;
-    Rating ratingMin = numeric_limits<Rating>::max();
-    for (const auto& rating : ratings)
-    {
-        ratingMax = max(ratingMax, rating.second);
-        ratingMin = min(ratingMin, rating.second);
-    }
-    for (const auto& rating : ratings)
-    {
-        Rating positiveRating = ratingMin / rating.second;
-        ratingSum += positiveRating;
-        positiveRatings.emplace_back(rating.first, positiveRating);
-    }
-    return make_pair<vector<NodeRating>, Rating>(move(positiveRatings), move(ratingSum));
-}
-
 void MonteCarloScheduler::calculate()
 {
     if (_localRepetitions == 0)
