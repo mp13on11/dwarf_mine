@@ -10,6 +10,7 @@ Sets global environment variables for VampirTrace to record corresponding perfor
 You can specify a per-process buffer size in MB to reduce the amount of flushes. (Default: 32 MB)
 
 OPTIONS:
+    none
     cache_l1
     cache_l2
     cache_l3
@@ -37,6 +38,10 @@ else
 fi
 
 case $1 in
+    none)
+        echo "Not recording performance events."
+        setRecordingSet ""
+        ;;
     cache_l1)
         echo "Recording L1 data cache misses, loads, stores and instruction cache misses."
         setRecordingSet "PAPI_L1_DCM:PAPI_L1_LDM:PAPI_L1_STM:PAPI_L1_ICM"
@@ -54,8 +59,8 @@ case $1 in
         setRecordingSet "PAPI_BR_PRC:PAPI_BR_MSP"
         ;;
     flop)
-        # http://icl.cs.utk.edu/projects/papi/wiki/PAPITopics:SandyFlops
         echo "Recording double precision floating point scalar and vector operations."
+        echo "Please also see http://icl.cs.utk.edu/projects/papi/wiki/PAPITopics:SandyFlops."
         setRecordingSet "PAPI_DP_OPS"
         ;;
     *)
