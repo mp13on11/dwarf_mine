@@ -10,4 +10,9 @@ public:
     MpiGuard(MpiGuard&& move) = delete;
     MpiGuard& operator=(const MpiGuard& rhs) = delete;
     MpiGuard& operator=(const MpiGuard&& rhs) = delete;
+
+    static int getThreadSupport();
+
+protected:
+    static int threadSupport;
 };
