@@ -1,41 +1,33 @@
 #pragma once
 
 #include "BenchmarkResults.h"
+#include "Configuration.h"
 #include "ProblemStatement.h"
-#include "Scheduler.h"
 
-#include <chrono>
-#include <memory>
-#include <vector>
 #include <functional>
+#include <memory>
 
+class Communicator;
 class Configuration;
+class Profiler;
 
 class BenchmarkRunner
 {
 public:
-    typedef std::chrono::microseconds Measurement;
-
     explicit BenchmarkRunner(const Configuration& config);
 
-    BenchmarkResult benchmarkIndividualNodes() const;
-    std::vector<Measurement> runBenchmark(const BenchmarkResult& nodeWeights) const;
+    void benchmarkNode(const Communicator& communicator, Profiler& profiler) const;
+    void runBenchmark(const Communicator& communicator, Profiler& profiler) const;
+    void runElf(const Communicator& communicator, Profiler& profiler) const;
 
 private:
     typedef std::function<void()> BenchmarkMethod;
 
-    static Measurement averageOf(const std::vector<Measurement>& runTimes);
-    static BenchmarkResult calculateNodeWeights(const std::vector<Measurement>& averageRunTimes);
-    static bool slaveShouldRunWith(const BenchmarkResult& nodeWeights);
-
+    const Configuration* config;
     size_t iterations;
     size_t warmUps;
-    mutable bool inPreBenchmark;
-    std::unique_ptr<ProblemStatement> clusterProblem;
-    std::unique_ptr<Scheduler> scheduler;
+    std::unique_ptr<ProblemStatement> fileProblem;
+    std::unique_ptr<ProblemStatement> generatedProblem;
 
-    std::vector<Measurement> runBenchmark(const BenchmarkResult& nodeWeights, bool useProblemStatement) const;
-    std::vector<Measurement> benchmarkNodeset(bool useProblemStatement, BenchmarkMethod targetMethod) const;
-    void benchmarkSlave(BenchmarkMethod targetMethod) const;
-    Measurement measureCall(BenchmarkMethod targetMethod) const;
+    void run(BenchmarkMethod targetMethod, Profiler& profiler) const;
 };

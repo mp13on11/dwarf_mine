@@ -4,7 +4,6 @@
 #include "MonteCarloElf.h"
 #include <functional>
 #include <vector>
-#include <mpi.h>
 
 class MonteCarloElf;
 struct OthelloResult;
@@ -12,7 +11,7 @@ struct OthelloResult;
 class MonteCarloScheduler: public SchedulerTemplate<MonteCarloElf>
 {
 public:
-    MonteCarloScheduler(const std::function<ElfPointer()>& factory);
+    MonteCarloScheduler(const Communicator& communicator, const std::function<ElfPointer()>& factory);
     virtual ~MonteCarloScheduler() = default;
 
     virtual void provideData(std::istream& input);
@@ -24,7 +23,7 @@ protected:
     virtual bool hasData() const;
     virtual void doDispatch();
     virtual void doSimpleDispatch();
-    virtual void doBenchmarkDispatch(NodeId node);
+    virtual void doBenchmarkDispatch(int node);
 
     OthelloState _state;
     OthelloResult _result;

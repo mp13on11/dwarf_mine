@@ -1,6 +1,7 @@
 #pragma once
 
-#include "MpiHelper.h"
+#include "BenchmarkResults.h"
+#include "Communicator.h"
 #include "Scheduler.h"
 
 #include <functional>
@@ -13,17 +14,20 @@ class SchedulerTemplate : public Scheduler
 public:
     typedef ElfType *ElfPointer;
 
-    SchedulerTemplate(const std::function<ElfPointer()>& factory);
+    SchedulerTemplate(const Communicator& communicator, const std::function<ElfPointer()>& factory);
     virtual ~SchedulerTemplate() = 0;
 
     virtual void dispatch();
     virtual void dispatchSimple();
-    virtual void dispatchBenchmark(NodeId node);
+    virtual void dispatchBenchmark(int node);
 
 protected:
+    Communicator communicator;
+    BenchmarkResult nodeSet;
+
     virtual void doDispatch() = 0;
     virtual void doSimpleDispatch() = 0;
-    virtual void doBenchmarkDispatch(NodeId node) = 0;
+    virtual void doBenchmarkDispatch(int node) = 0;
     virtual bool hasData() const = 0;
     ElfType& elf() const;
 
@@ -35,9 +39,11 @@ private:
 };
 
 template<typename ElfType>
-SchedulerTemplate<ElfType>::SchedulerTemplate(const std::function<ElfPointer()>& factory) :
-    _factory(factory)
+SchedulerTemplate<ElfType>::SchedulerTemplate(const Communicator& communicator, const std::function<ElfPointer()>& factory) :
+    communicator(communicator), _factory(factory)
 {
+    for (size_t i=0; i<communicator.size(); ++i)
+        nodeSet[i] = communicator.weights()[i];
 }
 
 template<typename ElfType>
@@ -70,7 +76,7 @@ void SchedulerTemplate<ElfType>::dispatchSimple()
 }
 
 template<typename ElfType>
-void SchedulerTemplate<ElfType>::dispatchBenchmark(NodeId node)
+void SchedulerTemplate<ElfType>::dispatchBenchmark(int node)
 {
     _elf.reset(_factory());
     validate();
@@ -81,16 +87,11 @@ void SchedulerTemplate<ElfType>::dispatchBenchmark(NodeId node)
 template<typename ElfType>
 void SchedulerTemplate<ElfType>::validate() const
 {
-    if (MpiHelper::isMaster())
+    if (communicator.isMaster())
     {
         if (!hasData())
         {
             throw std::runtime_error("SchedulerTemplate::dispatch(): No input data provided or generated!");
-        }
-
-        if (nodeSet.empty())
-        {
-            throw std::runtime_error("SchedulerTemplate::dispatch(): Nodeset is empty!");
         }
     }
 }

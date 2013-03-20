@@ -1,4 +1,4 @@
-SET(LIBRARY_NAME cuda-montecarlo)
+SET(LIBRARY_NAME cooda-montecarlo)
 
 # Export library for main subproject
 SET(CUDA_MONTECARLO_ELF_LIB ${LIBRARY_NAME} CACHE STRING INTERNAL FORCE)

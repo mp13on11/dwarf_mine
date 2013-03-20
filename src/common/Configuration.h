@@ -5,6 +5,7 @@
 #include <memory>
 #include <string>
 
+class Communicator;
 class ProblemStatement;
 class Scheduler;
 class SchedulerFactory;
@@ -17,9 +18,10 @@ public:
 
     Configuration(int argc, char** argv);
 
-    std::unique_ptr<Scheduler> createScheduler() const;
+    std::unique_ptr<Scheduler> createScheduler(const Communicator& communicator) const;
 
     std::unique_ptr<ProblemStatement> createProblemStatement() const;
+    std::unique_ptr<ProblemStatement> createGeneratedProblemStatement() const;
     std::unique_ptr<SchedulerFactory> createSchedulerFactory() const;
 
     size_t warmUps() const;
@@ -32,9 +34,12 @@ public:
     bool shouldBeQuiet() const;
     bool shouldBeVerbose() const;
     std::string timeOutputFilename() const;
+    std::string schedulingStrategy() const;
 
     void validate() const;
     bool shouldPrintHelp() const;
+
+    bool shouldRunWithoutMPI() const;
 
     friend std::ostream& operator<<(std::ostream& s, const Configuration& c);
 

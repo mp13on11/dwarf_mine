@@ -8,3 +8,5 @@ out.txt
 *.sublime-workspace
 *.swp
 *.swo
+*.cmake
+*CMakeFiles/

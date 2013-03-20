@@ -29,12 +29,12 @@ public:
     {
     }
 
-    std::istream& getInput()
+    std::istream& getInput() const
     {
         return *input;
     }
 
-    std::ostream& getOutput()
+    std::ostream& getOutput() const
     {
         return *output;
     }
