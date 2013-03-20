@@ -51,7 +51,9 @@ void MatrixOnlineScheduler::doDispatch()
     if (MpiGuard::getThreadSupport() == MPI_THREAD_MULTIPLE)
         MatrixScheduler::doDispatch();
     else
-        throw runtime_error("MatrixOnlineScheduler needs MPI with MPI_THREAD_MULTIPLE support.");
+        throw runtime_error("\
+MatrixOnlineScheduler needs MPI with MPI_THREAD_MULTIPLE support.\n\
+Please rebuild MPI with enabled multiple thread support.");
 }
 
 void MatrixOnlineScheduler::orchestrateCalculation()
