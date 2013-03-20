@@ -3,8 +3,11 @@
 #include <OthelloField.h>
 #include <OthelloResult.h>
 #include <vector>
+#include <cuda.h>
+#include <cuda_runtime.h>
 
 extern void gameSimulation(size_t numberOfBlocks, size_t iterations, size_t* seeds, size_t numberOfPlayfields, Field* playfields, Player currentPlayer, OthelloResult* results);
+extern void gameSimulationStreamed(size_t numberOfBlocks, size_t iterations, size_t* seeds, size_t numberOfPlayfields, Field* playfields, Player currentPlayer, OthelloResult* results, cudaStream_t stream);
 
 extern void testRandomNumberProxy(float fakedRandom, size_t maximum, size_t* randomMoveIndex);
 extern void testDoStepProxy(Field* playfield, Player currentPlayer, float fakedRandom);
