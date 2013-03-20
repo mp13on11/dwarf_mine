@@ -26,6 +26,7 @@ public:
     int getRemainingWorkAmount() const;
 
 protected:
+    virtual void doDispatch();
     virtual void orchestrateCalculation();
     virtual void calculateOnSlave();
 

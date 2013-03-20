@@ -7,9 +7,11 @@
 #include "MatrixSlicerOnline.h"
 #include "MatrixOnlineSchedulingStrategyFactory.h"
 #include "common/ProblemStatement.h"
+#include "common/MpiGuard.h"
 
 #include <algorithm>
 #include <iterator>
+#include <stdexcept>
 
 using namespace std;
 using MatrixHelper::MatrixPair;
@@ -42,6 +44,14 @@ void MatrixOnlineScheduler::configureWith(const Configuration& config)
 void MatrixOnlineScheduler::generateData(const DataGenerationParameters& params)
 {
     MatrixScheduler::generateData(params);
+}
+
+void MatrixOnlineScheduler::doDispatch()
+{
+    if (MpiGuard::getThreadSupport() == MPI_THREAD_MULTIPLE)
+        MatrixScheduler::doDispatch();
+    else
+        throw runtime_error("MatrixOnlineScheduler needs MPI with MPI_THREAD_MULTIPLE support.");
 }
 
 void MatrixOnlineScheduler::orchestrateCalculation()
@@ -132,7 +142,7 @@ MatrixSlice& MatrixOnlineScheduler::getNextSliceDefinitionFor(const int node)
     for (auto& slice : sliceDefinitions)
         if (slice.getNodeId() == node)
             return slice;
-    throw "ERROR: No next slice definition found.";
+    throw runtime_error("No next slice definition found.");
 }
 
 void MatrixOnlineScheduler::sendNextSlicesTo(const int node)
