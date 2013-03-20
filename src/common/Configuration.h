@@ -35,6 +35,7 @@ public:
     bool shouldBeVerbose() const;
     std::string timeOutputFilename() const;
     std::string schedulingStrategy() const;
+    bool mpiThreadMultiple() const;
 
     void validate() const;
     bool shouldPrintHelp() const;
