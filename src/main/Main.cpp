@@ -4,6 +4,7 @@
 #include "common/MpiGuard.h"
 #include "common/TimingProfiler.h"
 
+#include <algorithm>
 #include <chrono>
 #include <fstream>
 #include <iostream>
@@ -69,20 +70,23 @@ void silenceOutputStreams(bool keepErrorStreams = false)
 
 vector<double> nodeWeightsFrom(const vector<microseconds>& averageExecutionTimes)
 {
-    microseconds sum(0);
-    for (microseconds time : averageExecutionTimes)
+    microseconds max = *max_element(averageExecutionTimes.begin(), averageExecutionTimes.end());
+    double fullWeight = 0;
+    vector<double> weights;
+
+    for (const microseconds& time : averageExecutionTimes)
     {
-        sum += time;
+        double weight = static_cast<double>(max.count()) / static_cast<double>(time.count());
+        fullWeight += weight;
+        weights.push_back(weight);
     }
 
-    cout << "\tWeights:" << endl;
-    vector<double> weights;
-    for (size_t i=0; i<averageExecutionTimes.size(); ++i)
+    cout << "\tWeights (scaled):" << endl;
+
+    for (size_t i=0; i<weights.size(); ++i)
     {
-        double weight = static_cast<double>(averageExecutionTimes[i].count())
-            / static_cast<double>(sum.count());
-        weights.push_back(weight);
-        cout << "\t\tRank " << i << ":\t" << weight << endl;
+        weights[i] /= fullWeight;
+        cout << "\t\tRank " << i << ":\t" << weights[i] << endl;
     }
 
     return weights;
