@@ -75,11 +75,16 @@ vector<double> nodeWeightsFrom(const vector<microseconds>& averageExecutionTimes
         sum += time;
     }
 
+    cout << "\tWeights:" << endl;
     vector<double> weights;
-    for (microseconds time : averageExecutionTimes)
+    for (size_t i=0; i<averageExecutionTimes.size(); ++i)
     {
-        weights.push_back(static_cast<double>(time.count()) / static_cast<double>(sum.count()));
+        double weight = static_cast<double>(averageExecutionTimes[i].count())
+            / static_cast<double>(sum.count());
+        weights.push_back(weight);
+        cout << "\t\tRank " << i << ":\t" << weight << endl;
     }
+
     return weights;
 }
 
@@ -88,6 +93,8 @@ Communicator determineWeightedCommunicator(const BenchmarkRunner& runner, const 
     TimingProfiler profiler;
     vector<microseconds> averageTimes;
     
+    cout << "\tAverage execution times (microseconds):" << endl;
+
     for (size_t i=0; i<unweightedCommunicator.size(); ++i)
     {
         Communicator subCommunicator = unweightedCommunicator.createSubCommunicator(
@@ -95,6 +102,8 @@ Communicator determineWeightedCommunicator(const BenchmarkRunner& runner, const 
             );
         runner.runBenchmark(subCommunicator, profiler);
         averageTimes.push_back(profiler.averageIterationTime());
+
+        cout << "\t\tRank " << i << ":\t" << profiler.averageIterationTime().count() << endl;
     }
     return Communicator(nodeWeightsFrom(averageTimes));
 }
