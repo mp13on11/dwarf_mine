@@ -34,6 +34,9 @@ MatrixOnlineScheduler::MatrixOnlineScheduler(const Communicator& communicator, c
 
 MatrixOnlineScheduler::~MatrixOnlineScheduler()
 {
+    #pragma omp parallel for
+    for (size_t i = 0; i < scheduleHandlers.size(); ++i)
+        scheduleHandlers[i].wait();
 }
 
 void MatrixOnlineScheduler::configureWith(const Configuration& config)
