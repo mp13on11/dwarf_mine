@@ -2,18 +2,15 @@
 #include "common/Communicator.h"
 #include "common/Configuration.h"
 #include "common/MpiGuard.h"
+#include "common/NodeWeightProfiler.h"
 #include "common/TimingProfiler.h"
 
-#include <algorithm>
-#include <chrono>
 #include <fstream>
 #include <iostream>
 #include <stdexcept>
 #include <string>
-#include <vector>
 
 using namespace std;
-using namespace std::chrono;
 
 void exportWeightedCommunicator(const string& filename, const Communicator& communicator)
 {
@@ -68,30 +65,6 @@ void silenceOutputStreams(bool keepErrorStreams = false)
     }
 }
 
-vector<double> nodeWeightsFrom(const vector<microseconds>& averageExecutionTimes)
-{
-    microseconds max = *max_element(averageExecutionTimes.begin(), averageExecutionTimes.end());
-    double fullWeight = 0;
-    vector<double> weights;
-
-    for (const microseconds& time : averageExecutionTimes)
-    {
-        double weight = static_cast<double>(max.count()) / static_cast<double>(time.count());
-        fullWeight += weight;
-        weights.push_back(weight);
-    }
-
-    cout << "\tWeights (scaled):" << endl;
-
-    for (size_t i=0; i<weights.size(); ++i)
-    {
-        weights[i] /= fullWeight;
-        cout << "\t\tRank " << i << ":\t" << weights[i] << endl;
-    }
-
-    return weights;
-}
-
 Communicator createSubCommunicatorFor(const Communicator& communicator, int rank)
 {
     if (rank == Communicator::MASTER_RANK)
@@ -111,20 +84,16 @@ Communicator createSubCommunicatorFor(const Communicator& communicator, int rank
 
 Communicator determineWeightedCommunicator(const BenchmarkRunner& runner, const Communicator& unweightedCommunicator)
 {
-    TimingProfiler profiler;
-    vector<microseconds> averageTimes;
-    
-    cout << "\tAverage execution times (microseconds):" << endl;
+    NodeWeightProfiler profiler;
 
     for (size_t i=0; i<unweightedCommunicator.size(); ++i)
     {
         Communicator subCommunicator = createSubCommunicatorFor(unweightedCommunicator, i);
         runner.runBenchmark(subCommunicator, profiler);
-        averageTimes.push_back(profiler.averageIterationTime());
-
-        cout << "\t\tRank " << i << ":\t" << profiler.averageIterationTime().count() << endl;
+        profiler.saveExecutionTime();
     }
-    return Communicator(nodeWeightsFrom(averageTimes));
+
+    return Communicator(profiler.nodeWeights());
 }
 
 void printResults(const Communicator& communicator, const TimingProfiler& profiler, ostream& timeFile)
