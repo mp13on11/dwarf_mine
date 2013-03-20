@@ -53,7 +53,7 @@ void MatrixOnlineScheduler::doDispatch()
     else
         throw runtime_error("\
 MatrixOnlineScheduler needs MPI with MPI_THREAD_MULTIPLE support.\n\
-Please rebuild MPI with enabled multiple thread support.");
+Please use --mpi_thread_multiple and/or rebuild MPI with enabled multiple thread support.");
 }
 
 void MatrixOnlineScheduler::orchestrateCalculation()
