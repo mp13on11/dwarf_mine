@@ -253,8 +253,11 @@ void MonteCarloScheduler::collectResults(BenchmarkResult nodeSet)
             accumulatedResults.push_back(r);
             existingMove = &(accumulatedResults.back());
         }
-        existingMove->visits += r.visits;
-        existingMove->wins += r.wins;
+        else
+        {
+            existingMove->visits += r.visits;
+            existingMove->wins += r.wins;
+        }
         if (bestMove == nullptr || bestMove->successRate() < existingMove->successRate())
         {
             bestMove = existingMove;
