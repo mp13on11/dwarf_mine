@@ -76,13 +76,7 @@ public:
 
     __device__ size_t countPossibleMoves()
     {
-        __syncthreads();
-        size_t sum = 0;
-        for (size_t i = 0; i < _state->size; ++i)
-        {
-            sum += _state->possible[i];
-        }
-        return sum;
+        return numberOfMarkedFields(_state->possible);
     }
 
     // this function may deliver different results for the threads, so it should be only called once per block

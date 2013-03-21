@@ -15,6 +15,7 @@ const int THREADS_PER_BLOCK = 64;
 __global__ void setupStateForRandom(curandState* state, size_t* seeds);
 __global__ void simulateGame(size_t reiterations, curandState* deviceStates, size_t numberOfPlayfields, const Field* playfields, Player currentPlayer, OthelloResult* results);
 
+__global__ void testNumberOfMarkedFields(size_t* sum, const bool* playfield);
 __global__ void testRandomNumber(float fakedRandom, size_t maximum, size_t* randomNumberResult);
 __global__ void testDoStep(curandState* deviceState, Field* playfield, Player currentPlayer, float fakedRandom);
 __global__ void testExpandLeaf(curandState* deviceState, Field* playfield, Player currentPlayer, size_t* wins, size_t* visits);
@@ -63,6 +64,12 @@ void testDoStepProxy(Field* playfield, Player currentPlayer, float fakedRandom)
 
     testDoStep <<< numberOfBlocks, THREADS_PER_BLOCK >>>(deviceStates, playfield, currentPlayer, fakedRandom);
     CudaUtils::checkState();    
+}
+
+void testNumberOfMarkedFieldsProxy(size_t* sum, const bool* playfield)
+{
+    testNumberOfMarkedFields<<< 1, THREADS_PER_BLOCK >>>(sum, playfield);
+    CudaUtils::checkState();
 }
 
 void testRandomNumberProxy(float fakedRandom, size_t maximum, size_t* randomMoveIndex)

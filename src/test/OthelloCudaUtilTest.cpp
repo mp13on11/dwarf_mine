@@ -6,7 +6,7 @@
 using namespace std;
 
 
-TEST_F(OthelloCudaSimulatorTest, GetRandomMoveIndexTest)
+TEST_F(OthelloCudaUtilTest, GetRandomMoveIndexTest)
 {
 	size_t randomResult = 0;
 	CudaUtils::Memory<size_t> cudaRandomResult(1);
@@ -26,7 +26,7 @@ TEST_F(OthelloCudaSimulatorTest, GetRandomMoveIndexTest)
 	}
 }
 
-TEST_F(OthelloCudaSimulatorTest, GetRandomMoveIndexRegressionTest)
+TEST_F(OthelloCudaUtilTest, GetRandomMoveIndexRegressionTest)
 {
 	size_t randomResult = 0;
 	CudaUtils::Memory<size_t> cudaRandomResult(1);
@@ -48,4 +48,129 @@ TEST_F(OthelloCudaSimulatorTest, GetRandomMoveIndexRegressionTest)
 
 		ASSERT_EQ(get<2>(t), randomResult);
 	}
+}
+
+TEST_F(OthelloCudaUtilTest, CalculateNumberOfMarkedFieldsAllTrueTest)
+{
+	size_t sumResult = 0;
+	CudaUtils::Memory<size_t> cudaSumResult(1);
+	cudaSumResult.transferFrom(&sumResult);
+
+	bool playfield[64] = {
+		true, true, true, true, true, true, true, true, 
+		true, true, true, true, true, true, true, true, 
+		true, true, true, true, true, true, true, true, 
+		true, true, true, true, true, true, true, true, 
+		true, true, true, true, true, true, true, true, 
+		true, true, true, true, true, true, true, true, 
+		true, true, true, true, true, true, true, true, 
+		true, true, true, true, true, true, true, true, 
+	};
+	CudaUtils::Memory<bool> cudaPlayfield(64);
+	cudaPlayfield.transferFrom(playfield);
+
+	testNumberOfMarkedFieldsProxy(cudaSumResult.get(), cudaPlayfield.get());
+
+	cudaSumResult.transferTo(&sumResult);
+	ASSERT_EQ(64u, sumResult);
+}
+
+TEST_F(OthelloCudaUtilTest, CalculateNumberOfMarkedFieldsAllFalseTest)
+{
+	size_t sumResult = 0;
+	CudaUtils::Memory<size_t> cudaSumResult(1);
+	cudaSumResult.transferFrom(&sumResult);
+
+	bool playfield[64] = {
+		false, false, false, false, false, false, false, false, 
+		false, false, false, false, false, false, false, false, 
+		false, false, false, false, false, false, false, false, 
+		false, false, false, false, false, false, false, false, 
+		false, false, false, false, false, false, false, false, 
+		false, false, false, false, false, false, false, false, 
+		false, false, false, false, false, false, false, false, 
+		false, false, false, false, false, false, false, false, 
+	};
+	CudaUtils::Memory<bool> cudaPlayfield(64);
+	cudaPlayfield.transferFrom(playfield);
+
+	testNumberOfMarkedFieldsProxy(cudaSumResult.get(), cudaPlayfield.get());
+
+	cudaSumResult.transferTo(&sumResult);
+	ASSERT_EQ(0u, sumResult);
+}
+
+TEST_F(OthelloCudaUtilTest, CalculateNumberOfMarkedFieldsSomeTrueTest)
+{
+	size_t sumResult = 0;
+	CudaUtils::Memory<size_t> cudaSumResult(1);
+	cudaSumResult.transferFrom(&sumResult);
+
+	bool playfield[64] = {
+		false, true,  false, false, false, false, true,  false, 
+		false, false, false, false, false, true,  false, false, 
+		false, false, false, false, true,  false, false, false, 
+		true,  false, false, true,  false, false, false, true, 
+		false, false, true,  false, false, false, false, false, 
+		false, true,  false, false, false, false, false, false, 
+		true,  false, false, false, false, false, false, false, 
+		false, false, false, false, false, false, false, true, 
+	};
+	CudaUtils::Memory<bool> cudaPlayfield(64);
+	cudaPlayfield.transferFrom(playfield);
+
+	testNumberOfMarkedFieldsProxy(cudaSumResult.get(), cudaPlayfield.get());
+
+	cudaSumResult.transferTo(&sumResult);
+	ASSERT_EQ(11u, sumResult);
+}
+
+TEST_F(OthelloCudaUtilTest, CalculateNumberOfMarkedFieldsManyTrueTest)
+{
+	size_t sumResult = 0;
+	CudaUtils::Memory<size_t> cudaSumResult(1);
+	cudaSumResult.transferFrom(&sumResult);
+
+	bool playfield[64] = {
+		true,  false, true,  true,  true,  true,  false, true, 
+		false, true,  true,  false, true,  true,  true,  false, 
+		true,  true,  true,  true,  true,  false, true,  true, 
+		true,  true,  true,  true,  false, true,  true,  true, 
+		false, true,  true,  true,  true,  true,  true,  true, 
+		true,  true,  false, true,  true,  true,  true,  true, 
+		true,  true,  true,  true,  true,  true,  true,  false, 
+		true,  false, true,  true,  true,  true,  true,  true, 
+	};
+	CudaUtils::Memory<bool> cudaPlayfield(64);
+	cudaPlayfield.transferFrom(playfield);
+
+	testNumberOfMarkedFieldsProxy(cudaSumResult.get(), cudaPlayfield.get());
+
+	cudaSumResult.transferTo(&sumResult);
+	ASSERT_EQ(53u, sumResult);
+}
+
+TEST_F(OthelloCudaUtilTest, CalculateNumberOfMarkedFieldsTrueAndFalseEqualTest)
+{
+	size_t sumResult = 0;
+	CudaUtils::Memory<size_t> cudaSumResult(1);
+	cudaSumResult.transferFrom(&sumResult);
+
+	bool playfield[64] = {
+		false, false, true,  true,  true,  true,  false, false, 
+		false, false, true,  false, true,  false, false, false, 
+		false, false, false, false, false, false, true,  true, 
+		false, false, false, false, false, true,  true,  true, 
+		false, true,  false, true,  false, true,  false, true, 
+		true,  false, false, true,  false, true,  true,  true, 
+		true,  true,  true,  false, true,  true,  true,  false, 
+		true,  false, true,  false, true,  true,  true,  true, 
+	};
+	CudaUtils::Memory<bool> cudaPlayfield(64);
+	cudaPlayfield.transferFrom(playfield);
+
+	testNumberOfMarkedFieldsProxy(cudaSumResult.get(), cudaPlayfield.get());
+
+	cudaSumResult.transferTo(&sumResult);
+	ASSERT_EQ(32u, sumResult);
 }

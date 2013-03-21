@@ -55,14 +55,12 @@ __device__ void expandLeaf(curandState* deviceState, CudaSimulator& simulator, C
     }
     __syncthreads();
 
-    if (threadIdx.x == 0)
+    if (threadIdx.x == 0) ++(*visits);
+    if (state.isWinner(startingPlayer))
     {
-        ++(*visits);
-        if (state.isWinner(startingPlayer))
-        {
-            ++(*wins);
-        }
+        if (threadIdx.x == 0) ++(*wins);
     }
+    
 }
 
 __global__ void simulateGame(size_t reiterations, curandState* deviceStates, size_t numberOfPlayfields, const Field* playfields, Player currentPlayer, OthelloResult* results)
@@ -109,6 +107,11 @@ __global__ void simulateGame(size_t reiterations, curandState* deviceStates, siz
 __global__ void testRandomNumber(float fakedRandom, size_t maximum, size_t* randomNumberResult)
 {
     *randomNumberResult = randomNumber(NULL, maximum, fakedRandom);
+}
+
+__global__ void testNumberOfMarkedFields(size_t* resultSum, const bool* playfield)
+{
+    *resultSum = numberOfMarkedFields(playfield);
 }
 
 
