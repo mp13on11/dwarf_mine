@@ -20,7 +20,7 @@ FILE(GLOB GCC_SOURCES
 # Build executable out of sources
 SET(LINKING_MODE SHARED)
 
-IF(CMAKE_COMPILER_IS_GNUCXX)
+IF(CMAKE_COMPILER_IS_GNUCXX OR USE_VAMPIR_TRACE)
     ADD_CXX_FLAGS("-O3 -fopenmp -funroll-loops")        ## Optimize
 ENDIF()
 

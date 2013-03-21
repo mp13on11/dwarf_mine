@@ -1,83 +1,85 @@
 #include "SMPMonteCarloElf.h"
-#include "OthelloNode.h"
 #include "OthelloUtil.h"
 #include <functional>
 #include <random>
 #include <iostream>
 #include <omp.h>
 #include <chrono>
+#include <cassert>
 #include <ratio>
+#include <vector>
+#include <atomic>
+#include <algorithm>
 
 using namespace std;
 
-void SMPMonteCarloElf::expand(OthelloNode* node, OthelloState& state)
+const int WORKSTEALING_BLOCKSIZE = 10;
+
+void expand(const OthelloState& rootState, vector<OthelloState>& childStates, vector<OthelloResult>& childResults)
 {
-    OthelloMove move = node->getRandomUntriedMove(_generator);
-    node->removeFromUntriedMoves(move);
-    state.doMove(move);
-    node->addChild(move, state);   
+    auto moves = rootState.getPossibleMoves();
+    for (const auto& move : moves)
+    {
+        childStates.emplace_back(rootState, move);
+        childResults.emplace_back(OthelloResult{ (size_t)move.x, (size_t)move.y, 0, 0});
+    }   
 }
 
-OthelloNode* SMPMonteCarloElf::select(OthelloNode* node, OthelloState& state)
+void rollout(OthelloState& state, RandomGenerator generator)
 {
-    while(!node->hasUntriedMoves() && node->hasChildren())
+    size_t passCounter = 0;
+    while (passCounter < 2)
     {
-        node = &(node->getRandomChildNode(_generator));
-        OthelloMove move = node->getTriggerMove();
-        state.doMove(move);
+        auto possibleMoves = state.getPossibleMoves();
+        if (possibleMoves.size() > 0)
+        {
+            OthelloMove move = possibleMoves[generator(possibleMoves.size())];
+            state.doMove(move);
+            passCounter = 0;
+        }
+        else
+        {
+            ++passCounter;
+        }
     }
-    return node;
 }
 
-void SMPMonteCarloElf::rollout(OthelloState& state)
+OthelloResult SMPMonteCarloElf::getBestMoveFor(OthelloState& rootState, size_t reiterations, size_t nodeId, size_t commonSeed)
 {
-    while(state.hasPossibleMoves())
+    vector<OthelloResult> childResults;
+    vector<OthelloState> childStates;
+
+    expand(rootState, childStates, childResults);
+
+    #pragma omp parallel
     {
-        OthelloMove move = state.getRandomMove(_generator);
-        state.doMove(move);
-    }
-}
+        // thread-private random number generator
+        mt19937 engine(OthelloHelper::generateUniqueSeed(nodeId, omp_get_thread_num(), commonSeed));
 
-void SMPMonteCarloElf::backPropagate(OthelloNode* node, OthelloState& state, Player player)
-{
-    do
-    {
-        node->updateSuccessProbability(state.hasWon(player));
-        node = &(node->parent());
-    }
-    while(node->hasParent());
-}
+        auto generator = [&engine](size_t limit){ 
+            uniform_int_distribution<size_t> distribution(0, limit - 1);
+            return distribution(engine);
+        };
 
-OthelloResult SMPMonteCarloElf::getBestMoveFor(OthelloState& rootState, size_t reiterations)
-{
+        #pragma omp for schedule(dynamic, WORKSTEALING_BLOCKSIZE)
+        for(size_t i=0; i<reiterations; ++i)
+        {
+            // select randomly
+            size_t selectedIndex = generator(childStates.size());
+            OthelloState selectedState = childStates[selectedIndex];
 
-    mt19937 engine(time(nullptr));
-    _generator = [&engine](size_t limit){ 
-        uniform_int_distribution<size_t> distribution(0, limit - 1);
-        return distribution(engine);
-    };
+            // rollout
+            rollout(selectedState, generator);
 
-    OthelloNode rootNode(rootState);
-
-    while (rootNode.hasUntriedMoves())
-    {
-        auto childState = rootState;
-        expand(&rootNode, childState);
+            // backpropagate
+            #pragma omp critical(selectedIndex)
+            {
+                childResults[selectedIndex].visits++;
+                if (selectedState.hasWon(selectedState.getCurrentEnemy()))
+                    childResults[selectedIndex].wins++;
+            }
+        }
     }
 
-    #pragma omp parallel for shared(rootState, rootNode) 
-    for (size_t i = 0; i < reiterations; ++i)
-    {
-        OthelloNode* currentNode = &rootNode;
-        OthelloState currentState = rootState;
-
-        currentNode = select(currentNode, currentState);
-        //expand() moved before parallelization
-        rollout(currentState);
-        backPropagate(currentNode, currentState, rootNode.currentPlayer());
-    }
-    
-    auto result = rootNode.getFavoriteChild().collectedResult();
-    result.iterations = reiterations;
-    return result;
+    return *max_element(childResults.begin(), childResults.end());
 }

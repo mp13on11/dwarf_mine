@@ -4,6 +4,7 @@
 #include "DataGenerationParameters.h"
 #include "matrix/Matrix.h"
 #include "matrix/MatrixHelper.h"
+#include "matrix/MatrixOnlineSchedulingStrategyFactory.h"
 
 #include <stdexcept>
 #include <cstdlib>
@@ -29,14 +30,17 @@ Configuration::Configuration(int argc, char** argv) :
 unique_ptr<ProblemStatement> Configuration::createProblemStatement() const
 {
     if(!useFiles())
-    {
-        return unique_ptr<ProblemStatement>(
-            new ProblemStatement(category(), makeDataGenerationParameters())
-        );
-    }
+        return createGeneratedProblemStatement();
 
     return unique_ptr<ProblemStatement>(
         new ProblemStatement(category(), inputFilename(), outputFilename())
+    );
+}
+
+unique_ptr<ProblemStatement> Configuration::createGeneratedProblemStatement() const
+{
+    return unique_ptr<ProblemStatement>(
+        new ProblemStatement(category(), makeDataGenerationParameters())
     );
 }
 
@@ -52,6 +56,7 @@ DataGenerationParameters Configuration::makeDataGenerationParameters() const
             leftMatrixRows(),
             commonMatrixRowsColumns(),
             rightMatrixColumns(),
+            schedulingStrategy(),
             leftDigits(),
             rightDigits(),
             monteCarloTrials()
@@ -137,6 +142,10 @@ options_description Configuration::createDescription()
 {
     string categories = boost::algorithm::join(SchedulerFactory::getValidCategories(), "\n\t    ");
     string categoriesDescription = "Elf to be run, valid categories:\n\t    " + categories;
+    string schedulingStrategies = boost::algorithm::join(
+        MatrixOnlineSchedulingStrategyFactory::getStrategies(), "\n\t    ");
+    string schedulingStrategiesDescription =
+        "Matrix: Scheduling strategy for online scheduling mode:\n\t    " + schedulingStrategies;
 
     options_description description("Options");
     description.add_options()
@@ -155,6 +164,8 @@ options_description Configuration::createDescription()
         ("left_rows",            value<size_t>()->default_value(500), "Matrix: Number of left rows to be generated (overridden for benchmark by input file)")
         ("common_rows_columns",  value<size_t>()->default_value(500), "Matrix: Number of left columns / right rows to be generated (overridden for benchmark by input file)")
         ("right_columns",        value<size_t>()->default_value(500), "Matrix: Number of right columns to be generated (overridden for benchmark by input file)")
+        ("scheduling,s",         value<string>()->default_value("row-wise"), schedulingStrategiesDescription.c_str())
+        ("mpi_thread_multiple",  "Initialize MPI with thread multiple support.")
         ("left_digits",          value<size_t>()->default_value(8), "QuadraticSieve: Digits for product's left operand")
         ("right_digits",         value<size_t>()->default_value(8), "QuadraticSieve: Digits for product's right operand")
         ("time_output",          value<string>()->default_value("/dev/null"), "Output file for time measurements")
@@ -209,6 +220,16 @@ size_t Configuration::rightMatrixColumns() const
     return variables["right_columns"].as<size_t>();
 }
 
+string Configuration::schedulingStrategy() const
+{
+    return variables["scheduling"].as<string>();
+}
+
+bool Configuration::mpiThreadMultiple() const
+{
+    return variables.count("mpi_thread_multiple") > 0;
+}
+
 size_t Configuration::monteCarloTrials() const
 {
     return variables["montecarlo_trials"].as<size_t>();
@@ -239,7 +260,9 @@ std::ostream& operator<<(std::ostream& s, const Configuration& c)
     return s;
 }
 
-unique_ptr<Scheduler> Configuration::createScheduler() const
+unique_ptr<Scheduler> Configuration::createScheduler(const Communicator& communicator) const
 {
-    return createSchedulerFactory()->createScheduler();
+    auto scheduler = createSchedulerFactory()->createScheduler(communicator);
+    scheduler->configureWith(*this);
+    return scheduler;
 }

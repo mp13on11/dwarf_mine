@@ -1,6 +1,5 @@
 #include "SequentialFactorizer.h"
 #include "MonteCarloFactorizationElf.h"
-#include "common/MpiHelper.h"
 
 #include <ctime>
 #include <omp.h>
@@ -42,5 +41,5 @@ void MonteCarloFactorizationElf::stop()
 
 size_t MonteCarloFactorizationElf::randomSeed() const
 {
-    return time(NULL) * (omp_get_thread_num() + 1) + MpiHelper::rank();
+    return time(NULL) * (omp_get_thread_num() + 1); // TODO: do something sophisticated
 }

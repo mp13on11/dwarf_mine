@@ -1,4 +1,4 @@
-SET(LIBRARY_NAME cuda-quadratic-sieve)
+SET(LIBRARY_NAME cooda-quadratic-sieve)
 
 # Export library for main subproject
 SET(CUDA_QUADRATIC_SIEVE_ELF_LIB ${LIBRARY_NAME} CACHE STRING INTERNAL FORCE)

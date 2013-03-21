@@ -4,15 +4,14 @@
 #include "MonteCarloElf.h"
 #include <functional>
 #include <vector>
-#include <mpi.h>
 
 class MonteCarloElf;
-class OthelloResult;
+struct OthelloResult;
 
 class MonteCarloScheduler: public SchedulerTemplate<MonteCarloElf>
 {
 public:
-    MonteCarloScheduler(const std::function<ElfPointer()>& factory);
+    MonteCarloScheduler(const Communicator& communicator, const std::function<ElfPointer()>& factory);
     virtual ~MonteCarloScheduler() = default;
 
     virtual void provideData(std::istream& input);
@@ -24,19 +23,20 @@ protected:
     virtual bool hasData() const;
     virtual void doDispatch();
     virtual void doSimpleDispatch();
-    virtual void doBenchmarkDispatch(NodeId node);
 
     OthelloState _state;
     OthelloResult _result;
     size_t _repetitions;
     size_t _localRepetitions;
+    size_t _commonSeed;
 
 private:
     void orchestrateCalculation();
     void calculateOnSlave();
     void calculate();
     void distributeInput();
-    void collectInput();
+    size_t distributeCommonParameters();
+    void distributePlayfield(size_t size);
     void collectResults();
     std::vector<OthelloResult> gatherResults();
 };

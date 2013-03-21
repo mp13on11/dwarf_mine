@@ -4,6 +4,7 @@
 #include "factorization_montecarlo/FactorizationScheduler.h"
 #include "factorization_montecarlo/MonteCarloFactorizationElf.h"
 #include "matrix/MatrixScheduler.h"
+#include "matrix/MatrixOnlineScheduler.h"
 #include "matrix/smp/SMPMatrixElf.h"
 #include "montecarlo/MonteCarloScheduler.h"
 #include "montecarlo/smp/SMPMonteCarloElf.h"
@@ -11,6 +12,7 @@
 #ifdef HAVE_CUDA
 #include "matrix/cuda/CudaMatrixElf.h"
 #include "quadratic_sieve/cuda/CudaQuadraticSieveElf.h"
+#include "montecarlo/cuda/CudaMonteCarloElf.h"
 #endif
 
 #include <stdexcept>
@@ -22,7 +24,7 @@ using namespace std;
 #ifndef HAVE_CUDA
 struct HasNoCudaDummy : public Elf {};
 
-typedef HasNoCudaDummy CudaMatrixElf, CudaQuadraticSieveElf;
+typedef HasNoCudaDummy CudaMatrixElf, CudaQuadraticSieveElf, CudaMonteCarloElf;
 #endif
 
 typedef SchedulerFactory::FactoryFunction FactoryFunction;
@@ -30,9 +32,9 @@ typedef SchedulerFactory::FactoryFunction FactoryFunction;
 template<typename SchedulerType, typename ElfType>
 static FactoryFunction innerCreateFactory()
 {
-    return []()
+    return [](const Communicator& communicator)
     { 
-        return new SchedulerType([]()
+        return new SchedulerType(communicator, []()
             {
                 return new ElfType();
             }
@@ -73,6 +75,10 @@ static map<string, function<FactoryFunction(bool)>> sFactoryFunctionsMap =
         &createFactory<MatrixScheduler, SMPMatrixElf, CudaMatrixElf>
     },
     {
+        "matrix_online",
+        &createFactory<MatrixOnlineScheduler, SMPMatrixElf, CudaMatrixElf>
+    },
+    {
         "factorization_montecarlo",
         &createFactory<FactorizationScheduler, MonteCarloFactorizationElf>
     },
@@ -82,7 +88,7 @@ static map<string, function<FactoryFunction(bool)>> sFactoryFunctionsMap =
     },
     {
         "montecarlo_tree_search",
-        &createFactory<MonteCarloScheduler, SMPMonteCarloElf>
+        &createFactory<MonteCarloScheduler, SMPMonteCarloElf, CudaMonteCarloElf>
     }
 };
 
@@ -126,7 +132,7 @@ SchedulerFactory::SchedulerFactory(const FactoryFunction& factory) :
 {
 }
 
-unique_ptr<Scheduler> SchedulerFactory::createScheduler() const
+unique_ptr<Scheduler> SchedulerFactory::createScheduler(const Communicator& communicator) const
 {
-    return unique_ptr<Scheduler>(factory());
+    return unique_ptr<Scheduler>(factory(communicator));
 }

@@ -1,22 +1,34 @@
 #include "OthelloUtil.h"
-
+#include <OthelloResult.h>
 #include <iostream>
 #include <stdexcept>
+#include <sstream>
+#include <string>
 
 namespace OthelloHelper
 {
-    void writeResultToStream(std::ostream& stream, OthelloResult& result)
+    size_t generateUniqueSeed(size_t nodeId, size_t threadId, size_t commonSeed)
     {
-        stream << result.x << result.y << result.visits << result.wins << result.iterations;
+        std::stringstream buffer;
+        buffer << commonSeed << " ~ "<< nodeId << " ~ " << threadId;
+        std::hash<std::string> generateHash;
+        return generateHash(buffer.str());
+    }
+
+    void writeResultToStream(std::ostream& stream, const OthelloResult& result)
+    {
+        stream << result.x 
+               << result.y 
+               << result.visits 
+               << result.wins; 
     }
 
     void readResultFromStream(std::istream& stream, OthelloResult& result)
     {
-        stream >> result.x;
-        stream >> result.y;
-        stream >> result.visits;
-        stream >> result.wins;
-        stream >> result.iterations;
+        stream >> result.x
+               >> result.y
+               >> result.visits
+               >> result.wins;
     }
 
     void writePlayfieldToStream(std::ostream& stream, const std::vector<Field>& playfield)
@@ -31,17 +43,22 @@ namespace OthelloHelper
     {
         if (stream.good())
         {
-            do 
+            Field field;
+            stream >> field;
+            while (stream.good())
             {
-                Field field;
-                stream >> field;
                 playfield.push_back(field);
+                stream >> field;
             }
-            while (stream.good());
         }
         else
         {
             throw std::runtime_error("Unexpected empty stream");
+        }
+        if (playfield.size() != 64)
+        {
+            std::cout << "SIZE "<<playfield.size() << std::endl;
+            throw std::runtime_error("Invalid playfield size");
         }
     }
 }
@@ -56,9 +73,13 @@ std::ostream& operator<<(std::ostream& stream, const Field field)
     {
         stream << "W";
     }
-    else 
+    else if (field == Field::Free)
     {
         stream << "F";
+    }
+    else 
+    {
+        stream << "?";
     }
     return stream;
 }
@@ -75,6 +96,8 @@ std::istream& operator>>(std::istream& stream, Field& field)
             break;
         case 'F': field = Field::Free;
             break;
+        default:
+            field = Field::Illegal;
     }
     return stream;
 }

@@ -1,12 +1,10 @@
 #include "MatrixIntegrationTest.h"
 #include "Utilities.h"
 #include "matrix/MatrixHelper.h"
-#include "matrix/Matrix.h"
 #include "matrix/MatrixElf.h"
 #include "matrix/smp/SMPMatrixElf.h"
 #include "common/SchedulerFactory.h"
 
-#include <cstdlib>
 #include <string>
 #include <fstream>
 #include <future>
@@ -23,14 +21,22 @@ const char* const   INPUT_FILENAME  = "small_input.bin";
 const char* const   OUTPUT_FILENAME = "small_output.bin";
 const char* const   MPIRUN_PATH     = MPIEXEC; // defined by CMake file
 
-void setupConfigFile();
-pid_t spawnChildProcess();
-std::tuple<Matrix<float>, Matrix<float>> readMatrices();
-
-TEST_F(MatrixIntegrationTest, TestSmallInputSMPScheduling)
+TEST_F(MatrixIntegrationTest, TestSmallInputSMPSchedulingOffline)
 {
-    setupConfigFile();
-    pid_t pid = spawnChildProcess();
+    MatrixIntegrationTest::executeWith("matrix");
+}
+
+TEST_F(MatrixIntegrationTest, TestSmallInputSMPSchedulingOnline)
+{
+    MatrixIntegrationTest::executeWith("matrix_online", "row-wise");
+}
+
+void MatrixIntegrationTest::executeWith(
+    const char* matrixCategory,
+    const char* scheduling)
+{
+    MatrixIntegrationTest::setupConfigFile();
+    pid_t pid = MatrixIntegrationTest::spawnChildProcess(matrixCategory, scheduling);
 
     auto future = async(std::launch::async, [pid]() -> bool
     {
@@ -50,7 +56,7 @@ TEST_F(MatrixIntegrationTest, TestSmallInputSMPScheduling)
     ASSERT_TRUE(future.get()) << "Process not exited normally";
 
     Matrix<float> expectedMatrix, actualMatrix;
-    std::tie(expectedMatrix, actualMatrix) = readMatrices();
+    std::tie(expectedMatrix, actualMatrix) = MatrixIntegrationTest::readMatrices();
 
     EXPECT_TRUE(AreMatricesEquals(expectedMatrix, actualMatrix));
 }
@@ -61,18 +67,22 @@ void MatrixIntegrationTest::TearDown()
     remove(CONF_FILENAME);
 }
 
-void setupConfigFile()
+void MatrixIntegrationTest::setupConfigFile()
 {
     ofstream config(CONF_FILENAME);
     for (int i=0; i<NUM_NODES; ++i)
-        config << i << " " << 1 << endl;
+        config << 1 << endl;
 }
 
-pid_t spawnChildProcess()
+pid_t MatrixIntegrationTest::spawnChildProcess(
+    const char* matrixCategory,
+    const char* scheduling)
 {
+    string schedulingStrategy(scheduling);
     pid_t pid = fork();
     if(pid == 0) // child process
     {
+        bool usesOnlineScheduling = schedulingStrategy != "";
         execl(MPIRUN_PATH,
             MPIRUN_PATH,
             "-n", boost::lexical_cast<string>(NUM_NODES).c_str(),
@@ -85,6 +95,10 @@ pid_t spawnChildProcess()
             "-i", INPUT_FILENAME,
             "-o", OUTPUT_FILENAME,
             "--import_configuration", CONF_FILENAME,
+            "-c", matrixCategory,
+            (usesOnlineScheduling ? "--mpi_thread_multiple" : ""),
+            (schedulingStrategy != "" ? "-s" : ""),
+            (schedulingStrategy != "" ? scheduling : ""),
             nullptr
         );
         exit(-1);
@@ -92,7 +106,7 @@ pid_t spawnChildProcess()
     return pid;
 }
 
-std::tuple<Matrix<float>, Matrix<float>> readMatrices()
+std::tuple<Matrix<float>, Matrix<float>> MatrixIntegrationTest::readMatrices()
 {
     ifstream input("small_input.bin", ios_base::binary);
     auto inputMatrices = MatrixHelper::readMatrixPairFrom(input);

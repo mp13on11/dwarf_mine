@@ -8,6 +8,9 @@ struct DataGenerationParameters {
     std::size_t common;
     std::size_t rightColumns;
 
+    // Additional for Matrix with online scheduling category
+    std::string schedulingStrategy;
+
     // For Quadratic Sieve category
     std::size_t leftOperandDigits;
     std::size_t rightOperandDigits;
