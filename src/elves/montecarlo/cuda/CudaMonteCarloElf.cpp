@@ -83,17 +83,14 @@ OthelloResult CudaMonteCarloElf::getBestMoveForMultipleStream(OthelloState& stat
             
             CudaUtils::checkError(cudaStreamSynchronize(stream));
 
-
             vector<OthelloResult> result(childResults.size());
 
             copy(hostResults, hostResults + result.size(), result.data());
 
             cudaFreeHost(hostResults);
-            // cudaFreeHost(hostPlayfields);
             cudaFreeHost(hostSeeds);
             cudaFree(cudaSeeds);
             cudaFree(cudaResults);
-            // cudaFree(cudaPlayfields);    
             return result;
         }));
     }

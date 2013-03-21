@@ -2,6 +2,8 @@
 
 const int FIELD_DIMENSION = 8;
 
+#include "CudaDebug.cuh"
+
 /***
  * Delivers a random number x with 0 <= x < maximum
  */
@@ -15,11 +17,42 @@ __device__ size_t randomNumber(curandState* deviceStates, size_t maximum, float 
 	}
 	else
 	{
+		
 		curandState deviceState = deviceStates[threadGeneratorIndex];
 		random = 1.0f - curand_uniform(&deviceState); // delivers (0, 1] - we need [0, 1)
 		deviceStates[threadGeneratorIndex] = deviceState;
 	}
 	size_t result = size_t(floor(random * maximum));
-	//cassert(result < maximum, "Random %f - Maximum %lu = %f = %lu\n", random, maximum, random * maximum, result);
+	if (maximum == result) // nothing with (0,1] ... sometimes it is rounded to maximum - so we need to reduce manually
+	{
+		--result;
+	}
+	cassert(result < maximum, "Random %f - Maximum %lu = %f = %lu\n", random, maximum, random * maximum, result);
     return result;
 } 
+
+// /***
+//  * Delivers a "random" number (faked)
+//  */
+// __device__ size_t randomNumber(curandState* deviceStates, size_t maximum, float fakedRandom)
+// {
+// 	size_t result = size_t(floor(fakedRandom * maximum));
+// 	cassert(result < maximum, "Random %f - Maximum %lu = %f = %lu\n", random, maximum, random * maximum, result);
+//     return result;
+// }
+
+// /***
+//  * Delivers a random number x with 0 <= x < maximum
+//  */
+// __device__ size_t randomNumber(curandState* deviceStates, size_t maximum)
+// {
+// 	size_t threadGeneratorIndex = blockIdx.x;
+// 	float random = 0;
+	
+// 	curandState deviceState = deviceStates[threadGeneratorIndex];
+// 	random = 1.0f - curand_uniform(&deviceState); // delivers (0, 1] - we need [0, 1)
+// 	deviceStates[threadGeneratorIndex] = deviceState;
+// 	size_t result = size_t(floor(random * maximum));
+// 	cassert(result < maximum, "Random %f - Maximum %lu = %f = %lu\n", random, maximum, random * maximum, result);
+//     return result;
+// }   

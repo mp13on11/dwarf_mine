@@ -37,7 +37,8 @@ TEST_F(OthelloCudaSimulatorTest, GetRandomMoveIndexRegressionTest)
 		scenario(0.590909, 			  22, 12),// 13),
 		scenario(0.979073,  		   4,  3),
 		scenario(0.69767439365386963, 43, 29),// 30),
-		scenario(0.7804877758026123,  41, 31) // 32)
+		scenario(0.7804877758026123,  41, 31), // 32)
+		scenario(1.0,                 10,  9)
 	}; 
 	for (const auto& t : data)
 	{
