@@ -89,7 +89,7 @@ Communicator determineWeightedCommunicator(const BenchmarkRunner& runner, const 
     for (size_t i=0; i<unweightedCommunicator.size(); ++i)
     {
         Communicator subCommunicator = createSubCommunicatorFor(unweightedCommunicator, i);
-        runner.runBenchmark(subCommunicator, profiler);
+        runner.runPreBenchmark(subCommunicator, profiler);
         profiler.saveExecutionTime();
     }
 

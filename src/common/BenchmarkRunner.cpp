@@ -16,6 +16,20 @@ BenchmarkRunner::BenchmarkRunner(const Configuration& config) :
 
 void BenchmarkRunner::runBenchmark(const Communicator& communicator, Profiler& profiler) const
 {
+    runBenchmarkInternal(communicator, profiler, fileProblem);
+}
+
+void BenchmarkRunner::runPreBenchmark(const Communicator& communicator, Profiler& profiler) const
+{
+    runBenchmarkInternal(communicator, profiler, generatedProblem);
+}
+
+void BenchmarkRunner::runBenchmarkInternal(
+    const Communicator& communicator, 
+    Profiler& profiler,
+    const unique_ptr<ProblemStatement>& problem
+) const
+{   
     if (!communicator.isValid())
         return;
     
@@ -23,9 +37,9 @@ void BenchmarkRunner::runBenchmark(const Communicator& communicator, Profiler& p
 
     if (communicator.isMaster())
     {
-        scheduler->provideData(*fileProblem);
+        scheduler->provideData(*problem);
         run(*scheduler, profiler);
-        scheduler->outputData(*fileProblem);
+        scheduler->outputData(*problem);
     }
     else
     {
