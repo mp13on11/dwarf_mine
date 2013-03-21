@@ -41,7 +41,6 @@ vector<BigInt> smpSieveKernel(const BigInt& start, const BigInt& end, const BigI
             for(const BigInt& root : roots)
             {
                 BigInt offset = (primePower + root - (start % primePower)) % primePower;
-                cout << "offset for prime " << offset << " " << primePower << endl;
                 for(BigInt j=offset; j<=blockSize; j+=primePower)
                 {
                     logs[j.get_ui()] -= primeLog;
@@ -58,10 +57,8 @@ vector<BigInt> smpSieveKernel(const BigInt& start, const BigInt& end, const BigI
 
     for(uint32_t i=0; i<=blockSize; i++)
     {
-        //cout << "log: " << logs[i] << endl;
         if(logs[i] < logTreshold) // probable smooth
         {
-            cout << "result: " << start + i;
             result.emplace_back(start+i);
         }
     }
