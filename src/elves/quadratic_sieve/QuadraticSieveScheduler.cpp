@@ -193,13 +193,23 @@ vector<BigInt> QuadraticSieveScheduler::sieveDistributed(
 {
     sendBigInt(communicator, number);
 
-    BigInt intervalLength = end - start;
-    BigInt chunkSize = div_ceil(intervalLength, BigInt(communicator.size()));
+    BigInt intervalLengthBigInt = end - start;
+
+    if (!intervalLengthBigInt.fits_ulong_p())
+        throw runtime_error("Interval is too long!");
+
+    uint64_t intervalLength = intervalLengthBigInt.get_ui();
+    cout << "IntervalLength: " << intervalLength << endl;
+    double basicChunkSize = div_ceil(intervalLength, communicator.size());
+    auto weights = communicator.weights();
+    cout << "Weights: " << weights << endl;
 
     for (size_t nodeId=1; nodeId < communicator.size(); ++nodeId)
     {
-        BigInt partialStart = start + chunkSize*nodeId;
-        BigInt partialEnd = min(partialStart + chunkSize, end);
+        double weightedChunkSize = basicChunkSize * weights[nodeId];
+        cout << "Chunksize for node " << nodeId << ": " << weightedChunkSize << endl;
+        BigInt partialStart = start + weightedChunkSize*nodeId;
+        BigInt partialEnd = min(partialStart + basicChunkSize, end);
         sendBigIntTo(communicator, partialStart, nodeId);
         sendBigIntTo(communicator, partialEnd, nodeId);
     }
@@ -208,7 +218,8 @@ vector<BigInt> QuadraticSieveScheduler::sieveDistributed(
     communicator->Bcast(&factorBaseSize, 1, MPI::UNSIGNED_LONG, Communicator::MASTER_RANK);
     communicator->Bcast(const_cast<smallPrime_t*>(factorBase.data()), factorBaseSize, MPI::INT, Communicator::MASTER_RANK);
 
-    SmoothSquareList masterResult = elf().sieveSmoothSquares(start, min(start + chunkSize, end), number, factorBase);
+    double masterChunkSize = basicChunkSize * weights[0];
+    SmoothSquareList masterResult = elf().sieveSmoothSquares(start, min(start + masterChunkSize, end), number, factorBase);
     size_t resultSize = masterResult.size();
 
     vector<size_t> numberSizes;
