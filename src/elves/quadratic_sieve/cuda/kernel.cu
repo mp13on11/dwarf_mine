@@ -2,7 +2,8 @@
 #include "Number.cuh"
 #include "stdio.h"
 
-__device__ Number pow(Number b, Number e, Number m)
+
+__device__ uint32_t pow(Number b, Number e, Number m)
 {
     Number result = 1;
     for (int i = (NUM_FIELDS*32)-1; i>=0; --i)
@@ -14,7 +15,105 @@ __device__ Number pow(Number b, Number e, Number m)
        }
        result = result % m;
     }
-    return result;
+    return result.get_ui();
+}
+
+__device__ uint32_t cuda_pow(uint32_t b, uint32_t e)
+{
+    uint32_t res = 1;
+    while (e != 0)
+    {
+        while (e & 1 != 1)
+        {
+            e >>= 1;
+            b = (b*b);
+        }
+        --e;
+        res = res * b;
+    }
+    return res;
+}
+
+__device__ int legendre_symbol(Number a, Number p)
+{
+    Number ls = pow(a, (p-Number(1))/Number(2), p);
+    if(Number(5) < Number(2))
+        printf("Is No good\n");
+    printf("legendre exp: %u\n", Number(5).get_ui());
+    printf("legendre exp: %u\n", Number(1).get_ui());
+    printf("legendre exp: %u\n", (Number(1)+Number(1)).get_ui());
+    printf("legendre exp: %u\n", (Number(5)-Number(1)).get_ui());
+    printf("legendre exp: %u\n", ((Number(5)-Number(1))/Number(2)).get_ui());
+    if (ls == (p - Number(1)))
+        return -1;
+    else 
+        return ls.get_ui();
+}
+
+__device__ uint32_t rootModPrime(Number a, Number p)
+{
+    if (legendre_symbol(a, p) != -1)
+        return 0;
+    else if (a.isZero())
+        return 0;
+    else if (p == Number(2))
+        return p.get_ui();
+    else if (p % Number(4) == Number(3))
+        return pow(a, (p + Number(1)) / Number(4), p);
+
+    // Partition p-1 to s * 2^e for an odd s (i.e.
+    // reduce all the powers of 2 from p-1)
+    Number s = p - Number(1);
+    int e = 0;
+    while ((s % Number(2)).isZero())
+        s /= 2;
+        e += 1;
+
+    // Find some 'n' with a legendre symbol n|p = -1.
+    // Shouldn't take long.
+    //
+    Number n(2);
+    while (legendre_symbol(n, p) != -1)
+        n += 1;
+
+    // Here be dragons!
+    // Read the paper "Square roots from 1; 24, 51,
+    // 10 to Dan Shanks" by Ezra Brown for more
+    // information
+    
+
+    // x is a guess of the square root that gets better
+    // with each iteration.
+    // b is the "fudge factor" - by how much we're off
+    // with the guess. The invariant x^2 = ab (mod p)
+    // is maintained throughout the loop.
+    // g is used for successive powers of n to update
+    // both a and b
+    // r is the exponent - decreases with each update
+    
+    uint32_t x = pow(a, (s + Number(1)) / Number(2), p);
+    uint32_t b = pow(a, s, p);
+    uint32_t g = pow(n, s, p);
+    uint32_t r = e;
+
+    while (true)
+    {
+        uint32_t t = b;
+        uint32_t m = 0;
+        for (; m < r; ++m)
+            if (t == 1)
+                break;
+            t = pow(t, 2, p);
+
+        if (m == 0)
+            return x;
+
+        uint32_t gs = pow(g, cuda_pow(2, (r - m - 1)), p);
+        g = (gs * gs) % p.get_ui();
+        x = (x * gs) % p.get_ui();
+        b = (b * g) % p.get_ui();
+        r = m;
+    }
 }
 
 __device__ float log(const Number& n)  
@@ -155,7 +254,7 @@ __global__ void testDivKernel(PNumData pLeft, PNumData pRight, PNumData output)
     Number left(pLeft);
     Number right(pRight);
     
-    Number result(left.divMod(right));
+    Number result(left / right);
     result.writeTo(output);
 }
 
@@ -216,4 +315,13 @@ __global__ void testModPowKernel(PNumData pBase, PNumData pExponent, PNumData pM
     Number mod(pMod);
     Number result(pow(base, exponent, mod));
     result.writeTo(output);
+}
+
+__global__ void testLegendreKernel(PNumData pA, PNumData pPrime, int* output)
+{
+    Number a(pA);
+    Number p(pPrime);
+
+    int result(legendre_symbol(a, p));
+    *output = result;
 }

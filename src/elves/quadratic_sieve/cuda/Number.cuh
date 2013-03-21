@@ -15,14 +15,14 @@ struct Number
 
     __device__ Number() 
     {
-        memset(fields, 0, NUM_FIELDS);
+        memset(fields, 0, DATA_SIZE_BYTES);
     }
 
      __device__ Number(const uint64_t data)
      {
          fields[0] = static_cast<uint32_t>(data);
          fields[1] = static_cast<uint32_t>(data >> 32);
-         memset(fields + 2, 0, NUM_FIELDS - 2);
+         memset(fields + 2, 0, (NUM_FIELDS - 2)*4);
      }
 
      __device__ int bitAt(int index)
@@ -190,7 +190,7 @@ struct Number
     {
         for (int i = NUM_FIELDS-1; i >= 0; --i)
         {
-            //printf("%d fields %u, other %u\n",i,  fields[i], other.fields[i]);
+            //printf("%d fields %u, other %u\n", i, fields[i], other.fields[i]);
             if (fields[i] == other.fields[i]) continue;
             else if (fields[i] < other.fields[i])
             {
