@@ -65,7 +65,7 @@ __device__ void expandLeaf(curandState* deviceState, CudaSimulator& simulator, C
     }
 }
 
-__global__ void simulateGame(size_t reiterations, curandState* deviceStates, size_t numberOfPlayfields, Field* playfields, Player currentPlayer, OthelloResult* results)
+__global__ void simulateGame(size_t reiterations, curandState* deviceStates, size_t numberOfPlayfields, const Field* playfields, Player currentPlayer, OthelloResult* results)
 {
     int playfieldIndex = threadIdx.x;
 

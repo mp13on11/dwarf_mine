@@ -13,13 +13,13 @@
 const int THREADS_PER_BLOCK = 64;
 
 __global__ void setupStateForRandom(curandState* state, size_t* seeds);
-__global__ void simulateGame(size_t reiterations, curandState* deviceStates, size_t numberOfPlayfields, Field* playfields, Player currentPlayer, OthelloResult* results);
+__global__ void simulateGame(size_t reiterations, curandState* deviceStates, size_t numberOfPlayfields, const Field* playfields, Player currentPlayer, OthelloResult* results);
 
 __global__ void testRandomNumber(float fakedRandom, size_t maximum, size_t* randomNumberResult);
 __global__ void testDoStep(curandState* deviceState, Field* playfield, Player currentPlayer, float fakedRandom);
 __global__ void testExpandLeaf(curandState* deviceState, Field* playfield, Player currentPlayer, size_t* wins, size_t* visits);
 
-void gameSimulation(size_t numberOfBlocks, size_t iterations, size_t* seeds, size_t numberOfPlayfields, Field* playfields, Player currentPlayer, OthelloResult* results)
+void gameSimulation(size_t numberOfBlocks, size_t iterations, size_t* seeds, size_t numberOfPlayfields, const Field* playfields, Player currentPlayer, OthelloResult* results)
 {
     curandState* deviceStates;
     cudaMalloc(&deviceStates, sizeof(curandState) * numberOfBlocks);
@@ -31,7 +31,7 @@ void gameSimulation(size_t numberOfBlocks, size_t iterations, size_t* seeds, siz
     CudaUtils::checkState();
 }
 
-void gameSimulationStreamed(size_t numberOfBlocks, size_t iterations, size_t* seeds, size_t numberOfPlayfields, Field* playfields, Player currentPlayer, OthelloResult* results, cudaStream_t stream)
+void gameSimulationStreamed(size_t numberOfBlocks, size_t iterations, size_t* seeds, size_t numberOfPlayfields, const Field* playfields, Player currentPlayer, OthelloResult* results, cudaStream_t stream)
 {
     curandState* deviceStates;
     cudaMalloc(&deviceStates, sizeof(curandState) * numberOfBlocks);
