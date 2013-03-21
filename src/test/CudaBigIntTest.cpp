@@ -19,8 +19,21 @@ extern void testLargerEqual(PNumData left, PNumData right, bool* result);
 extern void testEqual(PNumData left, PNumData right, bool* result);
 extern void testShiftLeft(PNumData left, uint32_t offset, PNumData result);
 extern void testShiftRight(PNumData left, uint32_t offset, PNumData result);
+extern void testModPow(PNumData base, PNumData exponent, PNumData mod, PNumData result);
 
 using namespace std;
+
+BigInt invokeModPowKernel(const BigInt& base, const BigInt& exponent, const BigInt& mod, function<void (PNumData, PNumData, PNumData, PNumData)> kernelCall)
+{
+	CudaUtils::Memory<uint32_t> base_d(NumberHelper::BigIntToNumber(base));
+	CudaUtils::Memory<uint32_t> exponent_d(NumberHelper::BigIntToNumber(exponent));
+	CudaUtils::Memory<uint32_t> mod_d(NumberHelper::BigIntToNumber(mod));
+
+    CudaUtils::Memory<uint32_t> out_d(NUM_FIELDS);
+
+    kernelCall(base_d.get(), exponent_d.get(), mod_d.get(), out_d.get());
+    return NumberHelper::NumberToBigInt(out_d);
+}
 
 BigInt invokeShiftKernel(const BigInt& left, const uint32_t right, function<void (PNumData, uint32_t, PNumData)> kernelCall)
 {
@@ -216,6 +229,17 @@ TEST(CudaBigIntTest, testModulo2)
     BigInt left("100");
     BigInt right("2");
     BigInt expected("0");
+
+    auto actual = invokeKernel(left, right,  testMod);
+
+    EXPECT_EQ(expected, actual);
+}
+
+TEST(CudaBigIntTest, testModulo3)
+{
+    BigInt left("8");
+    BigInt right("100");
+    BigInt expected("8");
 
     auto actual = invokeKernel(left, right,  testMod);
 
@@ -580,6 +604,32 @@ TEST(CudaBigIntTest, testShiftRightWithBigShiftOffset)
 
     EXPECT_EQ(expected, actual);
 }
+
+TEST(CudaBigIntTest, testModPow)
+{
+    BigInt base("2");
+    BigInt exponent("3");
+    BigInt mod("100");
+    BigInt expected("8");
+
+    auto actual = invokeModPowKernel(base, exponent, mod, testModPow);
+
+    EXPECT_EQ(expected, actual);
+}
+
+TEST(CudaBigIntTest, testModPow2)
+{
+    BigInt base("55");
+    BigInt exponent("80");
+    BigInt mod("13");
+    BigInt expected("9");
+
+    auto actual = invokeModPowKernel(base, exponent, mod, testModPow);
+
+    EXPECT_EQ(expected, actual);
+}
+
+
 
 
 #endif /* HAVE_CUDA */
