@@ -144,26 +144,26 @@ TEST_P(FactorizationTest, testFactorizationQuadraticSieve)
     ASSERT_EQ(q, actualQ);
 }
 
-TEST_P(FactorizationTest, testFactorizationCudaQuadraticSieve)
-{
-    using namespace std::placeholders;
-    auto start = high_resolution_clock::now();
-
-    unique_ptr<QuadraticSieveElf> elf(new CudaQuadraticSieveElf());
-    BigInt actualP, actualQ;
-    tie(actualP, actualQ) = QuadraticSieveHelper::factor(product, bind(&QuadraticSieveElf::sieveSmoothSquares, elf.get(), _1, _2, _3, _4));
-
-
-    auto end = high_resolution_clock::now();
-    milliseconds elapsed = duration_cast<milliseconds>(end - start);
-    std::cout << "total time: " << elapsed.count() / 1000.0 << " seconds" << endl;
-
-    if(actualP > actualQ)
-        swap(actualP, actualQ);
-
-    ASSERT_EQ(p, actualP);
-    ASSERT_EQ(q, actualQ);
-}
+//TEST_P(FactorizationTest, testFactorizationCudaQuadraticSieve)
+//{
+//    using namespace std::placeholders;
+//    auto start = high_resolution_clock::now();
+//
+//    unique_ptr<QuadraticSieveElf> elf(new CudaQuadraticSieveElf());
+//    BigInt actualP, actualQ;
+//    tie(actualP, actualQ) = QuadraticSieveHelper::factor(product, bind(&QuadraticSieveElf::sieveSmoothSquares, elf.get(), _1, _2, _3, _4));
+//
+//
+//    auto end = high_resolution_clock::now();
+//    milliseconds elapsed = duration_cast<milliseconds>(end - start);
+//    std::cout << "total time: " << elapsed.count() / 1000.0 << " seconds" << endl;
+//
+//    if(actualP > actualQ)
+//        swap(actualP, actualQ);
+//
+//    ASSERT_EQ(p, actualP);
+//    ASSERT_EQ(q, actualQ);
+//}
 
 TEST(QuadraticSieveTest, testModularSquareRoot)
 {

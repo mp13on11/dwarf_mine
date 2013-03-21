@@ -2,6 +2,21 @@
 #include "Number.cuh"
 #include "stdio.h"
 
+__device__ Number pow(Number b, Number e, Number m)
+{
+    Number result = 1;
+    for (int i = (NUM_FIELDS*32)-1; i>=0; --i)
+    {
+       result *= result;
+       if (e.bitAt(i) == 1)
+       {
+           result *= b;
+       }
+       result = result % m;
+    }
+    return result;
+}
+
 __device__ float log(const Number& n)  
 {
     uint32_t low = 0;
@@ -76,6 +91,8 @@ __global__ void megaKernel(const Number* number, uint32_t* logs, const uint32_t*
         	bool invalid = false; 	
         	
             Number q = (newStart*newStart) - *number;
+            //unsigned int q = ((newStart*newStart) - *number).get_ui();
+        	//while (!(q % primePower.get_ui() == 0)) 
         	while (!(q % primePower).isZero()) 
         	{        	   
         	   ++timesAdvanced;
@@ -85,9 +102,9 @@ __global__ void megaKernel(const Number* number, uint32_t* logs, const uint32_t*
         	       invalid = true;
         	       break;
         	   }
-               q = (newStart * newStart) - *number;
+               //q = ((newStart * newStart) - *number).get_ui();
+               q = ((newStart * newStart) - *number);
         	} 
-            //newStartN = newStart + Number(1);
         	
         	if (invalid) break;
             //printf("q: %d, x: %d, n: %d\n", q.get_ui(), newStart.get_ui(), number->get_ui());
@@ -189,5 +206,14 @@ __global__ void testShiftRightKernel(PNumData pLeft, uint32_t offset, PNumData o
 {
     Number left(pLeft);
     Number result(left >> offset);
+    result.writeTo(output);
+}
+
+__global__ void testModPowKernel(PNumData pBase, PNumData pExponent, PNumData pMod, PNumData output)
+{
+    Number base(pBase);
+    Number exponent(pExponent);
+    Number mod(pMod);
+    Number result(pow(base, exponent, mod));
     result.writeTo(output);
 }

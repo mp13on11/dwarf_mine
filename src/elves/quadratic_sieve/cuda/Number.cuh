@@ -25,6 +25,14 @@ struct Number
          memset(fields + 2, 0, NUM_FIELDS - 2);
      }
 
+     __device__ int bitAt(int index)
+     {
+         int field = index / 32; 
+         int index2 = index % 32;
+
+         return (fields[field] >> index2) & 1; 
+     }
+
     __device__ Number(const NumData data)
     {
         memcpy(fields, data, DATA_SIZE_BYTES);
@@ -159,7 +167,7 @@ struct Number
 
         if (*this < other)
         {
-           *this = other;
+           //*this = other;
            return Number::ZERO();
         }
 

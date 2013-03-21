@@ -12,6 +12,7 @@ extern __global__ void testLargerEqualKernel(PNumData pLeft, PNumData pRight, bo
 extern __global__ void testEqualKernel(PNumData pLeft, PNumData pRight, bool* output);
 extern __global__ void testShiftLeftKernel(PNumData pLeft, uint32_t offset, PNumData output);
 extern __global__ void testShiftRightKernel(PNumData pLeft, uint32_t offset, PNumData output);
+extern __global__ void testModPowKernel(PNumData base, PNumData exponent, PNumData mod, PNumData result);
 
 void testAdd(PNumData left, PNumData right, PNumData result)
 {
@@ -76,5 +77,11 @@ void testShiftLeft(PNumData left,uint32_t offset, PNumData result)
 void testShiftRight(PNumData left,uint32_t offset, PNumData result)
 {
     testShiftRightKernel<<<1, 1>>>(left, offset, result);
+    CudaUtils::checkState();
+}
+
+void testModPow(PNumData base, PNumData exponent, PNumData mod, PNumData result)
+{
+    testModPowKernel<<<1, 1>>>(base, exponent, mod, result);
     CudaUtils::checkState();
 }
