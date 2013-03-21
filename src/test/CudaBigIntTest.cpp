@@ -20,8 +20,22 @@ extern void testEqual(PNumData left, PNumData right, bool* result);
 extern void testShiftLeft(PNumData left, uint32_t offset, PNumData result);
 extern void testShiftRight(PNumData left, uint32_t offset, PNumData result);
 extern void testModPow(PNumData base, PNumData exponent, PNumData mod, PNumData result);
+extern void testLegendre(PNumData a, PNumData p, int* result);
 
 using namespace std;
+
+int invokeLegendreKernel(const BigInt& a, const BigInt& prime, function<void (PNumData, PNumData, int*)> kernelCall)
+{
+	CudaUtils::Memory<uint32_t> a_d(NumberHelper::BigIntToNumber(a));
+	CudaUtils::Memory<uint32_t> prime_d(NumberHelper::BigIntToNumber(prime));
+
+    CudaUtils::Memory<int> out_d(1);
+
+    kernelCall(a_d.get(), prime_d.get(), out_d.get());
+    int out;
+    out_d.transferTo(&out);
+    return out;
+}
 
 BigInt invokeModPowKernel(const BigInt& base, const BigInt& exponent, const BigInt& mod, function<void (PNumData, PNumData, PNumData, PNumData)> kernelCall)
 {
@@ -192,6 +206,28 @@ TEST(CudaBigIntTest, testDivisionSmallValues)
     EXPECT_EQ(expected, actual);
 }
 
+TEST(CudaBigIntTest, testDivisionSmallValues2)
+{
+    BigInt left("4");
+    BigInt right("2");
+    BigInt expected("2");
+
+    auto actual = invokeKernel(left, right,  testDiv);
+
+    EXPECT_EQ(expected, actual);
+}
+
+TEST(CudaBigIntTest, testDivisionSmallValues3)
+{
+    BigInt left("7");
+    BigInt right("4");
+    BigInt expected("1");
+
+    auto actual = invokeKernel(left, right,  testDiv);
+
+    EXPECT_EQ(expected, actual);
+}
+
 TEST(CudaBigIntTest, testDivisionEqualValues)
 {
     BigInt left("90887891231490623");
@@ -285,6 +321,17 @@ TEST(CudaBigIntTest, testSmallerThanSmallValues)
     BigInt left("2");
     BigInt right("3");
     bool expected(true);
+
+    auto actual = invokeBoolKernel(left, right, testSmallerThan);
+
+    EXPECT_EQ(expected, actual);
+}
+
+TEST(CudaBigIntTest, testSmallerThanSmallValues2)
+{
+    BigInt left("4");
+    BigInt right("2");
+    bool expected(false);
 
     auto actual = invokeBoolKernel(left, right, testSmallerThan);
 
@@ -629,6 +676,41 @@ TEST(CudaBigIntTest, testModPow2)
     EXPECT_EQ(expected, actual);
 }
 
+TEST(CudaBigIntTest, testModPow3)
+{
+    BigInt base("55");
+    BigInt exponent("81");
+    BigInt mod("17");
+    BigInt expected("4");
+
+    auto actual = invokeModPowKernel(base, exponent, mod, testModPow);
+
+    EXPECT_EQ(expected, actual);
+}
+
+TEST(CudaBigIntTest, testModPow4)
+{
+    BigInt base("123123");
+    BigInt exponent("2");
+    BigInt mod("5");
+    BigInt expected("4");
+
+    auto actual = invokeModPowKernel(base, exponent, mod, testModPow);
+
+    EXPECT_EQ(expected, actual);
+}
+
+TEST(CudaBigIntTest, testLegendre)
+{
+    BigInt a("123123");
+    BigInt prime("5");
+
+    int expected(-1);
+
+    auto actual = invokeLegendreKernel(a, prime, testLegendre);
+
+    EXPECT_EQ(expected, actual);
+}
 
 
 
