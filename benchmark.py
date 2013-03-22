@@ -6,7 +6,10 @@ from matplotlib import pyplot
 from matplotlib.ticker import MultipleLocator, FormatStrFormatter
 from pylab import *
 
+import calendar
+
 DIRECTORY_NAME = "values"
+ITERATIONS = 5
 
 def avg(xs):
     return sum(xs) / len(xs)
@@ -14,7 +17,7 @@ def avg(xs):
 def timesFromFile(fileName):
     return [float(line) for line in open(fileName)]
 
-def plotChange(threadTimes, fileName):
+def plotChange(threadTimes, revisionDates, fileName):
 	chunksPerThread = dict({1:threadTimes})
 	fig = pyplot.figure(figsize=(20, 10))
 
@@ -26,13 +29,12 @@ def plotChange(threadTimes, fileName):
 
 #	avgSpeedUps = [avg(threadChunk)]
 #	xticks = threadChunk
-#	pyplot.xticks(xticks)
+	dates = []
 
-#	print xticks
-#	print avgSpeedUps
-#	pyplot.plot(xticks, avgSpeedUps, '-')
-
-
+	for date in revision_dates:
+		dates.append(datetime.datetime.fromtimestamp(float(date)).strftime('%Y-%m-%d_%H:%M:%S'))
+	pyplot.xticks(arange(len(dates)), dates, rotation = 17)
+	pyplot.plot(threadTimes)
 #	pyplot.legend(["#Thread {0}".format(key) for key in chunksPerThread.keys()])
 #	ylim(0)
 #	xlim(1)
@@ -62,15 +64,22 @@ def meassure(numberOfIterations, mode):
 
 if __name__ == "__main__":
 	start = 10
-	iterations = 5
 	modes = ["smp", "cuda"]
 
-	for i in range(1, iterations):
+	for i in range(1, ITERATIONS):
 		for mode in modes:
 			pass
 			#values = meassure(start ** i, mode)
 
 	for r,d,files in os.walk(DIRECTORY_NAME):
+		revision_dates = []
+
 		for f in files:
+			date = f.split("_")[1]
+			if date not in revision_dates:
+				revision_dates.append(date)
 			threadTimes = timesFromFile(os.path.join(DIRECTORY_NAME, f))
-			plotChange(threadTimes, f.replace(".txt", ".png"))
+
+			plotChange(threadTimes, revision_dates, f.replace(".txt", ".png"))
+
+	print revision_dates
