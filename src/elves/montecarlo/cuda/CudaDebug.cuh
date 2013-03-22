@@ -1,6 +1,6 @@
 #pragma once
 
-#define OTHELLO_DEBUG
+//#define OTHELLO_DEBUG
 
 #ifdef OTHELLO_DEBUG
     #include <cassert>

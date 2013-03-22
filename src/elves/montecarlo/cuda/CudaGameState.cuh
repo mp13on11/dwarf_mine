@@ -34,26 +34,27 @@ typedef struct _CudaGameState
     __device__ bool isWinner(Player requestedPlayer)
     {
         Player enemyPlayer = getEnemyPlayer(requestedPlayer);
-        // int superiority = 0;
-        // for (size_t i = 0; i < size; ++i)
-        // {
-        //     if (field[i] == enemyPlayer) superiority--;
-        //     if (field[i] == requestedPlayer) superiority++;
-        // }
-        // return superiority >= 0;
+
         __shared__ unsigned int enemyCounter[8];
         __shared__ unsigned int requestedCounter[8];
+
         if (threadIdx.x % 8 == 0) enemyCounter[threadIdx.x / 8] = requestedCounter[threadIdx.x / 8] = 0;
+
         __syncthreads();
+
         if (field[threadIdx.x] == enemyPlayer) atomicAdd(&enemyCounter[threadIdx.x / 8], 1u);
         if (field[threadIdx.x] == requestedPlayer) atomicAdd(&requestedCounter[threadIdx.x / 8], 1u);
+
         __syncthreads();
+
         if (threadIdx.x % 8 == 0 && threadIdx.x != 0) 
         {
             atomicAdd(&enemyCounter[0], enemyCounter[threadIdx.x / 8]);
             atomicAdd(&requestedCounter[0], requestedCounter[threadIdx.x / 8]);
         }
+
         __syncthreads();
+
         return requestedCounter[0] > enemyCounter[0];
     }
 
