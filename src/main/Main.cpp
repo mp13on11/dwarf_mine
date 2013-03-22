@@ -173,7 +173,7 @@ int main(int argc, char** argv)
     {
         // used to ensure MPI::Finalize is called on exit of the application
         Configuration configuration(argc, argv);
-        MpiGuard guard(configuration, argc, argv);
+        MpiGuard guard(configuration.mpiThreadMultiple(), argc, argv);
 
         benchmarkWith(configuration);
     }

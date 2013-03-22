@@ -1,11 +1,9 @@
 #pragma once
 
-class Configuration;
-
 class MpiGuard
 {
 public:
-    MpiGuard(const Configuration& configuration, int argc, char** argv);
+    MpiGuard(bool multiThreaded, int argc, char** argv);
     ~MpiGuard();
 
     MpiGuard(const MpiGuard& copy) = delete;
