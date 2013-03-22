@@ -18,6 +18,9 @@ public:
 
     std::pair<BigInt, BigInt> factor();
 
+
+    std::vector<double> determineChunkSizes(const BigInt& start, const BigInt& end);
+
 private:
     std::vector<BigInt> sieveDistributed(
         const BigInt& start,

@@ -184,15 +184,8 @@ BigInt receiveBigIntFromMaster(const Communicator& communicator)
     return arrayToBigInt(result);
 }
 
-vector<BigInt> QuadraticSieveScheduler::sieveDistributed(
-    const BigInt& start,
-    const BigInt& end,
-    const BigInt& number,
-    const FactorBase& factorBase
-)
+vector<double> QuadraticSieveScheduler::determineChunkSizes(const BigInt& start, const BigInt& end)
 {
-    sendBigInt(communicator, number);
-
     BigInt intervalLengthBigInt = end - start;
 
     if (!intervalLengthBigInt.fits_ulong_p())
@@ -204,12 +197,30 @@ vector<BigInt> QuadraticSieveScheduler::sieveDistributed(
     auto weights = communicator.weights();
     cout << "Weights: " << weights << endl;
 
+    vector<double> chunkSizes;
+    for (auto weight : weights)
+        chunkSizes.push_back(basicChunkSize * weight);
+
+    return chunkSizes;
+}
+
+vector<BigInt> QuadraticSieveScheduler::sieveDistributed(
+    const BigInt& start,
+    const BigInt& end,
+    const BigInt& number,
+    const FactorBase& factorBase
+)
+{
+    sendBigInt(communicator, number);
+
+    auto chunkSizes = determineChunkSizes(start, end);
+
     for (size_t nodeId=1; nodeId < communicator.size(); ++nodeId)
     {
-        double weightedChunkSize = basicChunkSize * weights[nodeId];
+        double weightedChunkSize = chunkSizes[nodeId];
         cout << "Chunksize for node " << nodeId << ": " << weightedChunkSize << endl;
         BigInt partialStart = start + weightedChunkSize*nodeId;
-        BigInt partialEnd = min(partialStart + basicChunkSize, end);
+        BigInt partialEnd = min(partialStart + weightedChunkSize, end);
         sendBigIntTo(communicator, partialStart, nodeId);
         sendBigIntTo(communicator, partialEnd, nodeId);
     }
@@ -218,7 +229,8 @@ vector<BigInt> QuadraticSieveScheduler::sieveDistributed(
     communicator->Bcast(&factorBaseSize, 1, MPI::UNSIGNED_LONG, Communicator::MASTER_RANK);
     communicator->Bcast(const_cast<smallPrime_t*>(factorBase.data()), factorBaseSize, MPI::INT, Communicator::MASTER_RANK);
 
-    double masterChunkSize = basicChunkSize * weights[0];
+    double masterChunkSize = chunkSizes[0];
+    cout << "Chunksize for master: " << masterChunkSize << endl;
     SmoothSquareList masterResult = elf().sieveSmoothSquares(start, min(start + masterChunkSize, end), number, factorBase);
     size_t resultSize = masterResult.size();
 
