@@ -163,20 +163,46 @@ struct Number
             return Number(1);
         }
 
+        Number rest(static_cast<uint64_t>(0));
         Number quotient(static_cast<uint64_t>(0));
 
-        if (*this < other)
+        for (int i = NUM_FIELDS - 1; i >= 0; i--) 
         {
-           //*this = other;
-           return Number::ZERO();
-        }
+            rest <<= 32;
+            rest.fields[0] = this->fields[i];
 
-        while (*this >= other)
-        {
-            *this = *this - other;
-            quotient += 1;
+            while (rest >= other)
+            {
+                rest -= other;
+                quotient.fields[i] += (uint32_t) 1;
+            }
+            //printf("%d:  quotient: %d, rest: %d, other: %d\n", i, quotient.fields[i], rest.fields[i], other.get_ui());
+            //printf("quotient: %d\n", quotient.fields[i]);
         }
+        *this = rest;
         return quotient;
+
+      //  if(this == &other)
+      //  {
+      //      *this = Number(static_cast<uint64_t>(0));
+      //      return Number(1);
+      //  }
+
+      //  Number quotient(static_cast<uint64_t>(0));
+
+      //  if (*this < other)
+      //  {
+      //     return Number::ZERO();
+      //  }
+
+      //  while (*this >= other)
+      //  {
+      //      //printf("div: %u, %u\n", this->get_ui(), other.get_ui());
+      //      *this = *this - other;
+      //      quotient += 1;
+      //      if (quotient > 100) break;
+      //  }
+      //  return quotient;
     }
 
     __device__ Number operator/(const Number& other) const

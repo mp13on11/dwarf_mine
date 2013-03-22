@@ -21,8 +21,20 @@ extern void testShiftLeft(PNumData left, uint32_t offset, PNumData result);
 extern void testShiftRight(PNumData left, uint32_t offset, PNumData result);
 extern void testModPow(PNumData base, PNumData exponent, PNumData mod, PNumData result);
 extern void testLegendre(PNumData a, PNumData p, int* result);
+extern void testRootModPrime(PNumData a, PNumData p, int* result);
+extern void testCudaPow(int b, int e, int* result);
 
 using namespace std;
+
+int invokeCudaPowKernel(int b, int e, function<void (int, int, int*)> kernelCall)
+{
+    CudaUtils::Memory<int> out_d(1);
+
+    kernelCall(b, e, out_d.get());
+    int out;
+    out_d.transferTo(&out);
+    return out;
+}
 
 int invokeLegendreKernel(const BigInt& a, const BigInt& prime, function<void (PNumData, PNumData, int*)> kernelCall)
 {
@@ -712,6 +724,113 @@ TEST(CudaBigIntTest, testLegendre)
     EXPECT_EQ(expected, actual);
 }
 
+TEST(CudaBigIntTest, testLegendre2)
+{
+    BigInt a("1231");
+    BigInt prime("23");
 
+    int expected(1);
+
+    auto actual = invokeLegendreKernel(a, prime, testLegendre);
+
+    EXPECT_EQ(expected, actual);
+}
+
+TEST(CudaBigIntTest, testLegendre3)
+{
+    BigInt a("3737");
+    BigInt prime("877");
+
+    int expected(-1);
+
+    auto actual = invokeLegendreKernel(a, prime, testLegendre);
+
+    EXPECT_EQ(expected, actual);
+}
+
+TEST(CudaBigIntTest, testLegendre4)
+{
+    BigInt a("123");
+    BigInt prime("17");
+
+    int expected(1);
+
+    auto actual = invokeLegendreKernel(a, prime, testLegendre);
+
+    EXPECT_EQ(expected, actual);
+}
+
+TEST(CudaBigIntTest, testRootModPrime)
+{
+    BigInt a("123");
+    BigInt prime("17");
+
+    int expected(2);
+
+    auto actual = invokeLegendreKernel(a, prime, testRootModPrime);
+
+    EXPECT_EQ(expected, actual);
+}
+
+TEST(CudaBigIntTest, testRootModPrime2)
+{
+    BigInt a("123123");
+    BigInt prime("17");
+
+    int expected(14);
+
+    auto actual = invokeLegendreKernel(a, prime, testRootModPrime);
+
+    EXPECT_EQ(expected, actual);
+}
+
+TEST(CudaBigIntTest, testRootModPrime3)
+{
+    BigInt a("34732");
+    BigInt prime("97");
+
+    int expected(54);
+
+    auto actual = invokeLegendreKernel(a, prime, testRootModPrime);
+
+    EXPECT_EQ(expected, actual);
+}
+
+TEST(CudaBigIntTest, testCudaPow)
+{
+    int base = 9;
+    int exp = 2;
+
+    int expected(81);
+
+    auto actual = invokeCudaPowKernel(base, exp, testCudaPow);
+
+    EXPECT_EQ(expected, actual);
+}
+
+TEST(CudaBigIntTest, testCudaPow2)
+{
+    int base = 123;
+    int exp = 2;
+
+    int expected(15129);
+
+    auto actual = invokeCudaPowKernel(base, exp, testCudaPow);
+
+    EXPECT_EQ(expected, actual);
+}
+
+TEST(CudaBigIntTest, testCudaPow3)
+{
+    int base = 81;
+    int exp = 4;
+
+    int expected(43046721);
+
+    auto actual = invokeCudaPowKernel(base, exp, testCudaPow);
+
+    EXPECT_EQ(expected, actual);
+}
 
 #endif /* HAVE_CUDA */
+
