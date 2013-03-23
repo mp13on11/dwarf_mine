@@ -93,19 +93,6 @@ void count_qs_matrix_nonzero(fact_obj_t *obj,
 		printf("sparse part has weight %u (%5.2f/col)\n", 
 				sparse_weight, 
 				(double)sparse_weight / ncols);
-
-	if (obj->logfile != NULL)
-		logprint(obj->logfile, "matrix is %u x %u (%.1f MB) with "
-			"weight %u (%5.2f/col)\n", 
-				nrows, ncols, 
-				(double)mem_use / 1048576,
-				total_weight, 
-				(double)total_weight / ncols);
-
-	if (obj->logfile != NULL)
-		logprint(obj->logfile, "sparse part has weight %u (%5.2f/col)\n", 
-				sparse_weight, 
-				(double)sparse_weight / ncols);
 }
 
 /*------------------------------------------------------------------*/
@@ -367,11 +354,6 @@ void reduce_qs_matrix(fact_obj_t *obj, uint32 *nrows,
 
 	if (VFLAG > 0)
 		printf("filtering completed in %u passes\n", passes);
-
-	if (obj->logfile != NULL)
-		logprint(obj->logfile, "filtering completed in %u passes\n", passes);
-	count_qs_matrix_nonzero(obj, reduced_rows, num_dense_rows,
-				reduced_cols, cols);
 
 	/* permute the row indices to remove rows with zero
 	   weight, put the heaviest row indices together,
