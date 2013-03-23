@@ -1165,11 +1165,9 @@ static uint64 * yafu_block_lanczos_core(fact_obj_t *obj,
 			if (obj->flags & MSIEVE_FLAG_STOP_SIEVING)
 				break;
 		}
+#endif
 	}
 
-	if (report_interval)
-		fprintf(stderr, "\n");
-#endif
 	if (VFLAG > 0)
 		printf("lanczos halted after %u iterations (dim = %u)\n", 
 					iter, dim_solved);
