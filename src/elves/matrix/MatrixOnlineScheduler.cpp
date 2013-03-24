@@ -170,11 +170,12 @@ void MatrixOnlineScheduler::calculateOnSlave()
     futures.push_back(async(launch::async, [&]() { receiveWork(); }));
     while (hasToWork())
     {
+        file << "Working." << endl;
         Matrix<float> result = calculateNextResult();
         futures.push_back(async(launch::async, [&]() { sendResult(move(result)); }));
     }
+    file << "Slave done" << endl;
     waitFor(futures);
-    file << "Salve done" << endl;
 }
 
 void MatrixOnlineScheduler::getWorkQueueSize()
@@ -193,12 +194,8 @@ void MatrixOnlineScheduler::receiveWork()
             file << "Receiver: Full workQueue; wait." << endl;
             receiveWorkState.wait(workLock);
         }
-        file << "Receiver: rank = " <<  communicator.rank() << endl;
         file << "Receiver: Finished waiting." << endl;
         MatrixPair receivedWork = getNextWork();
-        file << "Receiver: Try workMutex.lock()" << endl;
-        workMutex.lock();
-        file << "Receiver: Locked workMutex." << endl;
         workQueue.push_back(move(receivedWork));
         workMutex.unlock();
         file << "Receiver: Unlocked workMutex." << endl;
@@ -218,9 +215,6 @@ Matrix<float> MatrixOnlineScheduler::calculateNextResult()
         doWorkState.wait(workLock);
     }
     file << "Calc: Finished waiting." << endl;
-    file << "Calc: Try workMutex.lock()" << endl;
-    workMutex.lock();
-    file << "Calc: Locked workMutex." << endl;
     MatrixPair work = move(workQueue.back());
     workQueue.pop_back();
     workMutex.unlock();
