@@ -36,7 +36,6 @@ __device__ uint32_t pow(Number b, Number e, Number m)
 __device__ uint32_t cuda_pow(uint32_t b, uint32_t e)
 {
     uint32_t res = 1;
-    int iter = 0;
     while (e > 0)
     {
         while (e % 2 == 0)
@@ -191,58 +190,27 @@ __device__ uint32_t log_2_22(Number x)
 __global__ void megaKernel(const Number* number, uint32_t* logs, const uint32_t* factorBase, const int factorBaseSize, const Number* start, const Number* end, const uint32_t intervalLength)
 {
     int index = blockIdx.x * blockDim.x + threadIdx.x;
-    Number newStart(*start + index * NUMBERS_PER_THREAD);
-    Number newStartP(newStart);
-    //Number newStartN(newStart);
-    Number newEnd = newStart + Number(NUMBERS_PER_THREAD);
+    Number newStart(*start + index);
       
-    if (newStart > *end) 
+    if (index >= intervalLength) 
     {
         return;
     }
-
     for (int i=0; i<factorBaseSize; ++i)
     {
     	Number prime(factorBase[i]);
-    	Number primePower(prime);
+    	Number primePower(factorBase[i]);
     	
         int primeLog = log_2_22(prime) - 1;
+        Number q = (newStart*newStart) - *number;
+        
     	while (primePower < *number) 
         {
-            newStart = newStartP;
-    	   
-    	    int timesAdvanced = 0;
-        	bool invalid = false; 	
-        	
-            Number q = (newStart*newStart) - *number;
-            //unsigned int q = ((newStart*newStart) - *number).get_ui();
-        	//while (!(q % primePower.get_ui() == 0)) 
-        	while (!(q % primePower).isZero()) 
+        	if ((q % primePower).isZero()) 
         	{        	   
-        	   ++timesAdvanced;
-        	   newStart += 1;
-        	   if ((timesAdvanced > NUMBERS_PER_THREAD) || (newStart > *end)) 
-        	   {
-        	       invalid = true;
-        	       break;
-        	   }
-               //q = ((newStart * newStart) - *number).get_ui();
-               q = ((newStart * newStart) - *number);
+                    //printf("%u is div by %u\n", q.get_ui(), primePower.get_ui());
+                    logs[index] -= primeLog;
         	} 
-        	
-        	if (invalid) break;
-            //printf("q: %d, x: %d, n: %d\n", q.get_ui(), newStart.get_ui(), number->get_ui());
-        	
-        	Number offset = newStart - *start;
-            if (index == 0)
-            {
-                printf("offset for prime %d %d\n", offset.get_ui(), primePower.get_ui());
-            }
-            int endOffset = offset.get_ui() + NUMBERS_PER_THREAD;
-        	for (; offset.get_ui() < endOffset; offset += primePower) 
-        	{
-        	   logs[offset.get_ui()] -= primeLog;
-        	}
         	primePower *= prime;
         	
     	}

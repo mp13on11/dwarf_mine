@@ -28,7 +28,7 @@ INSTANTIATE_TEST_CASE_P(
         // The large pair takes too long at the moment
         //make_pair(BigInt("551226983117"), BigInt("554724632351"))
         //make_pair(BigInt("15485863"), BigInt("15534733")),
-        //make_pair(BigInt("1313839"), BigInt("1327901")),
+        //make_pair(BigInt("1313839"), BigInt("1327901"))
         make_pair(BigInt("547"), BigInt("719"))
     	//make_pair(BigInt("13"), BigInt("11"))
     )
@@ -144,26 +144,26 @@ TEST_P(FactorizationTest, testFactorizationQuadraticSieve)
     ASSERT_EQ(q, actualQ);
 }
 
-//TEST_P(FactorizationTest, testFactorizationCudaQuadraticSieve)
-//{
-//    using namespace std::placeholders;
-//    auto start = high_resolution_clock::now();
-//
-//    unique_ptr<QuadraticSieveElf> elf(new CudaQuadraticSieveElf());
-//    BigInt actualP, actualQ;
-//    tie(actualP, actualQ) = QuadraticSieveHelper::factor(product, bind(&QuadraticSieveElf::sieveSmoothSquares, elf.get(), _1, _2, _3, _4));
-//
-//
-//    auto end = high_resolution_clock::now();
-//    milliseconds elapsed = duration_cast<milliseconds>(end - start);
-//    std::cout << "total time: " << elapsed.count() / 1000.0 << " seconds" << endl;
-//
-//    if(actualP > actualQ)
-//        swap(actualP, actualQ);
-//
-//    ASSERT_EQ(p, actualP);
-//    ASSERT_EQ(q, actualQ);
-//}
+TEST_P(FactorizationTest, testFactorizationCudaQuadraticSieve)
+{
+    using namespace std::placeholders;
+    auto start = high_resolution_clock::now();
+
+    unique_ptr<QuadraticSieveElf> elf(new CudaQuadraticSieveElf());
+    BigInt actualP, actualQ;
+    tie(actualP, actualQ) = QuadraticSieveHelper::factor(product, bind(&QuadraticSieveElf::sieveSmoothSquares, elf.get(), _1, _2, _3, _4));
+
+
+    auto end = high_resolution_clock::now();
+    milliseconds elapsed = duration_cast<milliseconds>(end - start);
+    std::cout << "total time: " << elapsed.count() / 1000.0 << " seconds" << endl;
+
+    if(actualP > actualQ)
+        swap(actualP, actualQ);
+
+    ASSERT_EQ(p, actualP);
+    ASSERT_EQ(q, actualQ);
+}
 
 TEST(QuadraticSieveTest, testModularSquareRoot)
 {
