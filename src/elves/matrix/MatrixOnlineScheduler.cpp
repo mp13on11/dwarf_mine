@@ -12,6 +12,8 @@
 #include <algorithm>
 #include <iterator>
 #include <stdexcept>
+#include <condition_variable>
+#include <utility>
 
 using namespace std;
 using MatrixHelper::MatrixPair;
@@ -19,24 +21,19 @@ using MatrixHelper::MatrixPair;
 vector<MatrixSlice> MatrixOnlineScheduler::sliceDefinitions = std::vector<MatrixSlice>();
 vector<MatrixSlice>::iterator MatrixOnlineScheduler::currentSliceDefinition = MatrixOnlineScheduler::sliceDefinitions.begin();
 map<int, bool> MatrixOnlineScheduler::finishedSlaves = map<int, bool>();
-vector<future<void>> MatrixOnlineScheduler::scheduleHandlers = vector<future<void>>();
 mutex MatrixOnlineScheduler::schedulingMutex;
 
 MatrixOnlineScheduler::MatrixOnlineScheduler(const Communicator& communicator, const function<ElfPointer()>& factory) :
     MatrixScheduler(communicator, factory)
 {
+    receivedAllWork = false;
     if (communicator.isMaster())
-        for (size_t i = 1; i < communicator.size(); ++i)
+        for (size_t i = 0; i < communicator.size(); ++i)
             finishedSlaves[int(i)] = false;
-    else
-        resultQueue.push_back(Matrix<float>(0, 0));
 }
 
 MatrixOnlineScheduler::~MatrixOnlineScheduler()
 {
-    #pragma omp parallel for
-    for (size_t i = 0; i < scheduleHandlers.size(); ++i)
-        scheduleHandlers[i].wait();
 }
 
 void MatrixOnlineScheduler::configureWith(const Configuration& config)
@@ -67,81 +64,75 @@ void MatrixOnlineScheduler::orchestrateCalculation()
 
 void MatrixOnlineScheduler::sliceInput()
 {
-    MatrixSlicerOnline slicer;
     result = Matrix<float>(left.rows(), right.columns());
     sliceDefinitions = schedulingStrategy->getSliceDefinitions(
-            result, communicator.nodeSet()
-        );
+        result, communicator.nodeSet());
     currentSliceDefinition = sliceDefinitions.begin();
 }
 
 void MatrixOnlineScheduler::schedule()
 {
+    async(launch::async, [&]() { scheduleWork(); });
+    async(launch::async, [&]() { receiveResults(); });    
+    for (size_t i = 0; i <= communicator.nodeSet().size(); ++i)
+        MatrixHelper::sendWorkQueueSize(communicator, int(i), 3, int(Tags::workQueueSize));
+    calculateOnSlave();
+}
+
+void MatrixOnlineScheduler::scheduleWork()
+{
+    vector<future<void>> futures;
     while (hasSlices() || !haveSlavesFinished())
     {
-        const int requestingNode = MatrixHelper::waitForSlicesRequest(communicator);
-        scheduleHandlers.push_back(async(launch::async,
-            [&, requestingNode] () { schedule(requestingNode); }));
+        const int requestingNode = MatrixHelper::waitForTransactionRequest(
+            communicator, int(Tags::workRequest));
+        futures.push_back(async(launch::async, [&, requestingNode]() {
+            sendNextWorkTo(requestingNode); }));
     }
+    waitFor(futures);
 }
 
-void MatrixOnlineScheduler::schedule(const int node)
+void MatrixOnlineScheduler::receiveResults()
 {
-    const int lastWorkAmount = getLastWorkAmountFor(node);
-    fetchResultsFrom(node, lastWorkAmount);
-    sendNextSlicesTo(node);
-}
-
-void MatrixOnlineScheduler::fetchResultsFrom(const int node, const int workAmount)
-{
-    for (int i = 0; i < workAmount; ++i)
+    vector<future<void>> futures;
+    while (!haveSlavesFinished())
     {
-        Matrix<float> nodeResult = MatrixHelper::receiveMatrixFrom(communicator, node);
-        if (nodeResult.empty()) return;
-        MatrixSlice& sliceDefinition = getNextSliceDefinitionFor(node);
-        sliceDefinition.injectSlice(nodeResult, result);
-        sliceDefinition.setNodeId(Communicator::MASTER_RANK);
+        const int requestingNode = MatrixHelper::waitForTransactionRequest(
+            communicator, int(Tags::resultRequest));
+        futures.push_back(async(launch::async, [&, requestingNode]() {
+            receiveResultFrom(requestingNode); }));
     }
+    waitFor(futures);
 }
 
-int MatrixOnlineScheduler::getLastWorkAmountFor(const int node) const
+void MatrixOnlineScheduler::sendNextWorkTo(const int node)
 {
-    return schedulingStrategy->getLastWorkAmountFor(*this, node);
-}
-
-int MatrixOnlineScheduler::getNextWorkAmountFor(const int node) const
-{
-    return schedulingStrategy->getNextWorkAmountFor(*this, node);
-}
-
-vector<MatrixPair> MatrixOnlineScheduler::getNextWorkFor(
-    const int node,
-    vector<MatrixSlice>::iterator& workSlice,
-    const int workAmount)
-{
-    vector<MatrixPair> work;
-    for (int i = 0; workSlice != sliceDefinitions.end() && i < workAmount; ++workSlice, ++i)
-    {
-        work.push_back(sliceMatrices(*workSlice));
-        workSlice->setNodeId(node);
-    }
-    if ((int) work.size() < workAmount)
-        work.push_back(MatrixPair(Matrix<float>(0,0), Matrix<float>(0,0)));
-    return work;
-}
-
-void MatrixOnlineScheduler::getWorkData(
-    const int node,
-    vector<MatrixPair>& work,
-    int& workAmount)
-{
+    MatrixPair work;
+    vector<MatrixSlice>::iterator workDefinition;
     schedulingMutex.lock();
-    vector<MatrixSlice>::iterator workStartingSliceDefinition = currentSliceDefinition;
-    int remainingWorkAmount = getRemainingWorkAmount();
-    workAmount = getNextWorkAmountFor(node);
-    currentSliceDefinition += min(remainingWorkAmount, workAmount);
+    workDefinition = currentSliceDefinition;
+    currentSliceDefinition++;
     schedulingMutex.unlock();
-    work = getNextWorkFor(node, workStartingSliceDefinition, workAmount);
+    if (workDefinition != sliceDefinitions.end())
+    {
+        workDefinition->setNodeId(node);
+        work = sliceMatrices(*workDefinition);
+    }
+    else
+    {
+        work = MatrixPair(Matrix<float>(0, 0), Matrix<float>(0, 0));
+        finishedSlaves[node] = true;
+    }
+    MatrixHelper::sendNextWork(communicator, work, node, int(Tags::exchangeWork));
+}
+
+void MatrixOnlineScheduler::receiveResultFrom(const int node)
+{
+    Matrix<float> nodeResult = MatrixHelper::receiveMatrixFrom(communicator, node, int(Tags::exchangeResult));
+    if (result.empty()) return;
+    MatrixSlice& sliceDefinition = getNextSliceDefinitionFor(node);
+    sliceDefinition.injectSlice(nodeResult, result);
+    sliceDefinition.setNodeId(-1);
 }
 
 MatrixSlice& MatrixOnlineScheduler::getNextSliceDefinitionFor(const int node)
@@ -150,28 +141,6 @@ MatrixSlice& MatrixOnlineScheduler::getNextSliceDefinitionFor(const int node)
         if (slice.getNodeId() == node)
             return slice;
     throw runtime_error("No next slice definition found.");
-}
-
-void MatrixOnlineScheduler::sendNextSlicesTo(const int node)
-{
-    int workAmount;
-    vector<MatrixPair> work;
-    getWorkData(node, work, workAmount);
-    MatrixHelper::sendWorkAmountTo(communicator, node, workAmount);
-    for (const auto& workPair : work)
-    {
-        if (workPair.first.empty() || workPair.second.empty())
-            finishedSlaves[node] = true;
-        MatrixHelper::sendMatrixTo(communicator, workPair.first, node);
-        MatrixHelper::sendMatrixTo(communicator, workPair.second, node);
-    }
-}
-
-int MatrixOnlineScheduler::getRemainingWorkAmount() const
-{
-    return hasSlices() ?
-        distance(currentSliceDefinition, sliceDefinitions.end()) :
-        0;
 }
 
 bool MatrixOnlineScheduler::hasSlices() const
@@ -189,52 +158,103 @@ bool MatrixOnlineScheduler::haveSlavesFinished() const
 
 void MatrixOnlineScheduler::calculateOnSlave()
 {
+    vector<future<void>> futures;
+    getWorkQueueSize();
+    futures.push_back(async(launch::async, [&]() { receiveWork(); }));
     while (hasToWork())
     {
-        workQueue.clear();
-        initiateCommunication();
-        sendResults();
-        resultQueue.clear();
-        receiveWork();
-        doWork();
+        Matrix<float> result = calculateNextResult();
+        futures.push_back(async(launch::async, [&]() { sendResult(move(result)); }));
     }
-    workQueue.clear();
-    initiateCommunication();
-    sendResults();
-    resultQueue.clear();
+    waitFor(futures);
 }
 
-bool MatrixOnlineScheduler::hasToWork()
+void MatrixOnlineScheduler::getWorkQueueSize()
 {
-    return workQueue.empty()
-        || (!workQueue.back().first.empty() && !workQueue.back().second.empty());
-}
-
-void MatrixOnlineScheduler::initiateCommunication() const
-{
-    MatrixHelper::requestNextSlices(communicator, communicator.rank());
-}
-
-void MatrixOnlineScheduler::sendResults()
-{
-    for (const auto& result : resultQueue)
-        MatrixHelper::sendMatrixTo(communicator, result, Communicator::MASTER_RANK);
+    maxWorkQueueSize = MatrixHelper::receiveWorkQueueSize(communicator, Communicator::MASTER_RANK, int(Tags::workQueueSize));
 }
 
 void MatrixOnlineScheduler::receiveWork()
 {
-    const int workAmount = MatrixHelper::receiveWorkAmountFrom(communicator, Communicator::MASTER_RANK);
-    for (int i = 0; i < workAmount; ++i)
+    unique_lock<mutex> workLock(workMutex);
+    while (hasToReceiveWork())
     {
-        Matrix<float> left = MatrixHelper::receiveMatrixFrom(communicator, Communicator::MASTER_RANK);
-        Matrix<float> right = MatrixHelper::receiveMatrixFrom(communicator, Communicator::MASTER_RANK);
-        workQueue.push_back({left, right});
+        while (workQueue.size() >= maxWorkQueueSize)
+            receiveWorkState.wait(workLock);
+        MatrixPair receivedWork = getNextWork();
+        workMutex.lock();
+        workQueue.push_back(move(receivedWork));
+        workMutex.unlock();
+        doWorkState.notify_one();
     }
+    receivedAllWork = true;
 }
 
-void MatrixOnlineScheduler::doWork()
+Matrix<float> MatrixOnlineScheduler::calculateNextResult()
 {
-    for (const auto& work : workQueue)
-        resultQueue.push_back(elf().multiply(work.first, work.second));
+    unique_lock<mutex> workLock(workMutex);
+    while (workQueue.empty())
+        doWorkState.wait(workLock);
+    workMutex.lock();
+    MatrixPair work = move(workQueue.back());
+    workQueue.pop_back();
+    workMutex.unlock();
+    receiveWorkState.notify_one();
+    return elf().multiply(work.first, work.second);
+}
+
+MatrixPair MatrixOnlineScheduler::getNextWork()
+{
+    initiateWorkReceiving();
+    return MatrixHelper::getNextWork(communicator, communicator.rank(), int(Tags::exchangeWork));
+}
+
+void MatrixOnlineScheduler::sendResult(const Matrix<float>& result)
+{
+    initiateResultSending();
+    MatrixHelper::sendMatrixTo(
+        communicator,
+        result,
+        Communicator::MASTER_RANK,
+        int(Tags::exchangeResult));
+}
+
+void MatrixOnlineScheduler::initiateWorkReceiving() const
+{
+    initiateTransaction(int(Tags::workRequest));
+}
+
+void MatrixOnlineScheduler::initiateResultSending() const
+{
+    initiateTransaction(int(Tags::resultRequest));
+}
+
+void MatrixOnlineScheduler::initiateTransaction(const int tag) const
+{
+    MatrixHelper::requestTransaction(
+        communicator,
+        communicator.rank(),
+        Communicator::MASTER_RANK,
+        tag);
+}
+
+bool MatrixOnlineScheduler::hasToReceiveWork()
+{
+    MatrixPair lastWork = workQueue[workQueue.size() - 1]; 
+    return workQueue.empty()
+        || !lastWork.first.empty()
+        || !lastWork.second.empty();
+}
+
+bool MatrixOnlineScheduler::hasToWork()
+{
+    return !workQueue.empty() || !receivedAllWork;
+}
+
+void MatrixOnlineScheduler::waitFor(vector<future<void>>& futures)
+{
+    #pragma omp parallel for
+    for (size_t i = 0; i < futures.size(); ++i)
+        futures[i].wait();
 }
 

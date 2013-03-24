@@ -23,45 +23,57 @@ public:
     virtual void configureWith(const Configuration& config);
     virtual void generateData(const DataGenerationParameters& params);
 
-    int getRemainingWorkAmount() const;
-
 protected:
     virtual void doDispatch();
     virtual void orchestrateCalculation();
     virtual void calculateOnSlave();
 
 private:
+    // Master
     std::unique_ptr<MatrixOnlineSchedulingStrategy> schedulingStrategy;
     static std::vector<MatrixSlice> sliceDefinitions;
     static std::vector<MatrixSlice>::iterator currentSliceDefinition;
     static std::map<int, bool> finishedSlaves;
-    static std::vector<std::future<void>> scheduleHandlers;
     static std::mutex schedulingMutex;
-    std::vector<MatrixHelper::MatrixPair> workQueue;
-    std::vector<Matrix<float>> resultQueue;
 
     void sliceInput();
     void schedule();
-    void schedule(const int node);
-    void fetchResultsFrom(const int node, const int workAmount);
-    int getLastWorkAmountFor(const int node) const;
-    int getNextWorkAmountFor(const int node) const;
-    std::vector<MatrixHelper::MatrixPair> getNextWorkFor(
-        const int node,
-        std::vector<MatrixSlice>::iterator& workSlice,
-        const int workAmount);
-    void getWorkData(
-        const int node,
-        std::vector<MatrixHelper::MatrixPair>& work,
-        int& workAmount);
+    void scheduleWork();
+    void sendNextWorkTo(const int node);
+    void receiveResults();
+    void receiveResultFrom(const int node);
     MatrixSlice& getNextSliceDefinitionFor(const int node);
-    void sendNextSlicesTo(const int node);
     bool hasSlices() const;
     bool haveSlavesFinished() const;
 
-    bool hasToWork();
-    void initiateCommunication() const;
-    void sendResults();
+    // Slave
+    size_t maxWorkQueueSize;
+    std::vector<MatrixHelper::MatrixPair> workQueue;
+    std::condition_variable receiveWorkState;
+    std::condition_variable doWorkState;
+    std::mutex workMutex;
+    bool receivedAllWork;
+    
+    void getWorkQueueSize();
     void receiveWork();
-    void doWork();
+    Matrix<float> calculateNextResult();
+    MatrixHelper::MatrixPair getNextWork();
+    void sendResult(const Matrix<float>& result);
+    void initiateWorkReceiving() const;
+    void initiateResultSending() const;
+    void initiateTransaction(const int tag) const;
+    bool hasToReceiveWork();
+    bool hasToWork();
+
+    // Utilities
+    void waitFor(std::vector<std::future<void>>& futures);
+    
+    enum class Tags : int
+    {
+        workQueueSize = 1,
+        workRequest,
+        resultRequest,
+        exchangeWork,
+        exchangeResult
+    };
 };

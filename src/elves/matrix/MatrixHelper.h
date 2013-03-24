@@ -14,16 +14,36 @@ class Communicator;
 namespace MatrixHelper
 {
     typedef std::pair<Matrix<float>, Matrix<float>> MatrixPair;
-    const int TAG_REQUEST_SLICE = 1;
  
-    //
-    // Send via MPI
-    int receiveWorkAmountFrom(const Communicator& communicator, const int node);
-    void sendWorkAmountTo(const Communicator& communicator, const int node, const int amount);
-    void requestNextSlices(const Communicator& communicator, int node);
-    int waitForSlicesRequest(const Communicator& communicator);
-    void sendMatrixTo(const Communicator& communicator, const Matrix<float>& matrix, int node);
-    Matrix<float> receiveMatrixFrom(const Communicator& communicator, int node);
+    size_t receiveWorkQueueSize(
+        const Communicator& communicator,
+        const int node,
+        const int tag = 0);
+    void sendWorkQueueSize(
+        const Communicator& communicator,
+        const int node,
+        const size_t workQueueSize,
+        const int tag = 0);
+    void requestTransaction(
+        const Communicator& communicator,
+        const int sourceNode,
+        const int targetNode,
+        const int tag = 0);
+    int waitForTransactionRequest(
+        const Communicator& communicator,
+        const int tag = 0);
+    MatrixPair getNextWork(
+        const Communicator& communicator,
+        const int node,
+        const int tag = 0);
+    void sendNextWork(
+        const Communicator& communicator,
+        const MatrixPair& work,
+        const int node,
+        const int tag = 0);
+
+    void sendMatrixTo(const Communicator& communicator, const Matrix<float>& matrix, const int node, const int tag = 0);
+    Matrix<float> receiveMatrixFrom(const Communicator& communicator, const int node, const int tag = 0);
 
     Matrix<float> readMatrixFrom(const std::string& fileName, bool binary = true);
     Matrix<float> readMatrixFrom(std::istream& stream);
