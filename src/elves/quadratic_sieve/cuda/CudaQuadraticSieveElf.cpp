@@ -41,15 +41,18 @@ vector<BigInt> CudaQuadraticSieveElf::sieveSmoothSquares(
     factorBase_d.transferFrom(factorBase.data());
 
     array<uint32_t, 10> number_d;
+    number_d.fill(0);
     mpz_export((void*)number_d.data(), 0, -1, sizeof(uint32_t), 0, 0, number.get_mpz_t());
 
     array<uint32_t, 10> start_d;
+    start_d.fill(0);
 	mpz_export((void*)start_d.data(), 0, -1, sizeof(uint32_t), 0, 0, start.get_mpz_t());
 
     array<uint32_t, 10> end_d;
+    end_d.fill(0);
 	mpz_export((void*)end_d.data(), 0, -1, sizeof(uint32_t), 0, 0, end.get_mpz_t());
 
-	cout << "start: " << start << " end: " << end << " start_d: " << start_d[9]  << endl;
+	cout << "start: " << start << " end: " << end << "number: " << number << " start_d: " << start_d[9]  << endl;
 
 
 
@@ -66,7 +69,7 @@ vector<BigInt> CudaQuadraticSieveElf::sieveSmoothSquares(
     uint32_t logTreshold = (int)(lb(number));
     for(uint32_t i=0; i<=blockSize; i++)
     {
-    	cout << "log: " << newLogs[i] << endl;
+    //	cout << "log: " << newLogs[i] << endl;
     	if(newLogs[i] < logTreshold) // probable smooth
     	{
     		result.emplace_back(start+i);
