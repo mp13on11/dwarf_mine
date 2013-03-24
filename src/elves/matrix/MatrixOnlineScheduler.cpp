@@ -15,6 +15,9 @@
 #include <condition_variable>
 #include <utility>
 
+#include <iostream>
+#include <fstream>
+
 using namespace std;
 using MatrixHelper::MatrixPair;
 
@@ -70,13 +73,17 @@ void MatrixOnlineScheduler::sliceInput()
     currentSliceDefinition = sliceDefinitions.begin();
 }
 
+ofstream file("/tmp/calc");
 void MatrixOnlineScheduler::schedule()
 {
-    async(launch::async, [&]() { scheduleWork(); });
-    async(launch::async, [&]() { receiveResults(); });    
-    for (size_t i = 0; i <= communicator.nodeSet().size(); ++i)
+    vector<future<void>> futures;
+    maxWorkQueueSize = 3;
+    futures.push_back(async(launch::async, [&]() { scheduleWork(); }));
+    futures.push_back(async(launch::async, [&]() { receiveResults(); }));
+    for (size_t i = 1; i < communicator.nodeSet().size(); ++i)
         MatrixHelper::sendWorkQueueSize(communicator, int(i), 3, int(Tags::workQueueSize));
     calculateOnSlave();
+    waitFor(futures);
 }
 
 void MatrixOnlineScheduler::scheduleWork()
@@ -167,6 +174,7 @@ void MatrixOnlineScheduler::calculateOnSlave()
         futures.push_back(async(launch::async, [&]() { sendResult(move(result)); }));
     }
     waitFor(futures);
+    file << "Salve done" << endl;
 }
 
 void MatrixOnlineScheduler::getWorkQueueSize()
@@ -176,37 +184,56 @@ void MatrixOnlineScheduler::getWorkQueueSize()
 
 void MatrixOnlineScheduler::receiveWork()
 {
+    file << "Receiver: Init workLock on workMutex." << endl;
     unique_lock<mutex> workLock(workMutex);
     while (hasToReceiveWork())
     {
         while (workQueue.size() >= maxWorkQueueSize)
+        {
+            file << "Receiver: Full workQueue; wait." << endl;
             receiveWorkState.wait(workLock);
+        }
+        file << "Receiver: rank = " <<  communicator.rank() << endl;
+        file << "Receiver: Finished waiting." << endl;
         MatrixPair receivedWork = getNextWork();
+        file << "Receiver: Try workMutex.lock()" << endl;
         workMutex.lock();
+        file << "Receiver: Locked workMutex." << endl;
         workQueue.push_back(move(receivedWork));
         workMutex.unlock();
+        file << "Receiver: Unlocked workMutex." << endl;
         doWorkState.notify_one();
+        file << "Receiver: Notified Calc." << endl;
     }
     receivedAllWork = true;
 }
 
 Matrix<float> MatrixOnlineScheduler::calculateNextResult()
 {
+    file << "Calc: Init workLock on workMutex." << endl;
     unique_lock<mutex> workLock(workMutex);
     while (workQueue.empty())
+    {
+        file << "Calc: Empty workQueue; wait." << endl;
         doWorkState.wait(workLock);
+    }
+    file << "Calc: Finished waiting." << endl;
+    file << "Calc: Try workMutex.lock()" << endl;
     workMutex.lock();
+    file << "Calc: Locked workMutex." << endl;
     MatrixPair work = move(workQueue.back());
     workQueue.pop_back();
     workMutex.unlock();
+    file << "Calc: Unlocked workMutex." << endl;
     receiveWorkState.notify_one();
+    file << "Calc: Notified receiver." << endl;
     return elf().multiply(work.first, work.second);
 }
 
 MatrixPair MatrixOnlineScheduler::getNextWork()
 {
     initiateWorkReceiving();
-    return MatrixHelper::getNextWork(communicator, communicator.rank(), int(Tags::exchangeWork));
+    return MatrixHelper::getNextWork(communicator, Communicator::MASTER_RANK, int(Tags::exchangeWork));
 }
 
 void MatrixOnlineScheduler::sendResult(const Matrix<float>& result)
@@ -240,10 +267,9 @@ void MatrixOnlineScheduler::initiateTransaction(const int tag) const
 
 bool MatrixOnlineScheduler::hasToReceiveWork()
 {
-    MatrixPair lastWork = workQueue[workQueue.size() - 1]; 
     return workQueue.empty()
-        || !lastWork.first.empty()
-        || !lastWork.second.empty();
+        || !workQueue[workQueue.size() - 1].first.empty()
+        || !workQueue[workQueue.size() - 1].second.empty();
 }
 
 bool MatrixOnlineScheduler::hasToWork()
