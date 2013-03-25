@@ -60,8 +60,9 @@ namespace MatrixHelper
         const int node,
         const int tag)
     {
-        return { receiveMatrixFrom(communicator, node, tag),
-                 receiveMatrixFrom(communicator, node, tag) };
+        Matrix<float> left = receiveMatrixFrom(communicator, node, tag);
+        Matrix<float> right = receiveMatrixFrom(communicator, node, tag);
+        return MatrixPair(move(left), move(right));
     }   
     
     void sendNextWork(
