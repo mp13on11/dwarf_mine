@@ -8,6 +8,7 @@
 #include <future>
 #include <functional>
 #include <vector>
+#include <deque>
 #include <map>
 #include <mutex>
 
@@ -29,6 +30,8 @@ protected:
     virtual void calculateOnSlave();
 
 private:
+    static std::mutex fileMutex;
+
     // Master
     std::unique_ptr<MatrixOnlineSchedulingStrategy> schedulingStrategy;
     static std::vector<MatrixSlice> sliceDefinitions;
@@ -49,13 +52,17 @@ private:
     // Slave
     size_t maxWorkQueueSize;
     std::vector<MatrixHelper::MatrixPair> workQueue;
+    std::deque<Matrix<float>> resultQueue;
     std::condition_variable receiveWorkState;
+    std::condition_variable sendResultsState;
     std::condition_variable doWorkState;
     std::mutex workMutex;
+    std::mutex resultMutex;
     bool receivedAllWork;
     
     void getWorkQueueSize();
     void receiveWork();
+    void sendResults();
     Matrix<float> calculateNextResult();
     MatrixHelper::MatrixPair getNextWork();
     void sendResult(const Matrix<float>& result);
@@ -63,6 +70,7 @@ private:
     void initiateResultSending() const;
     void initiateTransaction(const int tag) const;
     bool hasToReceiveWork();
+    bool hasToSendResults();
     bool hasToWork();
 
     // Utilities
