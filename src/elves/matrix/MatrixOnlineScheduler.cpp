@@ -95,12 +95,16 @@ fileMutex.lock();
     fileBLA << "Done calculating" << endl;
 fileMutex.unlock();
     waitFor(futures);
+fileMutex.lock();
+    fileBLA << "Shutting down master." << endl;
+fileMutex.unlock();
 }
 
 void MatrixOnlineScheduler::scheduleWork()
 {
     vector<future<void>> futures;
-    while (hasSlices() || !haveSlavesFinished())
+    size_t sentWork = 0;
+    while (sentWork != (sliceDefinitions.size() + communicator.nodeSet().size()))
     {
 fileMutex.lock();
         fileBLA << "Waiting for work requests." << endl;
@@ -109,6 +113,7 @@ fileMutex.unlock();
             communicator, int(Tags::workRequest));
         futures.push_back(async(launch::async, [&, requestingNode]() {
             sendNextWorkTo(requestingNode); }));
+        sentWork++;
     }
 fileMutex.lock();
     fileBLA << "Done waiting for work requests." << endl;
@@ -122,15 +127,17 @@ fileMutex.unlock();
 void MatrixOnlineScheduler::receiveResults()
 {
     vector<future<void>> futures;
-    while (!haveSlavesFinished())
+    size_t receivedResults = 0;
+    while (receivedResults != (sliceDefinitions.size() + communicator.nodeSet().size()))
     {
 fileMutex.lock();
-        fileBLA << "Waiting for results." << endl;
+        fileBLA << "Waiting for result " << receivedResults+1 << "/" << sliceDefinitions.size()+communicator.nodeSet().size() << endl;
 fileMutex.unlock();
         const int requestingNode = MatrixHelper::waitForTransactionRequest(
             communicator, int(Tags::resultRequest));
         futures.push_back(async(launch::async, [&, requestingNode]() {
             receiveResultFrom(requestingNode); }));
+        receivedResults++;
     }
 fileMutex.lock();
     fileBLA << "Done waiting for results." << endl;
@@ -200,11 +207,15 @@ bool MatrixOnlineScheduler::haveSlavesFinished() const
     return true;
 }
 
-ofstream file("/tmp/calc");
+ofstream file;
 void MatrixOnlineScheduler::calculateOnSlave()
 {
+    if (communicator.isMaster())
+        file.open("/tmp/calc0");
+    else
+        file.open("/tmp/calc1");
     vector<future<void>> futures;
-    if (communicator.rank() != Communicator::MASTER_RANK)
+    if (!communicator.isMaster())
         getWorkQueueSize();
     futures.push_back(async(launch::async, [&]() { receiveWork(); }));
     futures.push_back(async(launch::async, [&]() { sendResults(); }));
@@ -239,12 +250,26 @@ void MatrixOnlineScheduler::receiveWork()
     while (hasToReceiveWork())
     {
         while (workQueue.size() >= maxWorkQueueSize)
+        {
+fileMutex.lock();
+    file << communicator.rank() << "Receiver waiting." << endl;
+fileMutex.unlock();
             receiveWorkState.wait(workLock);
+fileMutex.lock();
+    file << communicator.rank() << "Receiver done waiting." << endl;
+fileMutex.unlock();
+        }
         MatrixPair receivedWork = getNextWork();
+fileMutex.lock();
+    file << communicator.rank() << "Received (" << receivedWork.first.rows() << "x" << receivedWork.first.columns() << ") * (" << receivedWork.second.rows() << "x" << receivedWork.second.columns() << ")" << endl;
+fileMutex.unlock();
         workQueue.push_back(move(receivedWork));
         workMutex.unlock();
         doWorkState.notify_one();
     }
+fileMutex.lock();
+    file << communicator.rank() << "Received all work." << endl;
+fileMutex.unlock();
     receivedAllWork = true;
 }
 
@@ -254,7 +279,15 @@ void MatrixOnlineScheduler::sendResults()
     while (hasToSendResults())
     {
         while (resultQueue.empty())
+        {
+fileMutex.lock();
+    file << communicator.rank() << "Sender waiting." << endl;
+fileMutex.unlock();
             sendResultsState.wait(resultLock);
+fileMutex.lock();
+    file << communicator.rank() << "Sender done waiting." << endl;
+fileMutex.unlock();
+        }
         Matrix<float> result = move(resultQueue.front());
         resultQueue.pop_front();
         resultMutex.unlock();
@@ -266,7 +299,15 @@ Matrix<float> MatrixOnlineScheduler::calculateNextResult()
 {
     unique_lock<mutex> workLock(workMutex);
     while (workQueue.empty())
+    {
+fileMutex.lock();
+    file << communicator.rank() << "Calc waiting." << endl;
+fileMutex.unlock();
         doWorkState.wait(workLock);
+fileMutex.lock();
+    file << communicator.rank() << "Calc done waiting." << endl;
+fileMutex.unlock();
+    }
     MatrixPair work = move(workQueue.back());
     workQueue.pop_back();
     workMutex.unlock();
@@ -325,7 +366,7 @@ bool MatrixOnlineScheduler::hasToReceiveWork()
 
 bool MatrixOnlineScheduler::hasToSendResults()
 {
-    return !resultQueue.empty() || hasToWork();
+    return !resultQueue.empty() || !receivedAllWork;
 }
 
 bool MatrixOnlineScheduler::hasToWork()
