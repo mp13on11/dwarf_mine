@@ -9,7 +9,6 @@
 #include <functional>
 #include <vector>
 #include <deque>
-#include <map>
 #include <mutex>
 
 class MatrixElf;
@@ -36,7 +35,6 @@ private:
     std::unique_ptr<MatrixOnlineSchedulingStrategy> schedulingStrategy;
     static std::vector<MatrixSlice> sliceDefinitions;
     static std::vector<MatrixSlice>::iterator currentSliceDefinition;
-    static std::map<int, bool> finishedSlaves;
     static std::mutex schedulingMutex;
 
     void sliceInput();
@@ -46,8 +44,7 @@ private:
     void receiveResults();
     void receiveResultFrom(const int node);
     MatrixSlice& getNextSliceDefinitionFor(const int node);
-    bool hasSlices() const;
-    bool haveSlavesFinished() const;
+    size_t numberOfTransactions() const;
 
     // Slave
     size_t maxWorkQueueSize;
@@ -59,6 +56,7 @@ private:
     std::mutex workMutex;
     std::mutex resultMutex;
     bool receivedAllWork;
+    bool processedAllWork;
     
     void getWorkQueueSize();
     void receiveWork();
