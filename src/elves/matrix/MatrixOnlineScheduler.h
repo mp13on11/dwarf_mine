@@ -45,11 +45,12 @@ private:
     void receiveResults();
     void receiveResultFrom(const int node);
     MatrixSlice& getNextSliceDefinitionFor(const int node);
-    size_t numberOfTransactions() const;
+    size_t amountOfWork() const;
+    size_t amountOfResults() const;
 
     // Slave
     size_t maxWorkQueueSize;
-    std::vector<MatrixHelper::MatrixPair> workQueue;
+    std::deque<MatrixHelper::MatrixPair> workQueue;
     std::deque<Matrix<float>> resultQueue;
     std::condition_variable receiveWorkState;
     std::condition_variable sendResultsState;
