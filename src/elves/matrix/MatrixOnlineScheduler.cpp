@@ -65,23 +65,25 @@ void MatrixOnlineScheduler::orchestrateCalculation()
     schedule();
 }
 
+ofstream fileBLA("/tmp/calc2");
 void MatrixOnlineScheduler::sliceInput()
 {
     result = Matrix<float>(left.rows(), right.columns());
     sliceDefinitions = schedulingStrategy->getSliceDefinitions(
         result, communicator.nodeSet());
+    for (const auto& slice : sliceDefinitions)
+        fileBLA << "Slice (" << slice.getRows() << "x" << slice.getColumns() << ") @ (" << slice.getStartY() << "x" << slice.getStartX() << ")" <<endl;
     currentSliceDefinition = sliceDefinitions.begin();
 }
 
-ofstream file("/tmp/calc");
 void MatrixOnlineScheduler::schedule()
 {
     vector<future<void>> futures;
-    maxWorkQueueSize = 3;
+    maxWorkQueueSize = 1;
     futures.push_back(async(launch::async, [&]() { scheduleWork(); }));
     futures.push_back(async(launch::async, [&]() { receiveResults(); }));
     for (size_t i = 1; i < communicator.nodeSet().size(); ++i)
-        MatrixHelper::sendWorkQueueSize(communicator, int(i), 3, int(Tags::workQueueSize));
+        MatrixHelper::sendWorkQueueSize(communicator, int(i), 1, int(Tags::workQueueSize));
     calculateOnSlave();
     waitFor(futures);
 }
@@ -118,7 +120,8 @@ void MatrixOnlineScheduler::sendNextWorkTo(const int node)
     vector<MatrixSlice>::iterator workDefinition;
     schedulingMutex.lock();
     workDefinition = currentSliceDefinition;
-    currentSliceDefinition++;
+    if (currentSliceDefinition != sliceDefinitions.end())
+        currentSliceDefinition++;
     schedulingMutex.unlock();
     if (workDefinition != sliceDefinitions.end())
     {
@@ -126,20 +129,22 @@ void MatrixOnlineScheduler::sendNextWorkTo(const int node)
         work = sliceMatrices(*workDefinition);
     }
     else
-    {
         work = MatrixPair(Matrix<float>(0, 0), Matrix<float>(0, 0));
-        finishedSlaves[node] = true;
-    }
     MatrixHelper::sendNextWork(communicator, work, node, int(Tags::exchangeWork));
 }
 
 void MatrixOnlineScheduler::receiveResultFrom(const int node)
 {
     Matrix<float> nodeResult = MatrixHelper::receiveMatrixFrom(communicator, node, int(Tags::exchangeResult));
-    if (result.empty()) return;
-    MatrixSlice& sliceDefinition = getNextSliceDefinitionFor(node);
-    sliceDefinition.injectSlice(nodeResult, result);
-    sliceDefinition.setNodeId(-1);
+    if (result.empty())
+    {
+        finishedSlaves[node] = true;
+        return;
+    }
+    MatrixSlice& slice = getNextSliceDefinitionFor(node);
+    fileBLA << "Inject using slice (" << slice.getRows() << "x" << slice.getColumns() << ") @ (" << slice.getStartY() << "x" << slice.getStartX() << ") with result matrix (" << nodeResult.rows() << "x" << nodeResult.columns() << ")." << endl;
+    slice.injectSlice(nodeResult, result);
+    slice.setNodeId(-1);
 }
 
 MatrixSlice& MatrixOnlineScheduler::getNextSliceDefinitionFor(const int node)
@@ -163,6 +168,7 @@ bool MatrixOnlineScheduler::haveSlavesFinished() const
     return true;
 }
 
+ofstream file("/tmp/calc");
 void MatrixOnlineScheduler::calculateOnSlave()
 {
     vector<future<void>> futures;
@@ -172,7 +178,8 @@ void MatrixOnlineScheduler::calculateOnSlave()
     {
         file << "Working." << endl;
         Matrix<float> result = calculateNextResult();
-        futures.push_back(async(launch::async, [&]() { sendResult(move(result)); }));
+        file << "Result: (" << result.rows() << "x" << result.columns() << ")" << endl;
+        futures.push_back(async(launch::async, [&, result]() { sendResult(result); }));
     }
     file << "Slave done" << endl;
     waitFor(futures);
@@ -185,43 +192,31 @@ void MatrixOnlineScheduler::getWorkQueueSize()
 
 void MatrixOnlineScheduler::receiveWork()
 {
-    file << "Receiver: Init workLock on workMutex." << endl;
     unique_lock<mutex> workLock(workMutex);
     while (hasToReceiveWork())
     {
         while (workQueue.size() >= maxWorkQueueSize)
-        {
-            file << "Receiver: Full workQueue; wait." << endl;
             receiveWorkState.wait(workLock);
-        }
-        file << "Receiver: Finished waiting." << endl;
         MatrixPair receivedWork = getNextWork();
         workQueue.push_back(move(receivedWork));
         workMutex.unlock();
-        file << "Receiver: Unlocked workMutex." << endl;
         doWorkState.notify_one();
-        file << "Receiver: Notified Calc." << endl;
     }
     receivedAllWork = true;
 }
 
 Matrix<float> MatrixOnlineScheduler::calculateNextResult()
 {
-    file << "Calc: Init workLock on workMutex." << endl;
     unique_lock<mutex> workLock(workMutex);
     while (workQueue.empty())
-    {
-        file << "Calc: Empty workQueue; wait." << endl;
         doWorkState.wait(workLock);
-    }
-    file << "Calc: Finished waiting." << endl;
     MatrixPair work = move(workQueue.back());
     workQueue.pop_back();
     workMutex.unlock();
-    file << "Calc: Unlocked workMutex." << endl;
     receiveWorkState.notify_one();
-    file << "Calc: Notified receiver." << endl;
-    return elf().multiply(work.first, work.second);
+    file << "Working on left matrix: (" << work.first.rows() << "x" << work.first.columns() << ")" << endl;
+    file << "Working on right matrix: (" << work.second.rows() << "x" << work.second.columns() << ")" << endl;
+    return move(elf().multiply(work.first, work.second));
 }
 
 MatrixPair MatrixOnlineScheduler::getNextWork()
@@ -232,6 +227,7 @@ MatrixPair MatrixOnlineScheduler::getNextWork()
 
 void MatrixOnlineScheduler::sendResult(const Matrix<float>& result)
 {
+    file << "Sending result (" << result.rows() << "x" << result.columns() << ")" << endl;
     initiateResultSending();
     MatrixHelper::sendMatrixTo(
         communicator,
