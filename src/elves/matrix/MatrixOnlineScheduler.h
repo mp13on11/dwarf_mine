@@ -30,6 +30,7 @@ protected:
 
 private:
     static std::mutex fileMutex;
+    static std::mutex fileMutex2;
 
     // Master
     std::unique_ptr<MatrixOnlineSchedulingStrategy> schedulingStrategy;
