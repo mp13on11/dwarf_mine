@@ -1,4 +1,8 @@
+#!/usr/bin/python
+
 import os
+import select
+import itertools
 import subprocess
 import datetime
 from math import sqrt
@@ -7,15 +11,13 @@ matplotlib.use('Agg')
 from matplotlib import pyplot
 from matplotlib.ticker import MultipleLocator, FormatStrFormatter
 from pylab import *
-
-import calendar
+from optparse import OptionParser
 
 import random
 import time
 
 DIRECTORY_NAME = "values"
-ITERATIONS = 5
-DEBUG = True
+ITERATION_STEPS = 3
 
 def collectMeasuresForTrial(trial):
 	smp = []
@@ -54,7 +56,7 @@ def collectMeasuresForRevision(rev):
 	
 	return smp, cuda
 
-def collectData(directoryName):
+def collectData(directoryName, revsToBenchmark):
 	timestamps_hash = []
 	trials = []
 
@@ -62,10 +64,13 @@ def collectData(directoryName):
 		timestamp, mode, trial, revision = fileName.split("_")
 		revision = revision.replace(".txt", "")
 		
-		timestamps_hash.append((timestamp, revision))
-		trials.append(trial)
+		if revision in revsToBenchmark:
+			if (timestamp, revision) not in timestamps_hash:
+				timestamps_hash.append((timestamp, revision))
+			if trial not in trials:	
+				trials.append(trial)
 
-	return set(timestamps_hash), set(trials)
+	return timestamps_hash, trials
 
 def avg(xs):
 	return int(sum(xs) / len(xs))
@@ -74,14 +79,14 @@ def avgTimeFromFile(fileName):
 	return avg([float(line) for line in open(os.path.join(DIRECTORY_NAME, fileName))])
 
 def plotTrialsForRevision(smp, cuda, rev, fileName):
-		
+	
+	print fileName
 	ind = arange(len(smp))
-	width = 0.35
 	
 	fig = pyplot.figure()
 	ax = fig.add_subplot(111)
 	ax.plot(ind, [value for date, value in smp], label = "SMP", color = "r")
-	ax.plot(ind + width, [value for date, value in cuda], label = "CUDA", color = "y")
+	ax.plot(ind, [value for date, value in cuda], label = "CUDA", color = "y")
 	
 	ax.set_ylabel("Runtime")
 	ax.set_title("Revision:" + rev)
@@ -91,7 +96,6 @@ def plotTrialsForRevision(smp, cuda, rev, fileName):
 	ax.legend(loc = 2)
 	
 	pyplot.savefig(fileName, bbox_inches = "tight")
-
 	
 def plotChange(smp, cuda, trial, fileName):
 	
@@ -117,29 +121,67 @@ def getCurrentRev():
 	rev, date = proc.communicate()[0].split("_")
 
 def createFileName(rev, date, mode, numberOfIterations):
-	return DIRECTORY_NAME + "/" + date + "_" + mode + "_" + str(numberOfIterations) + "_" + str(rev)+ ".txt"
+	return DIRECTORY_NAME + "/" + str(date) + "_" + mode + "_" + str(numberOfIterations) + "_" + str(rev)+ ".txt"
 
 def getCommandFor(numberOfIterations, mode, rev, date):
 	return "./build/src/main/dwarf_mine -m {0} -c montecarlo_tree_search -n 100 -w 10 --montecarlo_trials {1} -q --time_output {2}".format(mode, numberOfIterations, createFileName(rev, date, mode, numberOfIterations))
 
-def meassure(numberOfIterations, mode):
+def changeRevision(revision):
+	print "== Checkout revision " + revision + " =="
+	proc = subprocess.Popen(["git checkout " + revision], stdout=subprocess.PIPE, shell=True)
+	result, err = proc.communicate()
+	print "--> " + result
+
+def build():
+	print "== Build =="
+	proc = subprocess.Popen(["./build.sh"], stdout=subprocess.PIPE, shell=True)
+	result, err = proc.communicate()
+	print "--> " + result
+
+def setToLatestRevision():
+	print "== Return to latest revision =="
+	proc = subprocess.Popen(["git checkout HEAD"], stdout=subprocess.PIPE, shell=True)
+	result, err = proc.communicate()
+	print "--> " + result
+
+def getRevisionDate():
+	proc = subprocess.Popen(["git log --pretty=format:'%ct' -n 1"], stdout=subprocess.PIPE, shell=True)
+	return proc.communicate()[0]
+
+def measure(numberOfIterations, mode, rev):
 	
 	if not os.path.exists(DIRECTORY_NAME):
 		os.makedirs(DIRECTORY_NAME)
-	rev, date = getCurrentRev()
+	
+	#changeRevision(rev)
+	date = getRevisionDate()
+	#build()
 	command = getCommandFor(numberOfIterations, mode, rev, date)
-	value = os.system(command)
+	print "== EXECUTE COMMAND:", command
+	os.system(command)
 
 if __name__ == "__main__":
-	start = 10
+
+	parser = OptionParser()
+	parser.add_option("-r", dest = "rev_file")
+	(options, args) = parser.parse_args()
+
+	iterations = [10 ** n for n in range(1, ITERATION_STEPS + 1)]
 	modes = ["smp", "cuda"]
 
-	for i in range(1, ITERATIONS + 1):
-		for mode in modes:
-			pass
-	#		meassure(10**i, mode)
+	# determine the revs to compare
+	revsToBenchmark = []	
+	if options.rev_file is not None:
+			revsToBenchmark = [line.strip() for line in open(options.rev_file)]
+	else:
+		print "NO INPUT - USE A FILE WITH REVISON HASHES AND PARAMETER '-r'"
+		sys.exit()	
 
-	timestamp_hashes, trials = collectData(DIRECTORY_NAME)
+	for revision, iteration, mode in itertools.product(revsToBenchmark, iterations, modes):
+		print "== Measure revision ", revision, " with ", iteration, " iterations in ", mode, " =="			
+		#measure(iteration, mode, revision)
+		
+	timestamp_hashes, trials = collectData(DIRECTORY_NAME, revsToBenchmark)
 
 	for trial in trials:
 		smp, cuda = collectMeasuresForTrial(trial)
@@ -148,3 +190,5 @@ if __name__ == "__main__":
 	for timestamp_hash in timestamp_hashes:
 		smp, cuda = collectMeasuresForRevision(timestamp_hash[1])
 		plotTrialsForRevision(smp, cuda, timestamp_hash[0], "rev_" + timestamp_hash[1])
+
+	setToLatestevision()
