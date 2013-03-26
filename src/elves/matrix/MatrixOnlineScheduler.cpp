@@ -36,6 +36,7 @@ MatrixOnlineScheduler::~MatrixOnlineScheduler()
 void MatrixOnlineScheduler::configureWith(const Configuration& config)
 {
     schedulingStrategy = MatrixOnlineSchedulingStrategyFactory::getStrategy(config.schedulingStrategy());
+    maxWorkQueueSize = schedulingStrategy->getWorkQueueSize();
 }
 
 void MatrixOnlineScheduler::generateData(const DataGenerationParameters& params)
@@ -70,7 +71,6 @@ void MatrixOnlineScheduler::sliceInput()
 void MatrixOnlineScheduler::schedule()
 {
     vector<future<void>> futures;
-    maxWorkQueueSize = 5;
     futures.push_back(async(launch::async, [&]() { scheduleWork(); }));
     futures.push_back(async(launch::async, [&]() { receiveResults(); }));
     for (size_t i = 1; i < communicator.nodeSet().size(); ++i)

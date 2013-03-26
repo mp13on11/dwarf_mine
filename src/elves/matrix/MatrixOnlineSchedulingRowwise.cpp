@@ -1,12 +1,14 @@
 #include "MatrixOnlineSchedulingRowwise.h"
 #include "Matrix.h"
-#include "MatrixOnlineScheduler.h"
-
-#include <algorithm>
+#include "MatrixSlicerOnline.h"
+#include "common/BenchmarkResults.h"
 
 using namespace std;
 
-const int MatrixOnlineSchedulingRowwise::defaultWorkAmount = 3;
+size_t MatrixOnlineSchedulingRowwise::getWorkQueueSize()
+{
+    return 5;
+}
 
 vector<MatrixSlice> MatrixOnlineSchedulingRowwise::getSliceDefinitions(
     const Matrix<float>& result,
@@ -15,6 +17,6 @@ vector<MatrixSlice> MatrixOnlineSchedulingRowwise::getSliceDefinitions(
     return slicer.layout(
         result.rows(),
         result.columns(),
-        nodeSet.size() * defaultWorkAmount,
+        nodeSet.size() * getWorkQueueSize(),
         1);
 }
