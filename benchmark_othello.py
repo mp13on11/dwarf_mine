@@ -17,6 +17,7 @@ import random
 import time
 
 DIRECTORY_NAME = "values"
+OUTPUT_DIRECTORY_NAME = "diagrams"
 ITERATION_STEPS = 3
 
 def collectMeasuresForTrial(trial):
@@ -80,6 +81,9 @@ def avgTimeFromFile(fileName):
 
 def plotTrialsForRevision(smp, cuda, rev, fileName):
 	
+	if not os.path.exists(OUTPUT_DIRECTORY_NAME):
+		os.makedirs(OUTPUT_DIRECTORY_NAME)
+
 	print fileName
 	ind = arange(len(smp))
 	
@@ -95,10 +99,13 @@ def plotTrialsForRevision(smp, cuda, rev, fileName):
 	
 	ax.legend(loc = 2)
 	
-	pyplot.savefig(fileName, bbox_inches = "tight")
+	pyplot.savefig(os.path.join(OUTPUT_DIRECTORY_NAME,fileName), bbox_inches = "tight")
 	
 def plotChange(smp, cuda, trial, fileName):
 	
+	if not os.path.exists(OUTPUT_DIRECTORY_NAME):
+		os.makedirs(OUTPUT_DIRECTORY_NAME)
+
 	ind = arange(len(smp))
 	width = 0.35
 	
@@ -114,7 +121,7 @@ def plotChange(smp, cuda, trial, fileName):
 	
 	ax.legend(loc = 2)
 	
-	pyplot.savefig(fileName, bbox_inches = "tight")
+	pyplot.savefig(os.path.join(OUTPUT_DIRECTORY_NAME,fileName), bbox_inches = "tight")
 
 def getCurrentRev():
 	proc = subprocess.Popen(["git log --pretty=format:'%H_%ct' -n 1"], stdout=subprocess.PIPE, shell=True)
@@ -138,9 +145,9 @@ def build():
 	result, err = proc.communicate()
 	print "--> " + result
 
-def setToLatestRevision():
+def setToLatestRevision(branch):
 	print "== Return to latest revision =="
-	proc = subprocess.Popen(["git checkout HEAD"], stdout=subprocess.PIPE, shell=True)
+	proc = subprocess.Popen(["git checkout " + branch], stdout=subprocess.PIPE, shell=True)
 	result, err = proc.communicate()
 	print "--> " + result
 
@@ -153,9 +160,9 @@ def measure(numberOfIterations, mode, rev):
 	if not os.path.exists(DIRECTORY_NAME):
 		os.makedirs(DIRECTORY_NAME)
 	
-	#changeRevision(rev)
+	changeRevision(rev)
 	date = getRevisionDate()
-	#build()
+	build()
 	command = getCommandFor(numberOfIterations, mode, rev, date)
 	print "== EXECUTE COMMAND:", command
 	os.system(command)
@@ -164,6 +171,7 @@ if __name__ == "__main__":
 
 	parser = OptionParser()
 	parser.add_option("-r", dest = "rev_file")
+	parser.add_option("-b", dest = "branch")
 	(options, args) = parser.parse_args()
 
 	iterations = [10 ** n for n in range(1, ITERATION_STEPS + 1)]
@@ -175,11 +183,11 @@ if __name__ == "__main__":
 			revsToBenchmark = [line.strip() for line in open(options.rev_file)]
 	else:
 		print "NO INPUT - USE A FILE WITH REVISON HASHES AND PARAMETER '-r'"
-		sys.exit()	
+		sys.exit(-1)	
 
 	for revision, iteration, mode in itertools.product(revsToBenchmark, iterations, modes):
 		print "== Measure revision ", revision, " with ", iteration, " iterations in ", mode, " =="			
-		#measure(iteration, mode, revision)
+		measure(iteration, mode, revision)
 		
 	timestamp_hashes, trials = collectData(DIRECTORY_NAME, revsToBenchmark)
 
@@ -191,4 +199,7 @@ if __name__ == "__main__":
 		smp, cuda = collectMeasuresForRevision(timestamp_hash[1])
 		plotTrialsForRevision(smp, cuda, timestamp_hash[0], "rev_" + timestamp_hash[1])
 
-	setToLatestevision()
+	if options.branch is None:
+		print "Use -b to determine the branch!"	
+		sys.exit(-1)
+	setToLatestRevision(options.branch)
