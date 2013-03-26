@@ -188,7 +188,7 @@ if __name__ == "__main__":
 
 	for revision, iteration, mode in itertools.product(revsToBenchmark, iterations, modes):
 		print "== Measure revision ", revision, " with ", iteration, " iterations in ", mode, " =="			
-		#measure(iteration, mode, revision)
+		measure(iteration, mode, revision)
 		
 	timestamp_hashes, trials = collectData(DIRECTORY_NAME, revsToBenchmark)
 
@@ -203,4 +203,5 @@ if __name__ == "__main__":
 	if options.branch is None:
 		print "Use -b to determine the branch!"	
 		sys.exit(-1)
+
 	setToLatestRevision(options.branch)
