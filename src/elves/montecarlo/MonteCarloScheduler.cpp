@@ -266,7 +266,9 @@ void MonteCarloScheduler::collectResults(BenchmarkResult nodeSet)
     _result = *bestMove;
 }
 
-void MonteCarloScheduler::doBenchmarkDispatch(int /* node */)
+void MonteCarloScheduler::doBenchmarkDispatch(int node )
 {
-    doDispatch();
+    BenchmarkResult benchmarkNodeset;
+    benchmarkNodeset[node] = 1;
+    doDispatch(benchmarkNodeset);
 }    
