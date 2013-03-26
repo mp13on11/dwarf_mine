@@ -26,10 +26,10 @@ INSTANTIATE_TEST_CASE_P(
         //make_pair(BigInt("37975227936943673922808872755445627854565536638199"),
         //          BigInt("40094690950920881030683735292761468389214899724061"))
         // The large pair takes too long at the moment
-        //make_pair(BigInt("551226983117"), BigInt("554724632351"))
+        make_pair(BigInt("551226983117"), BigInt("554724632351"))
         //make_pair(BigInt("15485863"), BigInt("15534733")),
         //make_pair(BigInt("1313839"), BigInt("1327901"))
-        make_pair(BigInt("547"), BigInt("719"))
+        //make_pair(BigInt("547"), BigInt("719"))
     	//make_pair(BigInt("13"), BigInt("11"))
     )
 );

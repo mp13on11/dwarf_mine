@@ -1,6 +1,7 @@
 #include "QuadraticSieve.h"
 #include "common/Utils.h"
 #include "PrimeFactorization.h"
+#include "BlockLanczosWrapper.h"
 #include <algorithm>
 #include <cassert>
 
@@ -99,8 +100,11 @@ pair<BigInt, BigInt> factor(const BigInt& number, SieveSmoothSquaresCallback sie
     cout << "found " << relations.size() << " relations" << endl;
 
     // bring relations into lower diagonal form
-    cout << "performing gaussian elimination ..." << endl;
-    performGaussianElimination(relations);
+    //cout << "performing gaussian elimination ..." << endl;
+    //performGaussianElimination(relations);
+
+    cout << "Invoking Block Lanczos ..." << endl;
+    BlockLanczosWrapper::performBlockLanczos(relations, factorBase, sqrt(number) + 1);
 
     cout << "combining random congruences ..." << endl;
 
