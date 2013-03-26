@@ -39,8 +39,8 @@ def collectMeasuresForTrial(trial):
 	return smp, cuda
 
 def collectMeasuresForRevision(rev):
-	smp = []
-	cuda = []
+	smp = {}
+	cuda = {}
 	
 	for fileName in sorted(os.listdir(DIRECTORY_NAME)):
 		fileNameParts = fileName.split("_")
@@ -51,9 +51,9 @@ def collectMeasuresForRevision(rev):
 		
 		if fileRev == rev:
 			if mode == "smp":
-				smp.append((date, avgTimeFromFile(fileName)))
+				smp[fileTrial] = (date, avgTimeFromFile(fileName))
 			if mode == "cuda":
-				cuda.append((date, avgTimeFromFile(fileName)))
+				cuda[fileTrial] = (date, avgTimeFromFile(fileName))
 	
 	return smp, cuda
 
@@ -79,23 +79,24 @@ def avg(xs):
 def avgTimeFromFile(fileName):
 	return avg([float(line) for line in open(os.path.join(DIRECTORY_NAME, fileName))])
 
-def plotTrialsForRevision(smp, cuda, rev, fileName):
+def plotTrialsForRevision(smp, cuda, rev, trials, fileName):
 	
 	if not os.path.exists(OUTPUT_DIRECTORY_NAME):
 		os.makedirs(OUTPUT_DIRECTORY_NAME)
 
-	print fileName
+	trials = sorted(trials)
+
 	ind = arange(len(smp))
 	
 	fig = pyplot.figure()
 	ax = fig.add_subplot(111)
-	ax.plot(ind, [value for date, value in smp], label = "SMP", color = "r")
-	ax.plot(ind, [value for date, value in cuda], label = "CUDA", color = "y")
+	ax.plot(ind, [smp[trial][1] for trial in trials], label = "SMP", color = "r")
+	ax.plot(ind, [cuda[trial][1] for trial in trials], label = "CUDA", color = "y")
 	
 	ax.set_ylabel("Runtime")
 	ax.set_title("Revision:" + rev)
 	ax.set_xticks(ind)
-	ax.set_xticklabels([date for date, value in smp])
+	ax.set_xticklabels(trials)
 	
 	ax.legend(loc = 2)
 	
@@ -187,7 +188,7 @@ if __name__ == "__main__":
 
 	for revision, iteration, mode in itertools.product(revsToBenchmark, iterations, modes):
 		print "== Measure revision ", revision, " with ", iteration, " iterations in ", mode, " =="			
-		measure(iteration, mode, revision)
+		#measure(iteration, mode, revision)
 		
 	timestamp_hashes, trials = collectData(DIRECTORY_NAME, revsToBenchmark)
 
@@ -197,7 +198,7 @@ if __name__ == "__main__":
 
 	for timestamp_hash in timestamp_hashes:
 		smp, cuda = collectMeasuresForRevision(timestamp_hash[1])
-		plotTrialsForRevision(smp, cuda, timestamp_hash[0], "rev_" + timestamp_hash[1])
+		plotTrialsForRevision(smp, cuda, timestamp_hash[0], trials, "rev_" + timestamp_hash[1])
 
 	if options.branch is None:
 		print "Use -b to determine the branch!"	
