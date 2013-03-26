@@ -21,6 +21,7 @@ using MatrixHelper::MatrixPair;
 vector<MatrixSlice> MatrixOnlineScheduler::sliceDefinitions = std::vector<MatrixSlice>();
 vector<MatrixSlice>::iterator MatrixOnlineScheduler::currentSliceDefinition = MatrixOnlineScheduler::sliceDefinitions.begin();
 mutex MatrixOnlineScheduler::schedulingMutex;
+int MatrixOnlineScheduler::sliceNodeIdNone = -1;
 
 MatrixOnlineScheduler::MatrixOnlineScheduler(const Communicator& communicator, const function<ElfPointer()>& factory) :
     MatrixScheduler(communicator, factory)
@@ -113,12 +114,7 @@ void MatrixOnlineScheduler::receiveResults()
 void MatrixOnlineScheduler::sendNextWorkTo(const int node)
 {
     MatrixPair work;
-    vector<MatrixSlice>::iterator workDefinition;
-    schedulingMutex.lock();
-    workDefinition = currentSliceDefinition;
-    if (currentSliceDefinition != sliceDefinitions.end())
-        currentSliceDefinition++;
-    schedulingMutex.unlock();
+    vector<MatrixSlice>::iterator workDefinition = getNextWorkDefinition();
     if (workDefinition != sliceDefinitions.end())
     {
         workDefinition->setNodeId(node);
@@ -129,12 +125,23 @@ void MatrixOnlineScheduler::sendNextWorkTo(const int node)
     MatrixHelper::sendNextWork(communicator, work, node, int(Tags::exchangeWork));
 }
 
+vector<MatrixSlice>::iterator MatrixOnlineScheduler::getNextWorkDefinition()
+{
+    vector<MatrixSlice>::iterator workDefinition;
+    schedulingMutex.lock();
+    workDefinition = currentSliceDefinition;
+    if (currentSliceDefinition != sliceDefinitions.end())
+        currentSliceDefinition++;
+    schedulingMutex.unlock();
+    return move(workDefinition);
+}
+
 void MatrixOnlineScheduler::receiveResultFrom(const int node)
 {
     Matrix<float> nodeResult = MatrixHelper::receiveMatrixFrom(communicator, node, int(Tags::exchangeResult));
     MatrixSlice& slice = getNextSliceDefinitionFor(node);
     slice.injectSlice(nodeResult, result);
-    slice.setNodeId(-1);
+    slice.setNodeId(sliceNodeIdNone);
 }
 
 MatrixSlice& MatrixOnlineScheduler::getNextSliceDefinitionFor(const int node)
@@ -163,24 +170,39 @@ void MatrixOnlineScheduler::calculateOnSlave()
     futures.push_back(async(launch::async, [&]() { receiveWork(); }));
     futures.push_back(async(launch::async, [&]() { sendResults(); }));
     while (hasToWork())
-    {
-        Matrix<float> result = calculateNextResult();
-        if (result.empty())
-            processedAllWork = true;
-        else
-        {
-            resultMutex.lock();
-            resultQueue.push_back(result);
-            resultMutex.unlock();
-        }
-        sendResultsState.notify_one();
-    }
+        doWork();
     waitFor(futures);
 }
 
 void MatrixOnlineScheduler::getWorkQueueSize()
 {
     maxWorkQueueSize = MatrixHelper::receiveWorkQueueSize(communicator, Communicator::MASTER_RANK, int(Tags::workQueueSize));
+}
+
+void MatrixOnlineScheduler::doWork()
+{
+    Matrix<float> result = calculateNextResult();
+    if (result.empty())
+        processedAllWork = true;
+    else
+    {
+        resultMutex.lock();
+        resultQueue.push_back(result);
+        resultMutex.unlock();
+    }
+    sendResultsState.notify_one();
+}
+
+Matrix<float> MatrixOnlineScheduler::calculateNextResult()
+{
+    unique_lock<mutex> workLock(workMutex);
+    while (workQueue.empty())
+        doWorkState.wait(workLock);
+    MatrixPair work = move(workQueue.front());
+    workQueue.pop_front();
+    workMutex.unlock();
+    receiveWorkState.notify_one();
+    return move(elf().multiply(work.first, work.second));
 }
 
 void MatrixOnlineScheduler::receiveWork()
@@ -197,18 +219,6 @@ void MatrixOnlineScheduler::receiveWork()
         workMutex.unlock();
         doWorkState.notify_one();
     }
-}
-
-Matrix<float> MatrixOnlineScheduler::calculateNextResult()
-{
-    unique_lock<mutex> workLock(workMutex);
-    while (workQueue.empty())
-        doWorkState.wait(workLock);
-    MatrixPair work = move(workQueue.front());
-    workQueue.pop_front();
-    workMutex.unlock();
-    receiveWorkState.notify_one();
-    return move(elf().multiply(work.first, work.second));
 }
 
 void MatrixOnlineScheduler::sendResults()

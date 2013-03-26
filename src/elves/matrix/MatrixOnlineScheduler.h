@@ -34,12 +34,14 @@ private:
     static std::vector<MatrixSlice> sliceDefinitions;
     static std::vector<MatrixSlice>::iterator currentSliceDefinition;
     static std::mutex schedulingMutex;
+    static int sliceNodeIdNone;
 
     void sliceInput();
     void schedule();
     void scheduleWork();
-    void sendNextWorkTo(const int node);
     void receiveResults();
+    void sendNextWorkTo(const int node);
+    std::vector<MatrixSlice>::iterator getNextWorkDefinition();
     void receiveResultFrom(const int node);
     MatrixSlice& getNextSliceDefinitionFor(const int node);
     size_t amountOfWork() const;
@@ -58,9 +60,10 @@ private:
     bool processedAllWork;
     
     void getWorkQueueSize();
+    void doWork();
+    Matrix<float> calculateNextResult();
     void receiveWork();
     void sendResults();
-    Matrix<float> calculateNextResult();
     MatrixHelper::MatrixPair getNextWork();
     void sendResult(const Matrix<float>& result);
     void initiateWorkReceiving() const;
