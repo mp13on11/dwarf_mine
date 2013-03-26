@@ -29,9 +29,6 @@ protected:
     virtual void calculateOnSlave();
 
 private:
-    static std::mutex fileMutex;
-    static std::mutex fileMutex2;
-
     // Master
     std::unique_ptr<MatrixOnlineSchedulingStrategy> schedulingStrategy;
     static std::vector<MatrixSlice> sliceDefinitions;
