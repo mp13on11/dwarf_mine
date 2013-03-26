@@ -74,7 +74,8 @@ void MatrixOnlineScheduler::schedule()
     futures.push_back(async(launch::async, [&]() { scheduleWork(); }));
     futures.push_back(async(launch::async, [&]() { receiveResults(); }));
     for (size_t i = 1; i < communicator.nodeSet().size(); ++i)
-        MatrixHelper::sendWorkQueueSize(communicator, int(i), maxWorkQueueSize, int(Tags::workQueueSize));
+        futures.push_back(async(launch::async, [&, i] () {
+            MatrixHelper::sendWorkQueueSize(communicator, int(i), maxWorkQueueSize, int(Tags::workQueueSize)); }));
     calculateOnSlave();
     waitFor(futures);
 }
