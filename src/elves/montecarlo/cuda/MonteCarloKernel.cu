@@ -37,6 +37,31 @@ __device__ bool doStep(CudaGameState& state, CudaSimulator& simulator, size_t li
     return moveCount > 0;
 }
 
+__device__ void expandLeaf(CudaSimulator& simulator, CudaGameState& state, size_t* wins, size_t* visits)
+{
+    Player startingPlayer = state.currentPlayer;
+    size_t passCounter = 0;
+    size_t rounds = 0;
+
+    __syncthreads();
+    
+    while (passCounter < 2)
+    {
+        bool passedMove = !doStep(state, simulator, rounds);
+        passCounter = (passedMove ? passCounter + 1 : 0);
+
+        cassert (rounds < MAXIMAL_MOVE_COUNT, "Detected rounds overflowing maximal count %d in %d\n", MAXIMAL_MOVE_COUNT, threadIdx.x); 
+        rounds++;
+    }
+    __syncthreads();
+
+    if (threadIdx.x == 0) ++(*visits);
+    if (state.isWinner(startingPlayer))
+    {
+        if (threadIdx.x == 0) ++(*wins);
+    }
+}
+
 __device__ void expandLeaf(curandState* deviceState, CudaSimulator& simulator, CudaGameState& state, size_t* wins, size_t* visits)
 {
     Player startingPlayer = state.currentPlayer;
@@ -94,6 +119,48 @@ __global__ void simulateGame(size_t reiterations, curandState* deviceStates, siz
         __syncthreads();
 
         expandLeaf(deviceStates, simulator, state, &wins, &visits);
+        
+        __syncthreads();
+        if (threadIdx.x == 0)
+        {
+            results[node].wins += wins;
+            results[node].visits += visits;
+        }
+    }
+}
+
+__global__ void simulateGamePreRandom(size_t reiterations, float* randomValues, size_t numberOfPlayfields, const Field* playfields, Player currentPlayer, OthelloResult* results)
+{
+    int playfieldIndex = threadIdx.x;
+
+    for (size_t i = 0; i < reiterations; ++i)
+    {
+		size_t randomSeed = i * blockDim.x + blockIdx.x;
+        size_t node = randomNumber(randomValues, &randomSeed, numberOfPlayfields);
+
+        __shared__ Field sharedPlayfield[FIELD_DIMENSION * FIELD_DIMENSION];
+        __shared__ Field oldPlayfield[FIELD_DIMENSION * FIELD_DIMENSION];
+        __shared__ bool possibleMoves[FIELD_DIMENSION*FIELD_DIMENSION];
+        
+        size_t playfieldOffset = FIELD_DIMENSION * FIELD_DIMENSION * node;
+        sharedPlayfield[playfieldIndex] = playfields[playfieldOffset + playfieldIndex];
+
+        CudaGameState state =  { 
+            sharedPlayfield, 
+            oldPlayfield,
+            possibleMoves, 
+            FIELD_DIMENSION * FIELD_DIMENSION, 
+            FIELD_DIMENSION, 
+            currentPlayer
+        };
+        CudaSimulator simulator(&state, randomValues, &randomSeed);
+
+        size_t wins = 0;
+        size_t visits = 0;
+
+        __syncthreads();
+
+        expandLeaf(simulator, state, &wins, &visits);
         
         __syncthreads();
         if (threadIdx.x == 0)
