@@ -48,7 +48,7 @@ __device__ bool doStep(CudaGameState& state, CudaSimulator& simulator, size_t li
     return moveCount > 0;
 }
 
-__device__ void expandLeaf(CudaSimulator& simulator, CudaGameState& state, size_t* wins, size_t* visits)
+__device__ void expandLeaf(CudaSimulator& simulator, CudaGameState& state)
 {
     Player startingPlayer = state.currentPlayer;
     size_t passCounter = 0;
@@ -65,17 +65,10 @@ __device__ void expandLeaf(CudaSimulator& simulator, CudaGameState& state, size_
         rounds++;
     }
     __syncthreads();
-
-    if (threadIdx.x == 0) ++(*visits);
-    if (state.isWinner(startingPlayer))
-    {
-        if (threadIdx.x == 0) ++(*wins);
-    }
 }
 
-__device__ void expandLeaf(curandState* deviceState, CudaSimulator& simulator, CudaGameState& state, size_t* wins, size_t* visits)
+__device__ void expandLeaf(curandState* deviceState, CudaSimulator& simulator, CudaGameState& state)
 {
-    Player startingPlayer = state.currentPlayer;
     size_t passCounter = 0;
     size_t rounds = 0;
 
@@ -90,13 +83,6 @@ __device__ void expandLeaf(curandState* deviceState, CudaSimulator& simulator, C
         rounds++;
     }
     __syncthreads();
-
-    if (threadIdx.x == 0) ++(*visits);
-    if (state.isWinner(startingPlayer))
-    {
-        if (threadIdx.x == 0) ++(*wins);
-    }
-    
 }
 
 __global__ void simulateGame(size_t reiterations, curandState* deviceStates, size_t numberOfPlayfields, const Field* playfields, Player currentPlayer, OthelloResult* results)
@@ -124,29 +110,32 @@ __global__ void simulateGame(size_t reiterations, curandState* deviceStates, siz
         };
         CudaSimulator simulator(&state, deviceStates);
 
-        size_t wins = 0;
-        size_t visits = 0;
-
         __syncthreads();
 
-        expandLeaf(deviceStates, simulator, state, &wins, &visits);
+        expandLeaf(deviceStates, simulator, state);
         
         __syncthreads();
+        if (state.isWinner(currentPlayer))
+        {
+            if (threadIdx.x == 0)
+                results[node].wins++;
+        }
         if (threadIdx.x == 0)
         {
-            results[node].wins += wins;
-            results[node].visits += visits;
+            results[node].visits ++;
         }
     }
 }
 
-__global__ void simulateGamePreRandom(size_t reiterations, float* randomValues, size_t numberOfPlayfields, const Field* playfields, Player currentPlayer, OthelloResult* results)
+__global__ void simulateGamePreRandom(size_t reiterations, size_t numberOfBlocks, float* randomValues, size_t numberOfPlayfields, const Field* playfields, Player currentPlayer, OthelloResult* results)
 {
     int playfieldIndex = threadIdx.x;
-    size_t blockIterations = size_t(ceil(reiterations * 1.0 / blockDim.x));
+    size_t blockIterations = size_t(ceil(reiterations * 1.0 / numberOfBlocks));
+
     for (size_t i = 0; i < blockIterations; ++i)
     {
-		size_t randomSeed = i * blockDim.x + blockIdx.x;
+		size_t randomSeed = i * numberOfBlocks + blockIdx.x;
+
         cassert(randomSeed < reiterations + 121, "SeedIndex %lu exceeded reiterations\n", randomSeed);
         size_t node = randomNumber(randomValues, &randomSeed, numberOfPlayfields);
 
@@ -168,19 +157,19 @@ __global__ void simulateGamePreRandom(size_t reiterations, float* randomValues, 
 
         CudaSimulator simulator(&state, randomValues, randomSeed);
 
-        size_t wins = 0;
-        size_t visits = 0;
-
         __syncthreads();
 
-        expandLeaf(simulator, state, &wins, &visits);
+        expandLeaf(simulator, state);
         
         __syncthreads();
+        if (state.isWinner(currentPlayer))
+        {
+            if (threadIdx.x == 0)
+                results[node].wins++;
+        }
         if (threadIdx.x == 0)
         {
-            results[node].wins += wins;
-            results[node].visits += visits;
-            //printf("LastSeed: %lu\n", simulator._randomSeed);
+            results[node].visits ++;
         }
     }
 }
@@ -238,7 +227,12 @@ __global__ void testExpandLeaf(curandState* deviceState, Field* playfield, Playe
         currentPlayer 
     };
     CudaSimulator simulator(&state, deviceState);
-    expandLeaf(deviceState, simulator, state, wins, visits);
-
+    expandLeaf(deviceState, simulator, state);
+    if (state.isWinner(currentPlayer))
+    {
+        if (threadIdx.x == 0) ++(*wins);
+    }
+    if (threadIdx.x == 0)
+        (*visits)++;
 	playfield[playfieldIndex] = sharedPlayfield[playfieldIndex];
 }
