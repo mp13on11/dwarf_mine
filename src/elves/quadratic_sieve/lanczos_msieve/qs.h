@@ -751,7 +751,7 @@ int savefile_buf_off;
 
 qs_params sieve_params;
 
-int SIQS_ABORT;
+extern int SIQS_ABORT;
 
 
 #endif /* _SIQS_H_ */

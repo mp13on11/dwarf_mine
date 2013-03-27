@@ -21,6 +21,7 @@ vector<BigInt> smpSieveKernel(const BigInt& start, const BigInt& end, const BigI
 
     // init field with logarithm
     x = start;
+
     for(uint32_t i=0; i<=blockSize; i++, x++)
     {
         remainder = (x*x) % number;
@@ -68,7 +69,11 @@ vector<BigInt> smpSieveKernel(const BigInt& start, const BigInt& end, const BigI
 
 vector<BigInt> SmpQuadraticSieveElf::sieveSmoothSquares(const BigInt& start, const BigInt& end, const BigInt& number, const FactorBase& factorBase)
 {
-    const int NUM_THREADS = omp_get_num_threads();
+    //const int NUM_THREADS = omp_get_num_threads();
+    int NUM_THREADS = 1;
+
+    //#pragma omp parallel
+    NUM_THREADS = omp_get_num_threads();
     
     SmoothSquareList smooths;
     vector<future<SmoothSquareList>> partialResults;

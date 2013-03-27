@@ -99,16 +99,20 @@ pair<BigInt, BigInt> factor(const BigInt& number, SieveSmoothSquaresCallback sie
 
     cout << "found " << relations.size() << " relations" << endl;
 
-    // bring relations into lower diagonal form
-    //cout << "performing gaussian elimination ..." << endl;
-    //performGaussianElimination(relations);
-
+#ifdef USE_LANCZOS
     cout << "Invoking Block Lanczos ..." << endl;
-    BlockLanczosWrapper::performBlockLanczos(relations, factorBase, number);
+    auto lanczosFactors = BlockLanczosWrapper::performBlockLanczosAndFindFactors(relations, factorBase, number);
+    if (lanczosFactors.empty())
+        throw logic_error("No factors found!");
 
+    return { lanczosFactors[0], lanczosFactors[1] };
+#else
+    // bring relations into lower diagonal form
+    cout << "performing gaussian elimination ..." << endl;
+    performGaussianElimination(relations);
     cout << "combining random congruences ..." << endl;
-
     return searchForRandomCongruence(factorBase, number, 100, relations);
+#endif
 }
 
 pair<BigInt,BigInt> factorsFromCongruence(const BigInt& a, const BigInt& b, const BigInt& number)
@@ -211,6 +215,7 @@ void performGaussianElimination(Relations& relations)
 
     for(size_t i=0; i<relations.size(); i++)
     {
+        cout << "Gauss iteration i = " << i << endl;
         // swap next smallest relation to top, according to remaining primes (bigger than currentPrime)
         RelationComparator comparator(currentPrime);
 
@@ -239,6 +244,8 @@ void performGaussianElimination(Relations& relations)
                 auto last = relations[k].oddPrimePowers.indices.end();
                 if(find(start, last, currentPrime) == last)
                     continue;
+                //if (!binary_search(start, last, currentPrime))
+                //    continue;
 
                 auto lowerBoundIt = lower_bound(start, last, primeToRemove);
                 if(lowerBoundIt == last || *lowerBoundIt > primeToRemove)

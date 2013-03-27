@@ -18,10 +18,11 @@ FILE(GLOB GCC_SOURCES
 )
 
 # Build executable out of sources
-SET(LINKING_MODE SHARED)
+SET(LINKING_MODE STATIC)
 
 IF(CMAKE_COMPILER_IS_GNUCXX OR USE_VAMPIR_TRACE)
-    ADD_CXX_FLAGS("-O3 -funroll-loops")        ## Optimize
+    ADD_CXX_FLAGS("-O3 -fopenmp -funroll-loops")        ## Optimize
+    #ADD_CXX_FLAGS("-pg -fopenmp")
 ENDIF()
 
 ADD_LIBRARY(${LIBRARY_NAME} ${LINKING_MODE}
