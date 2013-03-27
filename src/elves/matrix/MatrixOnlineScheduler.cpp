@@ -15,6 +15,8 @@
 #include <condition_variable>
 #include <utility>
 
+#include "vt_user.h"
+
 using namespace std;
 using MatrixHelper::MatrixPair;
 
@@ -26,6 +28,8 @@ int MatrixOnlineScheduler::sliceNodeIdNone = -1;
 MatrixOnlineScheduler::MatrixOnlineScheduler(const Communicator& communicator, const function<ElfPointer()>& factory) :
     MatrixScheduler(communicator, factory)
 {
+    VT_TRACER("MatrixOnlineScheduler Tracer");
+    VT_ON();
     receivedAllWork = false;
     processedAllWork = false;
 }

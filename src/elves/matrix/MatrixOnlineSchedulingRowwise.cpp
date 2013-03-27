@@ -17,6 +17,6 @@ vector<MatrixSlice> MatrixOnlineSchedulingRowwise::getSliceDefinitions(
     return slicer.layout(
         result.rows(),
         result.columns(),
-        nodeSet.size() * getWorkQueueSize(),
+        nodeSet.size() * getWorkQueueSize() * getWorkQueueSize(),
         1);
 }
