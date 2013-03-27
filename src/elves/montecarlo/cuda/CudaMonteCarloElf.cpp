@@ -46,7 +46,7 @@ OthelloResult CudaMonteCarloElf::getBestMoveFor(OthelloState& state, size_t reit
 	//   x       x       x       x       x
 	//     x       x       x       x       x
 	//       x       x       x       x       x 
-	size_t numberOfRandomValues = MAXIMAL_NUMBER_OF_MOVES * NUMBER_OF_BLOCKS + reiterations / NUMBER_OF_BLOCKS + 1;
+	size_t numberOfRandomValues = (MAXIMAL_NUMBER_OF_MOVES + 1) + (reiterations / NUMBER_OF_BLOCKS + 1) * NUMBER_OF_BLOCKS;
 	for (size_t i = 0; i < numberOfRandomValues; ++i)
 	{
 		randomValues.push_back(generator(engine));
