@@ -52,6 +52,17 @@ void gameSimulationPreRandom(size_t numberOfBlocks, size_t iterations, float* ra
     CudaUtils::checkState();
 }
 
+void gameSimulationPreRandom(size_t numberOfBlocks, size_t iterations, float* randomValues, size_t numberOfRandomValues, size_t numberOfPlayfields, const Field* playfields, Player currentPlayer, OthelloResult* results, cudaStream_t stream)
+{
+    curandState* deviceStates;
+    cudaMalloc(&deviceStates, sizeof(curandState) * 128);
+    setupStateForRandom<<< 1, 128, 0, stream >>>(deviceStates, randomValues, numberOfRandomValues);
+    CudaUtils::checkState();
+
+    simulateGamePreRandom <<< numberOfBlocks, THREADS_PER_BLOCK, 0, stream >>> (iterations, randomValues, numberOfPlayfields, playfields, currentPlayer, results);
+    CudaUtils::checkState();
+}
+
 void gameSimulationStreamed(size_t numberOfBlocks, size_t iterations, size_t* seeds, size_t numberOfPlayfields, const Field* playfields, Player currentPlayer, OthelloResult* results, cudaStream_t stream)
 {
     curandState* deviceStates;
