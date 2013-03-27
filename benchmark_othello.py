@@ -229,7 +229,7 @@ if __name__ == "__main__":
 	parser.add_option("-t", dest = "translation_file")
 	(options, args) = parser.parse_args()
 
-	iterations = [10 ** n for n in range(5, ITERATION_STEPS + 1)]
+	iterations = [10 ** n for n in range(1, ITERATION_STEPS + 1)]
 #	modes = ["smp", "cuda"]
 	modes = ["cuda"]
 
