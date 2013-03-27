@@ -18,7 +18,7 @@ import time
 
 DIRECTORY_NAME = "values"
 OUTPUT_DIRECTORY_NAME = "diagrams"
-ITERATION_STEPS = 3
+ITERATION_STEPS = 5
 
 def collectMeasuresForTrial(trial):
 	smp = []
@@ -143,7 +143,7 @@ def changeRevision(revision):
 def build():
 	
 	print "== Change Build Type to Release"
-	proc = subprocess.Popen(["cmake -D CMAKE_BUILD_TYPE=Release"], stdout=subprocess.PIPE, shell=True)
+	proc = subprocess.Popen(["cmake -D CMAKE_BUILD_TYPE=Release build"], stdout=subprocess.PIPE, shell=True)
 	result, err = proc.communicate()
 	print "--> " + result
 
@@ -173,15 +173,65 @@ def measure(numberOfIterations, mode, rev):
 	print "== EXECUTE COMMAND:", command
 	os.system(command)
 
+def plotGraphForMode(mode, trials, translation_file):
+	
+	trials = sorted(trials)
+	revisions = {}
+	f = open(translation_file, "r")
+	for line in f:
+		print line
+		hash, translation = line.split(" ")
+		revisions[hash] = translation
+		
+	data = {}
+	for revision in revisions.keys():
+		values = []
+		for t in trials:
+			for fileName in os.listdir(DIRECTORY_NAME):
+				print fileName
+				timestamp, m, trial, rev = fileName.split("_")
+				rev = rev.replace(".txt", "")
+				
+				print "Mode:", mode , " m:", m
+				if (rev == revision) and (t == trial) and (mode == m):
+					values. append(avgTimeFromFile(fileName))
+		data[revision] = values
+	
+	if not os.path.exists(OUTPUT_DIRECTORY_NAME):
+		os.makedirs(OUTPUT_DIRECTORY_NAME)
+
+	ind = arange(len(trials))
+	
+	fig = pyplot.figure()
+	ax = fig.add_subplot(111)
+	print data
+	colors = ["r", "y", "b"]
+	for key in data.keys():
+		values = data[key]
+		print values
+		ax.plot(ind, values, label = revisions[key])
+	
+	ax.set_ylabel("Runtime")
+	ax.set_xlabel("Trial")
+	ax.set_xticks(ind)
+	ax.set_xticklabels(trials)
+	
+	ax.legend(loc = 2)
+	
+	pyplot.savefig(os.path.join(OUTPUT_DIRECTORY_NAME,mode), bbox_inches = "tight")
+
 if __name__ == "__main__":
 
 	parser = OptionParser()
+	parser.add_option("--with_measurements", action="store_true", dest = "with_measurements")
 	parser.add_option("-r", dest = "rev_file")
 	parser.add_option("-b", dest = "branch")
+	parser.add_option("-t", dest = "translation_file")
 	(options, args) = parser.parse_args()
 
-	iterations = [10 ** n for n in range(1, ITERATION_STEPS + 1)]
-	modes = ["smp", "cuda"]
+	iterations = [10 ** n for n in range(5, ITERATION_STEPS + 1)]
+#	modes = ["smp", "cuda"]
+	modes = ["cuda"]
 
 	# determine the revs to compare
 	revsToBenchmark = []	
@@ -191,12 +241,13 @@ if __name__ == "__main__":
 		print "NO INPUT - USE A FILE WITH REVISON HASHES AND PARAMETER '-r'"
 		sys.exit(-1)	
 
-	for revision in revsToBenchmark:
-		changeRevision(revision)
-		build()	
-		for iteration, mode in itertools.product(iterations, modes):
-			print "== Measure revision ", revision, " with ", iteration, " iterations in ", mode, " =="			
-			measure(iteration, mode, revision)
+	if options.with_measurements:
+		for revision in revsToBenchmark:
+			changeRevision(revision)
+			build()	
+			for iteration, mode in itertools.product(iterations, modes):
+				print "== Measure revision ", revision, " with ", iteration, " iterations in ", mode, "==="			
+				measure(iteration, mode, revision)
 		
 	timestamp_hashes, trials = collectData(DIRECTORY_NAME, revsToBenchmark)
 
@@ -208,9 +259,14 @@ if __name__ == "__main__":
 	#	smp, cuda = collectMeasuresForRevision(timestamp_hash[1])
 	#	plotTrialsForRevision(smp, cuda, timestamp_hash[0], trials, "rev_" + timestamp_hash[1])
 
-
+	#for mode in modes:
+	#	plotGraphForMode(trials, mode, mode)
+	
+	plotGraphForMode("cuda", trials, options.translation_file)
+	
 	if options.branch is None:
 		print "Use -b to determine the branch!"	
 		sys.exit(-1)
 
 	setToLatestRevision(options.branch)
+
