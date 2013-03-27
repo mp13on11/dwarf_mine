@@ -141,7 +141,13 @@ def changeRevision(revision):
 	print "--> " + result
 
 def build():
-	print "== Build =="
+	
+	print "== Change Build Type to Release"
+	proc = subprocess.Popen(["cmake -D CMAKE_BUILD_TYPE=Release"], stdout=subprocess.PIPE, shell=True)
+	result, err = proc.communicate()
+	print "--> " + result
+
+	print "== Build =="	
 	proc = subprocess.Popen(["./build.sh"], stdout=subprocess.PIPE, shell=True)
 	result, err = proc.communicate()
 	print "--> " + result
@@ -161,9 +167,8 @@ def measure(numberOfIterations, mode, rev):
 	if not os.path.exists(DIRECTORY_NAME):
 		os.makedirs(DIRECTORY_NAME)
 	
-	changeRevision(rev)
 	date = getRevisionDate()
-	build()
+	
 	command = getCommandFor(numberOfIterations, mode, rev, date)
 	print "== EXECUTE COMMAND:", command
 	os.system(command)
@@ -186,19 +191,23 @@ if __name__ == "__main__":
 		print "NO INPUT - USE A FILE WITH REVISON HASHES AND PARAMETER '-r'"
 		sys.exit(-1)	
 
-	for revision, iteration, mode in itertools.product(revsToBenchmark, iterations, modes):
-		print "== Measure revision ", revision, " with ", iteration, " iterations in ", mode, " =="			
-		measure(iteration, mode, revision)
+	for revision in revsToBenchmark:
+		changeRevision(revision)
+		build()	
+		for iteration, mode in itertools.product(iterations, modes):
+			print "== Measure revision ", revision, " with ", iteration, " iterations in ", mode, " =="			
+			measure(iteration, mode, revision)
 		
 	timestamp_hashes, trials = collectData(DIRECTORY_NAME, revsToBenchmark)
 
-	for trial in trials:
-		smp, cuda = collectMeasuresForTrial(trial)
-		plotChange(smp, cuda, trial, "change_" + trial)
+	#for trial in trials:
+	#	smp, cuda = collectMeasuresForTrial(trial)
+	#	plotChange(smp, cuda, trial, "change_" + trial)
 
-	for timestamp_hash in timestamp_hashes:
-		smp, cuda = collectMeasuresForRevision(timestamp_hash[1])
-		plotTrialsForRevision(smp, cuda, timestamp_hash[0], trials, "rev_" + timestamp_hash[1])
+	#for timestamp_hash in timestamp_hashes:
+	#	smp, cuda = collectMeasuresForRevision(timestamp_hash[1])
+	#	plotTrialsForRevision(smp, cuda, timestamp_hash[0], trials, "rev_" + timestamp_hash[1])
+
 
 	if options.branch is None:
 		print "Use -b to determine the branch!"	
