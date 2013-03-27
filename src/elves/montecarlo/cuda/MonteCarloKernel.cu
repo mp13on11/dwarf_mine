@@ -14,6 +14,16 @@ __global__ void setupStateForRandom(curandState* state, size_t* seeds)
 	curand_init(seeds[blockIdx.x], 0, 0, &state[blockIdx.x]);
 }
 
+__global__ void setupStateForRandom(curandState* states, float* randomValues, size_t numberOfRandomValues)
+{
+    curand_init(threadIdx.x, 0, 0, &states[threadIdx.x]);
+    for (size_t i = 0; i + threadIdx.x < numberOfRandomValues; i += 128)
+    {
+        curandState deviceState = states[threadIdx.x];
+        randomValues[i + threadIdx.x] = 1.0f - curand_uniform(&deviceState); // delivers (0, 1] - we need [0, 1)
+        states[threadIdx.x] = deviceState;
+    }
+}
 
 __device__ bool doStep(CudaGameState& state, CudaSimulator& simulator, size_t limit, float fakedRandom = -1)
 {
@@ -37,9 +47,8 @@ __device__ bool doStep(CudaGameState& state, CudaSimulator& simulator, size_t li
     return moveCount > 0;
 }
 
-__device__ void expandLeaf(curandState* deviceState, CudaSimulator& simulator, CudaGameState& state, size_t* wins, size_t* visits)
+__device__ void expandLeaf(CudaSimulator& simulator, CudaGameState& state)
 {
-    Player startingPlayer = state.currentPlayer;
     size_t passCounter = 0;
     size_t rounds = 0;
 
@@ -54,13 +63,24 @@ __device__ void expandLeaf(curandState* deviceState, CudaSimulator& simulator, C
         rounds++;
     }
     __syncthreads();
+}
 
-    if (threadIdx.x == 0) ++(*visits);
-    if (state.isWinner(startingPlayer))
-    {
-        if (threadIdx.x == 0) ++(*wins);
-    }
+__device__ void expandLeaf(curandState* deviceState, CudaSimulator& simulator, CudaGameState& state)
+{
+    size_t passCounter = 0;
+    size_t rounds = 0;
+
+    __syncthreads();
     
+    while (passCounter < 2)
+    {
+        bool passedMove = !doStep(state, simulator, rounds);
+        passCounter = (passedMove ? passCounter + 1 : 0);
+
+        cassert (rounds < MAXIMAL_MOVE_COUNT, "Detected rounds overflowing maximal count %d in %d\n", MAXIMAL_MOVE_COUNT, threadIdx.x); 
+        rounds++;
+    }
+    __syncthreads();
 }
 
 __global__ void simulateGame(size_t reiterations, curandState* deviceStates, size_t numberOfPlayfields, const Field* playfields, Player currentPlayer, OthelloResult* results)
@@ -88,18 +108,66 @@ __global__ void simulateGame(size_t reiterations, curandState* deviceStates, siz
         };
         CudaSimulator simulator(&state, deviceStates);
 
-        size_t wins = 0;
-        size_t visits = 0;
-
         __syncthreads();
 
-        expandLeaf(deviceStates, simulator, state, &wins, &visits);
+        expandLeaf(deviceStates, simulator, state);
         
         __syncthreads();
+        if (state.isWinner(currentPlayer))
+        {
+            if (threadIdx.x == 0)
+                results[node].wins++;
+        }
         if (threadIdx.x == 0)
         {
-            results[node].wins += wins;
-            results[node].visits += visits;
+            results[node].visits ++;
+        }
+    }
+}
+
+__global__ void simulateGamePreRandom(size_t reiterations, size_t numberOfBlocks, float* randomValues, size_t numberOfPlayfields, const Field* playfields, Player currentPlayer, OthelloResult* results)
+{
+    int playfieldIndex = threadIdx.x;
+    size_t blockIterations = size_t(ceil(reiterations * 1.0 / numberOfBlocks));
+
+    for (size_t i = 0; i < blockIterations; ++i)
+    {
+		size_t randomSeed = i * numberOfBlocks + blockIdx.x;
+
+        cassert(randomSeed < reiterations + 121, "SeedIndex %lu exceeded reiterations\n", randomSeed);
+        size_t node = randomNumber(randomValues, &randomSeed, numberOfPlayfields);
+
+        __shared__ Field sharedPlayfield[FIELD_DIMENSION * FIELD_DIMENSION];
+        __shared__ Field oldPlayfield[FIELD_DIMENSION * FIELD_DIMENSION];
+        __shared__ bool possibleMoves[FIELD_DIMENSION*FIELD_DIMENSION];
+        
+        size_t playfieldOffset = FIELD_DIMENSION * FIELD_DIMENSION * node;
+        sharedPlayfield[playfieldIndex] = playfields[playfieldOffset + playfieldIndex];
+
+        CudaGameState state =  { 
+            sharedPlayfield, 
+            oldPlayfield,
+            possibleMoves, 
+            FIELD_DIMENSION * FIELD_DIMENSION, 
+            FIELD_DIMENSION, 
+            currentPlayer
+        };
+
+        CudaSimulator simulator(&state, randomValues, randomSeed);
+
+        __syncthreads();
+
+        expandLeaf(simulator, state);
+        
+        __syncthreads();
+        if (state.isWinner(currentPlayer))
+        {
+            if (threadIdx.x == 0)
+                results[node].wins++;
+        }
+        if (threadIdx.x == 0)
+        {
+            results[node].visits ++;
         }
     }
 }
@@ -157,7 +225,12 @@ __global__ void testExpandLeaf(curandState* deviceState, Field* playfield, Playe
         currentPlayer 
     };
     CudaSimulator simulator(&state, deviceState);
-    expandLeaf(deviceState, simulator, state, wins, visits);
-
+    expandLeaf(deviceState, simulator, state);
+    if (state.isWinner(currentPlayer))
+    {
+        if (threadIdx.x == 0) ++(*wins);
+    }
+    if (threadIdx.x == 0)
+        (*visits)++;
 	playfield[playfieldIndex] = sharedPlayfield[playfieldIndex];
 }
