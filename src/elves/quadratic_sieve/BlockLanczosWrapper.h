@@ -5,9 +5,13 @@
 
 namespace BlockLanczosWrapper
 {
-    void performBlockLanczos(
+    class BlockLanczosResult;
+
+    BlockLanczosResult blockLanczos(
         const std::vector<Relation>& relations, 
         const FactorBase& factorBaseSize,
-        const BigInt& sieveStart
+        const BigInt& number
     );
+
+    std::vector<BigInt> findFactors(BlockLanczosResult& result);
 }

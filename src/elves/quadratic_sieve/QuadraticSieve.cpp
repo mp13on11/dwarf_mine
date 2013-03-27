@@ -104,7 +104,7 @@ pair<BigInt, BigInt> factor(const BigInt& number, SieveSmoothSquaresCallback sie
     //performGaussianElimination(relations);
 
     cout << "Invoking Block Lanczos ..." << endl;
-    BlockLanczosWrapper::performBlockLanczos(relations, factorBase, sqrt(number) + 1);
+    BlockLanczosWrapper::performBlockLanczos(relations, factorBase, number);
 
     cout << "combining random congruences ..." << endl;
 
