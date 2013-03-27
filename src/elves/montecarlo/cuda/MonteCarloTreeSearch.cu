@@ -13,7 +13,7 @@
 const int THREADS_PER_BLOCK = 64;
 
 __global__ void setupStateForRandom(curandState* state, size_t* seeds);
-__global__ void setupStateForRandom(curandState* states, float* randomValues, size_t numberOfRandomValues);
+__global__ void setupStateForRandom(curandState* states, float* randomValues, size_t numberOfRandomValues, size_t streamSeed = 0);
 __global__ void simulateGame(size_t reiterations, curandState* deviceStates, size_t numberOfPlayfields, const Field* playfields, Player currentPlayer, OthelloResult* results);
 __global__ void simulateGamePreRandom(size_t reiterations, float* randomValues, size_t numberOfRandomValues, size_t numberOfPlayfields, const Field* playfields, Player currentPlayer, OthelloResult* results);
 __global__ void simulateGamePreRandom(size_t reiterations, size_t numberOfBlocks, float* randomValues, size_t numberOfPlayfields, const Field* playfields, Player currentPlayer, OthelloResult* results);
@@ -25,7 +25,7 @@ __global__ void testExpandLeaf(curandState* deviceState, Field* playfield, Playe
 
 void gameSimulation(size_t numberOfBlocks, size_t iterations, size_t* seeds, size_t numberOfPlayfields, const Field* playfields, Player currentPlayer, OthelloResult* results)
 {
-    curandState* deviceStates;
+    curandState* deviceStates = NULL;
     cudaMalloc(&deviceStates, sizeof(curandState) * numberOfBlocks);
     
     setupStateForRandom <<< numberOfBlocks, 1 >>> (deviceStates, seeds);
@@ -43,7 +43,7 @@ void gameSimulationPreRandom(size_t numberOfBlocks, size_t iterations, float* ra
 
 void gameSimulationPreRandom(size_t numberOfBlocks, size_t iterations, float* randomValues, size_t numberOfRandomValues, size_t numberOfPlayfields, const Field* playfields, Player currentPlayer, OthelloResult* results)
 {
-    curandState* deviceStates;
+    curandState* deviceStates = NULL;
     cudaMalloc(&deviceStates, sizeof(curandState) * 128);
     setupStateForRandom<<< 1, 128 >>>(deviceStates, randomValues, numberOfRandomValues);
     CudaUtils::checkState();
@@ -52,11 +52,11 @@ void gameSimulationPreRandom(size_t numberOfBlocks, size_t iterations, float* ra
     CudaUtils::checkState();
 }
 
-void gameSimulationPreRandom(size_t numberOfBlocks, size_t iterations, float* randomValues, size_t numberOfRandomValues, size_t numberOfPlayfields, const Field* playfields, Player currentPlayer, OthelloResult* results, cudaStream_t stream)
+void gameSimulationPreRandom(size_t numberOfBlocks, size_t iterations, float* randomValues, size_t numberOfRandomValues, size_t numberOfPlayfields, const Field* playfields, Player currentPlayer, OthelloResult* results, cudaStream_t stream, size_t streamSeed)
 {
-    curandState* deviceStates;
+    curandState* deviceStates = NULL;
     cudaMalloc(&deviceStates, sizeof(curandState) * 128);
-    setupStateForRandom<<< 1, 128, 0, stream >>>(deviceStates, randomValues, numberOfRandomValues);
+    setupStateForRandom<<< 1, 128, 0, stream >>>(deviceStates, randomValues, numberOfRandomValues, streamSeed);
     CudaUtils::checkState();
 
     simulateGamePreRandom <<< numberOfBlocks, THREADS_PER_BLOCK, 0, stream >>> (iterations, numberOfBlocks, randomValues, numberOfPlayfields, playfields, currentPlayer, results);
@@ -65,7 +65,7 @@ void gameSimulationPreRandom(size_t numberOfBlocks, size_t iterations, float* ra
 
 void gameSimulationStreamed(size_t numberOfBlocks, size_t iterations, size_t* seeds, size_t numberOfPlayfields, const Field* playfields, Player currentPlayer, OthelloResult* results, cudaStream_t stream)
 {
-    curandState* deviceStates;
+    curandState* deviceStates = NULL;
     cudaMalloc(&deviceStates, sizeof(curandState) * numberOfBlocks);
     
     setupStateForRandom <<< numberOfBlocks, 1, 0, stream >>> (deviceStates, seeds);
@@ -89,7 +89,7 @@ void setupSeedForTest(size_t numberOfBlocks, curandState* deviceStates)
 
 void testDoStepProxy(Field* playfield, Player currentPlayer, float fakedRandom)
 {
-    curandState* deviceStates;
+    curandState* deviceStates = NULL;
     size_t numberOfBlocks = 1;
     setupSeedForTest(numberOfBlocks, deviceStates);
 
@@ -111,7 +111,7 @@ void testRandomNumberProxy(float fakedRandom, size_t maximum, size_t* randomMove
 
 void testExpandLeafProxy(size_t dimension, Field* playfield, Player currentPlayer, size_t* wins, size_t* visits)
 {
-    curandState* deviceStates;
+    curandState* deviceStates = NULL;
     size_t numberOfBlocks = 1;
     setupSeedForTest(numberOfBlocks, deviceStates);
     

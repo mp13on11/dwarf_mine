@@ -59,7 +59,6 @@ public:
 
     __device__ void findPossibleMoves(int directionX, int directionY)
     {
-        bool look = true;
         bool foundEnemy = false;
         Player enemyPlayer = _state->getEnemyPlayer();
         int neighbourX = _playfieldX + directionX;

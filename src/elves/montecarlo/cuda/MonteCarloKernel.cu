@@ -14,10 +14,9 @@ __global__ void setupStateForRandom(curandState* state, size_t* seeds)
 	curand_init(seeds[blockIdx.x], 0, 0, &state[blockIdx.x]);
 }
 
-
-__global__ void setupStateForRandom(curandState* states, float* randomValues, size_t numberOfRandomValues)
+__global__ void setupStateForRandom(curandState* states, float* randomValues, size_t numberOfRandomValues, size_t streamSeed = 0)
 {
-    curand_init(threadIdx.x, 0, 0, &states[threadIdx.x]);
+    curand_init(threadIdx.x + streamSeed, 0, 0, &states[threadIdx.x]);
     for (size_t i = 0; i + threadIdx.x < numberOfRandomValues; i += 128)
     {
         curandState deviceState = states[threadIdx.x];
@@ -50,7 +49,6 @@ __device__ bool doStep(CudaGameState& state, CudaSimulator& simulator, size_t li
 
 __device__ void expandLeaf(CudaSimulator& simulator, CudaGameState& state)
 {
-    Player startingPlayer = state.currentPlayer;
     size_t passCounter = 0;
     size_t rounds = 0;
 
@@ -115,14 +113,17 @@ __global__ void simulateGame(size_t reiterations, curandState* deviceStates, siz
         expandLeaf(deviceStates, simulator, state);
         
         __syncthreads();
+
         if (state.isWinner(currentPlayer))
         {
-            if (threadIdx.x == 0)
+            if (threadIdx.x == 0) 
+			{
                 results[node].wins++;
+			}
         }
         if (threadIdx.x == 0)
         {
-            results[node].visits ++;
+            results[node].visits++;
         }
     }
 }
@@ -232,7 +233,6 @@ __global__ void testExpandLeaf(curandState* deviceState, Field* playfield, Playe
     {
         if (threadIdx.x == 0) ++(*wins);
     }
-    if (threadIdx.x == 0)
-        (*visits)++;
+    if (threadIdx.x == 0) ++(*visits);
 	playfield[playfieldIndex] = sharedPlayfield[playfieldIndex];
 }

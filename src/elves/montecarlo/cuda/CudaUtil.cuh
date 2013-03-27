@@ -4,6 +4,7 @@ const int FIELD_DIMENSION = 8;
 
 #include "CudaDebug.cuh"
 #include <cstdio>
+
 __device__ size_t randomNumber(float* randomValues, size_t* randomSeed, size_t limit)
 {
 	size_t value = size_t(floor(randomValues[*randomSeed] * limit));

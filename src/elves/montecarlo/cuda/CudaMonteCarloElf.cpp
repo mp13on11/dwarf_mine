@@ -69,8 +69,8 @@ OthelloResult CudaMonteCarloElf::getBestMoveForStreamed(OthelloState& state, siz
             copy(childResults.data(), childResults.data() + childResults.size(), hostResults);
 
             CudaUtils::checkError(cudaMemcpyAsync(cudaResults, hostResults, sizeof(OthelloResult) * childResults.size(), cudaMemcpyHostToDevice, stream));
-
-            gameSimulationPreRandom(NUMBER_OF_BLOCKS, reiterationsPerStream, randomValues.get(), numberOfRandomValues, childResults.size(), cudaPlayfields.get(), state.getCurrentEnemy(), cudaResults, stream);
+			size_t streamSeed = OthelloHelper::generateUniqueSeed(nodeId, (size_t)stream, commonSeed);
+            gameSimulationPreRandom(NUMBER_OF_BLOCKS, reiterationsPerStream, randomValues.get(), numberOfRandomValues, childResults.size(), cudaPlayfields.get(), state.getCurrentEnemy(), cudaResults, stream, streamSeed);
 
             CudaUtils::checkError(cudaMemcpyAsync(hostResults, cudaResults, sizeof(OthelloResult) * childResults.size(), cudaMemcpyDeviceToHost, stream));
             
@@ -97,7 +97,6 @@ OthelloResult CudaMonteCarloElf::getBestMoveForStreamed(OthelloState& state, siz
     vector<OthelloResult> aggregatedChildResults;
     for (auto& result: collectedChildResults)
     {
-        //cout << "Stream {" << result.x << ", "<<result.y<<"}: "<<result.wins<<"/"<<result.visits<<endl;
         bool existed = false;
         for (auto& aggregatedResult : aggregatedChildResults)
         {
@@ -148,39 +147,15 @@ OthelloResult CudaMonteCarloElf::getBestMoveForSimple(OthelloState& state, size_
 
     initialize(state, aggregatedChildStatePlayfields, aggregatedChildResults);
 
-	// mt19937 engine(OthelloHelper::generateUniqueSeed(nodeId, 0, commonSeed));
-	// uniform_real_distribution<float> generator(0, 1);
-    
-	// #reiterations * #moves 
-	// #moves + #reiterations + #blocks  = 120 + reiterations per block * blocks
-	// #moves * blocks + #reiterations per block
-	// 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9
-	// x       x       x       x       x   
-	//   x       x       x       x       x
-	//     x       x       x       x       x
-	//       x       x       x       x       x 
     // one iteration: max 120 moves + one selection for leaf - for reiteration variation we step for each iteration one index to the right
 	size_t numberOfRandomValues = (MAXIMAL_NUMBER_OF_MOVES + 1) + (reiterations / NUMBER_OF_BLOCKS + 1) * NUMBER_OF_BLOCKS;
-    //vector<float> randomValues; 
     vector<float> randomValues(numberOfRandomValues);
-	// for (size_t i = 0; i < numberOfRandomValues; ++i)
-	// {
-	// 	randomValues.push_back(generator(engine));
-	// }
 	CudaUtils::Memory<float> cudaRandomValues(randomValues.size());
 
-    //vector<size_t> seeds;
-    //for (size_t i = 0; i < NUMBER_OF_BLOCKS; ++i)
-    //{
-    //    seeds.push_back(OthelloHelper::generateUniqueSeed(nodeId, i, commonSeed));
-    //}
-
-    //CudaUtils::Memory<size_t> cudaSeeds(seeds.size());
     CudaUtils::Memory<Field> cudaPlayfields(aggregatedChildStatePlayfields.size());
     CudaUtils::Memory<OthelloResult> cudaResults(aggregatedChildResults.size());
 
 	cudaRandomValues.transferFrom(randomValues.data());
-    //cudaSeeds.transferFrom(seeds.data());
     cudaPlayfields.transferFrom(aggregatedChildStatePlayfields.data());
     cudaResults.transferFrom(aggregatedChildResults.data());
 
