@@ -10,7 +10,7 @@
 
 using namespace std;
 
-size_t NUMBER_OF_STREAMS = 4;
+size_t NUMBER_OF_STREAMS = 2;
 size_t NUMBER_OF_BLOCKS = 1;
 size_t MAXIMAL_NUMBER_OF_MOVES = 120;
 
@@ -32,7 +32,7 @@ void initialize(const OthelloState& state, vector<Field>& aggregatedPlayfields, 
     }
 }
 
-OthelloResult CudaMonteCarloElf::getBestMoveForStreamed(OthelloState& state, size_t reiterations, size_t /*nodeId*/, size_t /*commonSeed*/)
+OthelloResult CudaMonteCarloElf::getBestMoveForStreamed(OthelloState& state, size_t reiterations, size_t nodeId, size_t commonSeed)
 {
     vector<Field> childPlayfields;
     vector<OthelloResult> childResults;
@@ -42,59 +42,55 @@ OthelloResult CudaMonteCarloElf::getBestMoveForStreamed(OthelloState& state, siz
     cudaPlayfields.transferFrom(childPlayfields.data());
     //cudaDeviceReset();
     vector<OthelloResult> collectedChildResults;
-    vector<vector<OthelloResult>> streamResults;
+    vector<future<vector<OthelloResult>>> streamResults;
 
     size_t reiterationsPerStream = div_ceil(reiterations,NUMBER_OF_STREAMS);
     //size_t numberOfRandomValues = (MAXIMAL_NUMBER_OF_MOVES + 1) + (reiterations / NUMBER_OF_BLOCKS + 1) * NUMBER_OF_BLOCKS;
 
-    vector<OthelloResult*> hostResults(NUMBER_OF_STREAMS);
-    vector<OthelloResult*> cudaResults(NUMBER_OF_STREAMS);
-    vector<cudaStream_t> streams;
-
-
     for (size_t currentStreamId = 0; currentStreamId < NUMBER_OF_STREAMS; ++currentStreamId)
     {
-        //streamResults.push_back(async(launch::async, [&state, &reiterationsPerStream, &nodeId, &commonSeed, &childResults, &cudaPlayfields, currentStreamId]() -> vector<OthelloResult> {
+        streamResults.push_back(async(launch::async, [&state, &reiterationsPerStream, &nodeId, &commonSeed, &childResults, &cudaPlayfields, currentStreamId]() -> vector<OthelloResult> {
             cudaStream_t stream;
-
             CudaUtils::checkError(cudaStreamCreate(&stream));
-            streams.push_back(move(stream));
 
-            //OthelloResult *cudaResults;
-            CudaUtils::checkError(cudaMalloc(&cudaResults[currentStreamId], sizeof(OthelloResult) * childResults.size()));
+            size_t* cudaSeeds;
+            CudaUtils::checkError(cudaMalloc(&cudaSeeds, sizeof(size_t) * NUMBER_OF_BLOCKS));
+
+            OthelloResult *cudaResults;
+            CudaUtils::checkError(cudaMalloc(&cudaResults, sizeof(OthelloResult) * childResults.size()));
 
             size_t numberOfRandomValues = (MAXIMAL_NUMBER_OF_MOVES + 1) + div_ceil(reiterationsPerStream, NUMBER_OF_BLOCKS) * NUMBER_OF_BLOCKS;
 
             CudaUtils::Memory<float> randomValues(numberOfRandomValues);
 
-            //OthelloResult *hostResults;
-            CudaUtils::checkError(cudaMallocHost(&hostResults[currentStreamId], sizeof(OthelloResult) * childResults.size()));
+            OthelloResult *hostResults;
+            CudaUtils::checkError(cudaMallocHost(&hostResults, sizeof(OthelloResult) * childResults.size()));
             // clean pinned memory
-            copy(childResults.data(), childResults.data() + childResults.size(), hostResults[currentStreamId]);
+            copy(childResults.data(), childResults.data() + childResults.size(), hostResults);
 
-            CudaUtils::checkError(cudaMemcpyAsync(cudaResults[currentStreamId], hostResults[currentStreamId], sizeof(OthelloResult) * childResults.size(), cudaMemcpyHostToDevice, streams[currentStreamId]));
+            CudaUtils::checkError(cudaMemcpyAsync(cudaResults, hostResults, sizeof(OthelloResult) * childResults.size(), cudaMemcpyHostToDevice, stream));
 
-            gameSimulationPreRandom(NUMBER_OF_BLOCKS, reiterationsPerStream, randomValues.get(), numberOfRandomValues, childResults.size(), cudaPlayfields.get(), state.getCurrentEnemy(), cudaResults[currentStreamId], streams[currentStreamId]);
-    }
+            gameSimulationPreRandom(NUMBER_OF_BLOCKS, reiterationsPerStream, randomValues.get(), numberOfRandomValues, childResults.size(), cudaPlayfields.get(), state.getCurrentEnemy(), cudaResults, stream);
 
-    cudaDeviceSynchronize();
-
-    for (size_t currentStreamId = 0; currentStreamId < NUMBER_OF_STREAMS; ++currentStreamId)
-    {
-            CudaUtils::checkError(cudaMemcpyAsync(hostResults[currentStreamId], cudaResults[currentStreamId], sizeof(OthelloResult) * childResults.size(), cudaMemcpyDeviceToHost, streams[currentStreamId]));
+            CudaUtils::checkError(cudaMemcpyAsync(hostResults, cudaResults, sizeof(OthelloResult) * childResults.size(), cudaMemcpyDeviceToHost, stream));
             
-            CudaUtils::checkError(cudaStreamSynchronize(streams[currentStreamId]));
+            CudaUtils::checkError(cudaStreamSynchronize(stream));
 
             vector<OthelloResult> result(childResults.size());
 
-            copy(hostResults[currentStreamId], hostResults[currentStreamId] + result.size(), result.data());
+            copy(hostResults, hostResults + result.size(), result.data());
 
-            cudaFreeHost(hostResults[currentStreamId]);
-            cudaFree(cudaResults[currentStreamId]);
-            //return result;
-            for (const auto& r : result)
+            cudaFreeHost(hostResults);
+            cudaFree(cudaResults);
+            return result;
+        }));
+    }
+    cudaDeviceSynchronize();
+    for (auto& future : streamResults)
+    {
+        for (const auto& result : future.get())
         {
-            collectedChildResults.push_back(r);
+            collectedChildResults.push_back(result);
         }
     }
 
