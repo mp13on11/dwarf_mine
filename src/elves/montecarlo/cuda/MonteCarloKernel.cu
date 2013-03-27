@@ -15,6 +15,17 @@ __global__ void setupStateForRandom(curandState* state, size_t* seeds)
 }
 
 
+__global__ void setupStateForRandom(curandState* states, float* randomValues, size_t numberOfRandomValues)
+{
+    curand_init(threadIdx.x, 0, 0, &states[threadIdx.x]);
+    for (size_t i = 0; i + threadIdx.x < numberOfRandomValues; i += 128)
+    {
+        curandState deviceState = states[threadIdx.x];
+        randomValues[i + threadIdx.x] = 1.0f - curand_uniform(&deviceState); // delivers (0, 1] - we need [0, 1)
+        states[threadIdx.x] = deviceState;
+    }
+}
+
 __device__ bool doStep(CudaGameState& state, CudaSimulator& simulator, size_t limit, float fakedRandom = -1)
 {
     cassert(state.size == FIELD_DIMENSION * FIELD_DIMENSION, "Block %d, Thread %d detected invalid field size of %li\n", blockIdx.x, threadIdx.x, state.size);
@@ -132,10 +143,11 @@ __global__ void simulateGame(size_t reiterations, curandState* deviceStates, siz
 __global__ void simulateGamePreRandom(size_t reiterations, float* randomValues, size_t numberOfPlayfields, const Field* playfields, Player currentPlayer, OthelloResult* results)
 {
     int playfieldIndex = threadIdx.x;
-
-    for (size_t i = 0; i < reiterations; ++i)
+    size_t blockIterations = size_t(ceil(reiterations * 1.0 / blockDim.x));
+    for (size_t i = 0; i < blockIterations; ++i)
     {
 		size_t randomSeed = i * blockDim.x + blockIdx.x;
+        cassert(randomSeed < reiterations + 121, "SeedIndex %lu exceeded reiterations\n", randomSeed);
         size_t node = randomNumber(randomValues, &randomSeed, numberOfPlayfields);
 
         __shared__ Field sharedPlayfield[FIELD_DIMENSION * FIELD_DIMENSION];
@@ -153,7 +165,8 @@ __global__ void simulateGamePreRandom(size_t reiterations, float* randomValues, 
             FIELD_DIMENSION, 
             currentPlayer
         };
-        CudaSimulator simulator(&state, randomValues, &randomSeed);
+
+        CudaSimulator simulator(&state, randomValues, randomSeed);
 
         size_t wins = 0;
         size_t visits = 0;
@@ -167,6 +180,7 @@ __global__ void simulateGamePreRandom(size_t reiterations, float* randomValues, 
         {
             results[node].wins += wins;
             results[node].visits += visits;
+            //printf("LastSeed: %lu\n", simulator._randomSeed);
         }
     }
 }

@@ -12,20 +12,22 @@ private:
     size_t _playfieldY;
     CudaGameState* _state;
     curandState* _deviceState;
-	size_t* _randomSeed;
+	
 	float* _randomValues;
 
 public:
+size_t _randomSeed;
     __device__ CudaSimulator(CudaGameState* state, curandState* deviceState)
         : _playfieldIndex(threadIdx.x), _playfieldX(_playfieldIndex % FIELD_DIMENSION), _playfieldY(_playfieldIndex / FIELD_DIMENSION),
             _state(state), _deviceState(deviceState)
     {
     }
 
-	__device__ CudaSimulator(CudaGameState* state, float* randomValues, size_t* randomSeed)
+	__device__ CudaSimulator(CudaGameState* state, float* randomValues, size_t randomSeed)
 		: _playfieldIndex(threadIdx.x), _playfieldX(_playfieldIndex % FIELD_DIMENSION), _playfieldY(_playfieldIndex / FIELD_DIMENSION),
 			_state(state), _randomSeed(randomSeed), _randomValues(randomValues)
 	{
+    
 	}
 
     __device__ bool isMaster()
@@ -96,7 +98,7 @@ public:
             if (moveCount > 1)
             {
                 //randomMoveCounter = randomNumber(_deviceState, moveCount, fakedRandom);    
-				randomMoveCounter = randomNumber(_randomValues, _randomSeed, moveCount); 
+				randomMoveCounter = randomNumber(_randomValues, &_randomSeed, moveCount); 
             }
             else
             {

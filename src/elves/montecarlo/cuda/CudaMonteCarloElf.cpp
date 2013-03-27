@@ -7,7 +7,7 @@
 
 using namespace std;
 
-size_t NUMBER_OF_BLOCKS = 64;
+size_t NUMBER_OF_BLOCKS = 2;
 size_t MAXIMAL_NUMBER_OF_MOVES = 120;
 
 void initialize(const OthelloState& state, vector<Field>& aggregatedPlayfields, vector<OthelloResult>& aggregatedResults)
@@ -28,16 +28,16 @@ void initialize(const OthelloState& state, vector<Field>& aggregatedPlayfields, 
     }
 }
 
-OthelloResult CudaMonteCarloElf::getBestMoveFor(OthelloState& state, size_t reiterations, size_t nodeId, size_t commonSeed)
+OthelloResult CudaMonteCarloElf::getBestMoveFor(OthelloState& state, size_t reiterations, size_t /*nodeId */, size_t /*commonSeed*/)
 {
     vector<Field> aggregatedChildStatePlayfields;
     vector<OthelloResult> aggregatedChildResults;
 
     initialize(state, aggregatedChildStatePlayfields, aggregatedChildResults);
 
-	mt19937 engine(OthelloHelper::generateUniqueSeed(nodeId, 0, commonSeed));
-	uniform_real_distribution<float> generator(0, 1);
-    vector<float> randomValues;	
+	// mt19937 engine(OthelloHelper::generateUniqueSeed(nodeId, 0, commonSeed));
+	// uniform_real_distribution<float> generator(0, 1);
+    
 	// #reiterations * #moves 
 	// #moves + #reiterations + #blocks  = 120 + reiterations per block * blocks
 	// #moves * blocks + #reiterations per block
@@ -46,11 +46,14 @@ OthelloResult CudaMonteCarloElf::getBestMoveFor(OthelloState& state, size_t reit
 	//   x       x       x       x       x
 	//     x       x       x       x       x
 	//       x       x       x       x       x 
-	size_t numberOfRandomValues = MAXIMAL_NUMBER_OF_MOVES * NUMBER_OF_BLOCKS + reiterations / NUMBER_OF_BLOCKS + 1;
-	for (size_t i = 0; i < numberOfRandomValues; ++i)
-	{
-		randomValues.push_back(generator(engine));
-	}
+    // one iteration: max 120 moves + one selection for leaf - for reiteration variation we step for each iteration one index to the right
+	size_t numberOfRandomValues = (MAXIMAL_NUMBER_OF_MOVES + 1) + (reiterations / NUMBER_OF_BLOCKS + 1) * NUMBER_OF_BLOCKS;
+    //vector<float> randomValues; 
+    vector<float> randomValues(numberOfRandomValues);
+	// for (size_t i = 0; i < numberOfRandomValues; ++i)
+	// {
+	// 	randomValues.push_back(generator(engine));
+	// }
 	CudaUtils::Memory<float> cudaRandomValues(randomValues.size());
 
     //vector<size_t> seeds;
@@ -68,7 +71,7 @@ OthelloResult CudaMonteCarloElf::getBestMoveFor(OthelloState& state, size_t reit
     cudaPlayfields.transferFrom(aggregatedChildStatePlayfields.data());
     cudaResults.transferFrom(aggregatedChildResults.data());
 
-    gameSimulationPreRandom(NUMBER_OF_BLOCKS, reiterations, cudaRandomValues.get(), aggregatedChildResults.size(), cudaPlayfields.get(), state.getCurrentEnemy(), cudaResults.get());
+    gameSimulationPreRandom(NUMBER_OF_BLOCKS, reiterations, cudaRandomValues.get(), cudaRandomValues.numberOfElements(), aggregatedChildResults.size(), cudaPlayfields.get(), state.getCurrentEnemy(), cudaResults.get());
 
     cudaResults.transferTo(aggregatedChildResults.data());
 
