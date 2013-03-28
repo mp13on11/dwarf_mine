@@ -87,7 +87,7 @@ __global__ void simulateGame(size_t numberOfBlocks, size_t reiterations, curandS
 {
     int playfieldIndex = threadIdx.x;
     size_t blockIterations = size_t(ceil(reiterations * 1.0 / numberOfBlocks));
-    for (size_t i = 0; i < reiterations; ++i)
+    for (size_t i = 0; i < blockIterations; ++i)
     {
         size_t node = randomNumber(deviceStates, numberOfPlayfields);
 
