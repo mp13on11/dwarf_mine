@@ -15,21 +15,18 @@
 #include <condition_variable>
 #include <utility>
 
-#include "vt_user.h"
-
 using namespace std;
 using MatrixHelper::MatrixPair;
 
 vector<MatrixSlice> MatrixOnlineScheduler::sliceDefinitions = std::vector<MatrixSlice>();
-vector<MatrixSlice>::iterator MatrixOnlineScheduler::currentSliceDefinition = MatrixOnlineScheduler::sliceDefinitions.begin();
+vector<SliceContainer> MatrixOnlineScheduler::sliceContainers = std::vector<SliceContainer>();
+vector<SliceContainer>::iterator MatrixOnlineScheduler::currentSliceContainer = MatrixOnlineScheduler::sliceContainers.begin();
 mutex MatrixOnlineScheduler::schedulingMutex;
 int MatrixOnlineScheduler::sliceNodeIdNone = -1;
 
 MatrixOnlineScheduler::MatrixOnlineScheduler(const Communicator& communicator, const function<ElfPointer()>& factory) :
     MatrixScheduler(communicator, factory)
 {
-    VT_TRACER("MatrixOnlineScheduler Tracer");
-    VT_ON();
     receivedAllWork = false;
     processedAllWork = false;
 }
@@ -62,6 +59,7 @@ Please use --mpi_thread_multiple and/or rebuild MPI with enabled multiple thread
 void MatrixOnlineScheduler::orchestrateCalculation()
 {
     sliceInput();
+    generateSlicePairs();
     schedule();
 }
 
@@ -70,17 +68,28 @@ void MatrixOnlineScheduler::sliceInput()
     result = Matrix<float>(left.rows(), right.columns());
     sliceDefinitions = schedulingStrategy->getSliceDefinitions(
         result, communicator.nodeSet());
-    currentSliceDefinition = sliceDefinitions.begin();
 }
+
+void MatrixOnlineScheduler::generateSlicePairs()
+{
+    for (auto& sliceDefinition : sliceDefinitions)
+    {
+        SliceContainer container;
+        container.slicePair = sliceMatrices(sliceDefinition);
+        container.sliceDefinition = sliceDefinition;
+        sliceContainers.push_back(container);
+    }
+    currentSliceContainer = sliceContainers.begin();
+} 
 
 void MatrixOnlineScheduler::schedule()
 {
     vector<future<void>> futures;
-    futures.push_back(async(launch::async, [&]() { scheduleWork(); }));
-    futures.push_back(async(launch::async, [&]() { receiveResults(); }));
     for (size_t i = 1; i < communicator.nodeSet().size(); ++i)
         futures.push_back(async(launch::async, [&, i] () {
             MatrixHelper::sendWorkQueueSize(communicator, int(i), maxWorkQueueSize, int(Tags::workQueueSize)); }));
+    futures.push_back(async(launch::async, [&]() { scheduleWork(); }));
+    futures.push_back(async(launch::async, [&]() { receiveResults(); }));
     calculateOnSlave();
     waitFor(futures);
 }
@@ -117,25 +126,23 @@ void MatrixOnlineScheduler::receiveResults()
 
 void MatrixOnlineScheduler::sendNextWorkTo(const int node)
 {
-    MatrixPair work;
-    vector<MatrixSlice>::iterator workDefinition = getNextWorkDefinition();
-    if (workDefinition != sliceDefinitions.end())
+    vector<SliceContainer>::iterator workDefinition = getNextWorkDefinition();
+    if (workDefinition != sliceContainers.end())
     {
-        workDefinition->setNodeId(node);
-        work = sliceMatrices(*workDefinition);
+        (*workDefinition).sliceDefinition.setNodeId(node);
+        MatrixHelper::sendNextWork(communicator, workDefinition->slicePair, node, int(Tags::exchangeWork));
     }
     else
-        work = MatrixPair(Matrix<float>(0, 0), Matrix<float>(0, 0));
-    MatrixHelper::sendNextWork(communicator, work, node, int(Tags::exchangeWork));
+        MatrixHelper::sendNextWork(communicator, MatrixPair(Matrix<float>(), Matrix<float>()), node, int(Tags::exchangeWork));
 }
 
-vector<MatrixSlice>::iterator MatrixOnlineScheduler::getNextWorkDefinition()
+vector<SliceContainer>::iterator MatrixOnlineScheduler::getNextWorkDefinition()
 {
-    vector<MatrixSlice>::iterator workDefinition;
+    vector<SliceContainer>::iterator workDefinition;
     schedulingMutex.lock();
-    workDefinition = currentSliceDefinition;
-    if (currentSliceDefinition != sliceDefinitions.end())
-        currentSliceDefinition++;
+    workDefinition = currentSliceContainer;
+    if (currentSliceContainer != sliceContainers.end())
+        currentSliceContainer++;
     schedulingMutex.unlock();
     return move(workDefinition);
 }

@@ -4,6 +4,7 @@
 #include "MatrixScheduler.h"
 #include "MatrixHelper.h"
 #include "MatrixOnlineSchedulingStrategy.h"
+#include "MatrixSlice.h"
 
 #include <future>
 #include <functional>
@@ -13,6 +14,12 @@
 
 class MatrixElf;
 class MatrixSlice;
+
+struct SliceContainer
+{
+    MatrixHelper::MatrixPair slicePair;
+    MatrixSlice sliceDefinition;
+};
 
 class MatrixOnlineScheduler: public MatrixScheduler
 {
@@ -32,16 +39,18 @@ private:
     // Master
     std::unique_ptr<MatrixOnlineSchedulingStrategy> schedulingStrategy;
     static std::vector<MatrixSlice> sliceDefinitions;
-    static std::vector<MatrixSlice>::iterator currentSliceDefinition;
+    static std::vector<SliceContainer> sliceContainers;
+    static std::vector<SliceContainer>::iterator currentSliceContainer;
     static std::mutex schedulingMutex;
     static int sliceNodeIdNone;
 
     void sliceInput();
+    void generateSlicePairs();
     void schedule();
     void scheduleWork();
     void receiveResults();
     void sendNextWorkTo(const int node);
-    std::vector<MatrixSlice>::iterator getNextWorkDefinition();
+    std::vector<SliceContainer>::iterator getNextWorkDefinition();
     void receiveResultFrom(const int node);
     MatrixSlice& getNextSliceDefinitionFor(const int node);
     size_t amountOfWork() const;
