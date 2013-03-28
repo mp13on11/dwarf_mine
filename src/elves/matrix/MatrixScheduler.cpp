@@ -90,8 +90,10 @@ Matrix<float> MatrixScheduler::dispatchAndReceive() const
     Matrix<float> result(left.rows(), right.columns());
     //MatrixSlicer slicer;
     MatrixSlicerSquarified slicer;
-    //vector<MatrixSlice> sliceDefinitions = slicer.sliceAndDice(nodeSet, result.rows(), result.columns());
-    vector<MatrixSlice> sliceDefinitions = slicer.layout(nodeSet, result.rows(), result.columns());
+    //vector<MatrixSlice> sliceDefinitions = slicer.sliceAndDice(communicator.nodeSet(), result.rows(), result.columns());
+    vector<MatrixSlice> sliceDefinitions = slicer.layout(
+            communicator.nodeSet(), result.rows(), result.columns()
+        );
     const MatrixSlice* masterSlice = distributeSlices(sliceDefinitions);
     if (masterSlice != nullptr)
     {
@@ -150,9 +152,3 @@ MatrixPair MatrixScheduler::sliceMatrices(const MatrixSlice& definition) const
     Matrix<float> slicedRight = definition.extractSlice(right, false);
     return { move(slicedLeft), move(slicedRight) };
 }
-
-void MatrixScheduler::doBenchmarkDispatch(int /*node*/)
-{
-    dispatch();
-}    
-

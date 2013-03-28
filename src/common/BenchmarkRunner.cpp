@@ -1,8 +1,8 @@
 #include "BenchmarkRunner.h"
 #include "Communicator.h"
+#include "Configuration.h"
 #include "Profiler.h"
 #include "Scheduler.h"
-#include "SchedulerFactory.h"
 
 using namespace std;
 
@@ -14,70 +14,44 @@ BenchmarkRunner::BenchmarkRunner(const Configuration& config) :
 {
 }
 
-void BenchmarkRunner::benchmarkNode(const Communicator& communicator, Profiler& profiler) const
-{
-    if (!communicator.isValid())
-        return;
-
-    unique_ptr<Scheduler> scheduler = config->createScheduler(communicator);
-    BenchmarkMethod targetMethod = [&](){ scheduler->dispatchBenchmark(communicator.size()-1); };
-
-    if (communicator.isMaster())
-    {
-        scheduler->provideData(*generatedProblem);
-
-        run(targetMethod, profiler);
-        
-        scheduler->outputData(*generatedProblem);
-    }
-    else
-    {
-        run(targetMethod, profiler);
-    }
-}
-
 void BenchmarkRunner::runBenchmark(const Communicator& communicator, Profiler& profiler) const
 {
+    runBenchmarkInternal(communicator, profiler, fileProblem);
+}
+
+void BenchmarkRunner::runPreBenchmark(const Communicator& communicator, Profiler& profiler) const
+{
+    runBenchmarkInternal(communicator, profiler, generatedProblem);
+}
+
+void BenchmarkRunner::runBenchmarkInternal(
+    const Communicator& communicator, 
+    Profiler& profiler,
+    const unique_ptr<ProblemStatement>& problem
+) const
+{   
     if (!communicator.isValid())
         return;
     
     unique_ptr<Scheduler> scheduler = config->createScheduler(communicator);
-    BenchmarkMethod targetMethod = [&](){ scheduler->dispatch(); };
 
     if (communicator.isMaster())
     {
-        scheduler->provideData(*fileProblem);
-
-        run(targetMethod, profiler);
-        
-        scheduler->outputData(*fileProblem);
+        scheduler->provideData(*problem);
+        run(*scheduler, profiler);
+        scheduler->outputData(*problem);
     }
     else
     {
-        run(targetMethod, profiler);
+        run(*scheduler, profiler);
     }
 }
 
-void BenchmarkRunner::runElf(const Communicator& communicator, Profiler& profiler) const
-{
-    if (!communicator.isValid())
-        return;
-    
-    unique_ptr<Scheduler> scheduler = config->createScheduler(communicator);
-    BenchmarkMethod targetMethod = [&](){ scheduler->dispatchSimple(); };
-
-    scheduler->provideData(*fileProblem);
-
-    run(targetMethod, profiler);
-    
-    scheduler->outputData(*fileProblem);
-}
-
-void BenchmarkRunner::run(BenchmarkMethod targetMethod, Profiler& profiler) const
+void BenchmarkRunner::run(Scheduler& scheduler, Profiler& profiler) const
 {
     for (size_t i = 0; i < warmUps; ++i)
     {
-        targetMethod();
+        scheduler.dispatch();
     }
 
     profiler.beginIterationBlock();
@@ -85,7 +59,7 @@ void BenchmarkRunner::run(BenchmarkMethod targetMethod, Profiler& profiler) cons
     for (size_t i = 0; i < iterations; ++i)
     {
         profiler.beginIteration();
-        targetMethod();
+        scheduler.dispatch();
         profiler.endIteration();
     }
 
