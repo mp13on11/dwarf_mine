@@ -1,6 +1,6 @@
 #include "OthelloCudaLeafSimulationTest.h"
-#include "OthelloState.h"
-#include "OthelloMove.h"
+#include "State.h"
+#include "Move.h"
 #include "OthelloUtil.h"
 #include <cuda-utils/Memory.h>
 #include <functional>
@@ -39,10 +39,10 @@ void testSingleStep(Playfield& playfield, vector<pair<size_t, Field>> expectedCh
 
     Playfield expectedPlayfield = getExpectedPlayfield(playfield, expectedChanges);
 
-    // OthelloState temp(outputPlayfield, Player::White);
+    // State temp(outputPlayfield, Player::White);
     // cout << "Actual: \n"<<temp << endl;
 
-    // OthelloState temp2(expectedPlayfield, Player::White);
+    // State temp2(expectedPlayfield, Player::White);
     // cout << "Expected: \n"<<temp2 << endl;
 
     ASSERT_EQ_VECTOR(outputPlayfield, expectedPlayfield);
@@ -74,10 +74,10 @@ void testMultipleSteps(Playfield& playfield, vector<pair<size_t, Field>> expecte
 
     Playfield expectedPlayfield = getExpectedPlayfield(playfield, expectedChanges);
 
-    // OthelloState temp(outputPlayfield, Player::White);
+    // State temp(outputPlayfield, Player::White);
     // cout << "Actual: \n"<<temp << endl;
 
-    // OthelloState temp2(expectedPlayfield, Player::White);
+    // State temp2(expectedPlayfield, Player::White);
     // cout << "Expected: \n"<<temp2 << endl;
 
     ASSERT_EQ(expectedVisits, visits);

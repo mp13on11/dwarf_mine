@@ -2,14 +2,14 @@
 
 #include <iostream>
 
-struct OthelloResult
+struct Result
 {
     size_t x;
     size_t y;
     size_t visits;
     size_t wins;
 
-    OthelloResult(size_t _x = 0, size_t _y = 0, size_t _visits = 0, size_t _wins = 0)
+    Result(size_t _x = 0, size_t _y = 0, size_t _visits = 0, size_t _wins = 0)
     {
         x = _x;
         y = _y;
@@ -17,7 +17,7 @@ struct OthelloResult
         wins = _wins;
     }
 
-    bool equalMove(const OthelloResult& other) const
+    bool equalMove(const Result& other) const
     {
         return (x == other.x && y == other.y);
     }
@@ -27,7 +27,7 @@ struct OthelloResult
         return 1.0 * wins / visits;
     }
 
-    bool operator<(const OthelloResult& other) const 
+    bool operator<(const Result& other) const 
     {
         return this->successRate() < other.successRate();
     }

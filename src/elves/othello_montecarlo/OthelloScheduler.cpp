@@ -1,7 +1,7 @@
-#include "MonteCarloScheduler.h"
+#include "OthelloScheduler.h"
 #include <Elf.h>
 #include <common/ProblemStatement.h>
-#include <OthelloResult.h>
+#include <Result.h>
 #include <OthelloUtil.h>
 #include <limits>
 #include <utility>
@@ -18,7 +18,7 @@ const Player DEFAULT_PLAYER = Player::White;
 const size_t DEFAULT_SEED = 7337;
 const size_t DEFAULT_REITERATIONS = 1000U;
 
-MonteCarloScheduler::MonteCarloScheduler(const Communicator& communicator, const function<ElfPointer()>& factory) :
+OthelloScheduler::OthelloScheduler(const Communicator& communicator, const function<ElfPointer()>& factory) :
     SchedulerTemplate(communicator, factory),
     _repetitions(DEFAULT_REITERATIONS),
     _localRepetitions(0U),
@@ -26,7 +26,7 @@ MonteCarloScheduler::MonteCarloScheduler(const Communicator& communicator, const
 {
 }
 
-void MonteCarloScheduler::provideData(std::istream& input)
+void OthelloScheduler::provideData(std::istream& input)
 {
     input.clear();
     input.seekg(0);
@@ -34,10 +34,10 @@ void MonteCarloScheduler::provideData(std::istream& input)
     input >>_repetitions;
     vector<Field> playfield;
     OthelloHelper::readPlayfieldFromStream(input, playfield);
-    _state = OthelloState(playfield, DEFAULT_PLAYER);
+    _state = State(playfield, DEFAULT_PLAYER);
 }
 
-void MonteCarloScheduler::generateData(const DataGenerationParameters& params)
+void OthelloScheduler::generateData(const DataGenerationParameters& params)
 {
     vector<Field> playfield = {
         F, F, F, F, F, F, F, F,
@@ -50,28 +50,28 @@ void MonteCarloScheduler::generateData(const DataGenerationParameters& params)
         F, F, F, F, F, F, F, F
     };
     _repetitions = params.monteCarloTrials;
-    _state = OthelloState(playfield, DEFAULT_PLAYER);
+    _state = State(playfield, DEFAULT_PLAYER);
 }
 
-bool MonteCarloScheduler::hasData() const
+bool OthelloScheduler::hasData() const
 {
     return true;
 }
 
-void MonteCarloScheduler::outputData(std::ostream& output)
+void OthelloScheduler::outputData(std::ostream& output)
 {
     cout<< "Move: ("<<_result.x<<", "<<_result.y<<")\n"
         << "Wins: "<<_result.wins<<"/"<<_result.visits<<" = " <<_result.successRate()<<endl;
     OthelloHelper::writeResultToStream(output, _result);
 }
 
-void MonteCarloScheduler::doSimpleDispatch()
+void OthelloScheduler::doSimpleDispatch()
 {
     _localRepetitions = _repetitions;
     calculate();
 }
 
-void MonteCarloScheduler::doDispatch(BenchmarkResult nodeSet)
+void OthelloScheduler::doDispatch(BenchmarkResult nodeSet)
 {
     if (communicator.isMaster())
     {
@@ -87,7 +87,7 @@ void MonteCarloScheduler::doDispatch(BenchmarkResult nodeSet)
     }
 }
 
-void MonteCarloScheduler::doDispatch()
+void OthelloScheduler::doDispatch()
 {
    doDispatch(nodeSet);
 }
@@ -112,7 +112,7 @@ pair<vector<NodeRating>, Rating> weightRatings(const BenchmarkResult& ratings)
     return make_pair<vector<NodeRating>, Rating>(move(positiveRatings), move(ratingSum));
 }
 
-void MonteCarloScheduler::calculate()
+void OthelloScheduler::calculate()
 {
     if (_localRepetitions == 0)
         return;
@@ -120,7 +120,7 @@ void MonteCarloScheduler::calculate()
     _result = elf().getBestMoveFor(_state, _localRepetitions, communicator.rank(), _commonSeed);
 }
 
-void registerOthelloResultToMPI(MPI_Datatype& type)
+void registerResultToMPI(MPI_Datatype& type)
 {
     MPI_Datatype elementTypes[] = { 
         MPI::INT, 
@@ -145,13 +145,13 @@ void registerOthelloResultToMPI(MPI_Datatype& type)
     MPI_Type_commit(&type);
 }
 
-vector<OthelloResult> MonteCarloScheduler::gatherResults(BenchmarkResult nodeSet)
+vector<Result> OthelloScheduler::gatherResults(BenchmarkResult nodeSet)
 {
     size_t numberOfNodes = nodeSet.size();
-    vector<OthelloResult> results(numberOfNodes);
+    vector<Result> results(numberOfNodes);
 
-    MPI_Datatype MPI_OthelloResult;
-    registerOthelloResultToMPI(MPI_OthelloResult);
+    MPI_Datatype MPI_Result;
+    registerResultToMPI(MPI_Result);
     
     if (communicator.isMaster())
     {
@@ -164,19 +164,19 @@ vector<OthelloResult> MonteCarloScheduler::gatherResults(BenchmarkResult nodeSet
             }
             else
             {                
-                communicator->Recv(results.data() + i , 1, MPI_OthelloResult, node.first, 0);
+                communicator->Recv(results.data() + i , 1, MPI_Result, node.first, 0);
             }
             i++;
         }
     }
     else
     {
-        communicator->Send(&_result, 1, MPI_OthelloResult, Communicator::MASTER_RANK, 0);
+        communicator->Send(&_result, 1, MPI_Result, Communicator::MASTER_RANK, 0);
     }
     return results;
 }
 
-void MonteCarloScheduler::collectInput(BenchmarkResult /*nodeSet*/)
+void OthelloScheduler::collectInput(BenchmarkResult /*nodeSet*/)
 {
     unsigned long parameters[] = {0, 0, 0};
     communicator->Recv(parameters, 3, MPI::UNSIGNED_LONG, Communicator::MASTER_RANK, 0);
@@ -190,10 +190,10 @@ void MonteCarloScheduler::collectInput(BenchmarkResult /*nodeSet*/)
     auto MPI_FIELD = MPI::INT;
     communicator->Recv(playfield.data(), bufferSize, MPI_FIELD, Communicator::MASTER_RANK, 0);
 
-    _state = OthelloState(playfield, Player::White);
+    _state = State(playfield, Player::White);
 }
 
-void MonteCarloScheduler::distributeInput(BenchmarkResult nodeSet)
+void OthelloScheduler::distributeInput(BenchmarkResult nodeSet)
 {
     size_t bufferSize = _state.playfieldSideLength() * _state.playfieldSideLength();
     vector<NodeRating> ratings;
@@ -231,15 +231,15 @@ void MonteCarloScheduler::distributeInput(BenchmarkResult nodeSet)
 
 
 
-void MonteCarloScheduler::collectResults(BenchmarkResult nodeSet)
+void OthelloScheduler::collectResults(BenchmarkResult nodeSet)
 {
-    vector<OthelloResult> results = gatherResults(nodeSet);
+    vector<Result> results = gatherResults(nodeSet);
 
-    vector<OthelloResult> accumulatedResults;
-    OthelloResult* bestMove = nullptr;
+    vector<Result> accumulatedResults;
+    Result* bestMove = nullptr;
     for (const auto& r : results)
     {
-        OthelloResult* existingMove = nullptr;
+        Result* existingMove = nullptr;
         for (auto& a : accumulatedResults)
         {
             if (r.equalMove(a))
@@ -266,7 +266,7 @@ void MonteCarloScheduler::collectResults(BenchmarkResult nodeSet)
     _result = *bestMove;
 }
 
-void MonteCarloScheduler::doBenchmarkDispatch(int node )
+void OthelloScheduler::doBenchmarkDispatch(int node )
 {
     BenchmarkResult benchmarkNodeset;
     benchmarkNodeset[node] = 1;

@@ -1,4 +1,4 @@
-#include "OthelloState.h"
+#include "State.h"
 #include <stdexcept>
 #include <cmath>
 #include <iostream>
@@ -6,51 +6,32 @@
 
 using namespace std;
 
-#define TEST_AND_ADD(VECTOR, MOVE, DIRECTION_X, DIRECTION_Y) \
-    position = {MOVE.x + DIRECTION_X, MOVE.y + DIRECTION_Y};                              \
-    if (onBoard(position) && playfield(position) == getCurrentEnemy())  \
-    {                                                                   \
-        VECTOR.push_back(OthelloMove{DIRECTION_X, DIRECTION_Y});        \
-    }
-
-#define ADJACENT_DIRECTIONS(VECTOR, MOVE)   \
-    vector<OthelloMove> VECTOR;             \
-    OthelloMove position;                    \
-    TEST_AND_ADD(VECTOR, MOVE, -1, 1)       \
-    TEST_AND_ADD(VECTOR, MOVE, -1, 0)       \
-    TEST_AND_ADD(VECTOR, MOVE, -1,-1)       \
-    TEST_AND_ADD(VECTOR, MOVE,  0, 1)       \
-    TEST_AND_ADD(VECTOR, MOVE,  0,-1)       \
-    TEST_AND_ADD(VECTOR, MOVE,  1, 1)       \
-    TEST_AND_ADD(VECTOR, MOVE,  1, 0)       \
-    TEST_AND_ADD(VECTOR, MOVE,  1,-1)
-
-vector<OthelloMove> ADJACENT_DIRECTIONS = {
+vector<Move> ADJACENT_DIRECTIONS = {
     {-1, 1}, { 0, 1}, { 1, 1},
     {-1, 0},          { 1, 0},
     {-1,-1}, { 0,-1}, { 1,-1}
 };
 
-OthelloState::OthelloState(const OthelloState& state)
+State::State(const State& state)
     : _playfield(state._playfield), _sideLength(state._sideLength), _player(state._player)
 {
     ensureValidPlayfield();
 }
 
-OthelloState::OthelloState(const OthelloState& state, const OthelloMove& move)
+State::State(const State& state, const Move& move)
     : _playfield(state._playfield), _sideLength(state._sideLength), _player(state._player)
 {
     ensureValidPlayfield();
     doMove(move);
 }
 
-OthelloState::OthelloState(const vector<Field>& playfield, Player nextPlayer)
+State::State(const vector<Field>& playfield, Player nextPlayer)
     : _playfield(playfield), _sideLength(sqrt(playfield.size())), _player(nextPlayer)
 {
     ensureValidPlayfield();
 }
 
-OthelloState::OthelloState(size_t sideLength)
+State::State(size_t sideLength)
     : _sideLength((int)sideLength), _player(Player::White)
 {
     if (_sideLength % 2 != 0)
@@ -68,7 +49,7 @@ OthelloState::OthelloState(size_t sideLength)
     ensureValidPlayfield();
 }
 
-void OthelloState::doMove(const OthelloMove& move)
+void State::doMove(const Move& move)
 {
     if (!onBoard(move))
     {
@@ -87,12 +68,12 @@ void OthelloState::doMove(const OthelloMove& move)
     _player = getCurrentEnemy();
 }
 
-void OthelloState::passMove()
+void State::passMove()
 {
     _player = getCurrentEnemy();
 }
 
-void OthelloState::flipCounters(const vector<OthelloMove>& counterPostions, Player player) 
+void State::flipCounters(const vector<Move>& counterPostions, Player player) 
 {
     for (const auto& position : counterPostions)
     {
@@ -100,9 +81,9 @@ void OthelloState::flipCounters(const vector<OthelloMove>& counterPostions, Play
     }
 }
 
-vector<OthelloMove> OthelloState::getAdjacentEnemyDirections(const OthelloMove& move) const
+vector<Move> State::getAdjacentEnemyDirections(const Move& move) const
 {
-    vector<OthelloMove> directions;
+    vector<Move> directions;
     for (const auto& direction : ADJACENT_DIRECTIONS)
     {
         const auto position = move + direction;
@@ -114,24 +95,24 @@ vector<OthelloMove> OthelloState::getAdjacentEnemyDirections(const OthelloMove& 
     return directions;
 }
 
-vector<OthelloMove> OthelloState::getAllEnclosedCounters(const OthelloMove& move) const
+vector<Move> State::getAllEnclosedCounters(const Move& move) const
 {
-    vector<OthelloMove> counters;
+    vector<Move> counters;
     /*_ADJACENT_DIRECTIONS(enemyDirections, move);*/
-    vector<OthelloMove> enemyDirections = getAdjacentEnemyDirections(move);
+    vector<Move> enemyDirections = getAdjacentEnemyDirections(move);
     for (const auto& direction : enemyDirections)
     {
-        vector<OthelloMove> enclosed = getEnclosedCounters(move, direction);
+        vector<Move> enclosed = getEnclosedCounters(move, direction);
         for (const auto& e : enclosed)
             counters.push_back(e);
     }
     return counters;
 }
 
-MoveList OthelloState::getEnclosedCounters(const OthelloMove& move, const OthelloMove& direction) const
+MoveList State::getEnclosedCounters(const Move& move, const Move& direction) const
 {
     auto position = move + direction;
-    vector<OthelloMove> counters;
+    vector<Move> counters;
     while (onBoard(position) && playfield(position) == getCurrentEnemy())
     {
         counters.push_back(position);
@@ -145,15 +126,15 @@ MoveList OthelloState::getEnclosedCounters(const OthelloMove& move, const Othell
     return counters;
 }
 
-MoveList OthelloState::getPossibleMoves() const
+MoveList State::getPossibleMoves() const
 {
-    vector<OthelloMove> moves;
+    vector<Move> moves;
 
     for (size_t i = 0; i < _playfield.size(); ++i)
     {
         if (_playfield[i] == Field::Free)
         {
-            OthelloMove position{int(i % _sideLength), int(i / _sideLength)};
+            Move position{int(i % _sideLength), int(i / _sideLength)};
             if (existsEnclosedCounters(position))
             {
                 moves.push_back(move(position));
@@ -163,7 +144,7 @@ MoveList OthelloState::getPossibleMoves() const
     return moves;
 }
 
-bool OthelloState::existsEnclosedCounters(const OthelloMove& move) const
+bool State::existsEnclosedCounters(const Move& move) const
 {
     auto directions = getAdjacentEnemyDirections(move);
     for (const auto& direction : directions)
@@ -176,7 +157,7 @@ bool OthelloState::existsEnclosedCounters(const OthelloMove& move) const
     return false;
 }
 
-bool OthelloState::hasWon(Player player) const
+bool State::hasWon(Player player) const
 {
     int superiority = 0;
     for (size_t i = 0; i < _playfield.size(); ++i)
@@ -193,7 +174,7 @@ bool OthelloState::hasWon(Player player) const
     return superiority >= 0;
 }
 
-ostream& operator<<(ostream& stream, const OthelloState& state)
+ostream& operator<<(ostream& stream, const State& state)
 {
     stream << "  ";
     for (int i = 0; i < state._sideLength; ++i)

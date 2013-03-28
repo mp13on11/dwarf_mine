@@ -1,8 +1,8 @@
 
 #include "OthelloStateTest.h"
 #include "OthelloUtil.h"
-#include <montecarlo/OthelloMove.h>
-#include <montecarlo/OthelloExceptions.h>
+#include <othello_montecarlo/Move.h>
+#include <othello_montecarlo/Exceptions.h>
 #include <iostream>
 #include <cmath>
 
@@ -10,7 +10,7 @@ using namespace std;
 
 void OthelloStateTest::SetUp()
 {
-    state = new OthelloState(8);
+    state = new State(8);
 }
 
 void OthelloStateTest::TearDown()
@@ -26,34 +26,34 @@ TEST_F(OthelloStateTest, InitializationTest)
 
 TEST_F(OthelloStateTest, CreationTest)
 {
-    ASSERT_THROW(OthelloState(9), InvalidFieldSizeException);
+    ASSERT_THROW(State(9), InvalidFieldSizeException);
 }
 
 TEST_F(OthelloStateTest, DoMoveThrowOnOutOfBoundsTest)
 {
-    ASSERT_THROW(state->doMove(OthelloMove{8, 8}), InvalidMoveException);
-    ASSERT_THROW(state->doMove(OthelloMove{-1, -1}), InvalidMoveException);
-    ASSERT_THROW(state->doMove(OthelloMove{5, 8}), InvalidMoveException);
-    ASSERT_THROW(state->doMove(OthelloMove{3, -5}), InvalidMoveException);   
+    ASSERT_THROW(state->doMove(Move{8, 8}), InvalidMoveException);
+    ASSERT_THROW(state->doMove(Move{-1, -1}), InvalidMoveException);
+    ASSERT_THROW(state->doMove(Move{5, 8}), InvalidMoveException);
+    ASSERT_THROW(state->doMove(Move{3, -5}), InvalidMoveException);   
 }
 
 TEST_F(OthelloStateTest, DoMoveThrowOnAccessOccupiedFieldTest)
 {
-    ASSERT_THROW(state->doMove(OthelloMove{3, 3}), OccupiedFieldException);
-    ASSERT_THROW(state->doMove(OthelloMove{3, 4}), OccupiedFieldException);
-    ASSERT_THROW(state->doMove(OthelloMove{4, 3}), OccupiedFieldException);
-    ASSERT_THROW(state->doMove(OthelloMove{4, 4}), OccupiedFieldException);
+    ASSERT_THROW(state->doMove(Move{3, 3}), OccupiedFieldException);
+    ASSERT_THROW(state->doMove(Move{3, 4}), OccupiedFieldException);
+    ASSERT_THROW(state->doMove(Move{4, 3}), OccupiedFieldException);
+    ASSERT_THROW(state->doMove(Move{4, 4}), OccupiedFieldException);
 }
 
 
 TEST_F(OthelloStateTest, GetPossibleMovesTest)
 {
     auto actualMoves = state->getPossibleMoves();
-    vector<OthelloMove> expectedMoves{
-        OthelloMove{4, 2}, 
-        OthelloMove{5, 3}, 
-        OthelloMove{2, 4},
-        OthelloMove{3, 5}
+    vector<Move> expectedMoves{
+        Move{4, 2}, 
+        Move{5, 3}, 
+        Move{2, 4},
+        Move{3, 5}
     };
     verifyMoves(expectedMoves, actualMoves);
 }
@@ -62,16 +62,16 @@ TEST_F(OthelloStateTest, GetPossibleMovesTest)
 
 TEST_F(OthelloStateTest, SimpleFlippingTest)
 {
-    state->doMove(OthelloMove{4, 2});
+    state->doMove(Move{4, 2});
     
     ASSERT_EQ(Field::White, state->playfield(4, 3));
     auto actualMoves = state->getPossibleMoves();
     
     // next the Black player's possible moves
-    vector<OthelloMove> expectedMoves{
-        OthelloMove{3, 2}, 
-        OthelloMove{5, 2}, 
-        OthelloMove{5, 4}
+    vector<Move> expectedMoves{
+        Move{3, 2}, 
+        Move{5, 2}, 
+        Move{5, 4}
     };
     ASSERT_EQ(Player::Black, state->getCurrentPlayer());
     verifyMoves(expectedMoves, actualMoves);
@@ -79,10 +79,10 @@ TEST_F(OthelloStateTest, SimpleFlippingTest)
 
 TEST_F(OthelloStateTest, FlippingTest)
 {
-    state->doMove(OthelloMove{4, 2}); // White
-    state->doMove(OthelloMove{5, 4}); // Black
-    state->doMove(OthelloMove{3, 5}); // White
-    state->doMove(OthelloMove{4, 1}); // Black
+    state->doMove(Move{4, 2}); // White
+    state->doMove(Move{5, 4}); // Black
+    state->doMove(Move{3, 5}); // White
+    state->doMove(Move{4, 1}); // Black
 
     ASSERT_EQ(Player::White, state->getCurrentPlayer());
     vector<Field> playfield = {
@@ -98,12 +98,12 @@ TEST_F(OthelloStateTest, FlippingTest)
     verifyPlayfield(playfield, *state);
 
     auto actualMoves = state->getPossibleMoves();
-    vector<OthelloMove> expectedMoves = {
-        OthelloMove{5, 1},
-        OthelloMove{5, 2},
-        OthelloMove{5, 3},
-        OthelloMove{6, 4},
-        OthelloMove{5, 5}
+    vector<Move> expectedMoves = {
+        Move{5, 1},
+        Move{5, 2},
+        Move{5, 3},
+        Move{6, 4},
+        Move{5, 5}
     };
     verifyMoves(expectedMoves, actualMoves);
 }
@@ -116,7 +116,7 @@ TEST_F(OthelloStateTest, LockedStateTest)
         W, B, B, B,
         W, B, B, W,
     };
-    OthelloState lockedState(playfield, Player::White);
+    State lockedState(playfield, Player::White);
 
     ASSERT_EQ(Player::White, lockedState.getCurrentPlayer());
     auto possibleMoves = lockedState.getPossibleMoves();
@@ -134,27 +134,27 @@ TEST_F(OthelloStateTest, LockedWhiteStateTest)
         W, B, B, B,
         W, B, B, W,
     };
-    OthelloState lockedWhiteState(playfield, Player::White);
+    State lockedWhiteState(playfield, Player::White);
 
     ASSERT_EQ(Player::White, lockedWhiteState.getCurrentPlayer());
     auto possibleMoves = lockedWhiteState.getPossibleMoves();
     ASSERT_EQ(0U, possibleMoves.size());
 
-    OthelloState blackState(playfield, Player::Black);
+    State blackState(playfield, Player::Black);
 
     ASSERT_EQ(Player::Black, blackState.getCurrentPlayer());
     auto actualMoves = blackState.getPossibleMoves();
-    verifyMoves({OthelloMove{1, 0}}, actualMoves);
+    verifyMoves({Move{1, 0}}, actualMoves);
 }
 
 TEST_F(OthelloStateTest, ChangeOfPossibleMovesTest)
 {
     auto startMoves = state->getPossibleMoves();
     
-    state->doMove(OthelloMove{4, 2}); // White
-    state->doMove(OthelloMove{5, 4}); // Black
-    state->doMove(OthelloMove{3, 5}); // White
-    state->doMove(OthelloMove{4, 1}); // Black
+    state->doMove(Move{4, 2}); // White
+    state->doMove(Move{5, 4}); // Black
+    state->doMove(Move{3, 5}); // White
+    state->doMove(Move{4, 1}); // Black
     
     auto endMoves = state->getPossibleMoves();
     ASSERT_NE(startMoves.size(), endMoves.size());
@@ -162,7 +162,7 @@ TEST_F(OthelloStateTest, ChangeOfPossibleMovesTest)
 
 TEST_F(OthelloStateTest, ChangeOfPlayersAfterMoveTest)
 {
-    state->doMove(OthelloMove{3, 5});
+    state->doMove(Move{3, 5});
     
     ASSERT_EQ(Player::Black, state->getCurrentPlayer());
 
@@ -178,10 +178,10 @@ TEST_F(OthelloStateTest, ChangeOfPlayersAfterMoveTest)
     };
     verifyPlayfield(expectedField, *state);
     auto actualMoves = state->getPossibleMoves();
-    vector<OthelloMove> expectedMoves = {
-        OthelloMove{2, 3}, 
-        OthelloMove{4, 5},
-        OthelloMove{2, 5}
+    vector<Move> expectedMoves = {
+        Move{2, 3}, 
+        Move{4, 5},
+        Move{2, 5}
     };
     verifyMoves(expectedMoves, actualMoves);
 }

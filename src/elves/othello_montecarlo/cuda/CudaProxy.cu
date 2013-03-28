@@ -1,4 +1,4 @@
-#include "MonteCarloTreeSearch.h"
+#include "CudaProxy.h"
 
 #include "common/Utils.h"
 
@@ -14,16 +14,16 @@ const int THREADS_PER_BLOCK = 64;
 
 __global__ void setupStateForRandom(curandState* state, size_t* seeds);
 __global__ void setupStateForRandom(curandState* states, float* randomValues, size_t numberOfRandomValues, size_t streamSeed = 0);
-__global__ void simulateGame(size_t reiterations, curandState* deviceStates, size_t numberOfPlayfields, const Field* playfields, Player currentPlayer, OthelloResult* results);
-__global__ void simulateGamePreRandom(size_t reiterations, float* randomValues, size_t numberOfRandomValues, size_t numberOfPlayfields, const Field* playfields, Player currentPlayer, OthelloResult* results);
-__global__ void simulateGamePreRandom(size_t reiterations, size_t numberOfBlocks, float* randomValues, size_t numberOfPlayfields, const Field* playfields, Player currentPlayer, OthelloResult* results);
+__global__ void simulateGame(size_t reiterations, curandState* deviceStates, size_t numberOfPlayfields, const Field* playfields, Player currentPlayer, Result* results);
+__global__ void simulateGamePreRandom(size_t reiterations, float* randomValues, size_t numberOfRandomValues, size_t numberOfPlayfields, const Field* playfields, Player currentPlayer, Result* results);
+__global__ void simulateGamePreRandom(size_t reiterations, size_t numberOfBlocks, float* randomValues, size_t numberOfPlayfields, const Field* playfields, Player currentPlayer, Result* results);
 
 __global__ void testNumberOfMarkedFields(size_t* sum, bool* playfield);
 __global__ void testRandomNumber(float fakedRandom, size_t maximum, size_t* randomNumberResult);
 __global__ void testDoStep(curandState* deviceState, Field* playfield, Player currentPlayer, float fakedRandom);
 __global__ void testExpandLeaf(curandState* deviceState, Field* playfield, Player currentPlayer, size_t* wins, size_t* visits);
 
-void gameSimulation(size_t numberOfBlocks, size_t iterations, size_t* seeds, size_t numberOfPlayfields, const Field* playfields, Player currentPlayer, OthelloResult* results)
+void gameSimulation(size_t numberOfBlocks, size_t iterations, size_t* seeds, size_t numberOfPlayfields, const Field* playfields, Player currentPlayer, Result* results)
 {
     curandState* deviceStates = NULL;
     cudaMalloc(&deviceStates, sizeof(curandState) * numberOfBlocks);
@@ -35,13 +35,13 @@ void gameSimulation(size_t numberOfBlocks, size_t iterations, size_t* seeds, siz
     CudaUtils::checkState();
 }
 
-void gameSimulationPreRandom(size_t numberOfBlocks, size_t iterations, float* randomValues, size_t numberOfPlayfields, const Field* playfields, Player currentPlayer, OthelloResult* results)
+void gameSimulationPreRandom(size_t numberOfBlocks, size_t iterations, float* randomValues, size_t numberOfPlayfields, const Field* playfields, Player currentPlayer, Result* results)
 {
     simulateGamePreRandom <<< numberOfBlocks, THREADS_PER_BLOCK >>> (size_t(ceil(iterations * 1.0 / numberOfBlocks)), numberOfBlocks, randomValues, numberOfPlayfields, playfields, currentPlayer, results);
     CudaUtils::checkState();
 }
 
-void gameSimulationPreRandom(size_t numberOfBlocks, size_t iterations, float* randomValues, size_t numberOfRandomValues, size_t numberOfPlayfields, const Field* playfields, Player currentPlayer, OthelloResult* results)
+void gameSimulationPreRandom(size_t numberOfBlocks, size_t iterations, float* randomValues, size_t numberOfRandomValues, size_t numberOfPlayfields, const Field* playfields, Player currentPlayer, Result* results)
 {
     curandState* deviceStates = NULL;
     cudaMalloc(&deviceStates, sizeof(curandState) * 128);
@@ -52,7 +52,7 @@ void gameSimulationPreRandom(size_t numberOfBlocks, size_t iterations, float* ra
     CudaUtils::checkState();
 }
 
-void gameSimulationPreRandom(size_t numberOfBlocks, size_t iterations, float* randomValues, size_t numberOfRandomValues, size_t numberOfPlayfields, const Field* playfields, Player currentPlayer, OthelloResult* results, cudaStream_t stream, size_t streamSeed)
+void gameSimulationPreRandom(size_t numberOfBlocks, size_t iterations, float* randomValues, size_t numberOfRandomValues, size_t numberOfPlayfields, const Field* playfields, Player currentPlayer, Result* results, cudaStream_t stream, size_t streamSeed)
 {
     curandState* deviceStates = NULL;
     cudaMalloc(&deviceStates, sizeof(curandState) * 128);
@@ -63,7 +63,7 @@ void gameSimulationPreRandom(size_t numberOfBlocks, size_t iterations, float* ra
     CudaUtils::checkState();
 }
 
-void gameSimulationStreamed(size_t numberOfBlocks, size_t iterations, size_t* seeds, size_t numberOfPlayfields, const Field* playfields, Player currentPlayer, OthelloResult* results, cudaStream_t stream)
+void gameSimulationStreamed(size_t numberOfBlocks, size_t iterations, size_t* seeds, size_t numberOfPlayfields, const Field* playfields, Player currentPlayer, Result* results, cudaStream_t stream)
 {
     curandState* deviceStates = NULL;
     cudaMalloc(&deviceStates, sizeof(curandState) * numberOfBlocks);

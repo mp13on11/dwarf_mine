@@ -2,7 +2,7 @@
 
 #include <stdexcept>
 #include <string>
-#include "OthelloMove.h"
+#include "Move.h"
 
 class InvalidFieldSizeException : public std::logic_error
 {
@@ -16,17 +16,17 @@ private:
 class InvalidMoveException : public std::runtime_error
 {
 public:
-    InvalidMoveException(size_t sideLength, const OthelloMove& move);
+    InvalidMoveException(size_t sideLength, const Move& move);
 
 private:
-    static std::string constructMessage(size_t sideLength, const OthelloMove& move);
+    static std::string constructMessage(size_t sideLength, const Move& move);
 };
 
 class OccupiedFieldException : public std::runtime_error
 {
 public:
-    OccupiedFieldException(const OthelloMove& move);
+    OccupiedFieldException(const Move& move);
 
 private:
-    static std::string constructMessage(const OthelloMove& move);
+    static std::string constructMessage(const Move& move);
 };

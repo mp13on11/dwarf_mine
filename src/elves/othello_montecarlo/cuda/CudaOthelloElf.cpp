@@ -1,6 +1,6 @@
-#include "CudaMonteCarloElf.h"
-#include <OthelloField.h>
-#include "MonteCarloTreeSearch.h"
+#include "CudaOthelloElf.h"
+#include <Field.h>
+#include "CudaProxy.h"
 #include <cuda-utils/Memory.h>
 #include <iostream>
 #include <random>
@@ -14,13 +14,13 @@ size_t NUMBER_OF_STREAMS = 2;
 size_t NUMBER_OF_BLOCKS = 1;
 size_t MAXIMAL_NUMBER_OF_MOVES = 120;
 
-void initialize(const OthelloState& state, vector<Field>& aggregatedPlayfields, vector<OthelloResult>& aggregatedResults)
+void initialize(const State& state, vector<Field>& aggregatedPlayfields, vector<Result>& aggregatedResults)
 {
     MoveList untriedMoves = state.getPossibleMoves();
     size_t size = state.playfieldSideLength() * state.playfieldSideLength();
     for (size_t i = 0; i < untriedMoves.size(); ++i)
     {
-        OthelloState childState(state, untriedMoves[i]);
+        State childState(state, untriedMoves[i]);
 
         const Field* buffer = childState.playfieldBuffer();
         for (size_t j = 0; j < size; ++j)
@@ -32,51 +32,51 @@ void initialize(const OthelloState& state, vector<Field>& aggregatedPlayfields, 
     }
 }
 
-OthelloResult CudaMonteCarloElf::getBestMoveForStreamed(OthelloState& state, size_t reiterations, size_t nodeId, size_t commonSeed)
+Result CudaOthelloElf::getBestMoveForStreamed(State& state, size_t reiterations, size_t nodeId, size_t commonSeed)
 {
     vector<Field> childPlayfields;
-    vector<OthelloResult> childResults;
+    vector<Result> childResults;
     initialize(state, childPlayfields, childResults);
 
     CudaUtils::Memory<Field> cudaPlayfields(childPlayfields.size());
     cudaPlayfields.transferFrom(childPlayfields.data());
     //cudaDeviceReset();
-    vector<OthelloResult> collectedChildResults;
-    vector<future<vector<OthelloResult>>> streamResults;
+    vector<Result> collectedChildResults;
+    vector<future<vector<Result>>> streamResults;
 
     size_t reiterationsPerStream = div_ceil(reiterations,NUMBER_OF_STREAMS);
     //size_t numberOfRandomValues = (MAXIMAL_NUMBER_OF_MOVES + 1) + (reiterations / NUMBER_OF_BLOCKS + 1) * NUMBER_OF_BLOCKS;
 
     for (size_t currentStreamId = 0; currentStreamId < NUMBER_OF_STREAMS; ++currentStreamId)
     {
-        streamResults.push_back(async(launch::async, [&state, &reiterationsPerStream, &nodeId, &commonSeed, &childResults, &cudaPlayfields, currentStreamId]() -> vector<OthelloResult> {
+        streamResults.push_back(async(launch::async, [&state, &reiterationsPerStream, &nodeId, &commonSeed, &childResults, &cudaPlayfields, currentStreamId]() -> vector<Result> {
             cudaStream_t stream;
             CudaUtils::checkError(cudaStreamCreate(&stream));
 
             size_t* cudaSeeds;
             CudaUtils::checkError(cudaMalloc(&cudaSeeds, sizeof(size_t) * NUMBER_OF_BLOCKS));
 
-            OthelloResult *cudaResults;
-            CudaUtils::checkError(cudaMalloc(&cudaResults, sizeof(OthelloResult) * childResults.size()));
+            Result *cudaResults;
+            CudaUtils::checkError(cudaMalloc(&cudaResults, sizeof(Result) * childResults.size()));
 
             size_t numberOfRandomValues = (MAXIMAL_NUMBER_OF_MOVES + 1) + div_ceil(reiterationsPerStream, NUMBER_OF_BLOCKS) * NUMBER_OF_BLOCKS;
 
             CudaUtils::Memory<float> randomValues(numberOfRandomValues);
 
-            OthelloResult *hostResults;
-            CudaUtils::checkError(cudaMallocHost(&hostResults, sizeof(OthelloResult) * childResults.size()));
+            Result *hostResults;
+            CudaUtils::checkError(cudaMallocHost(&hostResults, sizeof(Result) * childResults.size()));
             // clean pinned memory
             copy(childResults.data(), childResults.data() + childResults.size(), hostResults);
 
-            CudaUtils::checkError(cudaMemcpyAsync(cudaResults, hostResults, sizeof(OthelloResult) * childResults.size(), cudaMemcpyHostToDevice, stream));
+            CudaUtils::checkError(cudaMemcpyAsync(cudaResults, hostResults, sizeof(Result) * childResults.size(), cudaMemcpyHostToDevice, stream));
 			size_t streamSeed = OthelloHelper::generateUniqueSeed(nodeId, (size_t)stream, commonSeed);
             gameSimulationPreRandom(NUMBER_OF_BLOCKS, reiterationsPerStream, randomValues.get(), numberOfRandomValues, childResults.size(), cudaPlayfields.get(), state.getCurrentEnemy(), cudaResults, stream, streamSeed);
 
-            CudaUtils::checkError(cudaMemcpyAsync(hostResults, cudaResults, sizeof(OthelloResult) * childResults.size(), cudaMemcpyDeviceToHost, stream));
+            CudaUtils::checkError(cudaMemcpyAsync(hostResults, cudaResults, sizeof(Result) * childResults.size(), cudaMemcpyDeviceToHost, stream));
             
             CudaUtils::checkError(cudaStreamSynchronize(stream));
 
-            vector<OthelloResult> result(childResults.size());
+            vector<Result> result(childResults.size());
 
             copy(hostResults, hostResults + result.size(), result.data());
 
@@ -94,7 +94,7 @@ OthelloResult CudaMonteCarloElf::getBestMoveForStreamed(OthelloState& state, siz
         }
     }
 
-    vector<OthelloResult> aggregatedChildResults;
+    vector<Result> aggregatedChildResults;
     for (auto& result: collectedChildResults)
     {
         bool existed = false;
@@ -113,7 +113,7 @@ OthelloResult CudaMonteCarloElf::getBestMoveForStreamed(OthelloState& state, siz
             aggregatedChildResults.push_back(result);
         }
     }
-    OthelloResult worstEnemyResult;
+    Result worstEnemyResult;
 
     for (auto& result : aggregatedChildResults)
     {
@@ -125,7 +125,7 @@ OthelloResult CudaMonteCarloElf::getBestMoveForStreamed(OthelloState& state, siz
         }   
     }
 
-    OthelloResult result = OthelloResult { 
+    Result result = Result { 
         worstEnemyResult.x,
         worstEnemyResult.y,
         worstEnemyResult.visits,
@@ -134,16 +134,16 @@ OthelloResult CudaMonteCarloElf::getBestMoveForStreamed(OthelloState& state, siz
     return result;
 }
 
-OthelloResult CudaMonteCarloElf::getBestMoveFor(OthelloState& state, size_t reiterations, size_t nodeId, size_t commonSeed)
+Result CudaOthelloElf::getBestMoveFor(State& state, size_t reiterations, size_t nodeId, size_t commonSeed)
 {
     //return getBestMoveForSimple(state, reiterations, nodeId, commonSeed);
     return getBestMoveForStreamed(state, reiterations, nodeId, commonSeed);
 }
 
-OthelloResult CudaMonteCarloElf::getBestMoveForSimple(OthelloState& state, size_t reiterations, size_t /*nodeId */, size_t /*commonSeed*/)
+Result CudaOthelloElf::getBestMoveForSimple(State& state, size_t reiterations, size_t /*nodeId */, size_t /*commonSeed*/)
 {
     vector<Field> aggregatedChildStatePlayfields;
-    vector<OthelloResult> aggregatedChildResults;
+    vector<Result> aggregatedChildResults;
 
     initialize(state, aggregatedChildStatePlayfields, aggregatedChildResults);
 
@@ -153,7 +153,7 @@ OthelloResult CudaMonteCarloElf::getBestMoveForSimple(OthelloState& state, size_
 	CudaUtils::Memory<float> cudaRandomValues(randomValues.size());
 
     CudaUtils::Memory<Field> cudaPlayfields(aggregatedChildStatePlayfields.size());
-    CudaUtils::Memory<OthelloResult> cudaResults(aggregatedChildResults.size());
+    CudaUtils::Memory<Result> cudaResults(aggregatedChildResults.size());
 
 	cudaRandomValues.transferFrom(randomValues.data());
     cudaPlayfields.transferFrom(aggregatedChildStatePlayfields.data());
@@ -164,7 +164,7 @@ OthelloResult CudaMonteCarloElf::getBestMoveForSimple(OthelloState& state, size_
     cudaResults.transferTo(aggregatedChildResults.data());
 
     // invert results since they are calculated for the enemy player
-    OthelloResult worstEnemyResult;
+    Result worstEnemyResult;
 
     for (auto& result : aggregatedChildResults)
     {
@@ -176,7 +176,7 @@ OthelloResult CudaMonteCarloElf::getBestMoveForSimple(OthelloState& state, size_
         }   
     }
 
-    OthelloResult result = OthelloResult { 
+    Result result = Result { 
         worstEnemyResult.x,
         worstEnemyResult.y,
         worstEnemyResult.visits,

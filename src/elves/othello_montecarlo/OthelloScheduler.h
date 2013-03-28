@@ -1,18 +1,18 @@
 #pragma once
 
 #include "common/SchedulerTemplate.h"
-#include "MonteCarloElf.h"
+#include "OthelloElf.h"
 #include <functional>
 #include <vector>
 
-class MonteCarloElf;
-struct OthelloResult;
+class OthelloElf;
+struct Result;
 
-class MonteCarloScheduler: public SchedulerTemplate<MonteCarloElf>
+class OthelloScheduler: public SchedulerTemplate<OthelloElf>
 {
 public:
-    MonteCarloScheduler(const Communicator& communicator, const std::function<ElfPointer()>& factory);
-    virtual ~MonteCarloScheduler() = default;
+    OthelloScheduler(const Communicator& communicator, const std::function<ElfPointer()>& factory);
+    virtual ~OthelloScheduler() = default;
 
     virtual void provideData(std::istream& input);
     virtual void outputData(std::ostream& output);
@@ -25,8 +25,8 @@ protected:
     virtual void doSimpleDispatch();
     virtual void doBenchmarkDispatch(int node);
 
-    OthelloState _state;
-    OthelloResult _result;
+    State _state;
+    Result _result;
     size_t _repetitions;
     size_t _localRepetitions;
     size_t _commonSeed;
@@ -39,5 +39,5 @@ private:
     void distributeInput(BenchmarkResult nodeSet);
     void collectInput(BenchmarkResult nodeSet);
     void collectResults(BenchmarkResult nodeSet);
-    std::vector<OthelloResult> gatherResults(BenchmarkResult nodeSet);
+    std::vector<Result> gatherResults(BenchmarkResult nodeSet);
 };

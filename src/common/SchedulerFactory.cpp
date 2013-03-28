@@ -6,13 +6,13 @@
 #include "matrix/MatrixScheduler.h"
 #include "matrix/MatrixOnlineScheduler.h"
 #include "matrix/smp/SMPMatrixElf.h"
-#include "montecarlo/MonteCarloScheduler.h"
-#include "montecarlo/smp/SMPMonteCarloElf.h"
+#include "othello_montecarlo/OthelloScheduler.h"
+#include "othello_montecarlo/smp/SMPOthelloElf.h"
 
 #ifdef HAVE_CUDA
 #include "matrix/cuda/CudaMatrixElf.h"
 #include "quadratic_sieve/cuda/CudaQuadraticSieveElf.h"
-#include "montecarlo/cuda/CudaMonteCarloElf.h"
+#include "othello_montecarlo/cuda/CudaOthelloElf.h"
 #endif
 
 #include <stdexcept>
@@ -88,7 +88,7 @@ static map<string, function<FactoryFunction(bool)>> sFactoryFunctionsMap =
     },
     {
         "montecarlo_tree_search",
-        &createFactory<MonteCarloScheduler, SMPMonteCarloElf, CudaMonteCarloElf>
+        &createFactory<OthelloScheduler, SMPOthelloElf, CudaOthelloElf>
     }
 };
 

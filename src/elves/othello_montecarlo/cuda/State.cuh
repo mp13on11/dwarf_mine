@@ -1,8 +1,8 @@
 #pragma once
 
-#include "OthelloField.h"
+#include "Field.h"
 
-typedef struct _CudaGameState
+typedef struct _State
 {
     Field* field;
     Field* oldField;
@@ -11,7 +11,7 @@ typedef struct _CudaGameState
     size_t sideLength;
     Player currentPlayer;
 
-    __device__ _CudaGameState(Field* field, Field* oldField, bool* possibleMoves, size_t fieldDimension, Player currentPlayer)
+    __device__ _State(Field* field, Field* oldField, bool* possibleMoves, size_t fieldDimension, Player currentPlayer)
         : field(field), oldField(oldField), possible(possibleMoves), size(fieldDimension * fieldDimension), sideLength(fieldDimension), currentPlayer(currentPlayer)
     {
 
@@ -91,4 +91,4 @@ typedef struct _CudaGameState
         }
         return same;
     }
-} CudaGameState;
+} State;

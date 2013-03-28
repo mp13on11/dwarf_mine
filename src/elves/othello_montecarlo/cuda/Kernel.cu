@@ -1,12 +1,12 @@
-#include "MonteCarloTreeSearch.h"
+#include "CudaProxy.h"
 #include <curand.h>
 #include <curand_kernel.h>
-#include "OthelloField.h"
-#include "CudaGameState.cuh"
-#include "CudaMove.cuh"
-#include "CudaSimulator.cuh"
-#include "CudaUtil.cuh"
-#include "CudaDebug.cuh"
+#include "Field.h"
+#include "Move.h"
+#include "State.cuh"
+#include "Simulator.cuh"
+#include "Random.cuh"
+#include "Debug.cuh"
 #include <assert.h>
 
 __global__ void setupStateForRandom(curandState* state, size_t* seeds)
@@ -25,7 +25,7 @@ __global__ void setupStateForRandom(curandState* states, float* randomValues, si
     }
 }
 
-__global__ void simulateGame(size_t reiterations, curandState* deviceStates, size_t numberOfPlayfields, const Field* playfields, Player currentPlayer, OthelloResult* results)
+__global__ void simulateGame(size_t reiterations, curandState* deviceStates, size_t numberOfPlayfields, const Field* playfields, Player currentPlayer, Result* results)
 {
     int playfieldIndex = threadIdx.x;
 
@@ -40,14 +40,14 @@ __global__ void simulateGame(size_t reiterations, curandState* deviceStates, siz
         size_t playfieldOffset = FIELD_DIMENSION * FIELD_DIMENSION * node;
         sharedPlayfield[playfieldIndex] = playfields[playfieldOffset + playfieldIndex];
 
-        CudaGameState state( 
+        State state( 
             sharedPlayfield, 
             oldPlayfield,
             possibleMoves, 
             FIELD_DIMENSION, 
             currentPlayer 
         );
-        CudaSimulator simulator(&state, deviceStates);
+        Simulator simulator(&state, deviceStates);
 
         __syncthreads();
 
@@ -69,7 +69,7 @@ __global__ void simulateGame(size_t reiterations, curandState* deviceStates, siz
     }
 }
 
-__global__ void simulateGamePreRandom(size_t reiterations, size_t numberOfBlocks, float* randomValues, size_t numberOfPlayfields, const Field* playfields, Player currentPlayer, OthelloResult* results)
+__global__ void simulateGamePreRandom(size_t reiterations, size_t numberOfBlocks, float* randomValues, size_t numberOfPlayfields, const Field* playfields, Player currentPlayer, Result* results)
 {
     int playfieldIndex = threadIdx.x;
     size_t blockIterations = size_t(ceil(reiterations * 1.0 / numberOfBlocks));
@@ -88,7 +88,7 @@ __global__ void simulateGamePreRandom(size_t reiterations, size_t numberOfBlocks
         size_t playfieldOffset = FIELD_DIMENSION * FIELD_DIMENSION * node;
         sharedPlayfield[playfieldIndex] = playfields[playfieldOffset + playfieldIndex];
 
-        CudaGameState state(
+        State state(
             sharedPlayfield, 
             oldPlayfield,
             possibleMoves, 
@@ -96,7 +96,7 @@ __global__ void simulateGamePreRandom(size_t reiterations, size_t numberOfBlocks
             currentPlayer
         );
 
-        CudaSimulator simulator(&state, randomValues, randomSeed);
+        Simulator simulator(&state, randomValues, randomSeed);
 
         __syncthreads();
 
@@ -122,7 +122,7 @@ __global__ void testRandomNumber(float fakedRandom, size_t maximum, size_t* rand
 __global__ void testNumberOfMarkedFields(size_t* resultSum, bool* playfield)
 {
     Field* stub = NULL;
-    CudaGameState state(
+    State state(
         stub, 
         stub,
         playfield, 
@@ -143,14 +143,14 @@ __global__ void testDoStep(curandState* deviceState, Field* playfield, Player cu
     sharedPlayfield[playfieldIndex] = playfield[playfieldIndex];
 
     // this part may be a shared variable?
-    CudaGameState state(
+    State state(
         sharedPlayfield, 
         oldPlayfield,
         possibleMoves, 
         FIELD_DIMENSION, 
         currentPlayer 
     );
-    CudaSimulator simulator(&state, deviceState);
+    Simulator simulator(&state, deviceState);
 
     simulator.doStep(fakedRandom);
 
@@ -166,14 +166,14 @@ __global__ void testExpandLeaf(curandState* deviceState, Field* playfield, Playe
     __shared__ bool possibleMoves[FIELD_DIMENSION*FIELD_DIMENSION];
     sharedPlayfield[playfieldIndex] = playfield[playfieldIndex];
 
-    CudaGameState state(
+    State state(
         sharedPlayfield, 
         oldPlayfield,
         possibleMoves, 
         FIELD_DIMENSION, 
         currentPlayer 
     );
-    CudaSimulator simulator(&state, deviceState);
+    Simulator simulator(&state, deviceState);
     simulator.expandLeaf();
 
     if (state.isWinner(currentPlayer))

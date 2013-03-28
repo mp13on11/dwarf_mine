@@ -1,5 +1,5 @@
 #include "OthelloUtil.h"
-#include <OthelloResult.h>
+#include <Result.h>
 #include <iostream>
 #include <stdexcept>
 #include <sstream>
@@ -15,7 +15,7 @@ namespace OthelloHelper
         return generateHash(buffer.str());
     }
 
-    void writeResultToStream(std::ostream& stream, const OthelloResult& result)
+    void writeResultToStream(std::ostream& stream, const Result& result)
     {
         stream << result.x 
                << result.y 
@@ -23,7 +23,7 @@ namespace OthelloHelper
                << result.wins; 
     }
 
-    void readResultFromStream(std::istream& stream, OthelloResult& result)
+    void readResultFromStream(std::istream& stream, Result& result)
     {
         stream >> result.x
                >> result.y

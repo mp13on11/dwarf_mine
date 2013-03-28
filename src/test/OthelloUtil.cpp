@@ -1,7 +1,7 @@
 #include "OthelloUtil.h"
 
 #include <iostream>
-#include <montecarlo/OthelloMove.h>
+#include <othello_montecarlo/Move.h>
 #include <vector>
 #include <cmath>
 #include <gtest/gtest.h>
@@ -10,7 +10,7 @@ using namespace std;
 
 
 
-void verifyPlayfield(vector<Field> expectedField, OthelloState& state)
+void verifyPlayfield(vector<Field> expectedField, State& state)
 {
     int sideLength = sqrt(expectedField.size());
     ASSERT_EQ(sideLength, state.playfieldSideLength());
@@ -24,9 +24,9 @@ void verifyPlayfield(vector<Field> expectedField, OthelloState& state)
 }
 
 
-void verifyMoves(const vector<OthelloMove>& expectedMoves, const vector<OthelloMove>& actualMoves)
+void verifyMoves(const vector<Move>& expectedMoves, const vector<Move>& actualMoves)
 {    
-    vector<OthelloMove> matchedMoves;
+    vector<Move> matchedMoves;
     ASSERT_EQ(expectedMoves.size(), actualMoves.size());
     for (const auto& actualMove : actualMoves)
     {
@@ -43,7 +43,7 @@ void verifyMoves(const vector<OthelloMove>& expectedMoves, const vector<OthelloM
 }
 
 
-ostream& operator<<(ostream& out, const vector<OthelloMove>& moves)
+ostream& operator<<(ostream& out, const vector<Move>& moves)
 {
     for ( const auto& move : moves)
     {

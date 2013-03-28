@@ -1,6 +1,7 @@
-#include "OthelloExceptions.h"
+#include "Exceptions.h"
 
 #include <sstream>
+#include "OthelloUtil.h"
 
 using namespace std;
 
@@ -17,12 +18,12 @@ string InvalidFieldSizeException::constructMessage(size_t sideLength)
 }
 
 
-InvalidMoveException::InvalidMoveException(size_t sideLength, const OthelloMove& move) :
+InvalidMoveException::InvalidMoveException(size_t sideLength, const Move& move) :
     runtime_error(constructMessage(sideLength, move))
 {
 }
 
-string InvalidMoveException::constructMessage(size_t sideLength, const OthelloMove& move)
+string InvalidMoveException::constructMessage(size_t sideLength, const Move& move)
 {
     stringstream stream;
     stream << "Move"<<move<<" outside of playfield ["<<sideLength<<"x"<<sideLength<<"]";
@@ -30,12 +31,12 @@ string InvalidMoveException::constructMessage(size_t sideLength, const OthelloMo
 }
 
 
-OccupiedFieldException::OccupiedFieldException( const OthelloMove& move) :
+OccupiedFieldException::OccupiedFieldException( const Move& move) :
     runtime_error(constructMessage(move))
 {
 }
 
-string OccupiedFieldException::constructMessage(const OthelloMove& move)
+string OccupiedFieldException::constructMessage(const Move& move)
 {
     stringstream stream;
     stream << "Move"<<move<<" on occupied field";

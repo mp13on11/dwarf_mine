@@ -1,4 +1,4 @@
-#include "SMPMonteCarloElf.h"
+#include "SMPOthelloElf.h"
 #include "OthelloUtil.h"
 #include <functional>
 #include <random>
@@ -15,17 +15,17 @@ using namespace std;
 
 const int WORKSTEALING_BLOCKSIZE = 10;
 
-void expand(const OthelloState& rootState, vector<OthelloState>& childStates, vector<OthelloResult>& childResults)
+void expand(const State& rootState, vector<State>& childStates, vector<Result>& childResults)
 {
     auto moves = rootState.getPossibleMoves();
     for (const auto& move : moves)
     {
         childStates.emplace_back(rootState, move);
-        childResults.emplace_back(OthelloResult{ (size_t)move.x, (size_t)move.y, 0, 0});
+        childResults.emplace_back(Result{ (size_t)move.x, (size_t)move.y, 0, 0});
     }   
 }
 
-void rollout(OthelloState& state, RandomGenerator generator)
+void rollout(State& state, RandomGenerator generator)
 {
     size_t passCounter = 0;
     while (passCounter < 2)
@@ -33,7 +33,7 @@ void rollout(OthelloState& state, RandomGenerator generator)
         auto possibleMoves = state.getPossibleMoves();
         if (possibleMoves.size() > 0)
         {
-            OthelloMove move = possibleMoves[generator(possibleMoves.size())];
+            Move move = possibleMoves[generator(possibleMoves.size())];
             state.doMove(move);
             passCounter = 0;
         }
@@ -44,10 +44,10 @@ void rollout(OthelloState& state, RandomGenerator generator)
     }
 }
 
-OthelloResult SMPMonteCarloElf::getBestMoveFor(OthelloState& rootState, size_t reiterations, size_t nodeId, size_t commonSeed)
+Result SMPOthelloElf::getBestMoveFor(State& rootState, size_t reiterations, size_t nodeId, size_t commonSeed)
 {
-    vector<OthelloResult> childResults;
-    vector<OthelloState> childStates;
+    vector<Result> childResults;
+    vector<State> childStates;
 
     expand(rootState, childStates, childResults);
 
@@ -66,7 +66,7 @@ OthelloResult SMPMonteCarloElf::getBestMoveFor(OthelloState& rootState, size_t r
         {
             // select randomly
             size_t selectedIndex = generator(childStates.size());
-            OthelloState selectedState = childStates[selectedIndex];
+            State selectedState = childStates[selectedIndex];
 
             // rollout
             rollout(selectedState, generator);

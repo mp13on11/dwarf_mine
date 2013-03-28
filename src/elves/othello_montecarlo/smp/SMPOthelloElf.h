@@ -1,14 +1,14 @@
 #pragma once
 
-#include <MonteCarloElf.h>
+#include <OthelloElf.h>
 #include "OthelloUtil.h"
 #include <chrono>
 #include <vector>
 
-class SMPMonteCarloElf : public MonteCarloElf
+class SMPOthelloElf : public OthelloElf
 {
 public:
-    virtual OthelloResult getBestMoveFor(OthelloState& state, size_t reiterations, size_t nodeId, size_t commonSeed);
+    virtual Result getBestMoveFor(State& state, size_t reiterations, size_t nodeId, size_t commonSeed);
 private:
     std::vector<RandomGenerator> _generators;
     std::chrono::high_resolution_clock::time_point _end;

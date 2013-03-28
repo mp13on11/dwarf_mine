@@ -1,13 +1,13 @@
 #pragma once
 
 #include <iosfwd>
-#include <montecarlo/OthelloMove.h>
-#include <montecarlo/OthelloState.h>
+#include <othello_montecarlo/Move.h>
+#include <othello_montecarlo/State.h>
 #include <vector>
 #include <cmath>
 
-void verifyPlayfield(std::vector<Field> expectedField, OthelloState& state);
+void verifyPlayfield(std::vector<Field> expectedField, State& state);
 
-void verifyMoves(const std::vector<OthelloMove>& expectedMoves, const std::vector<OthelloMove>& actualMoves);
+void verifyMoves(const std::vector<Move>& expectedMoves, const std::vector<Move>& actualMoves);
 
-std::ostream& operator<<(std::ostream& out, const std::vector<OthelloMove>& moves);
+std::ostream& operator<<(std::ostream& out, const std::vector<Move>& moves);

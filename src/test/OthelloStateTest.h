@@ -1,7 +1,7 @@
 #pragma once
 
 #include <gtest/gtest.h>
-#include <montecarlo/OthelloState.h>
+#include <othello_montecarlo/State.h>
 
 class OthelloStateTest : public testing::Test
 {
@@ -10,5 +10,5 @@ public:
     virtual void TearDown();
 
 protected:
-    OthelloState* state;
+    State* state;
 };

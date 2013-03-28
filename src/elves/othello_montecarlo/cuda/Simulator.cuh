@@ -1,29 +1,29 @@
 #pragma once
 
-#include "CudaUtil.cuh"
-#include "CudaGameState.cuh"
-#include "CudaDebug.cuh"
+#include "Random.cuh"
+#include "State.cuh"
+#include "Debug.cuh"
 
-class CudaSimulator
+class Simulator
 {
 private:
     size_t _playfieldIndex;
     size_t _playfieldX;
     size_t _playfieldY;
-    CudaGameState* _state;
+    State* _state;
     curandState* _deviceState;
 	size_t _randomSeed;
 	float* _randomValues;
     size_t _stepCounter;
 
 public:
-    __device__ CudaSimulator(CudaGameState* state, curandState* deviceState)
+    __device__ Simulator(State* state, curandState* deviceState)
         : _playfieldIndex(threadIdx.x), _playfieldX(_playfieldIndex % FIELD_DIMENSION), _playfieldY(_playfieldIndex / FIELD_DIMENSION),
             _state(state), _deviceState(deviceState), _stepCounter(0)
     {
     }
 
-    __device__ CudaSimulator(CudaGameState* state, float* randomValues, size_t randomSeed)
+    __device__ Simulator(State* state, float* randomValues, size_t randomSeed)
         : _playfieldIndex(threadIdx.x), _playfieldX(_playfieldIndex % FIELD_DIMENSION), _playfieldY(_playfieldIndex / FIELD_DIMENSION),
             _state(state), _randomSeed(randomSeed), _randomValues(randomValues), _stepCounter(0)
     {

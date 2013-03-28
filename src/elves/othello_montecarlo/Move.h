@@ -1,7 +1,7 @@
 #pragma once
 
-typedef struct _CudaMove
+typedef struct _Move
 {
     int x;
     int y;
-} CudaMove;
+} Move;
