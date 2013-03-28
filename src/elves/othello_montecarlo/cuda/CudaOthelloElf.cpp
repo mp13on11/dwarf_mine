@@ -10,7 +10,7 @@
 
 using namespace std;
 
-size_t NUMBER_OF_STREAMS = 16;
+size_t NUMBER_OF_STREAMS = 4;
 size_t NUMBER_OF_BLOCKS = 64;
 size_t MAXIMAL_NUMBER_OF_MOVES = 120;
 
