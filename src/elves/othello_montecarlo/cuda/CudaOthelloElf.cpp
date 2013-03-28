@@ -136,8 +136,8 @@ Result CudaOthelloElf::getBestMoveForStreamed(State& state, size_t reiterations,
 
 Result CudaOthelloElf::getBestMoveFor(State& state, size_t reiterations, size_t nodeId, size_t commonSeed)
 {
-    return getBestMoveForSimple(state, reiterations, nodeId, commonSeed);
-    //return getBestMoveForStreamed(state, reiterations, nodeId, commonSeed);
+    //return getBestMoveForSimple(state, reiterations, nodeId, commonSeed);
+    return getBestMoveForStreamed(state, reiterations, nodeId, commonSeed);
 }
 
 Result CudaOthelloElf::getBestMoveForSimple(State& state, size_t reiterations, size_t /*nodeId */, size_t /*commonSeed*/)
