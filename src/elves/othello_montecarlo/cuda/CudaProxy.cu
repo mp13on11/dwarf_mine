@@ -37,7 +37,7 @@ void gameSimulation(size_t numberOfBlocks, size_t iterations, size_t* seeds, siz
 
 void gameSimulationPreRandom(size_t numberOfBlocks, size_t iterations, float* randomValues, size_t numberOfPlayfields, const Field* playfields, Player currentPlayer, Result* results)
 {
-    simulateGamePreRandom <<< numberOfBlocks, THREADS_PER_BLOCK >>> (size_t(ceil(iterations * 1.0 / numberOfBlocks)), numberOfBlocks, randomValues, numberOfPlayfields, playfields, currentPlayer, results);
+    simulateGamePreRandom <<< numberOfBlocks, THREADS_PER_BLOCK >>> (iterations, numberOfBlocks, randomValues, numberOfPlayfields, playfields, currentPlayer, results);
     CudaUtils::checkState();
 }
 
@@ -71,7 +71,7 @@ void gameSimulationStreamed(size_t numberOfBlocks, size_t iterations, size_t* se
     setupStateForRandom <<< numberOfBlocks, 1, 0, stream >>> (deviceStates, seeds);
     //CudaUtils::checkState();
     
-    simulateGame <<< numberOfBlocks, THREADS_PER_BLOCK, 0, stream >>> (size_t(ceil(iterations * 1.0 / numberOfBlocks)), deviceStates, numberOfPlayfields, playfields, currentPlayer, results);
+    simulateGame <<< numberOfBlocks, THREADS_PER_BLOCK, 0, stream >>> (iterations, deviceStates, numberOfPlayfields, playfields, currentPlayer, results);
     //CudaUtils::checkState();
 }
 
