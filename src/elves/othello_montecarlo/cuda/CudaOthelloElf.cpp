@@ -11,7 +11,7 @@
 using namespace std;
 
 size_t NUMBER_OF_STREAMS = 2;
-size_t NUMBER_OF_BLOCKS = 1;
+size_t NUMBER_OF_BLOCKS = 64;
 size_t MAXIMAL_NUMBER_OF_MOVES = 120;
 
 void initialize(const State& state, vector<Field>& aggregatedPlayfields, vector<Result>& aggregatedResults)
@@ -136,8 +136,8 @@ Result CudaOthelloElf::getBestMoveForStreamed(State& state, size_t reiterations,
 
 Result CudaOthelloElf::getBestMoveFor(State& state, size_t reiterations, size_t nodeId, size_t commonSeed)
 {
-    //return getBestMoveForSimple(state, reiterations, nodeId, commonSeed);
-    return getBestMoveForStreamed(state, reiterations, nodeId, commonSeed);
+    return getBestMoveForSimple(state, reiterations, nodeId, commonSeed);
+    //return getBestMoveForStreamed(state, reiterations, nodeId, commonSeed);
 }
 
 Result CudaOthelloElf::getBestMoveForSimple(State& state, size_t reiterations, size_t /*nodeId */, size_t /*commonSeed*/)
