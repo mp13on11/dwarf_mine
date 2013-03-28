@@ -23,18 +23,6 @@ __global__ void testRandomNumber(float fakedRandom, size_t maximum, size_t* rand
 __global__ void testDoStep(curandState* deviceState, Field* playfield, Player currentPlayer, float fakedRandom);
 __global__ void testExpandLeaf(curandState* deviceState, Field* playfield, Player currentPlayer, size_t* wins, size_t* visits);
 
-void gameSimulation(size_t numberOfBlocks, size_t iterations, size_t* seeds, size_t numberOfPlayfields, const Field* playfields, Player currentPlayer, Result* results)
-{
-    curandState* deviceStates = NULL;
-    cudaMalloc(&deviceStates, sizeof(curandState) * numberOfBlocks);
-    
-    setupStateForRandom <<< numberOfBlocks, 1 >>> (deviceStates, seeds);
-    CudaUtils::checkState();
-    
-    simulateGame <<< numberOfBlocks, THREADS_PER_BLOCK >>> (size_t(ceil(iterations * 1.0 / numberOfBlocks)), deviceStates, numberOfPlayfields, playfields, currentPlayer, results);
-    CudaUtils::checkState();
-}
-
 void gameSimulationPreRandomStreamed(size_t numberOfBlocks, size_t iterations, float* randomValues, size_t numberOfRandomValues, size_t numberOfPlayfields, const Field* playfields, Player currentPlayer, Result* results, cudaStream_t stream, size_t streamSeed)
 {
     curandState* deviceStates = NULL;
