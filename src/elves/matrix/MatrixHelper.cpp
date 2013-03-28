@@ -74,6 +74,16 @@ namespace MatrixHelper
         sendMatrixTo(communicator, work.first, node, tag);
         sendMatrixTo(communicator, work.second, node, tag);
     }   
+    
+    void isendNextWork(
+        const Communicator& communicator,
+        const MatrixPair& work,
+        const int node,
+        const int tag)
+    {
+        isendMatrixTo(communicator, work.first, node, tag);
+        isendMatrixTo(communicator, work.second, node, tag);
+    }   
 
     void sendMatrixTo(
         const Communicator& communicator,
@@ -89,6 +99,22 @@ namespace MatrixHelper
         auto numElements = dimensions[0] * dimensions[1];
         communicator->Send(dimensions, 2, MPI::UNSIGNED_LONG, node, tag);
         communicator->Send(matrix.buffer(), numElements, MPI::FLOAT, node, tag);
+    }
+
+    void isendMatrixTo(
+        const Communicator& communicator,
+        const Matrix<float>& matrix,
+        const int node,
+        const int tag)
+    {
+        unsigned long dimensions[2] =
+        {
+            matrix.rows(),
+            matrix.columns()
+        };
+        auto numElements = dimensions[0] * dimensions[1];
+        communicator->Send(dimensions, 2, MPI::UNSIGNED_LONG, node, tag);
+        communicator->Isend(matrix.buffer(), numElements, MPI::FLOAT, node, tag);
     }
 
     Matrix<float> receiveMatrixFrom(

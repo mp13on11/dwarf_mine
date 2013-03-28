@@ -41,8 +41,14 @@ namespace MatrixHelper
         const MatrixPair& work,
         const int node,
         const int tag = 0);
+    void isendNextWork(
+        const Communicator& communicator,
+        const MatrixPair& work,
+        const int node,
+        const int tag = 0);
 
     void sendMatrixTo(const Communicator& communicator, const Matrix<float>& matrix, const int node, const int tag = 0);
+    void isendMatrixTo(const Communicator& communicator, const Matrix<float>& matrix, const int node, const int tag = 0);
     Matrix<float> receiveMatrixFrom(const Communicator& communicator, const int node, const int tag = 0);
 
     Matrix<float> readMatrixFrom(const std::string& fileName, bool binary = true);

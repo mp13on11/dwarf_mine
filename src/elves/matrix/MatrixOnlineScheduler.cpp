@@ -130,10 +130,10 @@ void MatrixOnlineScheduler::sendNextWorkTo(const int node)
     if (workDefinition != sliceContainers.end())
     {
         (*workDefinition).sliceDefinition.setNodeId(node);
-        MatrixHelper::sendNextWork(communicator, workDefinition->slicePair, node, int(Tags::exchangeWork));
+        MatrixHelper::isendNextWork(communicator, workDefinition->slicePair, node, int(Tags::exchangeWork));
     }
     else
-        MatrixHelper::sendNextWork(communicator, MatrixPair(Matrix<float>(), Matrix<float>()), node, int(Tags::exchangeWork));
+        MatrixHelper::isendNextWork(communicator, MatrixPair(Matrix<float>(), Matrix<float>()), node, int(Tags::exchangeWork));
 }
 
 vector<SliceContainer>::iterator MatrixOnlineScheduler::getNextWorkDefinition()
