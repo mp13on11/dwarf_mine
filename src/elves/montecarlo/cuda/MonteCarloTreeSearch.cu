@@ -18,7 +18,7 @@ __global__ void simulateGame(size_t reiterations, curandState* deviceStates, siz
 __global__ void simulateGamePreRandom(size_t reiterations, float* randomValues, size_t numberOfRandomValues, size_t numberOfPlayfields, const Field* playfields, Player currentPlayer, OthelloResult* results);
 __global__ void simulateGamePreRandom(size_t reiterations, size_t numberOfBlocks, float* randomValues, size_t numberOfPlayfields, const Field* playfields, Player currentPlayer, OthelloResult* results);
 
-__global__ void testNumberOfMarkedFields(size_t* sum, const bool* playfield);
+__global__ void testNumberOfMarkedFields(size_t* sum, bool* playfield);
 __global__ void testRandomNumber(float fakedRandom, size_t maximum, size_t* randomNumberResult);
 __global__ void testDoStep(curandState* deviceState, Field* playfield, Player currentPlayer, float fakedRandom);
 __global__ void testExpandLeaf(curandState* deviceState, Field* playfield, Player currentPlayer, size_t* wins, size_t* visits);
@@ -97,7 +97,7 @@ void testDoStepProxy(Field* playfield, Player currentPlayer, float fakedRandom)
     CudaUtils::checkState();    
 }
 
-void testNumberOfMarkedFieldsProxy(size_t* sum, const bool* playfield)
+void testNumberOfMarkedFieldsProxy(size_t* sum, bool* playfield)
 {
     testNumberOfMarkedFields<<< 1, THREADS_PER_BLOCK >>>(sum, playfield);
     CudaUtils::checkState();

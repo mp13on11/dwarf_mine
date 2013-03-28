@@ -11,6 +11,12 @@ typedef struct _CudaGameState
     size_t sideLength;
     Player currentPlayer;
 
+    __device__ _CudaGameState(Field* field, Field* oldField, bool* possibleMoves, size_t fieldDimension, Player currentPlayer)
+        : field(field), oldField(oldField), possible(possibleMoves), size(fieldDimension * fieldDimension), sideLength(fieldDimension), currentPlayer(currentPlayer)
+    {
+
+    }
+
     __device__ inline bool inBounds(int x, int y)
     {
         return (x >= 0 && x < sideLength && y >= 0 && y < sideLength);
@@ -29,6 +35,23 @@ typedef struct _CudaGameState
     __device__ inline Player getEnemyPlayer()
     {
         return getEnemyPlayer(currentPlayer);
+    }
+
+    __device__ inline void switchPlayer()
+    {
+        currentPlayer = getEnemyPlayer();
+    }
+
+    __device__ inline size_t numberOfMarkedFields()
+    {
+        __shared__ unsigned int s[8];
+        if (threadIdx.x % 8 == 0) s[threadIdx.x / 8] = 0;
+        __syncthreads();
+        if (possible[threadIdx.x]) atomicAdd(&s[threadIdx.x / 8], 1u);
+        __syncthreads();
+        if (threadIdx.x % 8 == 0 && threadIdx.x != 0) atomicAdd(&s[0], s[threadIdx.x / 8]);
+        __syncthreads();
+        return s[0];
     }
 
     __device__ bool isWinner(Player requestedPlayer)
