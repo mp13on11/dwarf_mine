@@ -72,9 +72,9 @@ void MatrixOnlineScheduler::sliceInput()
 
 void MatrixOnlineScheduler::generateSlicePairs()
 {
+    SliceContainer container;
     for (auto& sliceDefinition : sliceDefinitions)
     {
-        SliceContainer container;
         container.slicePair = sliceMatrices(sliceDefinition);
         container.sliceDefinition = sliceDefinition;
         sliceContainers.push_back(container);
@@ -85,11 +85,11 @@ void MatrixOnlineScheduler::generateSlicePairs()
 void MatrixOnlineScheduler::schedule()
 {
     vector<future<void>> futures;
+    futures.push_back(async(launch::async, [&]() { scheduleWork(); }));
+    futures.push_back(async(launch::async, [&]() { receiveResults(); }));
     for (size_t i = 1; i < communicator.nodeSet().size(); ++i)
         futures.push_back(async(launch::async, [&, i] () {
             MatrixHelper::sendWorkQueueSize(communicator, int(i), maxWorkQueueSize, int(Tags::workQueueSize)); }));
-    futures.push_back(async(launch::async, [&]() { scheduleWork(); }));
-    futures.push_back(async(launch::async, [&]() { receiveResults(); }));
     calculateOnSlave();
     waitFor(futures);
 }
@@ -157,9 +157,9 @@ void MatrixOnlineScheduler::receiveResultFrom(const int node)
 
 MatrixSlice& MatrixOnlineScheduler::getNextSliceDefinitionFor(const int node)
 {
-    for (auto& slice : sliceDefinitions)
-        if (slice.getNodeId() == node)
-            return slice;
+    for (auto& slice : sliceContainers)
+        if (slice.sliceDefinition.getNodeId() == node)
+            return slice.sliceDefinition;
     throw runtime_error("No next slice definition found.");
 }
 
