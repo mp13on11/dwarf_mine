@@ -21,8 +21,7 @@ FILE(GLOB GCC_SOURCES
 SET(LINKING_MODE STATIC)
 
 IF(CMAKE_COMPILER_IS_GNUCXX OR USE_VAMPIR_TRACE)
-    ADD_CXX_FLAGS("-O3 -fopenmp -funroll-loops")        ## Optimize
-    #ADD_CXX_FLAGS("-pg -fopenmp")
+    ADD_CXX_FLAGS("-O3 -fopenmp -funroll-loops")
 ENDIF()
 
 ADD_LIBRARY(${LIBRARY_NAME} ${LINKING_MODE}

@@ -72,7 +72,7 @@ vector<BigInt> SmpQuadraticSieveElf::sieveSmoothSquares(const BigInt& start, con
     //const int NUM_THREADS = omp_get_num_threads();
     int NUM_THREADS = 1;
 
-    //#pragma omp parallel
+    #pragma omp parallel
     NUM_THREADS = omp_get_num_threads();
     
     SmoothSquareList smooths;

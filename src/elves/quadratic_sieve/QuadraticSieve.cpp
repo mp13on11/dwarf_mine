@@ -216,7 +216,7 @@ void performGaussianElimination(Relations& relations)
 
     for(size_t i=0; i<relations.size(); i++)
     {
-        cout << "Gauss iteration i = " << i << endl;
+        //cout << "Gauss iteration i = " << i << endl;
         // swap next smallest relation to top, according to remaining primes (bigger than currentPrime)
         RelationComparator comparator(currentPrime);
 
