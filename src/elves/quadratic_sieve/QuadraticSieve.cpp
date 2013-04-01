@@ -130,7 +130,7 @@ bool isNonTrivial(const pair<BigInt,BigInt>& factors, const BigInt& number)
     return p>1 && p<number && q>1 && q<number;
 }
 
-static pair<BigInt,BigInt> pickRandomCongruence(const FactorBase& factorBase, const BigInt& number, int randomValue, const Relations& relations)
+static pair<BigInt,BigInt> pickRandomCongruence(const FactorBase& factorBase, const BigInt& number, function<int()> randomGenerator, const Relations& relations)
 {
     vector<bool> primeMask(factorBase.back()+1);
 
@@ -139,7 +139,7 @@ static pair<BigInt,BigInt> pickRandomCongruence(const FactorBase& factorBase, co
     {
         const Relation& relation = *relIter;
 
-        if((relation.dependsOnPrime == 0 &&  randomValue == 1) || (relation.dependsOnPrime > 0 && primeMask[relation.dependsOnPrime]))
+        if((relation.dependsOnPrime == 0 && randomGenerator() == 1) || (relation.dependsOnPrime > 0 && primeMask[relation.dependsOnPrime]))
         {
             selectedRelations.push_back(relation);
             for(uint32_t p : relation.oddPrimePowers.indices)
@@ -165,12 +165,13 @@ static pair<BigInt,BigInt> pickRandomCongruence(const FactorBase& factorBase, co
 
 pair<BigInt,BigInt> searchForRandomCongruence(const FactorBase& factorBase, const BigInt& number, size_t times, const Relations& relations)
 {
-    uniform_int_distribution<int> binaryDistribution;
+    uniform_int_distribution<int> binaryDistribution(0, 1);
     mt19937 randomEngine;
+    auto randomGenerator = bind(binaryDistribution, randomEngine);
 
     for(size_t i=0; i<times; i++)
     {
-        pair<BigInt, BigInt> result = pickRandomCongruence(factorBase, number, binaryDistribution(randomEngine), relations);
+        pair<BigInt, BigInt> result = pickRandomCongruence(factorBase, number, randomGenerator, relations);
         if(isNonTrivial(result, number))
             return result;
     }
