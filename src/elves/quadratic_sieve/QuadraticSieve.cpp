@@ -243,10 +243,10 @@ void performGaussianElimination(Relations& relations)
             {
                 auto start = relations[k].oddPrimePowers.indices.begin();
                 auto last = relations[k].oddPrimePowers.indices.end();
-                if(find(start, last, currentPrime) == last)
+                //if(find(start, last, currentPrime) == last)
+                    //continue;
+                if (!binary_search(start, last, currentPrime))
                     continue;
-                //if (!binary_search(start, last, currentPrime))
-                //    continue;
 
                 auto lowerBoundIt = lower_bound(start, last, primeToRemove);
                 if(lowerBoundIt == last || *lowerBoundIt > primeToRemove)
