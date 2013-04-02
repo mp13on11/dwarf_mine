@@ -210,7 +210,11 @@ __global__ void megaKernel(const Number* number, uint32_t* logs, const uint32_t*
         	{        	   
                     //printf("%u is div by %u\n", q.get_ui(), primePower.get_ui());
                     logs[index] -= primeLog;
-        	} 
+        	}
+        	else
+        	{
+        	    break;
+        	}
         	primePower *= prime;
         	
     	}
