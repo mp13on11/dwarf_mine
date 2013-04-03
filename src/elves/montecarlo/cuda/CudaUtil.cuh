@@ -1,6 +1,8 @@
 #pragma once
 
 const int FIELD_DIMENSION = 8;
+const int FIELD_SIZE = FIELD_DIMENSION * FIELD_DIMENSION;
+
 
 #include "CudaDebug.cuh"
 
@@ -27,12 +29,14 @@ __device__ size_t randomNumber(curandState* deviceStates, size_t maximum, float 
 		random = fakedRandom;
 	}
 	else
-	{
+	{	
 		curandState deviceState = deviceStates[threadGeneratorIndex];
 		random = 1.0f - curand_uniform(&deviceState); // delivers (0, 1] - we need [0, 1)
 		deviceStates[threadGeneratorIndex] = deviceState;
 	}
-	size_t result = size_t(floor(random * maximum));
+	//size_t result = size_t(floor(random * maximum));
+	size_t result = size_t(floorf(__fmul_rn(random, maximum)));
+	cassert(result ==  size_t(floor(random * maximum)), "__fmul_rd works not as expected %lu - %lu\n", result, size_t(floor(random * maximum)));
 	if (maximum == result) // nothing with (0,1] ... sometimes it is rounded to maximum - so we need to reduce manually
 	{
 		--result;
@@ -43,6 +47,18 @@ __device__ size_t randomNumber(curandState* deviceStates, size_t maximum, float 
 
 __device__ size_t numberOfMarkedFields(const bool* field)
 {
+/*
+	__shared__ unsigned int s[FIELD_DIMENSION];
+    int idMod = threadIdx.x % FIELD_DIMENSION;
+    int idDiv = threadIdx.x / FIELD_DIMENSION;
+	if (idMod == 0) s[idDiv] = 0;
+	__syncthreads();
+	if (field[threadIdx.x]) atomicAdd(&s[idDiv], 1u);
+	__syncthreads();
+	if (idMod == 0 && threadIdx.x != 0) atomicAdd(&s[0], s[idDiv]);
+	__syncthreads();
+	return s[0];
+*/
 	__shared__ unsigned int s[8];
 	if (threadIdx.x % 8 == 0) s[threadIdx.x / 8] = 0;
 	__syncthreads();

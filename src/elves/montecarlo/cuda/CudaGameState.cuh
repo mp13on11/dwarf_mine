@@ -1,6 +1,7 @@
 #pragma once
 
 #include "OthelloField.h"
+#include "CudaUtil.cuh"
 
 typedef struct _CudaGameState
 {
@@ -34,6 +35,26 @@ typedef struct _CudaGameState
     __device__ bool isWinner(Player requestedPlayer)
     {
         Player enemyPlayer = getEnemyPlayer(requestedPlayer);
+/*
+        __shared__ unsigned int enemyCounter[FIELD_DIMENSION];
+        __shared__ unsigned int requestedCounter[FIELD_DIMENSION];
+        int idMod = threadIdx.x % FIELD_DIMENSION;
+        int idDiv = threadIdx.x / FIELD_DIMENSION;
+        if (idMod == 0) enemyCounter[idDiv] = requestedCounter[idDiv] = 0;
+
+        __syncthreads();
+
+        if (field[threadIdx.x] == enemyPlayer) atomicAdd(&enemyCounter[idDiv], 1u);
+        if (field[threadIdx.x] == requestedPlayer) atomicAdd(&requestedCounter[idDiv], 1u);
+
+        __syncthreads();
+
+        if (idMod == 0 && threadIdx.x != 0) 
+        {
+            atomicAdd(&enemyCounter[0], enemyCounter[idDiv]);
+            atomicAdd(&requestedCounter[0], requestedCounter[idDiv]);
+        }
+*/
 
         __shared__ unsigned int enemyCounter[8];
         __shared__ unsigned int requestedCounter[8];
@@ -52,7 +73,6 @@ typedef struct _CudaGameState
             atomicAdd(&enemyCounter[0], enemyCounter[threadIdx.x / 8]);
             atomicAdd(&requestedCounter[0], requestedCounter[threadIdx.x / 8]);
         }
-
         __syncthreads();
 
         return requestedCounter[0] > enemyCounter[0];
