@@ -63,7 +63,7 @@ void testMultipleSteps(Playfield& playfield, vector<pair<size_t, Field>> expecte
 
     size_t dimension = 8;
 
-    testSimulateGameLeafProxy(dimension, cudaPlayfield.get(), currentPlayer, cudaWins.get(), cudaVisits.get());
+    testExpandLeafProxy(dimension, cudaPlayfield.get(), currentPlayer, cudaWins.get(), cudaVisits.get());
 
     cudaWins.transferTo(&wins);
     cudaVisits.transferTo(&visits);

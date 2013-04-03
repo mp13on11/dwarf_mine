@@ -1,6 +1,8 @@
 #pragma once
 
 #include "CudaUtil.cuh"
+#include "CudaGameState.cuh"
+#include "CudaDebug.cuh"
 
 class CudaSimulator
 {
@@ -10,11 +12,19 @@ private:
     size_t _playfieldY;
     CudaGameState* _state;
     curandState* _deviceState;
+    size_t _randomSeed;
+    float* _randomValues;
 
 public:
     __device__ CudaSimulator(CudaGameState* state, curandState* deviceState)
         : _playfieldIndex(threadIdx.x), _playfieldX(_playfieldIndex % FIELD_DIMENSION), _playfieldY(_playfieldIndex / FIELD_DIMENSION),
             _state(state), _deviceState(deviceState)
+    {
+    }
+
+    __device__ CudaSimulator(CudaGameState* state, float* randomValues, size_t randomSeed)
+        : _playfieldIndex(threadIdx.x), _playfieldX(_playfieldIndex % FIELD_DIMENSION), _playfieldY(_playfieldIndex / FIELD_DIMENSION),
+            _state(state), _randomSeed(randomSeed), _randomValues(randomValues)
     {
     }
 
@@ -25,6 +35,8 @@ public:
     
     __device__ void calculatePossibleMoves()
     {
+        __syncthreads();
+        
         _state->possible[threadIdx.x] = false;
     
         __syncthreads();
@@ -52,44 +64,27 @@ public:
         Player enemyPlayer = _state->getEnemyPlayer();
         int neighbourX = _playfieldX + directionX;
         int neighbourY = _playfieldY + directionY;
-        while (look)
+        
+        int neighbourIndex = neighbourY * FIELD_DIMENSION + neighbourX;
+        while (_state->inBounds(neighbourX, neighbourY) && _state->field[neighbourIndex] == enemyPlayer)
         {
-            int neighbourIndex = neighbourY * FIELD_DIMENSION + neighbourX;
-            if (_state->inBounds(neighbourX, neighbourY))
-            {
-                if (_state->field[neighbourIndex] == Free)
-                {
-                    look = false;
-                }
-                else if(_state->field[neighbourIndex] == enemyPlayer)
-                {
-                    foundEnemy = true;
-                }
-                else if (_state->field[neighbourIndex] == _state->currentPlayer)
-                {
-                    if (foundEnemy)
-                        _state->possible[_playfieldIndex] = true;
-                    look = false;
-                }
-            }
-            else
-            {
-                look = false;
-            }
+            foundEnemy = true;
+            
             neighbourX += directionX;
             neighbourY += directionY;
+            neighbourIndex = neighbourY * FIELD_DIMENSION + neighbourX;
+        }
+
+        if (_state->inBounds(neighbourX, neighbourY) && _state->field[neighbourIndex] == _state->currentPlayer)
+        {
+            if (foundEnemy)
+                _state->possible[_playfieldIndex] |= foundEnemy;      
         }
     }
 
     __device__ size_t countPossibleMoves()
     {
-        __syncthreads();
-        size_t sum = 0;
-        for (size_t i = 0; i < _state->size; ++i)
-        {
-            sum += _state->possible[i];
-        }
-        return sum;
+        return numberOfMarkedFields(_state->possible);
     }
 
     // this function may deliver different results for the threads, so it should be only called once per block
@@ -159,6 +154,8 @@ public:
 
     __device__ void flipEnemyCounter(size_t moveIndex, size_t limit)
     {
+        __syncthreads();
+
         _state->oldField[_playfieldIndex] = _state->field[_playfieldIndex];
 
         __syncthreads();

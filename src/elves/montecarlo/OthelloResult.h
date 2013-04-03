@@ -1,5 +1,7 @@
 #pragma once
 
+#include <iostream>
+
 struct OthelloResult
 {
     size_t x;
@@ -30,4 +32,9 @@ struct OthelloResult
         return this->successRate() < other.successRate();
     }
 
+    std::ostream& operator<<(std::ostream& stream)
+    {
+        stream << "Move: "<<x<<", "<<y<<" ("<<wins<<"/"<<visits<<")"<<successRate();
+        return stream;
+    }
 };

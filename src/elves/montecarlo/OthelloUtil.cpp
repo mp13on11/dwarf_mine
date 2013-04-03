@@ -57,7 +57,6 @@ namespace OthelloHelper
         }
         if (playfield.size() != 64)
         {
-            std::cout << "SIZE "<<playfield.size() << std::endl;
             throw std::runtime_error("Invalid playfield size");
         }
     }
