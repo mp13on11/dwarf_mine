@@ -1,13 +1,12 @@
 #include "MpiGuard.h"
-#include "Configuration.h"
 
 #include <mpi.h>
 
 int MpiGuard::threadSupport;
 
-MpiGuard::MpiGuard(const Configuration& configuration, int argc, char** argv)
+MpiGuard::MpiGuard(bool multiThreaded, int argc, char** argv)
 {
-    int requiredThreadSupport = configuration.mpiThreadMultiple() ?
+    int requiredThreadSupport = multiThreaded ?
         MPI_THREAD_MULTIPLE :
         MPI_THREAD_SINGLE;
     threadSupport = MPI::Init_thread(argc, argv, requiredThreadSupport);

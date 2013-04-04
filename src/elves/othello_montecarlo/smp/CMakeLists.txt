@@ -21,7 +21,7 @@ FILE(GLOB GCC_SOURCES
 # Build executable out of sources
 SET(LINKING_MODE SHARED)
 
-if(CMAKE_COMPILER_IS_GNUCXX)
+if(CMAKE_COMPILER_IS_GNUCXX OR USE_VAMPIR_TRACE)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -fopenmp -funroll-loops")        ## Optimize
 endif()
 

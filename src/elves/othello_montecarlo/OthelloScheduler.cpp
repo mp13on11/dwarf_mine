@@ -71,45 +71,11 @@ void OthelloScheduler::doSimpleDispatch()
     calculate();
 }
 
-void OthelloScheduler::doDispatch(BenchmarkResult nodeSet)
-{
-    if (communicator.isMaster())
-    {
-        distributeInput(nodeSet);
-        calculate();
-        collectResults(nodeSet);
-    }
-    else
-    {
-        collectInput(nodeSet);
-        calculate();
-        gatherResults(nodeSet);
-    }
-}
-
 void OthelloScheduler::doDispatch()
 {
-   doDispatch(nodeSet);
-}
-
-pair<vector<NodeRating>, Rating> weightRatings(const BenchmarkResult& ratings)
-{
-    vector<NodeRating> positiveRatings;
-    Rating ratingSum = 0;
-    Rating ratingMax = 0;
-    Rating ratingMin = numeric_limits<Rating>::max();
-    for (const auto& rating : ratings)
-    {
-        ratingMax = max(ratingMax, rating.second);
-        ratingMin = min(ratingMin, rating.second);
-    }
-    for (const auto& rating : ratings)
-    {
-        Rating positiveRating = ratingMin / rating.second;
-        ratingSum += positiveRating;
-        positiveRatings.emplace_back(rating.first, positiveRating);
-    }
-    return make_pair<vector<NodeRating>, Rating>(move(positiveRatings), move(ratingSum));
+    distributeInput();
+    calculate();
+    collectResults();
 }
 
 void OthelloScheduler::calculate()
@@ -123,8 +89,8 @@ void OthelloScheduler::calculate()
 void registerResultToMPI(MPI_Datatype& type)
 {
     MPI_Datatype elementTypes[] = { 
-        MPI::INT, 
-        MPI::INT, 
+        MPI::UNSIGNED, 
+        MPI::UNSIGNED, 
         MPI::UNSIGNED, 
         MPI::UNSIGNED 
     };
@@ -136,105 +102,79 @@ void registerResultToMPI(MPI_Datatype& type)
     };
     MPI_Aint elementDisplacements[] = { 
         0,
-        sizeof(size_t),
-        2 * sizeof(size_t),
-        3 * sizeof(size_t)
+        sizeof(unsigned int),
+        2 * sizeof(unsigned int),
+        3 * sizeof(unsigned int)
     };
 
     MPI_Type_create_struct(4, elementLengths, elementDisplacements, elementTypes, &type);
     MPI_Type_commit(&type);
 }
 
-vector<Result> OthelloScheduler::gatherResults(BenchmarkResult nodeSet)
+vector<Result> OthelloScheduler::gatherResults()
 {
-    size_t numberOfNodes = nodeSet.size();
+    size_t numberOfNodes = communicator.nodeSet().size();
     size_t numberOfPossibleMoves = _state.getPossibleMoves().size();
     vector<Result> results(numberOfNodes * numberOfPossibleMoves);
 
     MPI_Datatype MPI_Result;
     registerResultToMPI(MPI_Result);
-    
-    if (communicator.isMaster())
-    {
-        int i = 0;
-        for (const auto& node : nodeSet)
-        {
-            if (node.first == Communicator::MASTER_RANK)
-            {
-                results.insert(results.begin(), _results.begin(), _results.end());
-            }
-            else
-            {                
-                communicator->Recv(results.data() + i * numberOfPossibleMoves , numberOfPossibleMoves, MPI_Result, node.first, 0);
-            }
-            i++;
-        }
-    }
-    else
-    {
-        communicator->Send(_results.data(), numberOfPossibleMoves, MPI_Result, Communicator::MASTER_RANK, 0);
-    }
+
+    communicator->Gather(
+        _results.data(), _results.size(), MPI_Result,
+        results.data(), numberOfPossibleMoves, MPI_OthelloResult,
+        Communicator::MASTER_RANK
+    );
     return results;
 }
 
-void OthelloScheduler::collectInput(BenchmarkResult /*nodeSet*/)
+void OthelloScheduler::distributeInput()
 {
-    unsigned long parameters[] = {0, 0, 0};
-    communicator->Recv(parameters, 3, MPI::UNSIGNED_LONG, Communicator::MASTER_RANK, 0);
-
-    size_t bufferSize = (size_t) parameters[0];
-    _commonSeed =       (size_t) parameters[1];
-    _localRepetitions = (size_t) parameters[2];
-
-    Playfield playfield(bufferSize);
-
-    auto MPI_FIELD = MPI::INT;
-    communicator->Recv(playfield.data(), bufferSize, MPI_FIELD, Communicator::MASTER_RANK, 0);
-
-    _state = State(playfield, Player::White);
+    size_t bufferSize = distributeCommonParameters();
+    distributePlayfield(bufferSize);
 }
 
-void OthelloScheduler::distributeInput(BenchmarkResult nodeSet)
+size_t MonteCarloScheduler::distributeCommonParameters()
 {
     size_t bufferSize = _state.playfieldSideLength() * _state.playfieldSideLength();
-    vector<NodeRating> ratings;
-    Rating ratingSum;
-    tie(ratings, ratingSum) = weightRatings(nodeSet);
+    unsigned long commonParameters[] = {bufferSize, _commonSeed, _repetitions};
 
-    auto MPI_FIELD = MPI::INT;
-    const NodeRating* masterRating = nullptr;
-    for (const auto& rating : ratings)
+    communicator->Bcast(commonParameters, 3, MPI::UNSIGNED_LONG, Communicator::MASTER_RANK);
+
+    bufferSize = commonParameters[0];
+    _commonSeed = commonParameters[1];
+    _repetitions = commonParameters[2];
+    _localRepetitions = _repetitions * communicator.weight();
+
+    return bufferSize;
+}
+
+void OthelloScheduler::distributeInput(size_t bufferSize)
+{
+    Playfield playfield;
+
+    if (communicator.isMaster())
     {
-        if (rating.first != Communicator::MASTER_RANK)
-        {
-            unsigned long parameters[] = { 
-                bufferSize, 
-                _commonSeed, 
-                (size_t)round(_repetitions * rating.second / ratingSum) 
-            };
-            communicator->Send(parameters, 3, MPI::UNSIGNED_LONG, rating.first, 0);
-            communicator->Send(_state.playfieldBuffer(), bufferSize, MPI_FIELD, rating.first, 0);
-        }
-        else
-        {
-            masterRating = &rating;
-        }
-    }
-    if (masterRating != nullptr)
-    {
-        _localRepetitions = (size_t)(_repetitions * masterRating->second / ratingSum);
+        playfield = Playfield(
+                _state.playfieldBuffer(), _state.playfieldBuffer() + bufferSize
+            );
     }
     else
     {
-        _localRepetitions = 0;
+        playfield = Playfield(bufferSize);
     }
+
+    auto MPI_FIELD = MPI::INT;
+    communicator->Bcast(playfield.data(), bufferSize, MPI_FIELD, Communicator::MASTER_RANK);
+
+    _state = OthelloState(playfield, Player::White);
 }
 
 
 
-void OthelloScheduler::collectResults(BenchmarkResult nodeSet)
+void OthelloScheduler::collectResults()
 {
-    auto results = gatherResults(nodeSet);
+    vector<Result> results = gatherResults();
 
     vector<Result> accumulatedResults;
     Result* bestMove = nullptr;
@@ -267,10 +207,3 @@ void OthelloScheduler::collectResults(BenchmarkResult nodeSet)
     _results = accumulatedResults;
     _result = *bestMove;
 }
-
-void OthelloScheduler::doBenchmarkDispatch(int node )
-{
-    BenchmarkResult benchmarkNodeset;
-    benchmarkNodeset[node] = 1;
-    doDispatch(benchmarkNodeset);
-}    

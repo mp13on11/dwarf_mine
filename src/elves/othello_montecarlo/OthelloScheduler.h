@@ -37,8 +37,9 @@ private:
     void orchestrateCalculation();
     void calculateOnSlave();
     void calculate();
-    void distributeInput(BenchmarkResult nodeSet);
-    void collectInput(BenchmarkResult nodeSet);
-    void collectResults(BenchmarkResult nodeSet);
-    std::vector<Result> gatherResults(BenchmarkResult nodeSet);
+    void distributeInput();
+    size_t distributeCommonParameters();
+    void distributePlayfield(size_t size);
+    void collectResults();
+    std::vector<OthelloResult> gatherResults();
 };

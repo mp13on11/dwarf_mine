@@ -27,7 +27,6 @@ private:
     );
     virtual void doDispatch();
     virtual void doSimpleDispatch();
-    virtual void doBenchmarkDispatch(int node);
     virtual bool hasData() const;
 
     BigInt number;

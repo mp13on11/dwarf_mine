@@ -4,10 +4,10 @@
 
 struct Result
 {
-    size_t x;
-    size_t y;
-    size_t visits;
-    size_t wins;
+    unsigned int x;
+    unsigned int y;
+    unsigned int visits;
+    unsigned int wins;
 
     Result(size_t _x = 0, size_t _y = 0, size_t _visits = 0, size_t _wins = 0)
     {

@@ -2,17 +2,15 @@
 #include "common/Communicator.h"
 #include "common/Configuration.h"
 #include "common/MpiGuard.h"
+#include "common/NodeWeightProfiler.h"
 #include "common/TimingProfiler.h"
 
-#include <chrono>
 #include <fstream>
 #include <iostream>
 #include <stdexcept>
 #include <string>
-#include <vector>
 
 using namespace std;
-using namespace std::chrono;
 
 void exportWeightedCommunicator(const string& filename, const Communicator& communicator)
 {
@@ -67,36 +65,35 @@ void silenceOutputStreams(bool keepErrorStreams = false)
     }
 }
 
-vector<double> nodeWeightsFrom(const vector<microseconds>& averageExecutionTimes)
+Communicator createSubCommunicatorFor(const Communicator& communicator, int rank)
 {
-    microseconds sum(0);
-    for (microseconds time : averageExecutionTimes)
+    if (rank == Communicator::MASTER_RANK)
     {
-        sum += time;
+        return communicator.createSubCommunicator({
+                Communicator::Node(rank, 1.0)
+            });
     }
-
-    vector<double> weights;
-    for (microseconds time : averageExecutionTimes)
+    else
     {
-        weights.push_back(static_cast<double>(time.count()) / static_cast<double>(sum.count()));
+        return communicator.createSubCommunicator({
+                Communicator::Node(Communicator::MASTER_RANK, 0.0),
+                Communicator::Node(rank, 1.0)
+            });
     }
-    return weights;
 }
 
 Communicator determineWeightedCommunicator(const BenchmarkRunner& runner, const Communicator& unweightedCommunicator)
 {
-    TimingProfiler profiler;
-    vector<microseconds> averageTimes;
-    
+    NodeWeightProfiler profiler;
+
     for (size_t i=0; i<unweightedCommunicator.size(); ++i)
     {
-        Communicator subCommunicator = unweightedCommunicator.createSubCommunicator(
-                {Communicator::MASTER_RANK*1, static_cast<int>(i)}
-            );
-        runner.benchmarkNode(subCommunicator, profiler);
-        averageTimes.push_back(profiler.averageIterationTime());
+        Communicator subCommunicator = createSubCommunicatorFor(unweightedCommunicator, i);
+        runner.runPreBenchmark(subCommunicator, profiler);
+        profiler.saveExecutionTime();
     }
-    return Communicator(nodeWeightsFrom(averageTimes));
+
+    return Communicator(profiler.nodeWeights());
 }
 
 void printResults(const Communicator& communicator, const TimingProfiler& profiler, ostream& timeFile)
@@ -139,12 +136,9 @@ void benchmarkWith(const Configuration& config)
             throw runtime_error("Failed to open file \"" + config.timeOutputFilename() + "\"");
     }
 
-    if(config.shouldRunWithoutMPI())
+    if(communicator.size() == 1)
     {
-        if (communicator.size() > 1)
-            throw runtime_error("Process was told to run without MPI support, but was called via mpirun");
-
-        runner.runElf(communicator, profiler);
+        runner.runBenchmark(communicator, profiler);
         printResults(communicator, profiler, timeFile);
     }
     else
@@ -175,12 +169,12 @@ void benchmarkWith(const Configuration& config)
 
 int main(int argc, char** argv)
 {
-    // used to ensure MPI::Finalize is called on exit of the application
-    Configuration configuration(argc, argv);
-    MpiGuard guard(configuration, argc, argv);
-
     try
     {
+        // used to ensure MPI::Finalize is called on exit of the application
+        Configuration configuration(argc, argv);
+        MpiGuard guard(configuration.mpiThreadMultiple(), argc, argv);
+
         benchmarkWith(configuration);
     }
     catch (const boost::program_options::error& e)
