@@ -66,24 +66,20 @@ public:
         int neighbourX = _playfieldX + directionX;
         int neighbourY = _playfieldY + directionY;
         
-        int neighbourIndex = roundf(__fmaf_rn(neighbourY, FIELD_DIMENSION, neighbourX));
-        //int neighbourIndex = __fmaf_rn(__int2float_rn(neighbourY), __int2float_rn(FIELD_DIMENSION), __int2float_rn(neighbourX));
-        cassert(neighbourIndex == neighbourY * FIELD_DIMENSION + neighbourX, "__fmaf_rn does not work as expected %lu != %lu\n", neighbourIndex, neighbourY * FIELD_DIMENSION + neighbourX);
+        int neighbourIndex = neighbourY * FIELD_DIMENSION + neighbourX;
         while (_state->inBounds(neighbourX, neighbourY) && _state->field[neighbourIndex] == enemyPlayer)
         {
             foundEnemy = true;
             
             neighbourX += directionX;
             neighbourY += directionY;
-            //neighbourIndex = neighbourY * FIELD_DIMENSION + neighbourX;
-            neighbourIndex = roundf(__fmaf_rn(neighbourY, FIELD_DIMENSION, neighbourX));
-            cassert(neighbourIndex == neighbourY * FIELD_DIMENSION + neighbourX, "__fmaf_rn does not work as expected %lu != %lu\n", neighbourIndex, neighbourY * FIELD_DIMENSION + neighbourX);
+            neighbourIndex = neighbourY * FIELD_DIMENSION + neighbourX;
         }
 
         if (_state->inBounds(neighbourX, neighbourY) && _state->field[neighbourIndex] == _state->currentPlayer)
         {
             if (foundEnemy)
-                _state->possible[_playfieldIndex] |= foundEnemy;      
+                _state->possible[_playfieldIndex] |= foundEnemy;
         }
     }
 
@@ -129,14 +125,9 @@ public:
     __device__ bool canFlipInDirection(size_t moveIndex, int directionX, int directionY)
     {
         Player enemyPlayer = _state->getEnemyPlayer();
-#ifdef OTHELLO_DEBUG
-        for (int oldIndex = -1, currentIndex = _playfieldIndex, debugIndex = _playfieldIndex; _state->inBounds(currentIndex); oldIndex = currentIndex, currentIndex += __float2int_rn(__fmaf_rn(directionY, FIELD_DIMENSION, directionX)), debugIndex += (directionY * FIELD_DIMENSION + directionX))
+
+        for (int currentIndex = _playfieldIndex; _state->inBounds(currentIndex); currentIndex += (directionY * FIELD_DIMENSION + directionX))
         {
-            cassert(currentIndex == debugIndex, "__fmaf_rn works not as expected %d = %d = %f = %d - old %d\n",currentIndex,debugIndex, __fmaf_rn(directionY, FIELD_DIMENSION, directionX), (directionY * FIELD_DIMENSION + directionX), oldIndex);
-#else
-        for (int currentIndex = _playfieldIndex; _state->inBounds(currentIndex); currentIndex += __float2int_rn(__fmaf_rn(directionY, FIELD_DIMENSION, directionX)))
-        {
-#endif
             if(_state->field[currentIndex] != enemyPlayer)
             {
                 return (_state->field[currentIndex] == _state->currentPlayer && currentIndex != _playfieldIndex);
@@ -149,14 +140,8 @@ public:
     {
         Player enemyPlayer = _state->getEnemyPlayer();
 
-#ifdef OTHELLO_DEBUG
-        for (int oldIndex = -1, currentIndex = _playfieldIndex, debugIndex = _playfieldIndex; _state->inBounds(currentIndex); oldIndex = currentIndex, currentIndex += __float2int_rn(__fmaf_rn(directionY, FIELD_DIMENSION, directionX)), debugIndex += (directionY * FIELD_DIMENSION + directionX))
+        for (int currentIndex = _playfieldIndex; _state->inBounds(currentIndex); currentIndex += (directionY * FIELD_DIMENSION + directionX))
         {
-            cassert(currentIndex == debugIndex, "__fmaf_rn works not as expected %d = %d = %f = %d - old %d\n",currentIndex,debugIndex, __fmaf_rn(directionY, FIELD_DIMENSION, directionX), (directionY * FIELD_DIMENSION + directionX), oldIndex);
-#else
-        for (int currentIndex = _playfieldIndex; _state->inBounds(currentIndex); currentIndex += __float2int_rn(__fmaf_rn(directionY, FIELD_DIMENSION, directionX)))
-        {
-#endif
             if(_state->oldField[currentIndex] == enemyPlayer)
             {
                 _state->field[currentIndex] = _state->currentPlayer;

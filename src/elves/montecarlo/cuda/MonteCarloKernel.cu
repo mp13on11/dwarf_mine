@@ -87,9 +87,7 @@ __device__ void expandLeaf(curandState* deviceState, CudaSimulator& simulator, C
 __global__ void simulateGame(size_t numberOfBlocks, size_t reiterations, curandState* deviceStates, size_t numberOfPlayfields, const Field* playfields, Player currentPlayer, OthelloResult* results)
 {
     int playfieldIndex = threadIdx.x;
-    //size_t blockIterations = size_t(ceil(reiterations * 1.0 / numberOfBlocks));
-    size_t blockIterations = size_t(ceilf(__fdiv_ru(reiterations, numberOfBlocks)));
-	cassert(blockIterations == size_t(ceil(reiterations * 1.0 / numberOfBlocks)), "__fdiv_ru works not as expected %lu - %lu\n", blockIterations, size_t(ceil(reiterations * 1.0 / numberOfBlocks)));
+    size_t blockIterations = size_t(ceil(reiterations * 1.0 / numberOfBlocks));
 
     for (size_t i = 0; i < blockIterations; ++i)
     {
@@ -112,7 +110,6 @@ __global__ void simulateGame(size_t numberOfBlocks, size_t reiterations, curandS
         };
 
         CudaSimulator simulator(&state, deviceStates);
-        if (threadIdx.x == 0)
 
         expandLeaf(deviceStates, simulator, state);
 

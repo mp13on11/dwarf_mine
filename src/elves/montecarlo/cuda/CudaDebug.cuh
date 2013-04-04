@@ -9,6 +9,7 @@
     const int MAXIMAL_MOVE_COUNT = 128; // an impossible condition - it would mean that for every field both players had to pass
 
     #define cassert(CONDITION, MESSAGE, ...) \
+        if (threadIdx.x == 0 && blockIdx.x == 0) printf("== Assert enabled ==\n"); \
         if (!(CONDITION)) \
         {   \
             printf(MESSAGE, __VA_ARGS__); \
