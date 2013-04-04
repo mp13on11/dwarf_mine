@@ -60,8 +60,8 @@ bool OthelloScheduler::hasData() const
 
 void OthelloScheduler::outputData(std::ostream& output)
 {
-    cout<< "Move: ("<<_result.x<<", "<<_result.y<<")\n"
-        << "Wins: "<<_result.wins<<"/"<<_result.visits<<" = " <<_result.successRate()<<endl;
+    // cout<< "Move: ("<<_result.x<<", "<<_result.y<<")\n"
+    //     << "Wins: "<<_result.wins<<"/"<<_result.visits<<" = " <<_result.successRate()<<endl;
     OthelloHelper::writeResultToStream(output, _result);
 }
 
@@ -117,7 +117,7 @@ void OthelloScheduler::calculate()
     if (_localRepetitions == 0)
         return;
 
-    _result = elf().getBestMoveFor(_state, _localRepetitions, communicator.rank(), _commonSeed);
+    _results = elf().getMovesFor(_state, _localRepetitions, communicator.rank(), _commonSeed);
 }
 
 void registerResultToMPI(MPI_Datatype& type)
@@ -148,7 +148,8 @@ void registerResultToMPI(MPI_Datatype& type)
 vector<Result> OthelloScheduler::gatherResults(BenchmarkResult nodeSet)
 {
     size_t numberOfNodes = nodeSet.size();
-    vector<Result> results(numberOfNodes);
+    size_t numberOfPossibleMoves = _state.getPossibleMoves().size();
+    vector<Result> results(numberOfNodes * numberOfPossibleMoves);
 
     MPI_Datatype MPI_Result;
     registerResultToMPI(MPI_Result);
@@ -160,18 +161,18 @@ vector<Result> OthelloScheduler::gatherResults(BenchmarkResult nodeSet)
         {
             if (node.first == Communicator::MASTER_RANK)
             {
-                results[0] = _result;
+                results.insert(results.begin(), _results.begin(), _results.end());
             }
             else
             {                
-                communicator->Recv(results.data() + i , 1, MPI_Result, node.first, 0);
+                communicator->Recv(results.data() + i * numberOfPossibleMoves , numberOfPossibleMoves, MPI_Result, node.first, 0);
             }
             i++;
         }
     }
     else
     {
-        communicator->Send(&_result, 1, MPI_Result, Communicator::MASTER_RANK, 0);
+        communicator->Send(_results.data(), numberOfPossibleMoves, MPI_Result, Communicator::MASTER_RANK, 0);
     }
     return results;
 }
@@ -233,7 +234,7 @@ void OthelloScheduler::distributeInput(BenchmarkResult nodeSet)
 
 void OthelloScheduler::collectResults(BenchmarkResult nodeSet)
 {
-    vector<Result> results = gatherResults(nodeSet);
+    auto results = gatherResults(nodeSet);
 
     vector<Result> accumulatedResults;
     Result* bestMove = nullptr;
@@ -263,6 +264,7 @@ void OthelloScheduler::collectResults(BenchmarkResult nodeSet)
             bestMove = existingMove;
         }
     }
+    _results = accumulatedResults;
     _result = *bestMove;
 }
 

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Field.h"
+#include "Random.cuh"
 
 typedef struct _State
 {
@@ -57,27 +58,26 @@ typedef struct _State
     __device__ bool isWinner(Player requestedPlayer)
     {
         Player enemyPlayer = getEnemyPlayer(requestedPlayer);
+        __shared__ unsigned int enemyCounter[FIELD_DIMENSION];
+        __shared__ unsigned int requestedCounter[FIELD_DIMENSION];
 
-        __shared__ unsigned int enemyCounter[8];
-        __shared__ unsigned int requestedCounter[8];
-
-        if (threadIdx.x % 8 == 0) enemyCounter[threadIdx.x / 8] = requestedCounter[threadIdx.x / 8] = 0;
+        if (threadIdx.x % FIELD_DIMENSION == 0) enemyCounter[threadIdx.x / FIELD_DIMENSION] = requestedCounter[threadIdx.x / 8] = 0;
 
         __syncthreads();
 
-        if (field[threadIdx.x] == enemyPlayer) atomicAdd(&enemyCounter[threadIdx.x / 8], 1u);
+        if (field[threadIdx.x] == enemyPlayer) atomicAdd(&enemyCounter[threadIdx.x / FIELD_DIMENSION], 1u);
         if (field[threadIdx.x] == requestedPlayer) atomicAdd(&requestedCounter[threadIdx.x / 8], 1u);
 
         __syncthreads();
 
-        if (threadIdx.x % 8 == 0 && threadIdx.x != 0) 
+        if (threadIdx.x % FIELD_DIMENSION == 0 && threadIdx.x != 0) 
         {
-            atomicAdd(&enemyCounter[0], enemyCounter[threadIdx.x / 8]);
-            atomicAdd(&requestedCounter[0], requestedCounter[threadIdx.x / 8]);
+            atomicAdd(&enemyCounter[0], enemyCounter[threadIdx.x / FIELD_DIMENSION]);
+            atomicAdd(&requestedCounter[0], requestedCounter[threadIdx.x / FIELD_DIMENSION]);
         }
 
         __syncthreads();
-
+    
         return requestedCounter[0] > enemyCounter[0];
     }
 
@@ -91,4 +91,4 @@ typedef struct _State
         }
         return same;
     }
-} State;
+} CudaGameState;

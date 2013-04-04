@@ -1,9 +1,10 @@
 #pragma once
 
-const int FIELD_DIMENSION = 8;
+#define FIELD_DIMENSION 8
+#define FIELD_SIZE FIELD_DIMENSION * FIELD_DIMENSION
+
 
 #include "Debug.cuh"
-#include <cstdio>
 
 __device__ size_t randomNumber(float* randomValues, size_t* randomSeed, size_t limit, float fakedRandom = -1)
 {
@@ -15,13 +16,13 @@ __device__ size_t randomNumber(float* randomValues, size_t* randomSeed, size_t l
 	else
 	{
 		random = randomValues[*randomSeed];
-		++(*randomSeed);
 	}
 	size_t value = size_t(floor(random * limit));
 	if (value == limit)
 	{
 		--value;
 	}	
+	++(*randomSeed);
 	return value;
 }
 
@@ -37,7 +38,7 @@ __device__ size_t randomNumber(curandState* deviceStates, size_t maximum, float 
 		random = fakedRandom;
 	}
 	else
-	{
+	{	
 		curandState deviceState = deviceStates[threadGeneratorIndex];
 		random = 1.0f - curand_uniform(&deviceState); // delivers (0, 1] - we need [0, 1)
 		deviceStates[threadGeneratorIndex] = deviceState;
@@ -50,3 +51,16 @@ __device__ size_t randomNumber(curandState* deviceStates, size_t maximum, float 
 	cassert(result < maximum, "Random %f - Maximum %lu = %f = %lu\n", random, maximum, random * maximum, result);
     return result;
 } 
+
+__device__ size_t numberOfMarkedFields(const bool* field)
+{
+	__shared__ unsigned int s[FIELD_DIMENSION];
+	if (threadIdx.x % FIELD_DIMENSION == 0) s[threadIdx.x / FIELD_DIMENSION] = 0;
+	__syncthreads();
+	if (field[threadIdx.x]) atomicAdd(&s[threadIdx.x / FIELD_DIMENSION], 1u);
+	__syncthreads();
+	if (threadIdx.x % FIELD_DIMENSION == 0 && threadIdx.x != 0) atomicAdd(&s[0], s[threadIdx.x / FIELD_DIMENSION]);
+	__syncthreads();
+	
+	return s[0];
+}

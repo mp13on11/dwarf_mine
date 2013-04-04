@@ -13,17 +13,17 @@ Scheduler::~Scheduler()
 
 void Scheduler::provideData(const ProblemStatement& problem)
 {
-	if (problem.hasInput())
-	{
-		provideData(problem.getInput());
-	}
-	else
-	{
-		generateData(problem.getDataGenerationParameters());
-	}
+    if (problem.hasInput())
+    {
+        provideData(problem.getInput());
+    }
+    else
+    {
+        generateData(problem.getDataGenerationParameters());
+    }
 }
 
 void Scheduler::outputData(const ProblemStatement& problem)
 {
-	outputData(problem.getOutput());
+    outputData(problem.getOutput());
 }

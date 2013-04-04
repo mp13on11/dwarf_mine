@@ -26,6 +26,7 @@ protected:
     virtual void doBenchmarkDispatch(int node);
 
     State _state;
+    std::vector<Result> _results;
     Result _result;
     size_t _repetitions;
     size_t _localRepetitions;
