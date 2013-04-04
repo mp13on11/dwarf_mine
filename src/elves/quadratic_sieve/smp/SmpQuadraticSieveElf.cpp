@@ -69,16 +69,11 @@ vector<BigInt> smpSieveKernel(const BigInt& start, const BigInt& end, const BigI
 
 vector<BigInt> SmpQuadraticSieveElf::sieveSmoothSquares(const BigInt& start, const BigInt& end, const BigInt& number, const FactorBase& factorBase)
 {
-    //const int NUM_THREADS = omp_get_num_threads();
-    int NUM_THREADS = 1;
+    const int NUM_THREADS = omp_get_max_threads();
 
-    #pragma omp parallel
-    NUM_THREADS = omp_get_num_threads();
-    
     SmoothSquareList smooths;
     vector<future<SmoothSquareList>> partialResults;
     BigInt totalLength = end - start;
-    //BigInt chunkSize = //totalLength / NUM_THREADS;
     BigInt chunkSize = div_ceil(totalLength, BigInt(NUM_THREADS));
 
     for (int i=0; i<NUM_THREADS; ++i)
