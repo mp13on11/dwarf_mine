@@ -93,15 +93,12 @@ __global__ void simulateGame(size_t numberOfBlocks, size_t reiterations, curandS
 
     for (size_t i = 0; i < blockIterations; ++i)
     {
-        if (threadIdx.x == 0)
-            printf("%d INTIAL %lu / %lu\n", blockIdx.x ,i, blockIterations);
         size_t node = randomNumber(deviceStates, numberOfPlayfields);
 
         __shared__ Field sharedPlayfield[FIELD_SIZE];
         __shared__ Field oldPlayfield[FIELD_SIZE];
         __shared__ bool possibleMoves[FIELD_SIZE];
-        if (threadIdx.x == 0)
-            printf("%d PLAYFIELDS %lu / %lu\n", blockIdx.x ,i, blockIterations);
+
         size_t playfieldOffset = FIELD_SIZE * node;
         sharedPlayfield[playfieldIndex] = playfields[playfieldOffset + playfieldIndex];
 
@@ -116,12 +113,9 @@ __global__ void simulateGame(size_t numberOfBlocks, size_t reiterations, curandS
 
         CudaSimulator simulator(&state, deviceStates);
         if (threadIdx.x == 0)
-            printf("%d HELPER  %lu / %lu\n", blockIdx.x ,i, blockIterations);
-        __syncthreads();
 
         expandLeaf(deviceStates, simulator, state);
-        if (threadIdx.x == 0)
-            printf("%d EXPAND %lu / %lu\n", blockIdx.x ,i, blockIterations);
+
         __syncthreads();
         if (state.isWinner(currentPlayer))
         {
@@ -132,8 +126,6 @@ __global__ void simulateGame(size_t numberOfBlocks, size_t reiterations, curandS
         {
             results[node].visits ++;
         }
-        if (threadIdx.x == 0)
-            printf("%d FINISHED %lu / %lu\n", blockIdx.x ,i, blockIterations);
     }
 }
 
