@@ -23,7 +23,6 @@ protected:
     virtual bool hasData() const;
     virtual void doDispatch();
     virtual void doSimpleDispatch();
-    virtual void doBenchmarkDispatch(int node);
 
     OthelloState _state;
     std::vector<OthelloResult> _results;
@@ -33,12 +32,12 @@ protected:
     size_t _commonSeed;
 
 private:
-    void doDispatch(BenchmarkResult nodeSet);
     void orchestrateCalculation();
     void calculateOnSlave();
     void calculate();
-    void distributeInput(BenchmarkResult nodeSet);
-    void collectInput(BenchmarkResult nodeSet);
-    void collectResults(BenchmarkResult nodeSet);
-    std::vector<OthelloResult> gatherResults(BenchmarkResult nodeSet);
+    void distributeInput();
+    size_t distributeCommonParameters();
+    void distributePlayfield(size_t size);
+    void collectResults();
+    std::vector<OthelloResult> gatherResults();
 };

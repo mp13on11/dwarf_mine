@@ -34,6 +34,9 @@ MatrixOnlineScheduler::MatrixOnlineScheduler(const Communicator& communicator, c
 
 MatrixOnlineScheduler::~MatrixOnlineScheduler()
 {
+    #pragma omp parallel for
+    for (size_t i = 0; i < scheduleHandlers.size(); ++i)
+        scheduleHandlers[i].wait();
 }
 
 void MatrixOnlineScheduler::configureWith(const Configuration& config)
@@ -66,7 +69,9 @@ void MatrixOnlineScheduler::sliceInput()
 {
     MatrixSlicerOnline slicer;
     result = Matrix<float>(left.rows(), right.columns());
-    sliceDefinitions = schedulingStrategy->getSliceDefinitions(result, nodeSet);
+    sliceDefinitions = schedulingStrategy->getSliceDefinitions(
+            result, communicator.nodeSet()
+        );
     currentSliceDefinition = sliceDefinitions.begin();
 }
 
