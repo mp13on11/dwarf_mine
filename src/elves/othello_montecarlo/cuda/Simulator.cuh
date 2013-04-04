@@ -4,68 +4,28 @@
 #include "State.cuh"
 #include "Debug.cuh"
 
-class Simulator
+class CudaSimulator
 {
 private:
     size_t _playfieldIndex;
     size_t _playfieldX;
     size_t _playfieldY;
-    State* _state;
+    CudaGameState* _state;
     curandState* _deviceState;
-	size_t _randomSeed;
-	float* _randomValues;
-    size_t _stepCounter;
+    size_t _randomSeed;
+    float* _randomValues;
 
 public:
-    __device__ Simulator(State* state, curandState* deviceState)
+    __device__ CudaSimulator(CudaGameState* state, curandState* deviceState)
         : _playfieldIndex(threadIdx.x), _playfieldX(_playfieldIndex % FIELD_DIMENSION), _playfieldY(_playfieldIndex / FIELD_DIMENSION),
-            _state(state), _deviceState(deviceState), _stepCounter(0)
+            _state(state), _deviceState(deviceState)
     {
     }
 
-    __device__ Simulator(State* state, float* randomValues, size_t randomSeed)
+    __device__ CudaSimulator(CudaGameState* state, float* randomValues, size_t randomSeed)
         : _playfieldIndex(threadIdx.x), _playfieldX(_playfieldIndex % FIELD_DIMENSION), _playfieldY(_playfieldIndex / FIELD_DIMENSION),
-            _state(state), _randomSeed(randomSeed), _randomValues(randomValues), _stepCounter(0)
+            _state(state), _randomSeed(randomSeed), _randomValues(randomValues)
     {
-    }
-
-    __device__ void expandLeaf()
-    {
-        size_t passCounter = 0;
-
-        __syncthreads();
-        
-        while (passCounter < 2)
-        {
-            bool passedMove = !doStep();
-            passCounter = (passedMove ? passCounter + 1 : 0);
-
-            cassert (_stepCounter < MAXIMAL_MOVE_COUNT, "Detected rounds overflowing maximal count %d in %d\n", MAXIMAL_MOVE_COUNT, threadIdx.x); 
-            ++_stepCounter;
-        }
-        __syncthreads();
-    }
-
-    __device__ bool doStep(float fakedRandom = -1)
-    {
-        cassert(state.size == FIELD_DIMENSION * FIELD_DIMENSION, "Block %d, Thread %d detected invalid field size of %li\n", blockIdx.x, threadIdx.x, state.size);
-        
-        calculatePossibleMoves();
-        
-        size_t moveCount = countPossibleMoves();
-        
-        if (moveCount > 0)
-        {
-            size_t index = getRandomMoveIndex(moveCount, fakedRandom);
-            cassert(index < state.size, "Block %d, Thread %d: Round %d detected unexpected move index %d for maximal playfield size %lu\n", blockIdx.x, _stepCounter, index, state.size);
-
-            flipEnemyCounter(index);
-
-            cassert(!_state.isUnchanged(), "Block %d: %lu detected unchanged state\n", blockIdx.x, _stepCounter);
-        }
-
-        _state->switchPlayer();
-        return moveCount > 0;
     }
 
     __device__ bool isMaster()
@@ -77,7 +37,7 @@ public:
     {
         __syncthreads();
         
-        _state->possible[_playfieldIndex] = false;
+        _state->possible[threadIdx.x] = false;
     
         __syncthreads();
 
@@ -117,13 +77,13 @@ public:
         if (_state->inBounds(neighbourX, neighbourY) && _state->field[neighbourIndex] == _state->currentPlayer)
         {
             if (foundEnemy)
-                _state->possible[_playfieldIndex] |= foundEnemy;      
+                _state->possible[_playfieldIndex] |= foundEnemy;
         }
     }
 
     __device__ size_t countPossibleMoves()
     {
-        return _state->numberOfMarkedFields();
+        return numberOfMarkedFields(_state->possible);
     }
 
     // this function may deliver different results for the threads, so it should be only called once per block
@@ -175,7 +135,7 @@ public:
         return false;
     }
 
-    __device__ void flipInDirection(size_t moveIndex, int directionX, int directionY)
+    __device__ void flipInDirection(size_t moveIndex, int directionX, int directionY, size_t limit)
     {
         Player enemyPlayer = _state->getEnemyPlayer();
 
@@ -192,7 +152,7 @@ public:
         }
     }
 
-    __device__ void flipEnemyCounter(size_t moveIndex)
+    __device__ void flipEnemyCounter(size_t moveIndex, size_t limit)
     {
         __syncthreads();
 
@@ -213,7 +173,7 @@ public:
 
         if (flip)
         {
-            flipInDirection(moveIndex, directionX, directionY);
+            flipInDirection(moveIndex, directionX, directionY, limit);
         }
 
         __syncthreads();

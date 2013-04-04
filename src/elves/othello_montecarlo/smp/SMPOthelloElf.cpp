@@ -44,7 +44,7 @@ void rollout(State& state, RandomGenerator generator)
     }
 }
 
-Result SMPOthelloElf::getBestMoveFor(State& rootState, size_t reiterations, size_t nodeId, size_t commonSeed)
+vector<Result> SMPOthelloElf::getMovesFor(State& rootState, size_t reiterations, size_t nodeId, size_t commonSeed)
 {
     vector<Result> childResults;
     vector<State> childStates;
@@ -75,11 +75,11 @@ Result SMPOthelloElf::getBestMoveFor(State& rootState, size_t reiterations, size
             #pragma omp critical(selectedIndex)
             {
                 childResults[selectedIndex].visits++;
-                if (selectedState.hasWon(selectedState.getCurrentEnemy()))
+                if (selectedState.hasWon(rootState.getCurrentPlayer()))
                     childResults[selectedIndex].wins++;
             }
         }
     }
 
-    return *max_element(childResults.begin(), childResults.end());
+    return childResults;
 }
