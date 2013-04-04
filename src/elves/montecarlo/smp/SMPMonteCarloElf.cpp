@@ -44,11 +44,10 @@ void rollout(OthelloState& state, RandomGenerator generator)
     }
 }
 
-OthelloResult SMPMonteCarloElf::getBestMoveFor(OthelloState& rootState, size_t reiterations, size_t nodeId, size_t commonSeed)
+vector<OthelloResult> SMPMonteCarloElf::getMovesFor(OthelloState& rootState, size_t reiterations, size_t nodeId, size_t commonSeed)
 {
     vector<OthelloResult> childResults;
     vector<OthelloState> childStates;
-
     expand(rootState, childStates, childResults);
 
     #pragma omp parallel
@@ -75,11 +74,11 @@ OthelloResult SMPMonteCarloElf::getBestMoveFor(OthelloState& rootState, size_t r
             #pragma omp critical(selectedIndex)
             {
                 childResults[selectedIndex].visits++;
-                if (selectedState.hasWon(selectedState.getCurrentEnemy()))
+                if (selectedState.hasWon(rootState.getCurrentPlayer()))
                     childResults[selectedIndex].wins++;
             }
         }
     }
 
-    return *max_element(childResults.begin(), childResults.end());
+    return childResults;
 }

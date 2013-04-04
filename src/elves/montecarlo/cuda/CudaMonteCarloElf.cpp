@@ -26,7 +26,7 @@ void initialize(const OthelloState& state, vector<Field>& aggregatedPlayfields, 
     }
 }
 
-OthelloResult CudaMonteCarloElf::getBestMoveFor(OthelloState& state, size_t reiterations, size_t nodeId, size_t commonSeed)
+vector<OthelloResult> CudaMonteCarloElf::getMovesFor(OthelloState& state, size_t reiterations, size_t nodeId, size_t commonSeed)
 {
     vector<Field> aggregatedChildStatePlayfields;
     vector<OthelloResult> aggregatedChildResults;
@@ -51,25 +51,6 @@ OthelloResult CudaMonteCarloElf::getBestMoveFor(OthelloState& state, size_t reit
 
     cudaResults.transferTo(aggregatedChildResults.data());
 
-    // invert results since they are calculated for the enemy player
-    OthelloResult worstEnemyResult;
-
-    for (auto& result : aggregatedChildResults)
-    {
-        // inverted since we calculated the successrate for the enemy
-        if (worstEnemyResult.visits == 0 || 
-            worstEnemyResult.successRate() >= result.successRate())
-        {
-            worstEnemyResult = result;
-        }   
-    }
-
-    OthelloResult result = OthelloResult { 
-        worstEnemyResult.x,
-        worstEnemyResult.y,
-        worstEnemyResult.visits,
-        worstEnemyResult.visits - worstEnemyResult.wins
-    };
-    return result;
+    return aggregatedChildResults;
 }
 

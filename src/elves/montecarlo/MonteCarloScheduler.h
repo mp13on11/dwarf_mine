@@ -26,6 +26,7 @@ protected:
     virtual void doBenchmarkDispatch(int node);
 
     OthelloState _state;
+    std::vector<OthelloResult> _results;
     OthelloResult _result;
     size_t _repetitions;
     size_t _localRepetitions;
