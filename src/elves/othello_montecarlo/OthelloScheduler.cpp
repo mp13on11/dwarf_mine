@@ -86,6 +86,27 @@ void OthelloScheduler::calculate()
     _results = elf().getMovesFor(_state, _localRepetitions, communicator.rank(), _commonSeed);
 }
 
+void OthelloScheduler::distributePlayfield(size_t bufferSize)
+{
+    Playfield playfield;
+
+    if (communicator.isMaster())
+    {
+        playfield = Playfield(
+                _state.playfieldBuffer(), _state.playfieldBuffer() + bufferSize
+            );
+    }
+    else
+    {
+        playfield = Playfield(bufferSize);
+    }
+
+    auto MPI_FIELD = MPI::INT;
+    communicator->Bcast(playfield.data(), bufferSize, MPI_FIELD, Communicator::MASTER_RANK);
+
+    _state = State(playfield, Player::White);
+}
+
 void registerResultToMPI(MPI_Datatype& type)
 {
     MPI_Datatype elementTypes[] = { 
@@ -122,7 +143,7 @@ vector<Result> OthelloScheduler::gatherResults()
 
     communicator->Gather(
         _results.data(), _results.size(), MPI_Result,
-        results.data(), numberOfPossibleMoves, MPI_OthelloResult,
+        results.data(), numberOfPossibleMoves, MPI_Result,
         Communicator::MASTER_RANK
     );
     return results;
@@ -134,7 +155,7 @@ void OthelloScheduler::distributeInput()
     distributePlayfield(bufferSize);
 }
 
-size_t MonteCarloScheduler::distributeCommonParameters()
+size_t OthelloScheduler::distributeCommonParameters()
 {
     size_t bufferSize = _state.playfieldSideLength() * _state.playfieldSideLength();
     unsigned long commonParameters[] = {bufferSize, _commonSeed, _repetitions};
@@ -148,29 +169,6 @@ size_t MonteCarloScheduler::distributeCommonParameters()
 
     return bufferSize;
 }
-
-void OthelloScheduler::distributeInput(size_t bufferSize)
-{
-    Playfield playfield;
-
-    if (communicator.isMaster())
-    {
-        playfield = Playfield(
-                _state.playfieldBuffer(), _state.playfieldBuffer() + bufferSize
-            );
-    }
-    else
-    {
-        playfield = Playfield(bufferSize);
-    }
-
-    auto MPI_FIELD = MPI::INT;
-    communicator->Bcast(playfield.data(), bufferSize, MPI_FIELD, Communicator::MASTER_RANK);
-
-    _state = OthelloState(playfield, Player::White);
-}
-
-
 
 void OthelloScheduler::collectResults()
 {

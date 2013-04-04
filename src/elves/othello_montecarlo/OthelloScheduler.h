@@ -23,7 +23,6 @@ protected:
     virtual bool hasData() const;
     virtual void doDispatch();
     virtual void doSimpleDispatch();
-    virtual void doBenchmarkDispatch(int node);
 
     State _state;
     std::vector<Result> _results;
@@ -41,5 +40,5 @@ private:
     size_t distributeCommonParameters();
     void distributePlayfield(size_t size);
     void collectResults();
-    std::vector<OthelloResult> gatherResults();
+    std::vector<Result> gatherResults();
 };
