@@ -4,8 +4,11 @@
 #include "BlockLanczosWrapper.h"
 #include <algorithm>
 #include <cassert>
+#include "common/TimingProfiler.h"
 
 using namespace std;
+
+const BigInt MAX_INTERVAL_SIZE(BigInt(1073741824) * 4);
 
 pair<BigInt, BigInt> sieveIntervalFast(
     const BigInt& start,
@@ -16,10 +19,16 @@ pair<BigInt, BigInt> sieveIntervalFast(
     SieveSmoothSquaresCallback sieveSmoothSquaresCallback
 )
 {
+    TimingProfiler profiler;
+
     const size_t maxRelations = factorBase.size() + 2;
     cout << "before callback " << endl;
+
+    profiler.beginIteration();
     SmoothSquareList smooths = sieveSmoothSquaresCallback(start, end, number, factorBase);
-    cout << "after callback" << endl;
+    profiler.endIteration();
+
+    cout << "after callback, time: " << profiler.averageIterationTime().count() << " µs" << endl;
     for(const BigInt& x : smooths)
     {
         BigInt remainder = (x*x) % number;
@@ -51,6 +60,11 @@ pair<BigInt, BigInt> sieveIntervalFast(
     return QuadraticSieveHelper::TRIVIAL_FACTORS;
 }
 
+BigInt guessIntervalSize(const BigInt& number)
+{
+    return exp(sqrt(log(number)*log(log(number))));
+}
+
 pair<BigInt, BigInt> sieve(
     vector<Relation>& relations,
     const FactorBase& factorBase,
@@ -58,7 +72,7 @@ pair<BigInt, BigInt> sieve(
     SieveSmoothSquaresCallback sieveSmoothSquaresCallback
 )
 {
-    BigInt intervalSize = exp(sqrt(log(number)*log(log(number))));
+    BigInt intervalSize = min(guessIntervalSize(number), MAX_INTERVAL_SIZE);
     BigInt intervalStart = sqrt(number) + 1;
     BigInt intervalEnd = sqrt(number)+ 1 + intervalSize;
     intervalEnd = (sqrt(2*number) < intervalEnd) ? sqrt(2*number) : intervalEnd;

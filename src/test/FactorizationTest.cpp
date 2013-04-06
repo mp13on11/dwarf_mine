@@ -26,9 +26,12 @@ INSTANTIATE_TEST_CASE_P(
         //make_pair(BigInt("37975227936943673922808872755445627854565536638199"),
         //          BigInt("40094690950920881030683735292761468389214899724061"))
         //make_pair(BigInt("9499938415355683567"), BigInt("33172199367355317419")),
-        make_pair(BigInt("551226983117"), BigInt("554724632351")),
+        //make_pair(BigInt("551226983117"), BigInt("554724632351")),
+        make_pair(BigInt("4231231247"), BigInt("4231231253")),
         make_pair(BigInt("15485863"), BigInt("15534733")),
         make_pair(BigInt("1313839"), BigInt("1327901")),
+        make_pair(BigInt("3001"), BigInt("3011")),
+        make_pair(BigInt("1009"), BigInt("1013")),
         make_pair(BigInt("547"), BigInt("719"))
     	//make_pair(BigInt("13"), BigInt("11")) // too small
     )
@@ -63,7 +66,6 @@ TEST_P(FactorizationTest, testFactorizationQuadraticSieve)
     ASSERT_EQ(q, actualQ);
 }
 
-#if 0
 TEST_P(FactorizationTest, testFactorizationCudaQuadraticSieve)
 {
     using namespace std::placeholders;
@@ -84,7 +86,6 @@ TEST_P(FactorizationTest, testFactorizationCudaQuadraticSieve)
     ASSERT_EQ(p, actualP);
     ASSERT_EQ(q, actualQ);
 }
-#endif
 
 TEST(QuadraticSieveTest, testModularSquareRoot)
 {

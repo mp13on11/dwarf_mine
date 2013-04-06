@@ -170,25 +170,40 @@ __device__ float log(const Number& n)
     return 0;
 }
 
-__device__ float lb(Number x)
+#define USE_BIGNUMS
+//#define USE_U64_DIV
+
+#if defined(USE_BIGNUMS) || defined(USE_U64_DIV)
+typedef Number NumberType;
+
+__device__ float lb(NumberType x)
 {
     return log(x)/log(2.0f);
 }
+#else
+typedef uint64_t NumberType;
 
-__device__ uint32_t lb_scaled(Number x, uint32_t maxBits)
+__device__ float lb(NumberType x)
+{
+    return log((float)x)/log(2.0f);
+}
+#endif
+
+__device__ uint32_t lb_scaled(NumberType x, uint32_t maxBits)
 {
     uint32_t maxLogBits = (uint32_t)ceil(log((float)maxBits+1.0f)/log(2.0f));
     uint32_t scale_shift = 32 - maxLogBits;
     return (uint32_t)(lb(x) * (1 << scale_shift));
 }
 
-__device__ uint32_t log_2_22(Number x)
+__device__ uint32_t log_2_22(NumberType x)
 {
     return lb_scaled(x, 1023);
 }
 
 __global__ void megaKernel(const Number* number, uint32_t* logs, const uint32_t* factorBase, const int factorBaseSize, const Number* start, const Number* end, const uint32_t intervalLength)
 {
+#ifdef USE_BIGNUMS
     int index = blockIdx.x * blockDim.x + threadIdx.x;
     Number newStart(*start + index);
       
@@ -204,6 +219,9 @@ __global__ void megaKernel(const Number* number, uint32_t* logs, const uint32_t*
         int primeLog = log_2_22(prime) - 1;
         Number q = (newStart*newStart) - *number;
         
+        if (primeLog > logs[index])
+            break;
+
     	while (primePower < *number) 
         {
         	if ((q % primePower).isZero()) 
@@ -219,6 +237,72 @@ __global__ void megaKernel(const Number* number, uint32_t* logs, const uint32_t*
         	
     	}
     } 
+#elif defined(USE_U64_DIV)
+    int index = blockIdx.x * blockDim.x + threadIdx.x;
+    Number newStart(*start + index);
+
+    if (index >= intervalLength)
+    {
+        return;
+    }
+    for (int i=0; i<factorBaseSize; ++i)
+    {
+        Number prime(factorBase[i]);
+        Number primePower(factorBase[i]);
+
+        int primeLog = log_2_22(prime) - 1;
+        Number q = (newStart*newStart) - *number;
+
+        if (primeLog > logs[index])
+            break;
+
+        while (primePower < *number)
+        {
+            if (q.get_ui64() % primePower.get_ui64() == 0)
+            {
+                    //printf("%u is div by %u\n", q.get_ui(), primePower.get_ui());
+                    logs[index] -= primeLog;
+            }
+            else
+            {
+                break;
+            }
+            primePower *= prime;
+        }
+    }
+#else
+    int index = blockIdx.x * blockDim.x + threadIdx.x;
+    uint64_t newStart = start->get_ui64() + index;
+    uint64_t number64 = number->get_ui64();
+
+    if (index >= intervalLength)
+    {
+        return;
+    }
+    for (int i=0; i<factorBaseSize; ++i)
+    {
+        uint64_t prime(factorBase[i]);
+        uint64_t primePower(factorBase[i]);
+
+        int primeLog = log_2_22(prime) - 1;
+        uint64_t q = (newStart*newStart) - number64;
+
+        while (primePower < number64)
+        {
+            if ((q % primePower) == 0)
+            {
+                //printf("%u is div by %u\n", q.get_ui(), primePower.get_ui());
+                logs[index] -= primeLog;
+            }
+            else
+            {
+                break;
+            }
+            primePower *= prime;
+
+        }
+    }
+#endif
 }
 
 __global__ void testAddKernel(PNumData pLeft, PNumData pRight, PNumData output)

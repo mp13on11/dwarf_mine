@@ -4,7 +4,7 @@
 #include "common/Utils.h"
 #include "stdio.h"
 
-const size_t BLOCK_SIZE = 32;
+const size_t BLOCK_SIZE = 256;
 
 void megaWrapper(const uint32_t* number, uint32_t* logs_d, const uint32_t* factorBase_d, const size_t factorBaseSize, const uint32_t* start, const uint32_t* end, const uint32_t intervalLength)
 {

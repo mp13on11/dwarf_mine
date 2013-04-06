@@ -22,7 +22,7 @@ vector<BigInt> smpSieveKernel(const BigInt& start, const BigInt& end, const BigI
     // init field with logarithm
     x = start;
 
-    for(uint32_t i=0; i<=blockSize; i++, x++)
+    for(uint32_t i=0; i<=blockSize; ++i, ++x)
     {
         remainder = (x*x) % number;
         logs[i] = log_2_22(remainder);
