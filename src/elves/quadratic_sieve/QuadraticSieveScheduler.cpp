@@ -193,13 +193,12 @@ vector<double> QuadraticSieveScheduler::determineChunkSizes(const BigInt& start,
 
     uint64_t intervalLength = intervalLengthBigInt.get_ui();
     cout << "IntervalLength: " << intervalLength << endl;
-    double basicChunkSize = div_ceil(intervalLength, static_cast<uint64_t>(communicator.size()));
     auto weights = communicator.weights();
     cout << "Weights: " << weights << endl;
 
     vector<double> chunkSizes;
     for (auto weight : weights)
-        chunkSizes.push_back(basicChunkSize * weight);
+        chunkSizes.push_back(intervalLength * weight);
 
     return chunkSizes;
 }
