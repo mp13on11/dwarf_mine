@@ -29,8 +29,21 @@ pair<BigInt, BigInt> sieveIntervalFast(
     profiler.endIteration();
 
     cout << "after callback, time: " << profiler.averageIterationTime().count() << " µs" << endl;
-    for(const BigInt& x : smooths)
+
+    volatile bool loopFinished = false;
+    pair<BigInt, BigInt> earlyResult(QuadraticSieveHelper::TRIVIAL_FACTORS);
+
+    #pragma omp parallel for shared(relations, earlyResult, loopFinished)
+    //for(const BigInt& x : smooths)
+    for (size_t i=0; i<smooths.size(); ++i)
     {
+        const BigInt& x = smooths[i];
+
+        bool doStop;
+        #pragma omp critical
+        doStop = loopFinished;
+        if (doStop) continue;
+
         BigInt remainder = (x*x) % number;
 
         PrimeFactorization factorization = QuadraticSieveHelper::factorizeOverBase(remainder, factorBase);
@@ -47,17 +60,27 @@ pair<BigInt, BigInt> sieveIntervalFast(
             auto factors = QuadraticSieveHelper::factorsFromCongruence(x, sqrt(factorization).multiply(), number);
             if(QuadraticSieveHelper::isNonTrivial(factors, number))
             {
-                return factors;
+                #pragma omp critical
+                {
+                    earlyResult = factors;
+                    loopFinished = true;
+                    //return factors;
+                }
             }
         }
 
+        #pragma omp critical
+        {
         relations.push_back(relation);
 
         if(relations.size() >= maxRelations)
-            break;
+            //break;
+            loopFinished = true;
+        }
     }
 
-    return QuadraticSieveHelper::TRIVIAL_FACTORS;
+    return earlyResult;
+    //return QuadraticSieveHelper::TRIVIAL_FACTORS;
 }
 
 BigInt guessIntervalSize(const BigInt& number)
@@ -112,6 +135,9 @@ pair<BigInt, BigInt> factor(const BigInt& number, SieveSmoothSquaresCallback sie
         return factors;
 
     cout << "found " << relations.size() << " relations" << endl;
+#ifdef DONT_DO_GAUSS
+    return TRIVIAL_FACTORS;
+#endif
 
 #ifdef USE_LANCZOS
     cout << "Invoking Block Lanczos ..." << endl;
