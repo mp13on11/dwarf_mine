@@ -7,8 +7,26 @@
 #include "common/TimingProfiler.h"
 
 using namespace std;
+#define DONT_DO_GAUSS
 
 const BigInt MAX_INTERVAL_SIZE(BigInt(1073741824) * 4);
+
+void printRelation(const Relation& r, const FactorBase& factorBase)
+{
+    cout << r.a << "^2%%N=\t";
+    for(const smallPrime_t& prime : factorBase)
+    {
+       cout << ((find(r.oddPrimePowers.indices.begin(), r.oddPrimePowers.indices.end(), prime) == r.oddPrimePowers.indices.end()) ? 0 : 1);
+    }
+    cout << " (";
+    for(uint32_t p : r.oddPrimePowers.indices)
+    {
+        cout << p << " ";
+    }
+    cout << ")";
+    cout << endl;
+}
+
 
 pair<BigInt, BigInt> sieveIntervalFast(
     const BigInt& start,
@@ -35,7 +53,7 @@ pair<BigInt, BigInt> sieveIntervalFast(
 
     #pragma omp parallel for shared(relations, earlyResult, loopFinished)
     //for(const BigInt& x : smooths)
-    for (size_t i=0; i<smooths.size(); ++i)
+    for (size_t i=0; i<maxRelations; ++i)
     {
         const BigInt& x = smooths[i];
 
@@ -78,6 +96,15 @@ pair<BigInt, BigInt> sieveIntervalFast(
             loopFinished = true;
         }
     }
+
+    sort(relations.begin(), relations.end(), [](const Relation& a, const Relation& b) {
+        return a.a < b.a;
+    });
+
+    int diff = relations.size() - maxRelations;
+
+    if (diff > 0)
+        relations.erase(relations.end() - diff, relations.end());
 
     return earlyResult;
     //return QuadraticSieveHelper::TRIVIAL_FACTORS;

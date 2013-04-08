@@ -26,7 +26,7 @@ INSTANTIATE_TEST_CASE_P(
         //make_pair(BigInt("37975227936943673922808872755445627854565536638199"),
         //          BigInt("40094690950920881030683735292761468389214899724061"))
         //make_pair(BigInt("9499938415355683567"), BigInt("33172199367355317419")),
-        //make_pair(BigInt("551226983117"), BigInt("554724632351")),
+        make_pair(BigInt("551226983117"), BigInt("554724632351")),
         make_pair(BigInt("4231231247"), BigInt("4231231253")),
         make_pair(BigInt("15485863"), BigInt("15534733")),
         make_pair(BigInt("1313839"), BigInt("1327901")),
