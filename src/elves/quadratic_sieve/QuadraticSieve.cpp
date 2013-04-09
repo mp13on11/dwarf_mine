@@ -1,13 +1,13 @@
 #include "QuadraticSieve.h"
 #include "common/Utils.h"
 #include "PrimeFactorization.h"
-#include "BlockLanczosWrapper.h"
 #include <algorithm>
 #include <cassert>
 #include "common/TimingProfiler.h"
 
+#define SKIP_LINEAR_ALGEBRA
+
 using namespace std;
-#define DONT_DO_GAUSS
 
 const BigInt MAX_INTERVAL_SIZE(BigInt(1073741824) * 4);
 
@@ -162,24 +162,15 @@ pair<BigInt, BigInt> factor(const BigInt& number, SieveSmoothSquaresCallback sie
         return factors;
 
     cout << "found " << relations.size() << " relations" << endl;
-#ifdef DONT_DO_GAUSS
+#ifdef SKIP_LINEAR_ALGEBRA
     return TRIVIAL_FACTORS;
 #endif
 
-#ifdef USE_LANCZOS
-    cout << "Invoking Block Lanczos ..." << endl;
-    auto lanczosFactors = BlockLanczosWrapper::performBlockLanczosAndFindFactors(relations, factorBase, number);
-    if (lanczosFactors.empty())
-        throw logic_error("No factors found!");
-
-    return { lanczosFactors[0], lanczosFactors[1] };
-#else
     // bring relations into lower diagonal form
     cout << "performing gaussian elimination ..." << endl;
     performGaussianElimination(relations);
     cout << "combining random congruences ..." << endl;
     return searchForRandomCongruence(factorBase, number, 100, relations);
-#endif
 }
 
 pair<BigInt,BigInt> factorsFromCongruence(const BigInt& a, const BigInt& b, const BigInt& number)
