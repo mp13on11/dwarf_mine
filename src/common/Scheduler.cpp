@@ -27,5 +27,5 @@ void Scheduler::provideData(const ProblemStatement& problem)
 
 void Scheduler::outputData(const ProblemStatement& problem)
 {
-	outputData(problem.getOutput());
+    outputData(problem.getOutput());
 }

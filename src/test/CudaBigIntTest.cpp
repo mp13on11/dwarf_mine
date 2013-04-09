@@ -38,8 +38,8 @@ int invokeCudaPowKernel(int b, int e, function<void (int, int, int*)> kernelCall
 
 int invokeLegendreKernel(const BigInt& a, const BigInt& prime, function<void (PNumData, PNumData, int*)> kernelCall)
 {
-	CudaUtils::Memory<uint32_t> a_d(NumberHelper::BigIntToNumber(a));
-	CudaUtils::Memory<uint32_t> prime_d(NumberHelper::BigIntToNumber(prime));
+    CudaUtils::Memory<uint32_t> a_d(NumberHelper::BigIntToNumber(a));
+    CudaUtils::Memory<uint32_t> prime_d(NumberHelper::BigIntToNumber(prime));
 
     CudaUtils::Memory<int> out_d(1);
 
@@ -51,9 +51,9 @@ int invokeLegendreKernel(const BigInt& a, const BigInt& prime, function<void (PN
 
 BigInt invokeModPowKernel(const BigInt& base, const BigInt& exponent, const BigInt& mod, function<void (PNumData, PNumData, PNumData, PNumData)> kernelCall)
 {
-	CudaUtils::Memory<uint32_t> base_d(NumberHelper::BigIntToNumber(base));
-	CudaUtils::Memory<uint32_t> exponent_d(NumberHelper::BigIntToNumber(exponent));
-	CudaUtils::Memory<uint32_t> mod_d(NumberHelper::BigIntToNumber(mod));
+    CudaUtils::Memory<uint32_t> base_d(NumberHelper::BigIntToNumber(base));
+    CudaUtils::Memory<uint32_t> exponent_d(NumberHelper::BigIntToNumber(exponent));
+    CudaUtils::Memory<uint32_t> mod_d(NumberHelper::BigIntToNumber(mod));
 
     CudaUtils::Memory<uint32_t> out_d(NUM_FIELDS);
 
@@ -307,8 +307,8 @@ TEST(CudaBigIntTest, testSmallerThan)
 
 TEST(CudaBigIntTest, testSmallerThan2)
 {
-	BigInt left ("90887891231490623");
-	BigInt right("779789821317833");
+    BigInt left ("90887891231490623");
+    BigInt right("779789821317833");
     bool expected(false);
 
     auto actual = invokeBoolKernel(left, right, testSmallerThan);
@@ -318,8 +318,8 @@ TEST(CudaBigIntTest, testSmallerThan2)
 
 TEST(CudaBigIntTest, testSmallerThan3)
 {
-	BigInt left ("628");
-	BigInt right("886");
+    BigInt left ("628");
+    BigInt right("886");
     bool expected(true);
 
     auto actual = invokeBoolKernel(left, right, testSmallerThan);
@@ -431,8 +431,8 @@ TEST(CudaBigIntTest, testLargerThan)
 
 TEST(CudaBigIntTest, testLargerThan2)
 {
-	BigInt left ("628");
-	BigInt right("886");
+    BigInt left ("628");
+    BigInt right("886");
     bool expected(false);
 
     auto actual = invokeBoolKernel(left, right, testLargerThan);
