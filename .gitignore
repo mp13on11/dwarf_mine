@@ -1,6 +1,5 @@
 build/
 output
-out.txt
 *.cproject
 *.project
 *.settings
@@ -8,5 +7,3 @@ out.txt
 *.sublime-workspace
 *.swp
 *.swo
-*.cmake
-*CMakeFiles/
