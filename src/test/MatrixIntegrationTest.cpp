@@ -17,7 +17,7 @@ using namespace std;
 const int           TIMEOUT_SECONDS = 10;
 const int           NUM_NODES       = 8;
 const char* const   CONF_FILENAME   = "test_config.cfg";
-const char* const   INPUT_FILENAME  = "small_input.bin";
+const char* const   INPUT_FILENAME  = "example_data/matrix/small_input.bin";
 const char* const   OUTPUT_FILENAME = "small_output.bin";
 const char* const   MPIRUN_PATH     = MPIEXEC; // defined by CMake file
 
