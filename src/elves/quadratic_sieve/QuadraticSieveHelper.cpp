@@ -1,8 +1,9 @@
-#include "QuadraticSieve.h"
+#include "QuadraticSieveHelper.h"
 #include "common/Utils.h"
 #include "PrimeFactorization.h"
 #include <algorithm>
 #include <cassert>
+#include <iostream>
 #include "common/TimingProfiler.h"
 
 #define SKIP_LINEAR_ALGEBRA

@@ -2,7 +2,7 @@
 #include "Utilities.h"
 #include "common/SchedulerFactory.h"
 #include "elves/common-factorization/BigInt.h"
-#include "elves/quadratic_sieve/QuadraticSieve.h"
+#include "elves/quadratic_sieve/QuadraticSieveHelper.h"
 #include "elves/quadratic_sieve/smp/SmpQuadraticSieveElf.h"
 #include "elves/quadratic_sieve/cuda/CudaQuadraticSieveElf.h"
 

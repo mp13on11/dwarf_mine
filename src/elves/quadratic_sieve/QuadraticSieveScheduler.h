@@ -3,7 +3,7 @@
 #include "common/SchedulerTemplate.h"
 #include "common-factorization/BigInt.h"
 #include <utility>
-#include "QuadraticSieve.h"
+#include "QuadraticSieveHelper.h"
 
 class QuadraticSieveElf;
 

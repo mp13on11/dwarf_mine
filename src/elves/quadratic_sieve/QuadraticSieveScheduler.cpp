@@ -1,4 +1,3 @@
-#include "QuadraticSieve.h"
 #include "QuadraticSieveScheduler.h"
 #include "QuadraticSieveElf.h"
 #include "common/ProblemStatement.h"
@@ -222,7 +221,6 @@ vector<BigInt> QuadraticSieveScheduler::sieveDistributed(
     for (size_t nodeId=1; nodeId < communicator.size(); ++nodeId)
     {
         double weightedChunkSize = chunkSizes[nodeId];
-    cout.precision(20);
         cout << "Chunksize for node " << nodeId << ": " << weightedChunkSize << endl;
         BigInt partialStart = start + weightedChunkSize*nodeId;
         BigInt partialEnd = min(partialStart + weightedChunkSize, end);
