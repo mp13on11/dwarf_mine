@@ -20,6 +20,7 @@ const char* const   CONF_FILENAME   = "test_config.cfg";
 const char* const   INPUT_FILENAME  = "example_data/matrix/small_input.bin";
 const char* const   OUTPUT_FILENAME = "small_output.bin";
 const char* const   MPIRUN_PATH     = MPIEXEC; // defined by CMake file
+const char* const   EXECUTABLE_PATH = "build/src/main/dwarf_mine";
 
 TEST_F(MatrixIntegrationTest, TestSmallInputSMPSchedulingOffline)
 {
@@ -71,7 +72,7 @@ void MatrixIntegrationTest::setupConfigFile()
 {
     ofstream config(CONF_FILENAME);
     for (int i=0; i<NUM_NODES; ++i)
-        config << 1 << endl;
+        config << 1.0/NUM_NODES << endl;
 }
 
 pid_t MatrixIntegrationTest::spawnChildProcess(
@@ -87,7 +88,7 @@ pid_t MatrixIntegrationTest::spawnChildProcess(
             MPIRUN_PATH,
             "-n", boost::lexical_cast<string>(NUM_NODES).c_str(),
             "--tag-output",
-            "build/src/main/dwarf_mine",
+            EXECUTABLE_PATH,
             "-m", "smp",
             "-n", "1",
             "-w", "0",
@@ -108,9 +109,9 @@ pid_t MatrixIntegrationTest::spawnChildProcess(
 
 std::tuple<Matrix<float>, Matrix<float>> MatrixIntegrationTest::readMatrices()
 {
-    ifstream input("small_input.bin", ios_base::binary);
+    ifstream input(INPUT_FILENAME, ios_base::binary);
     auto inputMatrices = MatrixHelper::readMatrixPairFrom(input);
-    auto actualMatrix = MatrixHelper::readMatrixFrom("small_output.bin");
+    auto actualMatrix = MatrixHelper::readMatrixFrom(OUTPUT_FILENAME);
 
     auto leftMatrix = inputMatrices.first;
     auto rightMatrix = inputMatrices.second;
