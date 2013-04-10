@@ -14,15 +14,14 @@ const int THREADS_PER_BLOCK = 64;
 const int THREADS_PER_BLOCK_RANDOM_KERNEL = 128;
 
 
-__global__ void setupStateForRandom(curandState* state, size_t* seeds);
 __global__ void setupStateForRandom(curandState* states, float* randomValues, size_t numberOfRandomValues);
 __global__ void simulateGamePreRandom(size_t reiterations, size_t numberOfBlocks, float* randomValues, size_t numberOfPlayfields, const Field* playfields, Player currentPlayer, Result* results);
 
 
 __global__ void testNumberOfMarkedFields(size_t* sum, const bool* playfield);
 __global__ void testRandomNumber(float fakedRandom, size_t maximum, size_t* randomNumberResult);
-__global__ void testDoStep(curandState* deviceState, Field* playfield, Player currentPlayer, float fakedRandom);
-__global__ void testExpandLeaf(curandState* deviceState, Field* playfield, Player currentPlayer, size_t* wins, size_t* visits);
+__global__ void testDoStep(Field* playfield, Player currentPlayer, float fakedRandom);
+__global__ void testExpandLeaf(Field* playfield, Player currentPlayer, size_t* wins, size_t* visits);
 
 void gameSimulationPreRandom(size_t numberOfBlocks, size_t iterations, float* randomValues, size_t numberOfRandomValues, size_t numberOfPlayfields, const Field* playfields, Player currentPlayer, Result* results)
 {
@@ -47,25 +46,9 @@ void gameSimulationPreRandomStreamed(size_t numberOfBlocks, size_t iterations, f
     CudaUtils::checkState();
 }
 
-void setupSeedForTest(size_t numberOfBlocks, curandState* deviceStates)
-{
-    size_t* seed;
-    
-    cudaMalloc(&seed, sizeof(size_t) * numberOfBlocks);
-    cudaMalloc(&deviceStates, sizeof(curandState) * numberOfBlocks);
-    
-    setupStateForRandom <<< numberOfBlocks, 1 >>>(deviceStates, seed);
-    
-    CudaUtils::checkState();
-}
-
 void testDoStepProxy(Field* playfield, Player currentPlayer, float fakedRandom)
 {
-    curandState* deviceStates = NULL;
-    size_t numberOfBlocks = 1;
-    setupSeedForTest(numberOfBlocks, deviceStates);
-
-    testDoStep <<< numberOfBlocks, THREADS_PER_BLOCK >>>(deviceStates, playfield, currentPlayer, fakedRandom);
+    testDoStep <<< 1, THREADS_PER_BLOCK >>>(playfield, currentPlayer, fakedRandom);
     CudaUtils::checkState();    
 }
 
@@ -83,10 +66,6 @@ void testRandomNumberProxy(float fakedRandom, size_t maximum, size_t* randomMove
 
 void testExpandLeafProxy(size_t dimension, Field* playfield, Player currentPlayer, size_t* wins, size_t* visits)
 {
-    curandState* deviceStates = NULL;
-    size_t numberOfBlocks = 1;
-    setupSeedForTest(numberOfBlocks, deviceStates);
-    
-    testExpandLeaf <<< numberOfBlocks, THREADS_PER_BLOCK >>>(deviceStates, playfield, currentPlayer, wins, visits);
+    testExpandLeaf <<< 1, THREADS_PER_BLOCK >>>(playfield, currentPlayer, wins, visits);
     CudaUtils::checkState();
 }

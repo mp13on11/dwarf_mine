@@ -16,12 +16,6 @@ private:
     float* _randomValues;
 
 public:
-    __device__ CudaSimulator(CudaGameState* state, curandState* deviceState)
-        : _playfieldIndex(threadIdx.x), _playfieldX(_playfieldIndex % FIELD_DIMENSION), _playfieldY(_playfieldIndex / FIELD_DIMENSION),
-            _state(state), _deviceState(deviceState)
-    {
-    }
-
     __device__ CudaSimulator(CudaGameState* state, float* randomValues, size_t randomSeed)
         : _playfieldIndex(threadIdx.x), _playfieldX(_playfieldIndex % FIELD_DIMENSION), _playfieldY(_playfieldIndex / FIELD_DIMENSION),
             _state(state), _randomSeed(randomSeed), _randomValues(randomValues)
