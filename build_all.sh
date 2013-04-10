@@ -29,7 +29,7 @@ done
 echo "=== Removing old builds == rm -rf $BUILD_DIR ==="
 rm -rf $BUILD_DIR
 echo "=== Creating empty build directory == mkdir $BUILD_DIR ==="
-mkdir $BUILD_DIR
+mkdir -p $BUILD_DIR
 echo "=== Running out of source build == Build: $BUILD_TYPE in $BUILD_DIR ==="
 cd $BUILD_DIR
 cmake -G "$GENERATOR" "$SOURCE_DIR"

@@ -19,11 +19,11 @@ TEST_F(OthelloCudaUtilTest, GetRandomMoveIndexTest)
             size_t result = limit - i;
             testRandomNumberProxy(result * 1.0f / limit, limit, cudaRandomResult.get());
 
-			cudaRandomResult.transferTo(&randomResult);
+            cudaRandomResult.transferTo(&randomResult);
 
-			ASSERT_EQ(result, randomResult)<<" for limit "<<limit<<" ratio: "<<result * 1.0f / limit;
-		}
-	}
+            ASSERT_EQ(result, randomResult)<<" for limit "<<limit<<" ratio: "<<result * 1.0f / limit;
+        }
+    }
 }
 
 TEST_F(OthelloCudaUtilTest, GetRandomMoveIndexRegressionTest)

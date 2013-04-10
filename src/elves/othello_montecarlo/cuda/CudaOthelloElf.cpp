@@ -69,7 +69,7 @@ vector<Result> CudaOthelloElf::getBestMoveForStreamed(State& state, size_t reite
             copy(childResults.data(), childResults.data() + childResults.size(), hostResults);
 
             CudaUtils::checkError(cudaMemcpyAsync(cudaResults, hostResults, sizeof(Result) * childResults.size(), cudaMemcpyHostToDevice, stream));
-			size_t streamSeed = OthelloHelper::generateUniqueSeed(nodeId, (size_t)stream, commonSeed);
+            size_t streamSeed = OthelloHelper::generateUniqueSeed(nodeId, (size_t)stream, commonSeed);
             gameSimulationPreRandomStreamed(NUMBER_OF_BLOCKS, reiterationsPerStream, randomValues.get(), numberOfRandomValues, childResults.size(), cudaPlayfields.get(), state.getCurrentEnemy(), cudaResults, stream, streamSeed);
 
             CudaUtils::checkError(cudaMemcpyAsync(hostResults, cudaResults, sizeof(Result) * childResults.size(), cudaMemcpyDeviceToHost, stream));
@@ -130,14 +130,14 @@ vector<Result> CudaOthelloElf::getBestMoveForSimple(State& state, size_t reitera
     initialize(state, aggregatedChildStatePlayfields, aggregatedChildResults);
 
     // one iteration: max 120 moves + one selection for leaf - for reiteration variation we step for each iteration one index to the right
-	size_t numberOfRandomValues = (MAXIMAL_NUMBER_OF_MOVES + 1) + (reiterations / NUMBER_OF_BLOCKS + 1) * NUMBER_OF_BLOCKS;
+    size_t numberOfRandomValues = (MAXIMAL_NUMBER_OF_MOVES + 1) + (reiterations / NUMBER_OF_BLOCKS + 1) * NUMBER_OF_BLOCKS;
     vector<float> randomValues(numberOfRandomValues);
-	CudaUtils::Memory<float> cudaRandomValues(randomValues.size());
+    CudaUtils::Memory<float> cudaRandomValues(randomValues.size());
 
     CudaUtils::Memory<Field> cudaPlayfields(aggregatedChildStatePlayfields.size());
     CudaUtils::Memory<Result> cudaResults(aggregatedChildResults.size());
 
-	cudaRandomValues.transferFrom(randomValues.data());
+    cudaRandomValues.transferFrom(randomValues.data());
     cudaPlayfields.transferFrom(aggregatedChildStatePlayfields.data());
     cudaResults.transferFrom(aggregatedChildResults.data());
 
