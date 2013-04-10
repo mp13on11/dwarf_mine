@@ -6,6 +6,9 @@ from matplotlib import pyplot
 from matplotlib.ticker import MultipleLocator, FormatStrFormatter
 
 
+MATRIX_SIZE = 1000
+
+
 def times_from_file(fileName):
     return [float(line) for line in open(fileName)]
 
@@ -39,7 +42,7 @@ def plot(values, yaxis_label, file_name):
 
     pyplot.ylim(ymin=0)
 
-    pyplot.title('MatMul (SMP, 1000x1000)')
+    pyplot.title('MatMul (SMP, {0}x{0})'.format(MATRIX_SIZE))
     pyplot.xlabel('OMP_NUM_THREADS')
     pyplot.ylabel(yaxis_label)
     pyplot.show()
@@ -70,12 +73,12 @@ warmups = iterations / 10
 
 
 def time_file(threads, ext = ".txt"):
-    return os.path.join(file_dir, "matmul_smp_{0}_1000{1}".format(threads, ext))
+    return os.path.join(file_dir, "matmul_smp_{0}_{1}{2}".format(threads, MATRIX_SIZE, ext))
 
 def command_line(threads):
     return  "OMP_NUM_THREADS={0} ./build/src/main/dwarf_mine "\
-            "-m smp --left_rows 1000 --common_rows_columns 1000 --right_columns 1000 "\
-            "-w {1} -n {2} --time_output {3}".format(threads, warmups, iterations, time_file(threads))
+            "-m smp --left_rows {3} --common_rows_columns {3} --right_columns {3} "\
+            "-w {1} -n {2} --time_output {4}".format(threads, warmups, iterations, MATRIX_SIZE, time_file(threads))
 
 
 def main():

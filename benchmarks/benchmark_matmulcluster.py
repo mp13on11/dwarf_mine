@@ -7,6 +7,9 @@ from matplotlib.ticker import MultipleLocator, FormatStrFormatter
 from datetime import datetime
 
 
+MATRIX_SIZE = 1000
+
+
 def times_from_file(file_name):
     return [float(line) for line in open(file_name)]
 
@@ -39,7 +42,7 @@ def plot(values, yaxis_label, file_name):
 
     pyplot.ylim(ymin=0)
 
-    pyplot.title('MatMul (SMP, 1000x1000)')
+    pyplot.title('MatMul (SMP, {0}x{0})'.format(MATRIX_SIZE))
     pyplot.xlabel('MPI processes')
     pyplot.ylabel(yaxis_label)
     pyplot.show()
@@ -68,20 +71,19 @@ def set_axes_on(figure):
 file_dir = sys.argv[1]
 iterations = int(sys.argv[2]) if (len(sys.argv)>2) else 100
 warmups = iterations / 10
-matrix_size = 1000
 
 
 def time_file(smpHosts, cudaHosts, ext = ".txt"):
     hostsString = ",".join(smpHosts) + "-" + ",".join(cudaHosts)
-    return os.path.join(file_dir, "matmul_cluster_{0}_{1}{2}".format(hostsString, matrix_size, ext))
+    return os.path.join(file_dir, "matmul_cluster_{0}_{1}{2}".format(hostsString, MATRIX_SIZE, ext))
 
 def command_line(smpHosts, cudaHosts):
     HOST_LINE =  "-host {0} -np 1 ./build/src/main/dwarf_mine -m {1} -c matrix -w {3} -n {4} --time_output {5} "\
                 "--left_rows {2} --common_rows_columns {2} --right_columns {2}"
 
     time_file_name = time_file(smpHosts, cudaHosts)
-    smp_lines = [HOST_LINE.format(host, "smp", matrix_size, warmups, iterations, time_file_name) for host in smpHosts]
-    cuda_lines = [HOST_LINE.format(host, "cuda", matrix_size, warmups, iterations, time_file_name) for host in cudaHosts]
+    smp_lines = [HOST_LINE.format(host, "smp", MATRIX_SIZE, warmups, iterations, time_file_name) for host in smpHosts]
+    cuda_lines = [HOST_LINE.format(host, "cuda", MATRIX_SIZE, warmups, iterations, time_file_name) for host in cudaHosts]
 
     mpirun_args = " : ".join(smp_lines + cuda_lines)
 
