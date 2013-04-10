@@ -6,7 +6,7 @@
 #include <iostream>
 #include "common/TimingProfiler.h"
 
-#define SKIP_LINEAR_ALGEBRA
+//#define SKIP_LINEAR_ALGEBRA
 
 using namespace std;
 
@@ -49,26 +49,29 @@ pair<BigInt, BigInt> sieveIntervalFast(
 
     cout << "after callback, time: " << profiler.averageIterationTime().count() << " µs" << endl;
 
-    volatile bool loopFinished = false;
+    //volatile bool loopFinished = false;
     pair<BigInt, BigInt> earlyResult(QuadraticSieveHelper::TRIVIAL_FACTORS);
 
-    #pragma omp parallel for shared(relations, earlyResult, loopFinished)
-    //for(const BigInt& x : smooths)
-    for (size_t i=0; i<maxRelations; ++i)
+    //#pragma omp parallel for
+    //for (size_t i=0; i<maxRelations; ++i)
+    for (const BigInt& x : smooths) 
     {
-        const BigInt& x = smooths[i];
+#if 0
+        BigInt x = smooths[i];
+        BigInt myNumber = number;
 
         bool doStop;
         #pragma omp critical
         doStop = loopFinished;
         if (doStop) continue;
+#endif
 
         BigInt remainder = (x*x) % number;
 
         PrimeFactorization factorization = QuadraticSieveHelper::factorizeOverBase(remainder, factorBase);
         if(factorization.empty())
         {
-            cerr << "false alarm !!! (should not happend)" << endl;
+            cerr << "false alarm !!! (should not happen)" << endl;
             continue;
         }
 
@@ -79,25 +82,25 @@ pair<BigInt, BigInt> sieveIntervalFast(
             auto factors = QuadraticSieveHelper::factorsFromCongruence(x, sqrt(factorization).multiply(), number);
             if(QuadraticSieveHelper::isNonTrivial(factors, number))
             {
-                #pragma omp critical
+                //#pragma omp critical
                 {
-                    earlyResult = factors;
-                    loopFinished = true;
-                    //return factors;
+                    //earlyResult = factors;
+                    //loopFinished = true;
+                    return factors;
                 }
             }
         }
 
-        #pragma omp critical
+        //#pragma omp critical
         {
         relations.push_back(relation);
 
         if(relations.size() >= maxRelations)
-            //break;
-            loopFinished = true;
+            break;
+            //loopFinished = true;
         }
     }
-
+#if 0
     sort(relations.begin(), relations.end(), [](const Relation& a, const Relation& b) {
         return a.a < b.a;
     });
@@ -106,6 +109,7 @@ pair<BigInt, BigInt> sieveIntervalFast(
 
     if (diff > 0)
         relations.erase(relations.end() - diff, relations.end());
+#endif
 
     return earlyResult;
     //return QuadraticSieveHelper::TRIVIAL_FACTORS;
