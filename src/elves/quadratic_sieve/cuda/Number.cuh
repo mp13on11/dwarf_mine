@@ -4,6 +4,8 @@
 #include <cuda.h>
 #include <stdio.h>
 
+#define UNSAFE_DIVISION
+
 struct Number
 {
     NumData fields;
@@ -15,14 +17,22 @@ struct Number
 
     __device__ Number() 
     {
-        memset(fields, 0, NUM_FIELDS);
+        memset(fields, 0, DATA_SIZE_BYTES);
     }
 
      __device__ Number(const uint64_t data)
      {
          fields[0] = static_cast<uint32_t>(data);
          fields[1] = static_cast<uint32_t>(data >> 32);
-         memset(fields + 2, 0, NUM_FIELDS - 2);
+         memset(fields + 2, 0, (NUM_FIELDS - 2)*4);
+     }
+
+     __device__ int bitAt(int index)
+     {
+         int field = index / 32; 
+         int index2 = index % 32;
+
+         return (fields[field] >> index2) & 1; 
      }
 
     __device__ Number(const NumData data)
@@ -38,6 +48,11 @@ struct Number
     __device__ uint32_t get_ui() const
     {
         return fields[0];
+    }
+
+    __device__ uint64_t get_ui64() const
+    {
+        return fields[0] | ((uint64_t)fields[1] << 32);
     }
 
     __device__ bool isZero() const 
@@ -149,34 +164,52 @@ struct Number
 
     __device__ Number divMod(const Number& other)
     {
+#ifdef UNSAFE_DIVISION
         if(this == &other)
         {
             *this = Number(static_cast<uint64_t>(0));
             return Number(1);
         }
 
-        Number divisor(other);
         Number quotient(static_cast<uint64_t>(0));
+        Number rest(static_cast<uint64_t>(0));
 
-        while (*this > divisor)
+        for (int i = NUM_FIELDS - 1; i >= 0; i--)
         {
-            divisor <<= 32;
-        }
+            rest <<= 32;
+            rest.fields[0] = this->fields[i];
 
-        while (divisor >= other)
-        {
-            quotient <<= 1;
-
-            if (*this >= divisor)
+            while (rest >= other)
             {
-                *this -= divisor;
-                quotient += 1;
+                rest -= other;
+                quotient.fields[i] += (uint32_t) 1;
             }
-
-            divisor >>= 1;
         }
-
+        *this = rest;
         return quotient;
+
+#else
+      if(this == &other)
+      {
+          *this = Number(static_cast<uint64_t>(0));
+          return Number(1);
+      }
+
+      Number quotient(static_cast<uint64_t>(0));
+
+      if (*this < other)
+      {
+         return Number::ZERO();
+      }
+
+      while (*this >= other)
+      {
+          //printf("div: %u, %u\n", this->get_ui(), other.get_ui());
+          *this = *this - other;
+          quotient += 1;
+      }
+      return quotient;
+#endif
     }
 
     __device__ Number operator/(const Number& other) const
@@ -188,11 +221,17 @@ struct Number
 
     __device__ bool operator<(const Number& other) const
     {
-        for (int i = NUM_FIELDS-1; i > 0; --i)
+        for (int i = NUM_FIELDS-1; i >= 0; --i)
         {
-            if (fields[i] < other.fields[i])
+            //printf("%d fields %u, other %u\n", i, fields[i], other.fields[i]);
+            if (fields[i] == other.fields[i]) continue;
+            else if (fields[i] < other.fields[i])
             {
                 return true;
+            }
+            else
+            {
+                return false;
             }
         }
         return false;
@@ -210,12 +249,12 @@ struct Number
 
     __device__ bool operator>=(const Number& other) const
     {
-        return !(*this < other) || (*this == other);
+        return (other < *this) || (*this == other);
     }
 
     __device__ bool operator==(const Number& other) const
     {
-       return (!(*this < other) && !(other < *this));
+       return !(*this < other) && !(other < *this);
     }
 
     __device__ bool operator !=(const Number& other) const
@@ -242,7 +281,8 @@ struct Number
         {
             fields[i] = fields[i - blockOffset];
         }
-        memset(fields, 0, blockOffset);
+        if (blockOffset > 0)
+            memset(fields, 0, blockOffset);
 
         return *this;
     }

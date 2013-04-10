@@ -11,11 +11,11 @@
 #include <cstdio>
 
 const int THREADS_PER_BLOCK = 64;
+const int THREADS_PER_BLOCK_RANDOM_KERNEL = 128;
+
 
 __global__ void setupStateForRandom(curandState* state, size_t* seeds);
 __global__ void setupStateForRandom(curandState* states, float* randomValues, size_t numberOfRandomValues);
-__global__ void simulateGame(size_t reiterations, curandState* deviceStates, size_t numberOfPlayfields, const Field* playfields, Player currentPlayer, Result* results);
-__global__ void simulateGamePreRandom(size_t reiterations, float* randomValues, size_t numberOfRandomValues, size_t numberOfPlayfields, const Field* playfields, Player currentPlayer, Result* results);
 __global__ void simulateGamePreRandom(size_t reiterations, size_t numberOfBlocks, float* randomValues, size_t numberOfPlayfields, const Field* playfields, Player currentPlayer, Result* results);
 
 
@@ -24,29 +24,11 @@ __global__ void testRandomNumber(float fakedRandom, size_t maximum, size_t* rand
 __global__ void testDoStep(curandState* deviceState, Field* playfield, Player currentPlayer, float fakedRandom);
 __global__ void testExpandLeaf(curandState* deviceState, Field* playfield, Player currentPlayer, size_t* wins, size_t* visits);
 
-void gameSimulation(size_t numberOfBlocks, size_t iterations, size_t* seeds, size_t numberOfPlayfields, const Field* playfields, Player currentPlayer, Result* results)
-{
-    curandState* deviceStates;
-    cudaMalloc(&deviceStates, sizeof(curandState) * numberOfBlocks);
-    
-    setupStateForRandom <<< numberOfBlocks, 1 >>> (deviceStates, seeds);
-    CudaUtils::checkState();
-    
-    simulateGame <<< numberOfBlocks, THREADS_PER_BLOCK >>> (size_t(ceil(iterations * 1.0 / numberOfBlocks)), deviceStates, numberOfPlayfields, playfields, currentPlayer, results);
-    CudaUtils::checkState();
-}
-
-void gameSimulationPreRandom(size_t numberOfBlocks, size_t iterations, float* randomValues, size_t numberOfPlayfields, const Field* playfields, Player currentPlayer, Result* results)
-{
-    simulateGamePreRandom <<< numberOfBlocks, THREADS_PER_BLOCK >>> (size_t(ceil(iterations * 1.0 / numberOfBlocks)), numberOfBlocks, randomValues, numberOfPlayfields, playfields, currentPlayer, results);
-    CudaUtils::checkState();
-}
-
 void gameSimulationPreRandom(size_t numberOfBlocks, size_t iterations, float* randomValues, size_t numberOfRandomValues, size_t numberOfPlayfields, const Field* playfields, Player currentPlayer, Result* results)
 {
     curandState* deviceStates;
-    cudaMalloc(&deviceStates, sizeof(curandState) * 128);
-    setupStateForRandom<<< 1, 128 >>>(deviceStates, randomValues, numberOfRandomValues);
+    cudaMalloc(&deviceStates, sizeof(curandState) * THREADS_PER_BLOCK_RANDOM_KERNEL);
+    setupStateForRandom<<< 1, THREADS_PER_BLOCK_RANDOM_KERNEL >>>(deviceStates, randomValues, numberOfRandomValues);
     CudaUtils::checkState();
 
     simulateGamePreRandom <<< numberOfBlocks, THREADS_PER_BLOCK >>> (iterations, numberOfBlocks, randomValues, numberOfPlayfields, playfields, currentPlayer, results);
@@ -56,25 +38,13 @@ void gameSimulationPreRandom(size_t numberOfBlocks, size_t iterations, float* ra
 void gameSimulationPreRandomStreamed(size_t numberOfBlocks, size_t iterations, float* randomValues, size_t numberOfRandomValues, size_t numberOfPlayfields, const Field* playfields, Player currentPlayer, Result* results, cudaStream_t stream, size_t streamSeed)
 {
     curandState* deviceStates;
-    cudaMalloc(&deviceStates, sizeof(curandState) * 128);
+    cudaMalloc(&deviceStates, sizeof(curandState) * THREADS_PER_BLOCK_RANDOM_KERNEL);
 
-    setupStateForRandom<<< 1, 128, 0, stream >>>(deviceStates, randomValues, numberOfRandomValues);
+    setupStateForRandom<<< 1, THREADS_PER_BLOCK_RANDOM_KERNEL, 0, stream >>>(deviceStates, randomValues, numberOfRandomValues);
     CudaUtils::checkState();
 
     simulateGamePreRandom <<< numberOfBlocks, THREADS_PER_BLOCK, 0, stream >>> (iterations, numberOfBlocks, randomValues, numberOfPlayfields, playfields, currentPlayer, results);
     CudaUtils::checkState();
-}
-
-void gameSimulationPreRandom(size_t numberOfBlocks, size_t iterations, float* randomValues, size_t numberOfRandomValues, size_t numberOfPlayfields, const Field* playfields, Player currentPlayer, Result* results, cudaStream_t stream)
-{
-    curandState* deviceStates;
-    cudaMalloc(&deviceStates, sizeof(curandState) * numberOfBlocks);
-    
-    setupStateForRandom<<< 1, 128, 0, stream >>>(deviceStates, randomValues, numberOfRandomValues);
-    //CudaUtils::checkState();
-    
-    simulateGame <<< numberOfBlocks, THREADS_PER_BLOCK, 0, stream >>> (size_t(ceil(iterations * 1.0 / numberOfBlocks)), deviceStates, numberOfPlayfields, playfields, currentPlayer, results);
-    //CudaUtils::checkState();
 }
 
 void setupSeedForTest(size_t numberOfBlocks, curandState* deviceStates)

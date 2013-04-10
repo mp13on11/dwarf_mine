@@ -94,7 +94,6 @@ public:
         {
             if (moveCount > 1)
             {
-                //randomMoveCounter = randomNumber(_deviceState, moveCount, fakedRandom);    
 				randomMoveCounter = randomNumber(_randomValues, &_randomSeed, moveCount, fakedRandom); 
             }
             else

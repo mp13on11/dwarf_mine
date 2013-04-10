@@ -2,7 +2,6 @@
 #include "Scheduler.h"
 
 #include <stdexcept>
-#include <iostream>
 
 Scheduler::Scheduler()
 {

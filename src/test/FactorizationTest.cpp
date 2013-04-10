@@ -2,7 +2,7 @@
 #include "Utilities.h"
 #include "common/SchedulerFactory.h"
 #include "elves/common-factorization/BigInt.h"
-#include "elves/quadratic_sieve/QuadraticSieve.h"
+#include "elves/quadratic_sieve/QuadraticSieveHelper.h"
 #include "elves/quadratic_sieve/smp/SmpQuadraticSieveElf.h"
 #include "elves/quadratic_sieve/cuda/CudaQuadraticSieveElf.h"
 
@@ -13,6 +13,9 @@
 
 using namespace std;
 using namespace chrono;
+
+// Does not terminate fast enough
+//#define RUN_CUDA_QUADRATIC_SIEVE
 
 typedef vector<uint64_t> PrimeList;
 
@@ -25,11 +28,15 @@ INSTANTIATE_TEST_CASE_P(
     testing::Values(
         //make_pair(BigInt("37975227936943673922808872755445627854565536638199"),
         //          BigInt("40094690950920881030683735292761468389214899724061"))
-        // The large pair takes too long at the moment
-        //make_pair(BigInt("551226983117"), BigInt("554724632351"))
+        //make_pair(BigInt("9499938415355683567"), BigInt("33172199367355317419")),
+        make_pair(BigInt("551226983117"), BigInt("554724632351")),
+        make_pair(BigInt("4231231247"), BigInt("4231231253")),
         make_pair(BigInt("15485863"), BigInt("15534733")),
         make_pair(BigInt("1313839"), BigInt("1327901")),
+        make_pair(BigInt("3001"), BigInt("3011")),
+        make_pair(BigInt("1009"), BigInt("1013")),
         make_pair(BigInt("547"), BigInt("719"))
+        //make_pair(BigInt("13"), BigInt("11")) // too small
     )
 );
 
@@ -39,87 +46,6 @@ void FactorizationTest::SetUp()
     p = inputPair.first;
     q = inputPair.second;
     product = p*q;
-}
-
-TEST_P(FactorizationTest, testFactorizationFermat)
-{
-    BigInt n = sqrt(product);
-
-    BigInt x = n;
-    BigInt xx;
-    BigInt y;
-    BigInt yy;
-
-    auto start = high_resolution_clock::now();
-
-    for(uint64_t i=0; ;i++)
-    {
-        x = x + 1;
-
-        mpz_powm_ui(xx.get_mpz_t(), x.get_mpz_t(), 2, product.get_mpz_t());
-
-        y = sqrt(xx);
-
-        mpz_pow_ui(yy.get_mpz_t(), y.get_mpz_t(), 2);
-
-        if (xx == yy)
-        {
-            EXPECT_EQ(p, x-y);
-            EXPECT_EQ(q, x+y);
-            break;
-        }
-    }
-
-    auto end = high_resolution_clock::now();
-    milliseconds elapsed = duration_cast<milliseconds>(end - start);
-    std::cout << elapsed.count() / 1000.0 << '\n';
-
-}
-
-TEST_P(FactorizationTest, testFactorizationPollardRho)
-{
-    function<BigInt(BigInt)> f ([=](BigInt x){
-        BigInt result = (x*x+123) % product;
-        return result;
-    });
-
-    BigInt x(2);
-    BigInt y(x);
-    BigInt d(1);
-    BigInt absdiff;
-
-    auto start = high_resolution_clock::now();
-
-    while(d == 1)
-    {
-        x = f(x);
-        y = f(y);
-        y = f(y);
-        absdiff = abs(x-y);
-        mpz_gcd(d.get_mpz_t(), absdiff.get_mpz_t(), product.get_mpz_t());
-        if(1 < d && d < product)
-        {
-            BigInt pp = d;
-            BigInt qq = product / d;
-
-            if(pp > qq)
-            {
-                BigInt tmp(pp);
-                pp = qq;
-                qq = tmp;
-            }
-
-            EXPECT_EQ(p, pp);
-            EXPECT_EQ(q, qq);
-
-            break;
-        }
-    }
-
-    auto end = high_resolution_clock::now();
-    milliseconds elapsed = duration_cast<milliseconds>(end - start);
-    std::cout << elapsed.count() / 1000.0 << '\n';
-
 }
 
 TEST_P(FactorizationTest, testFactorizationQuadraticSieve)
@@ -142,6 +68,29 @@ TEST_P(FactorizationTest, testFactorizationQuadraticSieve)
     ASSERT_EQ(p, actualP);
     ASSERT_EQ(q, actualQ);
 }
+
+#ifdef RUN_CUDA_QUADRATIC_SIEVE
+TEST_P(FactorizationTest, testFactorizationCudaQuadraticSieve)
+{
+    using namespace std::placeholders;
+    auto start = high_resolution_clock::now();
+
+    unique_ptr<QuadraticSieveElf> elf(new CudaQuadraticSieveElf());
+    BigInt actualP, actualQ;
+    tie(actualP, actualQ) = QuadraticSieveHelper::factor(product, bind(&QuadraticSieveElf::sieveSmoothSquares, elf.get(), _1, _2, _3, _4));
+
+
+    auto end = high_resolution_clock::now();
+    milliseconds elapsed = duration_cast<milliseconds>(end - start);
+    std::cout << "total time: " << elapsed.count() / 1000.0 << " seconds" << endl;
+
+    if(actualP > actualQ)
+        swap(actualP, actualQ);
+
+    ASSERT_EQ(p, actualP);
+    ASSERT_EQ(q, actualQ);
+}
+#endif
 
 TEST(QuadraticSieveTest, testModularSquareRoot)
 {

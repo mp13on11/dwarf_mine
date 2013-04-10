@@ -21,14 +21,15 @@ vector<BigInt> smpSieveKernel(const BigInt& start, const BigInt& end, const BigI
 
     // init field with logarithm
     x = start;
-    for(uint32_t i=0; i<=blockSize; i++, x++)
+
+    for(uint32_t i=0; i<=blockSize; ++i, ++x)
     {
         remainder = (x*x) % number;
         logs[i] = log_2_22(remainder);
     }
 
     // now with prime powers
-    cout << "starting with logarithmic sieving ..." << endl;
+    cout << "starting with logarithmic sieving ..." << start <<  " " << end << endl;
     for(const smallPrime_t& smallPrime : factorBase)
     {
         BigInt prime(smallPrime);
@@ -62,34 +63,17 @@ vector<BigInt> smpSieveKernel(const BigInt& start, const BigInt& end, const BigI
             result.emplace_back(start+i);
         }
     }
-
+    
     return result;
 }
 
-template<typename ElemType>
-std::ostream& operator<<(std::ostream& stream, const std::vector<ElemType>& list)
-{
-    stream << "[";
-    bool first = true;
-    for (const auto& element : list)
-    {
-        if (!first)
-            stream << ", ";
-        stream << element;
-        first = false;
-    }
-    stream << "]";
-
-    return stream;
-}
 vector<BigInt> SmpQuadraticSieveElf::sieveSmoothSquares(const BigInt& start, const BigInt& end, const BigInt& number, const FactorBase& factorBase)
 {
-    const int NUM_THREADS = omp_get_num_threads();
-    
+    const int NUM_THREADS = omp_get_max_threads();
+
     SmoothSquareList smooths;
     vector<future<SmoothSquareList>> partialResults;
     BigInt totalLength = end - start;
-    //BigInt chunkSize = //totalLength / NUM_THREADS;
     BigInt chunkSize = div_ceil(totalLength, BigInt(NUM_THREADS));
 
     for (int i=0; i<NUM_THREADS; ++i)

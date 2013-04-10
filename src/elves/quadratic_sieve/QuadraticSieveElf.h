@@ -2,7 +2,7 @@
 
 #include "common-factorization/BigInt.h"
 #include <Elf.h>
-#include "QuadraticSieve.h"
+#include "QuadraticSieveHelper.h"
 
 class Relation;
 

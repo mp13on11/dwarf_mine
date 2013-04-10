@@ -107,6 +107,8 @@ void printResults(const Communicator& communicator, const TimingProfiler& profil
         if (communicator.isMaster())
             timeFile << iterationTime.count() << endl;
     }
+
+    cout << "Average: " << profiler.averageIterationTime().count() << endl;
 }
 
 void benchmarkWith(const Configuration& config)

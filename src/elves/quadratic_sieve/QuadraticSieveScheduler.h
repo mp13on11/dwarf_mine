@@ -3,7 +3,7 @@
 #include "common/SchedulerTemplate.h"
 #include "common-factorization/BigInt.h"
 #include <utility>
-#include "QuadraticSieve.h"
+#include "QuadraticSieveHelper.h"
 
 class QuadraticSieveElf;
 
@@ -17,6 +17,9 @@ public:
     virtual void generateData(const DataGenerationParameters& params);
 
     std::pair<BigInt, BigInt> factor();
+
+
+    std::vector<double> determineChunkSizes(const BigInt& start, const BigInt& end);
 
 private:
     std::vector<BigInt> sieveDistributed(

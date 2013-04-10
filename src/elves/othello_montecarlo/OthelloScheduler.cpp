@@ -205,3 +205,10 @@ void OthelloScheduler::collectResults()
     _results = accumulatedResults;
     _result = *bestMove;
 }
+
+//void MonteCarloScheduler::doBenchmarkDispatch(int node )
+//{
+//    BenchmarkResult benchmarkNodeset;
+//    benchmarkNodeset[node] = 1;
+//    doDispatch(benchmarkNodeset);
+//}    

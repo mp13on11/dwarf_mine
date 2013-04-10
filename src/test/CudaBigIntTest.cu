@@ -5,9 +5,17 @@ extern __global__ void testAddKernel(PNumData pLeft, PNumData pRight, PNumData o
 extern __global__ void testSubKernel(PNumData pLeft, PNumData pRight, PNumData output);
 extern __global__ void testMulKernel(PNumData pLeft, PNumData pRight, PNumData output);
 extern __global__ void testDivKernel(PNumData pLeft, PNumData pRight, PNumData output);
+extern __global__ void testModKernel(PNumData pLeft, PNumData pRight, PNumData output);
 extern __global__ void testSmallerThanKernel(PNumData pLeft, PNumData pRight, bool* output);
+extern __global__ void testLargerThanKernel(PNumData pLeft, PNumData pRight, bool* output);
+extern __global__ void testLargerEqualKernel(PNumData pLeft, PNumData pRight, bool* output);
+extern __global__ void testEqualKernel(PNumData pLeft, PNumData pRight, bool* output);
 extern __global__ void testShiftLeftKernel(PNumData pLeft, uint32_t offset, PNumData output);
 extern __global__ void testShiftRightKernel(PNumData pLeft, uint32_t offset, PNumData output);
+extern __global__ void testModPowKernel(PNumData base, PNumData exponent, PNumData mod, PNumData result);
+extern __global__ void testLegendreKernel(PNumData a, PNumData p, int* result);
+extern __global__ void testRootModPrimeKernel(PNumData a, PNumData p, int* result);
+extern __global__ void testCudaPowKernel(int b, int e, int* result);
 
 void testAdd(PNumData left, PNumData right, PNumData result)
 {
@@ -33,9 +41,33 @@ void testDiv(PNumData left, PNumData right, PNumData result)
     CudaUtils::checkState();
 }
 
+void testMod(PNumData left, PNumData right, PNumData result)
+{
+    testModKernel<<<1, 1>>>(left, right, result);
+    CudaUtils::checkState();
+}
+
 void testSmallerThan(PNumData left, PNumData right, bool* result)
 {
     testSmallerThanKernel<<<1, 1>>>(left, right, result);
+    CudaUtils::checkState();
+}
+
+void testLargerThan(PNumData left, PNumData right, bool* result)
+{
+    testLargerThanKernel<<<1, 1>>>(left, right, result);
+    CudaUtils::checkState();
+}
+
+void testLargerEqual(PNumData left, PNumData right, bool* result)
+{
+    testLargerEqualKernel<<<1, 1>>>(left, right, result);
+    CudaUtils::checkState();
+}
+
+void testEqual(PNumData left, PNumData right, bool* result)
+{
+    testEqualKernel<<<1, 1>>>(left, right, result);
     CudaUtils::checkState();
 }
 
@@ -48,5 +80,29 @@ void testShiftLeft(PNumData left,uint32_t offset, PNumData result)
 void testShiftRight(PNumData left,uint32_t offset, PNumData result)
 {
     testShiftRightKernel<<<1, 1>>>(left, offset, result);
+    CudaUtils::checkState();
+}
+
+void testModPow(PNumData base, PNumData exponent, PNumData mod, PNumData result)
+{
+    testModPowKernel<<<1, 1>>>(base, exponent, mod, result);
+    CudaUtils::checkState();
+}
+
+void testLegendre(PNumData a, PNumData p, int* result)
+{
+    testLegendreKernel<<<1, 1>>>(a, p, result);
+    CudaUtils::checkState();
+}
+
+void testRootModPrime(PNumData a, PNumData p, int* result)
+{
+    testRootModPrimeKernel<<<1, 1>>>(a, p, result);
+    CudaUtils::checkState();
+}
+
+void testCudaPow(int b, int e, int* result)
+{
+    testCudaPowKernel<<<1, 1>>>(b, e, result);
     CudaUtils::checkState();
 }

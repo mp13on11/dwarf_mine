@@ -1,10 +1,33 @@
-#include "QuadraticSieve.h"
+#include "QuadraticSieveHelper.h"
 #include "common/Utils.h"
 #include "PrimeFactorization.h"
 #include <algorithm>
 #include <cassert>
+#include <iostream>
+#include "common/TimingProfiler.h"
+
+//#define SKIP_LINEAR_ALGEBRA
 
 using namespace std;
+
+const BigInt MAX_INTERVAL_SIZE(BigInt(1073741824) * 4);
+
+void printRelation(const Relation& r, const FactorBase& factorBase)
+{
+    cout << r.a << "^2%%N=\t";
+    for(const smallPrime_t& prime : factorBase)
+    {
+       cout << ((find(r.oddPrimePowers.indices.begin(), r.oddPrimePowers.indices.end(), prime) == r.oddPrimePowers.indices.end()) ? 0 : 1);
+    }
+    cout << " (";
+    for(uint32_t p : r.oddPrimePowers.indices)
+    {
+        cout << p << " ";
+    }
+    cout << ")";
+    cout << endl;
+}
+
 
 pair<BigInt, BigInt> sieveIntervalFast(
     const BigInt& start,
@@ -15,18 +38,40 @@ pair<BigInt, BigInt> sieveIntervalFast(
     SieveSmoothSquaresCallback sieveSmoothSquaresCallback
 )
 {
+    TimingProfiler profiler;
+
     const size_t maxRelations = factorBase.size() + 2;
+    cout << "before callback " << endl;
 
+    profiler.beginIteration();
     SmoothSquareList smooths = sieveSmoothSquaresCallback(start, end, number, factorBase);
+    profiler.endIteration();
 
-    for(const BigInt& x : smooths)
+    cout << "after callback, time: " << profiler.averageIterationTime().count() << " µs" << endl;
+
+    //volatile bool loopFinished = false;
+    pair<BigInt, BigInt> earlyResult(QuadraticSieveHelper::TRIVIAL_FACTORS);
+
+    //#pragma omp parallel for
+    //for (size_t i=0; i<maxRelations; ++i)
+    for (const BigInt& x : smooths) 
     {
+#if 0
+        BigInt x = smooths[i];
+        BigInt myNumber = number;
+
+        bool doStop;
+        #pragma omp critical
+        doStop = loopFinished;
+        if (doStop) continue;
+#endif
+
         BigInt remainder = (x*x) % number;
 
         PrimeFactorization factorization = QuadraticSieveHelper::factorizeOverBase(remainder, factorBase);
         if(factorization.empty())
         {
-            cerr << "false alarm !!! (should not happend)" << endl;
+            cerr << "false alarm !!! (should not happen)" << endl;
             continue;
         }
 
@@ -37,17 +82,42 @@ pair<BigInt, BigInt> sieveIntervalFast(
             auto factors = QuadraticSieveHelper::factorsFromCongruence(x, sqrt(factorization).multiply(), number);
             if(QuadraticSieveHelper::isNonTrivial(factors, number))
             {
-                return factors;
+                //#pragma omp critical
+                {
+                    //earlyResult = factors;
+                    //loopFinished = true;
+                    return factors;
+                }
             }
         }
 
+        //#pragma omp critical
+        {
         relations.push_back(relation);
 
         if(relations.size() >= maxRelations)
             break;
+            //loopFinished = true;
+        }
     }
+#if 0
+    sort(relations.begin(), relations.end(), [](const Relation& a, const Relation& b) {
+        return a.a < b.a;
+    });
 
-    return QuadraticSieveHelper::TRIVIAL_FACTORS;
+    int diff = relations.size() - maxRelations;
+
+    if (diff > 0)
+        relations.erase(relations.end() - diff, relations.end());
+#endif
+
+    return earlyResult;
+    //return QuadraticSieveHelper::TRIVIAL_FACTORS;
+}
+
+BigInt guessIntervalSize(const BigInt& number)
+{
+    return exp(sqrt(log(number)*log(log(number))));
 }
 
 pair<BigInt, BigInt> sieve(
@@ -57,7 +127,7 @@ pair<BigInt, BigInt> sieve(
     SieveSmoothSquaresCallback sieveSmoothSquaresCallback
 )
 {
-    BigInt intervalSize = exp(sqrt(log(number)*log(log(number))));
+    BigInt intervalSize = min(guessIntervalSize(number), MAX_INTERVAL_SIZE);
     BigInt intervalStart = sqrt(number) + 1;
     BigInt intervalEnd = sqrt(number)+ 1 + intervalSize;
     intervalEnd = (sqrt(2*number) < intervalEnd) ? sqrt(2*number) : intervalEnd;
@@ -97,13 +167,14 @@ pair<BigInt, BigInt> factor(const BigInt& number, SieveSmoothSquaresCallback sie
         return factors;
 
     cout << "found " << relations.size() << " relations" << endl;
+#ifdef SKIP_LINEAR_ALGEBRA
+    return TRIVIAL_FACTORS;
+#endif
 
     // bring relations into lower diagonal form
     cout << "performing gaussian elimination ..." << endl;
     performGaussianElimination(relations);
-
     cout << "combining random congruences ..." << endl;
-
     return searchForRandomCongruence(factorBase, number, 100, relations);
 }
 
@@ -122,7 +193,7 @@ bool isNonTrivial(const pair<BigInt,BigInt>& factors, const BigInt& number)
     return p>1 && p<number && q>1 && q<number;
 }
 
-static pair<BigInt,BigInt> pickRandomCongruence(const FactorBase& factorBase, const BigInt& number, int randomValue, const Relations& relations)
+static pair<BigInt,BigInt> pickRandomCongruence(const FactorBase& factorBase, const BigInt& number, function<int()> randomGenerator, const Relations& relations)
 {
     vector<bool> primeMask(factorBase.back()+1);
 
@@ -131,7 +202,7 @@ static pair<BigInt,BigInt> pickRandomCongruence(const FactorBase& factorBase, co
     {
         const Relation& relation = *relIter;
 
-        if((relation.dependsOnPrime == 0 &&  randomValue == 1) || (relation.dependsOnPrime > 0 && primeMask[relation.dependsOnPrime]))
+        if((relation.dependsOnPrime == 0 && randomGenerator() == 1) || (relation.dependsOnPrime > 0 && primeMask[relation.dependsOnPrime]))
         {
             selectedRelations.push_back(relation);
             for(uint32_t p : relation.oddPrimePowers.indices)
@@ -157,12 +228,13 @@ static pair<BigInt,BigInt> pickRandomCongruence(const FactorBase& factorBase, co
 
 pair<BigInt,BigInt> searchForRandomCongruence(const FactorBase& factorBase, const BigInt& number, size_t times, const Relations& relations)
 {
-    uniform_int_distribution<int> binaryDistribution;
+    uniform_int_distribution<int> binaryDistribution(0, 1);
     mt19937 randomEngine;
+    auto randomGenerator = bind(binaryDistribution, randomEngine);
 
     for(size_t i=0; i<times; i++)
     {
-        pair<BigInt, BigInt> result = pickRandomCongruence(factorBase, number, binaryDistribution(randomEngine), relations);
+        pair<BigInt, BigInt> result = pickRandomCongruence(factorBase, number, randomGenerator, relations);
         if(isNonTrivial(result, number))
             return result;
     }
@@ -207,6 +279,7 @@ void performGaussianElimination(Relations& relations)
 
     for(size_t i=0; i<relations.size(); i++)
     {
+        //cout << "Gauss iteration i = " << i << endl;
         // swap next smallest relation to top, according to remaining primes (bigger than currentPrime)
         RelationComparator comparator(currentPrime);
 
@@ -233,7 +306,9 @@ void performGaussianElimination(Relations& relations)
             {
                 auto start = relations[k].oddPrimePowers.indices.begin();
                 auto last = relations[k].oddPrimePowers.indices.end();
-                if(find(start, last, currentPrime) == last)
+                //if(find(start, last, currentPrime) == last)
+                    //continue;
+                if (!binary_search(start, last, currentPrime))
                     continue;
 
                 auto lowerBoundIt = lower_bound(start, last, primeToRemove);
