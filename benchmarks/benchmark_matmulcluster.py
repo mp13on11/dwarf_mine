@@ -7,126 +7,85 @@ from matplotlib.ticker import MultipleLocator, FormatStrFormatter
 from datetime import datetime
 
 
-def timesFromFile(fileName):
-    return [float(line) for line in open(fileName)]
+def times_from_file(file_name):
+    return [float(line) for line in open(file_name)]
 
 def avg(xs):
     return sum(xs) / len(xs)
 
-def plotSpeedUp(threadTimes, fileName):
-    xticks = range(1, len(threadTimes)+1)
+def plot_speedup(process_times, file_name):
+    all_times = process_times.values()
+    single_process_average_time = avg(process_times[1])
+    all_speedups = [[single_process_average_time / t for t in ts] for ts in all_times]
 
-    alltimes = threadTimes.values()
-
-    oneThreadAvgTime = avg(threadTimes[1])
-
-    allSpeedUps = [[oneThreadAvgTime / t for t in ts] for ts in alltimes]
-
-    avgSpeedUps = [avg(ts) for ts in allSpeedUps]
-
-    fig = pyplot.figure(figsize=(20, 10))
-
-    pyplot.plot(xticks, avgSpeedUps, '-', c="grey")
+    plot(all_speedups, 'Speedup', file_name)
 
 
-    pyplot.boxplot(allSpeedUps)
+def plot_burndown(process_times, file_name):
+    all_times = process_times.values()
+    single_process_average_time = avg(process_times[1])
+    all_burn_downs = [[single_process_average_time / t / processes for t in ts] for processes, ts in process_times.items()]
 
-    pyplot.xticks(xticks, threadTimes.keys())
-
-    ax = fig.add_subplot(1,1,1)
-
-    ax.xaxis.set_major_locator(MultipleLocator(4))
-    ax.xaxis.set_major_formatter(FormatStrFormatter('%d'))
-    ax.xaxis.set_minor_locator(MultipleLocator(1))
-
-    ax.yaxis.set_major_locator(MultipleLocator(2))
-    ax.yaxis.set_minor_locator(MultipleLocator(0.5))
-
-    ax.xaxis.grid(True,'minor',linestyle='-', color='0.95', linewidth=1)
-    ax.yaxis.grid(True,'minor',linestyle='-', color='0.95', linewidth=1)
-
-    ax.xaxis.grid(True,'major',linestyle='-', color='0.5', linewidth=1)
+    plot(all_burn_downs, 'Burndown (Speedup / Processes)', file_name)
 
 
-    ax.set_axisbelow(True)
+def plot(values, yaxis_label, file_name):
+    figure = pyplot.figure(figsize=(20, 10))
 
-    pyplot.ylim(0)
+    pyplot.xticks(range(1, len(values)))
+    pyplot.boxplot(values)
+
+    set_axes_on(figure)
+
+    pyplot.ylim(ymin=0)
 
     pyplot.title('MatMul (SMP, 1000x1000)')
     pyplot.xlabel('MPI processes')
-    pyplot.ylabel('SpeedUp')
+    pyplot.ylabel(yaxis_label)
     pyplot.show()
-    pyplot.savefig(fileName, dpi=80)
+
+    pyplot.savefig(file_name, dpi=80)
 
 
-def plotBurnDown(threadTimes, fileName):
-    xticks = range(1, len(threadTimes)+1)
+def set_axes_on(figure):
+    axes = figure.add_subplot(1,1,1)
 
-    alltimes = threadTimes.values()
+    axes.xaxis.set_major_locator(MultipleLocator(1))
+    axes.xaxis.set_major_formatter(FormatStrFormatter('%d'))
+    axes.xaxis.grid(True, 'major', linestyle='-', color='0.5', linewidth=1)
+    axes.xaxis.grid(True, 'minor', linestyle='-', color='0.95', linewidth=1)
 
-    oneThreadAvgTime = avg(threadTimes[1])
+    axes.yaxis.set_major_locator(MultipleLocator(0.5))
+    axes.yaxis.set_major_formatter(FormatStrFormatter('%.2f'))
+    axes.yaxis.set_minor_locator(MultipleLocator(0.25))
+    axes.yaxis.grid(True, 'major', linestyle='-', color='0.5', linewidth=1)
+    axes.yaxis.grid(True, 'minor', linestyle='-', color='0.95', linewidth=1)
 
-    allSpeedUps = [[oneThreadAvgTime / t / threads for t in ts] for threads, ts in threadTimes.items()]
-
-    avgSpeedUps = [avg(ts) for ts in allSpeedUps]
-
-    fig = pyplot.figure(figsize=(20, 10))
-
-    pyplot.plot(xticks, avgSpeedUps, '-', c="grey")
-
-
-    pyplot.boxplot(allSpeedUps)
-
-    pyplot.xticks(xticks, threadTimes.keys())
-
-    ax = fig.add_subplot(1,1,1)
-
-    ax.xaxis.set_major_locator(MultipleLocator(4))
-    ax.xaxis.set_major_formatter(FormatStrFormatter('%d'))
-    ax.xaxis.set_minor_locator(MultipleLocator(1))
-
-    ax.yaxis.set_major_locator(MultipleLocator(0.5))
-    ax.yaxis.set_minor_locator(MultipleLocator(0.1))
-
-    ax.xaxis.grid(True,'minor',linestyle='-', color='0.95', linewidth=1)
-    ax.yaxis.grid(True,'minor',linestyle='-', color='0.95', linewidth=1)
-
-    ax.xaxis.grid(True,'major',linestyle='-', color='0.5', linewidth=1)
-
-
-    ax.set_axisbelow(True)
-
-    pyplot.ylim(0)
-
-    pyplot.title('MatMul (SMP, 1000x1000)')
-    pyplot.xlabel('MPI processes')
-    pyplot.ylabel('Burndown (SpeedUp / Thread)')
-    pyplot.show()
-    pyplot.savefig(fileName, dpi=80)
+    axes.set_axisbelow(True)
 
 
 
 file_dir = sys.argv[1]
 iterations = int(sys.argv[2]) if (len(sys.argv)>2) else 100
 warmups = iterations / 10
-matrixSize = 1000
+matrix_size = 1000
 
 
-def timeFile(smpHosts, cudaHosts, ext = ".txt"):
+def time_file(smpHosts, cudaHosts, ext = ".txt"):
     hostsString = ",".join(smpHosts) + "-" + ",".join(cudaHosts)
-    return os.path.join(file_dir, "matmul_cluster_{0}_{1}{2}".format(hostsString, matrixSize, ext))
+    return os.path.join(file_dir, "matmul_cluster_{0}_{1}{2}".format(hostsString, matrix_size, ext))
 
-def commandLine(smpHosts, cudaHosts):
-    hostLine =  "-host {0} -np 1 ./build/src/main/dwarf_mine -m {1} -c matrix -w {3} -n {4} --time_output {5} "\
+def command_line(smpHosts, cudaHosts):
+    HOST_LINE =  "-host {0} -np 1 ./build/src/main/dwarf_mine -m {1} -c matrix -w {3} -n {4} --time_output {5} "\
                 "--left_rows {2} --common_rows_columns {2} --right_columns {2}"
 
-    timeFileName = timeFile(smpHosts, cudaHosts)
-    smpLines = [hostLine.format(host, "smp", matrixSize, warmups, iterations, timeFileName) for host in smpHosts]
-    cudaLines = [hostLine.format(host, "cuda", matrixSize, warmups, iterations, timeFileName) for host in cudaHosts]
+    time_file_name = time_file(smpHosts, cudaHosts)
+    smp_lines = [HOST_LINE.format(host, "smp", matrix_size, warmups, iterations, time_file_name) for host in smpHosts]
+    cuda_lines = [HOST_LINE.format(host, "cuda", matrix_size, warmups, iterations, time_file_name) for host in cudaHosts]
 
-    mpirunArgs = " : ".join(smpLines + cudaLines)
+    mpirun_args = " : ".join(smp_lines + cuda_lines)
 
-    return "mpirun --tag-output %s" % mpirunArgs
+    return "mpirun --tag-output %s" % mpirun_args
 
 
 def main():
@@ -137,16 +96,16 @@ def main():
 
     for smpHosts, cudaHosts in scenarios:
         print "Executing on smpHosts:", smpHosts, "and cudaHosts:", cudaHosts
-        print "commandLine:", commandLine(smpHosts, cudaHosts)
+        print "commandLine:", command_line(smpHosts, cudaHosts)
         startTime = datetime.now();
-        os.system(commandLine(smpHosts, cudaHosts))
+        os.system(command_line(smpHosts, cudaHosts))
         print "elapsed:", (datetime.now() - startTime).total_seconds(), "s"
 
-    alltimes = dict((len(smpHosts)+len(cudaHosts), timesFromFile(timeFile(smpHosts, cudaHosts))) for smpHosts, cudaHosts in scenarios)
+    all_times = dict((len(smpHosts)+len(cudaHosts), times_from_file(time_file(smpHosts, cudaHosts))) for smpHosts, cudaHosts in scenarios)
 
     print "Plotting..."
-    plotSpeedUp(alltimes, timeFile("", "", "_speedup.png"))
-    plotBurnDown(alltimes, timeFile("", "", "_burndown.png"))
+    plot_speedup(all_times, time_file("", "", "_speedup.png"))
+    plot_burndown(all_times, time_file("", "", "_burndown.png"))
 
 
 main()
