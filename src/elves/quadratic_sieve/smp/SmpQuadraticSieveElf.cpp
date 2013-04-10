@@ -29,7 +29,6 @@ vector<BigInt> smpSieveKernel(const BigInt& start, const BigInt& end, const BigI
     }
 
     // now with prime powers
-    cout << "starting with logarithmic sieving ..." << start <<  " " << end << endl;
     for(const smallPrime_t& smallPrime : factorBase)
     {
         BigInt prime(smallPrime);
@@ -52,8 +51,6 @@ vector<BigInt> smpSieveKernel(const BigInt& start, const BigInt& end, const BigI
 
     //second scan for smooth numbers
     BigInt biggestPrime(factorBase.back());
-
-
     vector<BigInt> result;
 
     for(uint32_t i=0; i<=blockSize; i++)
@@ -69,6 +66,8 @@ vector<BigInt> smpSieveKernel(const BigInt& start, const BigInt& end, const BigI
 
 vector<BigInt> SmpQuadraticSieveElf::sieveSmoothSquares(const BigInt& start, const BigInt& end, const BigInt& number, const FactorBase& factorBase)
 {
+    // Ensure execution can be controlled via 
+    // OMP_NUM_THREADS environment variable
     const int NUM_THREADS = omp_get_max_threads();
 
     SmoothSquareList smooths;
