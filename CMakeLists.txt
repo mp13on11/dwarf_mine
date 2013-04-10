@@ -5,13 +5,26 @@ PROJECT(dwarf_mine)
 SET(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/CMakeModules)
 SET(CMAKE_CONFIGURATION_TYPES "Debug;Release;RelWithDebInfo" CACHE STRING "limited configs" FORCE)
 SET(CMAKE_DEBUG_POSTFIX "d")
-OPTION(USE_VAMPIR_TRACE OFF)
 
 INCLUDE(Utils)
+
+# Enable Vampir profiling.
+#
+# WARNING: Do not set this option manually - use the script provided
+# in /utilities/use_vampir_trace.sh
+OPTION(USE_VAMPIR_TRACE OFF)
 
 # Enable C++ 11 and threading for gcc
 IF(CMAKE_COMPILER_IS_GNUCXX)
     ADD_CXX_FLAGS("-std=c++0x -pthread")
+ENDIF()
+
+IF(MSVC)
+    MESSAGE(WARN 
+        "This project has never been tested on Windows. Most of the code should 
+        be portable, but there might be compiler errors or other problems. 
+        Don't expect it to simply work."
+    )
 ENDIF()
 
 # Enable strict warnings
@@ -44,6 +57,7 @@ IF(MSVC)
     ENDIF()
 ENDIF()
 
+# Add sources from subdirectories
 ADD_SUBDIRECTORY(gtest-1.6.0)
 ADD_SUBDIRECTORY(src)
 
