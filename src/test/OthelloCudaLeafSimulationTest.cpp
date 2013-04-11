@@ -61,9 +61,7 @@ void testMultipleSteps(Playfield& playfield, vector<pair<size_t, Field>> expecte
     cudaWins.transferFrom(&wins);
     cudaVisits.transferFrom(&visits);
 
-    size_t dimension = 8;
-
-    testExpandLeafProxy(dimension, cudaPlayfield.get(), currentPlayer, cudaWins.get(), cudaVisits.get());
+    testExpandLeafProxy(cudaPlayfield.get(), currentPlayer, cudaWins.get(), cudaVisits.get());
 
     cudaWins.transferTo(&wins);
     cudaVisits.transferTo(&visits);
@@ -180,6 +178,37 @@ TEST_F(OthelloCudaLeafSimulationTest, NoPossibleMovesTest)
     testMultipleSteps(playfield, {}, B, 0, 1);  
 }
 
+TEST_F(OthelloCudaLeafSimulationTest, PredictableMoveTest)
+{
+    Playfield playfield {
+        F, F, F, F, W, F, F, F, 
+        W, F, F, F, W, F, F, F, 
+        F, W, F, F, W, F, F, W, 
+        F, F, W, F, W, F, W, F, 
+        F, F, F, W, W, W, F, F, 
+        W, W, W, W, B, W, W, W, 
+        F, F, F, W, W, W, F, F, 
+        F, F, W, W, F, F, W, F
+    };
+    testSingleStep(playfield, {{60, B}, {52, B}}, B,  0);   
+}
+
+
+TEST_F(OthelloCudaLeafSimulationTest, PredictableFinalMoveTest)
+{
+    Playfield playfield {
+        F, F, F, F, W, F, F, F, 
+        W, F, F, F, W, F, F, F, 
+        F, W, F, F, W, F, F, W, 
+        F, F, W, F, W, F, W, F, 
+        F, F, F, W, W, W, F, F, 
+        W, W, W, W, B, W, W, W, 
+        F, F, F, W, B, W, F, F, 
+        F, F, W, W, B, F, W, F
+    };
+    testSingleStep(playfield, {{60, W}, {61, W}, {52, W}}, W,  0);   
+}
+
 TEST_F(OthelloCudaLeafSimulationTest, PredictableLoserGameTest)
 {
     Playfield playfield {
@@ -193,7 +222,7 @@ TEST_F(OthelloCudaLeafSimulationTest, PredictableLoserGameTest)
         F, F, W, W, F, F, W, F
     };
 
-    //testMultipleSteps(playfield, {{60, W}, {61, W}}, B, 0, 1);
+    testMultipleSteps(playfield, {{60, W}, {61, W}}, B, 0, 1);
 }
 
 TEST_F(OthelloCudaLeafSimulationTest, PredictableWinnerGameTest)
@@ -209,7 +238,7 @@ TEST_F(OthelloCudaLeafSimulationTest, PredictableWinnerGameTest)
         F, F, W, W, B, F, W, F
     };
 
-    //testMultipleSteps(playfield, {{52, W}, {60, W}, {61, W}}, W, 1, 1);
+    testMultipleSteps(playfield, {{52, W}, {60, W}, {61, W}}, W, 1, 1);
 }
 
 TEST_F(OthelloCudaLeafSimulationTest, BoundarySingleStepSingleFlipTest)

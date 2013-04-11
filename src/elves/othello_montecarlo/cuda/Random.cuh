@@ -54,13 +54,29 @@ __device__ size_t randomNumber(curandState* deviceStates, size_t maximum, float 
 
 __device__ size_t numberOfMarkedFields(const bool* field)
 {
-	__shared__ unsigned int s[FIELD_DIMENSION];
-	if (threadIdx.x % FIELD_DIMENSION == 0) s[threadIdx.x / FIELD_DIMENSION] = 0;
+	__shared__ int s[FIELD_DIMENSION];
+
 	__syncthreads();
-	if (field[threadIdx.x]) atomicAdd(&s[threadIdx.x / FIELD_DIMENSION], 1u);
-	__syncthreads();
-	if (threadIdx.x % FIELD_DIMENSION == 0 && threadIdx.x != 0) atomicAdd(&s[0], s[threadIdx.x / FIELD_DIMENSION]);
+	if (threadIdx.x % FIELD_DIMENSION == 0) 
+	{
+		s[threadIdx.x / FIELD_DIMENSION] = 0;
+	}
+	
 	__syncthreads();
 	
-	return s[0];
+	if (field[threadIdx.x])
+	{
+		atomicAdd(&s[threadIdx.x / FIELD_DIMENSION], 1u);
+	}
+	
+	__syncthreads();
+	
+	if (threadIdx.x % FIELD_DIMENSION == 0 && threadIdx.x != 0)
+	{
+		atomicAdd(&s[0], s[threadIdx.x / FIELD_DIMENSION]);
+	}
+
+	__syncthreads();
+
+	return (size_t)s[0];
 }

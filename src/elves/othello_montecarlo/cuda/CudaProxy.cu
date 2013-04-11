@@ -64,7 +64,7 @@ void testRandomNumberProxy(float fakedRandom, size_t maximum, size_t* randomMove
     CudaUtils::checkState();
 }
 
-void testExpandLeafProxy(size_t dimension, Field* playfield, Player currentPlayer, size_t* wins, size_t* visits)
+void testExpandLeafProxy(Field* playfield, Player currentPlayer, size_t* wins, size_t* visits)
 {
     testExpandLeaf <<< 1, THREADS_PER_BLOCK >>>(playfield, currentPlayer, wins, visits);
     CudaUtils::checkState();

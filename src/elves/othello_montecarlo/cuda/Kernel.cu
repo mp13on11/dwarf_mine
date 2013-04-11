@@ -24,10 +24,14 @@ __device__ bool doStep(CudaGameState& state, CudaSimulator& simulator, size_t li
 {
     cassert(state.size == FIELD_DIMENSION * FIELD_DIMENSION, "Block %d, Thread %d detected invalid field size of %li\n", blockIdx.x, threadIdx.x, state.size);
     
+    __syncthreads();
+
     simulator.calculatePossibleMoves();
     
     size_t moveCount = simulator.countPossibleMoves();
-    
+
+    __syncthreads();
+
     if (moveCount > 0)
     {
         size_t index = simulator.getRandomMoveIndex(moveCount, fakedRandom);
@@ -47,8 +51,6 @@ __device__ void expandLeaf(CudaSimulator& simulator, CudaGameState& state)
     size_t passCounter = 0;
     size_t rounds = 0;
 
-    __syncthreads();
-    
     while (passCounter < 2)
     {
         bool passedMove = !doStep(state, simulator, rounds);
@@ -120,9 +122,11 @@ __global__ void testNumberOfMarkedFields(size_t* resultSum, const bool* playfiel
 __global__ void testDoStep(Field* playfield, Player currentPlayer, float fakedRandom)
 {
     int playfieldIndex = threadIdx.x;
+
     __shared__ Field sharedPlayfield[FIELD_SIZE];
     __shared__ Field oldPlayfield[FIELD_SIZE];
     __shared__ bool possibleMoves[FIELD_SIZE];
+
     sharedPlayfield[playfieldIndex] = playfield[playfieldIndex];
 
     // this part may be a shared variable?
@@ -134,7 +138,7 @@ __global__ void testDoStep(Field* playfield, Player currentPlayer, float fakedRa
         currentPlayer 
     );
 
-    CudaSimulator simulator(&state, 0, 0);
+    CudaSimulator simulator(&state, &fakedRandom, 0);
 
     doStep(state, simulator, 0, fakedRandom);
 
@@ -148,6 +152,7 @@ __global__ void testExpandLeaf(Field* playfield, Player currentPlayer, size_t* w
     __shared__ Field sharedPlayfield[FIELD_SIZE];
     __shared__ Field oldPlayfield[FIELD_SIZE];
     __shared__ bool possibleMoves[FIELD_SIZE];
+
     sharedPlayfield[playfieldIndex] = playfield[playfieldIndex];
 
     CudaGameState state (
@@ -157,13 +162,21 @@ __global__ void testExpandLeaf(Field* playfield, Player currentPlayer, size_t* w
         FIELD_DIMENSION, 
         currentPlayer 
     );
-    CudaSimulator simulator(&state, 0, 0);
+
+    float fakedRandom = 0;
+    CudaSimulator simulator(&state, &fakedRandom, 0);
+
+    __syncthreads();
+
     expandLeaf(simulator, state);
+
     if (state.isWinner(currentPlayer))
     {
         if (threadIdx.x == 0) ++(*wins);
     }
     if (threadIdx.x == 0)
-        (*visits)++;
+    {
+        ++(*visits);
+    }
     playfield[playfieldIndex] = sharedPlayfield[playfieldIndex];
 }
