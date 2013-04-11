@@ -11,60 +11,64 @@
 using namespace std;
 
 const BigInt MAX_INTERVAL_SIZE(BigInt(1073741824) * 4);
+const BigInt USE_PARALLEL_FACTOR_STAGE_THRESHOLD("10000000000000000000000");
+const size_t ADDITIONAL_RELATIONS = 2;
+const size_t SEARCH_CONGRUENCES_ITERATIONS = 100;
 
-void printRelation(const Relation& r, const FactorBase& factorBase)
-{
-    cout << r.a << "^2%%N=\t";
-    for(const smallPrime_t& prime : factorBase)
-    {
-       cout << ((find(r.oddPrimePowers.indices.begin(), r.oddPrimePowers.indices.end(), prime) == r.oddPrimePowers.indices.end()) ? 0 : 1);
-    }
-    cout << " (";
-    for(uint32_t p : r.oddPrimePowers.indices)
-    {
-        cout << p << " ";
-    }
-    cout << ")";
-    cout << endl;
-}
-
-
-pair<BigInt, BigInt> sieveIntervalFast(
-    const BigInt& start,
-    const BigInt& end,
-    vector<Relation>& relations,
-    const FactorBase& factorBase,
+pair<BigInt, BigInt> factorSmoothSquaresSequential(
+    const size_t maxRelations,
+    const SmoothSquareList& smooths,
     const BigInt& number,
-    SieveSmoothSquaresCallback sieveSmoothSquaresCallback
+    vector<Relation>& relations,
+    const FactorBase& factorBase
 )
 {
-    TimingProfiler profiler;
-
-    const size_t maxRelations = factorBase.size() + 2;
-    cout << "before callback " << endl;
-
-    profiler.beginIteration();
-    SmoothSquareList smooths = sieveSmoothSquaresCallback(start, end, number, factorBase);
-    profiler.endIteration();
-
-    cout << "after callback, time: " << profiler.averageIterationTime().count() << " µs" << endl;
-
-    //volatile bool loopFinished = false;
-    pair<BigInt, BigInt> earlyResult(QuadraticSieveHelper::TRIVIAL_FACTORS);
-
-    //#pragma omp parallel for
-    //for (size_t i=0; i<maxRelations; ++i)
     for (const BigInt& x : smooths) 
     {
-#if 0
-        BigInt x = smooths[i];
-        BigInt myNumber = number;
+        BigInt remainder = (x*x) % number;
 
-        bool doStop;
-        #pragma omp critical
-        doStop = loopFinished;
-        if (doStop) continue;
-#endif
+        PrimeFactorization factorization = QuadraticSieveHelper::factorizeOverBase(remainder, factorBase);
+        if(factorization.empty())
+        {
+            cerr << "false alarm !!! (should not happen)" << endl;
+            continue;
+        }
+
+        Relation relation(x, factorization);
+        if(relation.isPerfectCongruence())
+        {
+            auto factors = QuadraticSieveHelper::factorsFromCongruence(x, sqrt(factorization).multiply(), number);
+            if(QuadraticSieveHelper::isNonTrivial(factors, number))
+                return factors;
+        }
+        relations.push_back(relation);
+
+        if(relations.size() >= maxRelations)
+            break;
+    }
+
+    return QuadraticSieveHelper::TRIVIAL_FACTORS;
+}
+
+pair<BigInt, BigInt> factorSmoothSquaresParallel(
+    const size_t maxRelations,
+    const SmoothSquareList& smooths,
+    const BigInt& number,
+    vector<Relation>& relations,
+    const FactorBase& factorBase
+)
+{
+    cout << "Factoring smooth squares (in parallel) ..." << endl;
+    volatile bool loopFinished = false;
+    pair<BigInt, BigInt> earlyResult(QuadraticSieveHelper::TRIVIAL_FACTORS);
+
+    #pragma omp parallel for
+    for (size_t i=0; i<maxRelations; ++i)
+    {
+        const BigInt& x = smooths[i];
+
+        #pragma omp flush(loopFinished)
+        if (loopFinished) continue;
 
         BigInt remainder = (x*x) % number;
 
@@ -82,37 +86,54 @@ pair<BigInt, BigInt> sieveIntervalFast(
             auto factors = QuadraticSieveHelper::factorsFromCongruence(x, sqrt(factorization).multiply(), number);
             if(QuadraticSieveHelper::isNonTrivial(factors, number))
             {
-                //#pragma omp critical
+                #pragma omp critical
                 {
-                    //earlyResult = factors;
-                    //loopFinished = true;
-                    return factors;
+                    earlyResult = factors;
+                    loopFinished = true;
                 }
             }
         }
 
-        //#pragma omp critical
+        #pragma omp critical
         {
-        relations.push_back(relation);
+            relations.push_back(relation);
 
-        if(relations.size() >= maxRelations)
-            break;
-            //loopFinished = true;
+            if(relations.size() >= maxRelations)
+                loopFinished = true;
         }
     }
-#if 0
+
     sort(relations.begin(), relations.end(), [](const Relation& a, const Relation& b) {
         return a.a < b.a;
     });
 
-    int diff = relations.size() - maxRelations;
-
-    if (diff > 0)
-        relations.erase(relations.end() - diff, relations.end());
-#endif
-
     return earlyResult;
-    //return QuadraticSieveHelper::TRIVIAL_FACTORS;
+}
+
+pair<BigInt, BigInt> sieveIntervalFast(
+    const BigInt& start,
+    const BigInt& end,
+    vector<Relation>& relations,
+    const FactorBase& factorBase,
+    const BigInt& number,
+    SieveSmoothSquaresCallback sieveSmoothSquaresCallback
+)
+{
+    const size_t maxRelations = factorBase.size() + ADDITIONAL_RELATIONS;
+    SmoothSquareList smooths = sieveSmoothSquaresCallback(start, end, number, factorBase);
+    
+    auto factorFunction = &factorSmoothSquaresSequential;
+
+    if (number >= USE_PARALLEL_FACTOR_STAGE_THRESHOLD)
+        factorFunction = &factorSmoothSquaresParallel;
+
+    return factorFunction(
+        maxRelations, 
+        smooths, 
+        number, 
+        relations, 
+        factorBase
+    );
 }
 
 BigInt guessIntervalSize(const BigInt& number)
@@ -175,7 +196,7 @@ pair<BigInt, BigInt> factor(const BigInt& number, SieveSmoothSquaresCallback sie
     cout << "performing gaussian elimination ..." << endl;
     performGaussianElimination(relations);
     cout << "combining random congruences ..." << endl;
-    return searchForRandomCongruence(factorBase, number, 100, relations);
+    return searchForRandomCongruence(factorBase, number, SEARCH_CONGRUENCES_ITERATIONS, relations);
 }
 
 pair<BigInt,BigInt> factorsFromCongruence(const BigInt& a, const BigInt& b, const BigInt& number)
