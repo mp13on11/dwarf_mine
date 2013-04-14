@@ -1,7 +1,7 @@
 SET(LIBRARY_NAME smp-matrix)
 
 # Export library for main subproject
-SET(SMP_MATRIX_ELF_LIB ${LIBRARY_NAME} CACHE STRING INTERNAL FORCE)
+REGISTER_ELF_LIB(${LIBRARY_NAME})
 
 # Dependencies
 LINK_DIRECTORIES(

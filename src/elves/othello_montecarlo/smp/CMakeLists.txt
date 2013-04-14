@@ -1,14 +1,13 @@
 SET(LIBRARY_NAME smp-othello-montecarlo)
 
 # Export library for main subproject
-SET(SMP_OTHELLO_MONTECARLO_ELF_LIB ${LIBRARY_NAME} CACHE STRING INTERNAL FORCE)
+REGISTER_ELF_LIB(${LIBRARY_NAME})
 
 LINK_DIRECTORIES(
     ${CMAKE_CURRENT_BINARY_DIR}
 )
 
 # Dependencies
-    
 INCLUDE_DIRECTORIES(
     # Add dependencies' include dirs here
 )
