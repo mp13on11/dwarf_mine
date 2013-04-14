@@ -1,28 +1,18 @@
 #pragma once
 
-#include "MatrixSlicer.h"
-#include "common/BenchmarkResults.h"
-
+#include <cstddef>
 #include <vector>
-#include <map>
-#include <memory>
 
-class MatrixOnlineScheduler;
+template <typename T>
+class Matrix;
+class MatrixSlice;
+class BenchmarkResult;
 
 class MatrixOnlineSchedulingStrategy
 {
 public:
+    virtual size_t getWorkQueueSize() = 0;
     virtual std::vector<MatrixSlice> getSliceDefinitions(
         const Matrix<float>& result,
         const BenchmarkResult& nodeSet) = 0;
-    virtual int getLastWorkAmountFor(
-        const MatrixOnlineScheduler& scheduler,
-        const int node) = 0;
-    virtual int getNextWorkAmountFor(
-        const MatrixOnlineScheduler& scheduler,
-        const int node) = 0;
-
-protected:
-    virtual void reset() = 0;
 };
-

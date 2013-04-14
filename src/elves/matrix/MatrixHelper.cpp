@@ -17,31 +17,79 @@ namespace MatrixHelper
     static void fillMatrixFromStream(Matrix<float>& matrix, istream& stream);
     static vector<float> getValuesIn(const string& line);
 
-    int receiveWorkAmountFrom(const Communicator& communicator, const int node)
+    size_t receiveWorkQueueSize(
+        const Communicator& communicator,
+        const int node,
+        const int tag)
     {
-        int amount;
-        communicator->Recv(&amount, 1, MPI::INT, node, 0);
-        return amount;
+        int size;
+        communicator->Recv(&size, 1, MPI::INT, node, tag);
+        return size_t(size);
     }
 
-    void sendWorkAmountTo(const Communicator& communicator, const int node, const int amount)
+    void sendWorkQueueSize(
+        const Communicator& communicator,
+        const int node,
+        const size_t workQueueSize,
+        const int tag)
     {
-        communicator->Send(&amount, 1, MPI::INT, node, 0);
+        int size = int(workQueueSize);
+        communicator->Send(&size, 1, MPI::INT, node, tag);
     }
 
-    void requestNextSlices(const Communicator& communicator, int node)
+    void requestTransaction(
+        const Communicator& communicator,
+        const int sourceNode,
+        const int targetNode,
+        const int tag)
     {
-        communicator->Send(&node, 1, MPI::INT, 0, MatrixHelper::TAG_REQUEST_SLICE);
+        communicator->Send(&sourceNode, 1, MPI::INT, targetNode, tag);
     }
 
-    int waitForSlicesRequest(const Communicator& communicator)
+    int waitForTransactionRequest(
+        const Communicator& communicator,
+        const int tag)
     {
-        int nodeId;
-        communicator->Recv(&nodeId, 1, MPI::INT, MPI::ANY_SOURCE, MatrixHelper::TAG_REQUEST_SLICE);
-        return nodeId;
+        int node;
+        communicator->Recv(&node, 1, MPI::INT, MPI::ANY_SOURCE, tag);
+        return node;
     }
 
-    void sendMatrixTo(const Communicator& communicator, const Matrix<float>& matrix, int node)
+    MatrixPair getNextWork(
+        const Communicator& communicator,
+        const int node,
+        const int tag)
+    {
+        Matrix<float> left = receiveMatrixFrom(communicator, node, tag);
+        Matrix<float> right = receiveMatrixFrom(communicator, node, tag);
+        return MatrixPair(move(left), move(right));
+    }   
+    
+    void sendNextWork(
+        const Communicator& communicator,
+        const MatrixPair& work,
+        const int node,
+        const int tag)
+    {
+        sendMatrixTo(communicator, work.first, node, tag);
+        sendMatrixTo(communicator, work.second, node, tag);
+    }   
+    
+    void isendNextWork(
+        const Communicator& communicator,
+        const MatrixPair& work,
+        const int node,
+        const int tag)
+    {
+        isendMatrixTo(communicator, work.first, node, tag);
+        isendMatrixTo(communicator, work.second, node, tag);
+    }   
+
+    void sendMatrixTo(
+        const Communicator& communicator,
+        const Matrix<float>& matrix,
+        const int node,
+        const int tag)
     {
         unsigned long dimensions[2] =
         {
@@ -49,18 +97,37 @@ namespace MatrixHelper
             matrix.columns()
         };
         auto numElements = dimensions[0] * dimensions[1];
-        communicator->Send(dimensions, 2, MPI::UNSIGNED_LONG, node, 0);
-        communicator->Send(matrix.buffer(), numElements, MPI::FLOAT, node, 0);
+        communicator->Send(dimensions, 2, MPI::UNSIGNED_LONG, node, tag);
+        communicator->Send(matrix.buffer(), numElements, MPI::FLOAT, node, tag);
     }
 
-    Matrix<float> receiveMatrixFrom(const Communicator& communicator, int node)
+    void isendMatrixTo(
+        const Communicator& communicator,
+        const Matrix<float>& matrix,
+        const int node,
+        const int tag)
+    {
+        unsigned long dimensions[2] =
+        {
+            matrix.rows(),
+            matrix.columns()
+        };
+        auto numElements = dimensions[0] * dimensions[1];
+        communicator->Send(dimensions, 2, MPI::UNSIGNED_LONG, node, tag);
+        communicator->Isend(matrix.buffer(), numElements, MPI::FLOAT, node, tag);
+    }
+
+    Matrix<float> receiveMatrixFrom(
+        const Communicator& communicator,
+        const int node,
+        const int tag)
     {
         unsigned long dimensions[2];
-        communicator->Recv(dimensions, 2, MPI::UNSIGNED_LONG, node, 0);
+        communicator->Recv(dimensions, 2, MPI::UNSIGNED_LONG, node, tag);
         auto rows = dimensions[0];
         auto cols = dimensions[1];
         Matrix<float> result(rows, cols);
-        communicator->Recv(result.buffer(), rows*cols, MPI::FLOAT, node, 0);
+        communicator->Recv(result.buffer(), rows*cols, MPI::FLOAT, node, tag);
         return result;
     }
 
