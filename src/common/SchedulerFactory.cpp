@@ -24,7 +24,7 @@ using namespace std;
 #ifndef HAVE_CUDA
 struct HasNoCudaDummy : public Elf {};
 
-typedef HasNoCudaDummy CudaMatrixElf, CudaQuadraticSieveElf, CudaMonteCarloElf;
+typedef HasNoCudaDummy CudaMatrixElf, CudaQuadraticSieveElf, CudaOthelloElf;
 #endif
 
 typedef SchedulerFactory::FactoryFunction FactoryFunction;
