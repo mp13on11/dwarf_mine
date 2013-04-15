@@ -23,10 +23,7 @@ void megaWrapper(const uint32_t* number, uint32_t* logs_d, const uint32_t* facto
 	cudaMalloc(&end_d, sizeof(uint32_t)*NUM_FIELDS);
 	cudaMemcpy(end_d, end, NUM_FIELDS*sizeof(uint32_t), cudaMemcpyHostToDevice);
 	
-	printf("before megaKernel in wrapper, numBlocks: %d, numThreads: %d\n", numBlocks, numThreads);
 	megaKernel<<<numBlocks, BLOCK_SIZE>>>(number_d, logs_d, factorBase_d, (int)factorBaseSize, start_d, end_d, intervalLength);
-	printf("after megaKernel\n");
-	
 	cudaDeviceSynchronize();
 	
 	cudaFree(start_d);

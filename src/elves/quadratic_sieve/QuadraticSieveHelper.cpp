@@ -4,8 +4,9 @@
 #include <algorithm>
 #include <cassert>
 #include <iostream>
-#include "common/TimingProfiler.h"
 
+// Uncomment this to skip the (non-parallel) gaussian elimination stage,
+// which takes very long for larger input numbers
 //#define SKIP_LINEAR_ALGEBRA
 
 using namespace std;
@@ -300,7 +301,6 @@ void performGaussianElimination(Relations& relations)
 
     for(size_t i=0; i<relations.size(); i++)
     {
-        //cout << "Gauss iteration i = " << i << endl;
         // swap next smallest relation to top, according to remaining primes (bigger than currentPrime)
         RelationComparator comparator(currentPrime);
 
@@ -327,8 +327,6 @@ void performGaussianElimination(Relations& relations)
             {
                 auto start = relations[k].oddPrimePowers.indices.begin();
                 auto last = relations[k].oddPrimePowers.indices.end();
-                //if(find(start, last, currentPrime) == last)
-                    //continue;
                 if (!binary_search(start, last, currentPrime))
                     continue;
 

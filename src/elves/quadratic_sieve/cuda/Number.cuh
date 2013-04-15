@@ -4,7 +4,7 @@
 #include <cuda.h>
 #include <stdio.h>
 
-#define UNSAFE_DIVISION
+#define USE_LONG_DIVISION
 
 struct Number
 {
@@ -164,7 +164,7 @@ struct Number
 
     __device__ Number divMod(const Number& other)
     {
-#ifdef UNSAFE_DIVISION
+#ifdef USE_LONG_DIVISION
         if(this == &other)
         {
             *this = Number(static_cast<uint64_t>(0));
@@ -204,7 +204,6 @@ struct Number
 
       while (*this >= other)
       {
-          //printf("div: %u, %u\n", this->get_ui(), other.get_ui());
           *this = *this - other;
           quotient += 1;
       }
@@ -223,7 +222,6 @@ struct Number
     {
         for (int i = NUM_FIELDS-1; i >= 0; --i)
         {
-            //printf("%d fields %u, other %u\n", i, fields[i], other.fields[i]);
             if (fields[i] == other.fields[i]) continue;
             else if (fields[i] < other.fields[i])
             {

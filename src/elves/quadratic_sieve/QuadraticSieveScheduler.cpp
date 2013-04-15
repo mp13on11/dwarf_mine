@@ -3,24 +3,6 @@
 #include "common/ProblemStatement.h"
 #include "common/Utils.h"
 #include <numeric>
-#include "common/TimingProfiler.h"
-
-template<typename ElemType>
-std::ostream& operator<<(std::ostream& stream, const std::vector<ElemType>& list)
-{
-    stream << "[";
-    bool first = true;
-    for (const auto& element : list)
-    {
-        if (!first)
-            stream << ", ";
-        stream << element;
-        first = false;
-    }
-    stream << "]";
-
-    return stream;
-}
 
 using namespace std;
 using namespace std::placeholders;
@@ -133,14 +115,11 @@ void QuadraticSieveScheduler::doDispatch()
         BigInt number = receiveBigInt(communicator);
         BigInt start = receiveBigIntFromMaster(communicator);
         BigInt end = receiveBigIntFromMaster(communicator);
+
         size_t factorBaseSize;
-        TimingProfiler prof;
-        prof.beginIteration();
         communicator->Bcast(&factorBaseSize, 1, MPI::UNSIGNED_LONG, Communicator::MASTER_RANK);
         vector<smallPrime_t> factorBase(factorBaseSize);
         communicator->Bcast(factorBase.data(), factorBaseSize, MPI::INT, Communicator::MASTER_RANK);
-        prof.endIteration();
-        cout << "Receiving factorbase: " << prof.averageIterationTime().count() << " µs" << endl;
 
         auto result = elf().sieveSmoothSquares(start, end, number, factorBase);
         int resultSize = result.size();
@@ -196,9 +175,7 @@ vector<double> QuadraticSieveScheduler::determineChunkSizes(const BigInt& start,
         throw runtime_error("Interval is too long!");
 
     uint64_t intervalLength = intervalLengthBigInt.get_ui();
-    cout << "IntervalLength: " << intervalLength << endl;
     auto weights = communicator.weights();
-    cout << "Weights: " << weights << endl;
 
     vector<double> chunkSizes;
     for (auto weight : weights)
@@ -221,7 +198,6 @@ vector<BigInt> QuadraticSieveScheduler::sieveDistributed(
     for (size_t nodeId=1; nodeId < communicator.size(); ++nodeId)
     {
         double weightedChunkSize = chunkSizes[nodeId];
-        cout << "Chunksize for node " << nodeId << ": " << weightedChunkSize << endl;
         BigInt partialStart = start + weightedChunkSize*nodeId;
         BigInt partialEnd = min(partialStart + weightedChunkSize, end);
         sendBigIntTo(communicator, partialStart, nodeId);
@@ -233,15 +209,11 @@ vector<BigInt> QuadraticSieveScheduler::sieveDistributed(
     communicator->Bcast(const_cast<smallPrime_t*>(factorBase.data()), factorBaseSize, MPI::INT, Communicator::MASTER_RANK);
 
     double masterChunkSize = chunkSizes[0];
-    cout << "Chunksize for master: " << masterChunkSize << endl;
     SmoothSquareList masterResult;
 
     if (masterChunkSize > 0.0) 
         masterResult  = elf().sieveSmoothSquares(start, min(start + masterChunkSize, end), number, factorBase);
     size_t resultSize = masterResult.size();
-
-    TimingProfiler prof;
-    prof.beginIteration();
 
     vector<size_t> numberSizes;
     vector<uint32_t> numberData;
@@ -287,7 +259,5 @@ vector<BigInt> QuadraticSieveScheduler::sieveDistributed(
     communicator->Gatherv(numberData.data(), numberData.size(), MPI::INT, allNumberData.data(), sizePerNode.data(), dataDispls.data(), MPI::INT, Communicator::MASTER_RANK);
 
     auto unpacked = unpackBigintVector(allNumberSizes, allNumberData);
-    prof.endIteration();
-    cout << "Receiving relations " << prof.averageIterationTime().count() << " µs" << endl;
     return unpacked;
 }
