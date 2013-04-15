@@ -25,6 +25,12 @@ OPTION(BUILD_WITH_CUDA "Set to ON to build with cuda elves. (Requires Cuda suppo
 
 IF(BUILD_WITH_CUDA)
     FIND_PACKAGE(CUDA REQUIRED)
+
+    # Compile code for Fermi class devices
+    SET(CUDA_NVCC_FLAGS
+        "--generate-code code=sm_21,arch=compute_20"
+        "--generate-code code=sm_20,arch=compute_20" # sm_20 needed for Quadro 4000
+    )
 ENDIF()
 
 # Scripts in subdirectories will populate 
