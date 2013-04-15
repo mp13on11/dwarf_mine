@@ -20,7 +20,7 @@ IF(CMAKE_COMPILER_IS_GNUCXX)
 ENDIF()
 
 IF(MSVC)
-    MESSAGE(WARN 
+    MESSAGE(WARNING
         "This project has never been tested on Windows. Most of the code should 
         be portable, but there might be compiler errors or other problems. 
         Don't expect it to simply work."
@@ -64,6 +64,6 @@ ADD_SUBDIRECTORY(src)
 IF(USE_VAMPIR_TRACE)
     ADD_CUSTOM_TARGET(symbols ALL
         COMMAND find . -name *.so > /tmp/dwarf_mine.symbols.init\; tr \"\\n\" \" \" < /tmp/dwarf_mine.symbols.init | xargs nm ./src/main/dwarf_mine > /tmp/dwarf_mine.symbols
-    )   
+    )
     ADD_DEPENDENCIES(symbols dwarf_mine)
 ENDIF()
