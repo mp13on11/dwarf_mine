@@ -3,10 +3,13 @@
 # This is an example MPI configuration using 4 physical machines, with 3 of 
 # them having CUDA-capable hardware. On each of these, a process is started 
 # for each elf implementation (CUDA or SMP).
--host host1 -np 1 /home/jenkins/share/dwarf_mine/build/src/main/dwarf_mine -m smp -c matrix
--host host1 -np 1 /home/jenkins/share/dwarf_mine/build/src/main/dwarf_mine -m cuda -c matrix
--host host2 -np 1 /home/jenkins/share/dwarf_mine/build/src/main/dwarf_mine -m smp -c matrix
--host host2 -np 1 /home/jenkins/share/dwarf_mine/build/src/main/dwarf_mine -m cuda -c matrix
--host host3 -np 1 /home/jenkins/share/dwarf_mine/build/src/main/dwarf_mine -m smp -c matrix
--host host3 -np 1 /home/jenkins/share/dwarf_mine/build/src/main/dwarf_mine -m cuda -c matrix
--host host4 -np 1 /home/jenkins/share/dwarf_mine/build/src/main/dwarf_mine -m smp -c matrix
+#
+# "/path/to/executable" has to be equal on all machines - if it isn't, the
+# correct path has to be specified for each host.
+-host host1 -np 1 /path/to/executable/dwarf_mine -m smp -c matrix
+-host host1 -np 1 /path/to/executable/dwarf_mine -m cuda -c matrix
+-host host2 -np 1 /path/to/executable/dwarf_mine -m smp -c matrix
+-host host2 -np 1 /path/to/executable/dwarf_mine -m cuda -c matrix
+-host host3 -np 1 /path/to/executable/dwarf_mine -m smp -c matrix
+-host host3 -np 1 /path/to/executable/dwarf_mine -m cuda -c matrix
+-host host4 -np 1 /path/to/executable/dwarf_mine -m smp -c matrix
