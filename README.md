@@ -17,6 +17,7 @@ Setting the `BUILD_WITH_CUDA` CMake option to `OFF` will disable building the CU
 * CUDA 5.0 or higher (optional)
 * OpenMPI 1.6.4 or higher, with multithreading support
 * Boost 1.49 or higher
+* GMP 5.0.5 or higher, GMPXX C++ bindings
 
 **NOTE:** The OpenMPI package provided in Debian's package management system is built without multithreading support and therefore is not compatible with this project. To run all scenarios successfully,
 you have to build MPI from source:
