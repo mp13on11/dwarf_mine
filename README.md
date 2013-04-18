@@ -68,8 +68,10 @@ build directory is something else than `build`).
 
 ## Running/Example scenarios
 
-A recorded shell session demonstrating some basic usage of the program can be found in `docs/demo.ttyrecord`. 
+A recorded shell session demonstrating some basic usage of the program can be found in `doc/demo.ttyrecord`. 
 The [ttyplay](http://0xcc.net/ttyrec/index.html.en) tool is required to play the demo.
+
+An example MPI appfile (needed to benchmark a cluster) can be found in `doc/example_appfile`.
 
 ## License
 

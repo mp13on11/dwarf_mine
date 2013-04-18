@@ -6,6 +6,8 @@
 #
 # "/path/to/executable" has to be equal on all machines - if it isn't, the
 # correct path has to be specified for each host.
+#
+# The first process will act as master and control the overall execution.
 -host host1 -np 1 /path/to/executable/dwarf_mine -m smp -c matrix
 -host host1 -np 1 /path/to/executable/dwarf_mine -m cuda -c matrix
 -host host2 -np 1 /path/to/executable/dwarf_mine -m smp -c matrix
