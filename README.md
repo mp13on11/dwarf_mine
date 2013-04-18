@@ -8,7 +8,9 @@ Our goal was to define and implement a **parallel benchmark suite for heterogene
 
 ## Build instructions
 
-This is a CMake based project, but it has only been compiled and tested in Linux environments. In order to build and run the GPU implementations, a Fermi-class NVIDIA graphics card is required.
+This is a CMake based project, but it has only been compiled and tested in Linux environments so far. 
+The CMake scripts assume GCC, but in principle, any compiler with sufficient C++ 11 support should work.
+In order to build and run the GPU implementations, a Fermi-class NVIDIA graphics card is required.
 Setting the `BUILD_WITH_CUDA` CMake option to `OFF` will disable building the CUDA implementations.
 
 ### Prerequisites
@@ -43,6 +45,14 @@ cd build
 cmake ..
 make
 ```
+
+After building, you should run all the tests using `test.sh` or `<BUILD_DIR>/src/test/test` if your
+build directory is something else than `build`.
+
+## Running/Example scenarios
+
+A recorded shell session demonstrating some basic usage of the program can be found in `docs/demo.ttyrecord`. 
+The [ttyplay](http://0xcc.net/ttyrec/index.html.en) tool is required to play the demo.
 
 ## License
 
