@@ -1,10 +1,12 @@
--host bigdwarf -np 1 /home/jenkins/share/dwarf_mine/build/src/main/dwarf_mine -m smp -c montecarlo
-#-host bigdwarf -np 1 /home/jenkins/share/dwarf_mine/build/src/main/dwarf_mine -m cuda -c montecarlo
--host quadcore1 -np 1 /home/jenkins/share/dwarf_mine/build/src/main/dwarf_mine -m smp -c montecarlo
-#-host quadcore1 -np 1 /home/jenkins/share/dwarf_mine/build/src/main/dwarf_mine -m cuda -c montecarlo
--host quadcore2 -np 1 /home/jenkins/share/dwarf_mine/build/src/main/dwarf_mine -m smp -c montecarlo
-#-host quadcore2 -np 1 /home/jenkins/share/dwarf_mine/build/src/main/dwarf_mine -m cuda -c montecarlo
--host quadcore3 -np 1 /home/jenkins/share/dwarf_mine/build/src/main/dwarf_mine -m smp -c montecarlo
-#-host quadcore3 -np 1 /home/jenkins/share/dwarf_mine/build/src/main/dwarf_mine -m cuda -c montecarlo
-#-host smalldwarf -np 1 /home/jenkins/share/dwarf_mine/build/src/main/dwarf_mine -m smp -c montecarlo
-
+# Example MPI appfile
+# 
+# This is an example MPI configuration using 4 physical machines, with 3 of 
+# them having CUDA-capable hardware. On each of these, a process is started 
+# for each elf implementation (CUDA or SMP).
+-host host1 -np 1 /home/jenkins/share/dwarf_mine/build/src/main/dwarf_mine -m smp -c matrix
+-host host1 -np 1 /home/jenkins/share/dwarf_mine/build/src/main/dwarf_mine -m cuda -c matrix
+-host host2 -np 1 /home/jenkins/share/dwarf_mine/build/src/main/dwarf_mine -m smp -c matrix
+-host host2 -np 1 /home/jenkins/share/dwarf_mine/build/src/main/dwarf_mine -m cuda -c matrix
+-host host3 -np 1 /home/jenkins/share/dwarf_mine/build/src/main/dwarf_mine -m smp -c matrix
+-host host3 -np 1 /home/jenkins/share/dwarf_mine/build/src/main/dwarf_mine -m cuda -c matrix
+-host host4 -np 1 /home/jenkins/share/dwarf_mine/build/src/main/dwarf_mine -m smp -c matrix
