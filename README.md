@@ -2,7 +2,7 @@ Dwarf Mine - The 13-11 Benchmark
 ================================
 
 This was a Master's project by the [Operating Systems and Middleware Group](http://www.dcl.hpi.uni-potsdam.de) 
-at the [Hasso-Plattner-Institute (HPI)](http://www.hpi-web.de) in Potsdam, Germany.  
+at the [Hasso-Plattner-Institute (HPI)](http://www.hpi-web.de) in Potsdam, Germany.
 Our goal was to define and implement a **parallel benchmark suite for heterogeneous many-core systems**, 
 based on the 13 [Berkeley Dwarfs](http://www.eecs.berkeley.edu/Pubs/TechRpts/2006/EECS-2006-183.html).
 
@@ -63,8 +63,8 @@ cmake ..
 make
 ```
 
-After building, you should run all the tests using `test.sh` or `<BUILD_DIR>/src/test/test` if your
-build directory is something else than `build`.
+After building, you should run all the tests using `test.sh` or `<BUILD_DIR>/src/test/test` (if your
+build directory is something else than `build`).
 
 ## Running/Example scenarios
 
