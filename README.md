@@ -1,10 +1,27 @@
 Dwarf Mine - The 13-11 Benchmark
 ================================
 
-This was a Master's project by the [Operating Systems and Middleware Group](http://www.dcl.hpi.uni-potsdam.de) at the [Hasso-Plattner-Institute (HPI)](http://www.hpi-web.de) in Potsdam, Germany.  
-Our goal was to define and implement a **parallel benchmark suite for heterogeneous many-core systems**. 
+This was a Master's project by the [Operating Systems and Middleware Group](http://www.dcl.hpi.uni-potsdam.de) 
+at the [Hasso-Plattner-Institute (HPI)](http://www.hpi-web.de) in Potsdam, Germany.  
+Our goal was to define and implement a **parallel benchmark suite for heterogeneous many-core systems**, 
+based on the 13 [Berkeley Dwarfs](http://www.eecs.berkeley.edu/Pubs/TechRpts/2006/EECS-2006-183.html).
 
-## Overview
+Three representative parallel algorithms were chosen and implemented in a GPU and a CPU
+variant:
+
+* Matrix multiplication
+* Quadratic Sieve
+* Othello game simulation
+
+Furthermore, a problem-specific scheduler was implemented for each of these algorithms, which uses MPI to distribute an
+input problem among several physical machines, and to distribute the workload among all CPUs and GPUs in each machine.
+So ultimately, every processor and graphics processor in a cluster are combined to solve a single problem. 
+The run time of the whole calculation is measured and printed out at the end, possibly using the average of several runs.
+
+Before the actual benchmark stage, each participating processor (GPU or CPU) is rated according to it's speed regarding
+the chosen algorithm. 
+These ratings are used to distribute the workload accordingly - faster processors get bigger slices of the input data 
+than slower processors, thus maximizing processor utilization in a heterogeneous environment.
 
 ## Build instructions
 
@@ -13,11 +30,11 @@ The CMake scripts assume GCC, but in principle, any compiler with sufficient C++
 In order to build and run the GPU implementations, a Fermi-class NVIDIA graphics card is required.
 Setting the `BUILD_WITH_CUDA` CMake option to `OFF` will disable building the CUDA implementations.
 
-### Prerequisites
+### Prerequisites/Dependencies
 
 * GCC 4.7 or higher
 * CUDA 5.0 or higher (optional)
-* OpenMPI 1.6.4 or higher, with multithreading support
+* OpenMPI 1.6.4 or higher, _with multithreading support_
 * Boost 1.49 or higher
 * GMP 5.0.5 or higher, GMPXX C++ bindings
 
@@ -56,4 +73,4 @@ The [ttyplay](http://0xcc.net/ttyrec/index.html.en) tool is required to play the
 
 ## License
 
-The source code is licensed under the [MIT license](http://opensource.org/licenses/MIT). Also see the file `LICENSE`.
+The source code is licensed under the [MIT license](http://opensource.org/licenses/MIT).
